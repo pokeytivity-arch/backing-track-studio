@@ -677,11 +677,27 @@ function scheduleStep(eng, step, t, bd, live){
   if(live && (s%4===0 || evStep===0)) uiQ.push({t,ei,beat:Math.floor(s/4),bar:Math.floor(ss/16)+1,loop:loop+1});
 }
 
+/* Timer runs in a Web Worker so background tabs don't throttle it */
+const ticker=(()=>{
+  let w=null;
+  try{
+    const src="let i=null;onmessage=e=>{if(e.data==='start'){clearInterval(i);i=setInterval(()=>postMessage(0),25);}else{clearInterval(i);i=null;}};";
+    w=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'})));
+    w.onmessage=()=>{ if(playing) tick(); };
+  }catch(_){ w=null; }
+  let iv=null;
+  return {
+    start(){ if(w) w.postMessage('start'); else { clearInterval(iv); iv=setInterval(tick,25); } },
+    stop(){ if(w) w.postMessage('stop'); clearInterval(iv); iv=null; }
+  };
+})();
+document.addEventListener('visibilitychange',()=>{ if(playing) tick(); });
+
 function tick(){
   const style=STYLES[S.style];
   while(true){
     const bd=60/P.bpm, t=P.beatTime+swingOff(P.sub,P.step<0?0:style.swing)*bd;
-    if(t>ctx.currentTime+0.12) break;
+    if(t>ctx.currentTime+(document.hidden?1.5:0.12)) break;
     if(P.step>=0 && song && song.steps && P.step%song.steps===0 && P.sub===0){
       const loop=P.step/song.steps;
       if(loop>0 && S.trainer.on && loop%Math.max(1,S.trainer.every)===0 && P.bpm<S.trainer.max){
@@ -701,10 +717,10 @@ async function play(){
   try{ await ensureCtx(); }catch(err){ toast('This browser blocked audio. Tap Play again.'); return; }
   E.applyMix(S.mix,STYLES[S.style]); E.vo=null;
   P={step:S.countIn?-16:0,sub:0,beatTime:ctx.currentTime+0.1,bpm:S.bpm};
-  uiQ=[]; timer=setInterval(tick,25); tick(); playing=true; setPlayUI(); requestAnimationFrame(draw);
+  uiQ=[]; playing=true; ticker.start(); tick(); setPlayUI(); requestAnimationFrame(draw);
 }
 function stop(){
-  playing=false; clearInterval(timer); timer=null; uiQ=[];
+  playing=false; ticker.stop(); uiQ=[];
   if(E){ const g=E.master.gain; g.setTargetAtTime(0.0001,ctx.currentTime,0.03); const old=E; setTimeout(()=>{ try{old.master.disconnect();}catch(_){}},400); E=new Engine(ctx); }
   setPlayUI(); renderStage(null);
 }
