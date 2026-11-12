@@ -391,7 +391,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-m (Parker bebop scales)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-n (Parker bebop vocabulary)</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1237,7 +1237,7 @@ const SOLOISTS={
   none:null,
   parker:{name:'Charlie Parker',inst:'Alto sax · bebop lines',sound:'sax',lo:54,hi:81,color:'#e8590c',
     blurb:'Long swinging eighth-note lines that hit chord tones on the beat, enclosures, accented off-beats and quick double-time turns.',
-    bars:{1:2,2:4,3:2,4:1}, rest:[3,7], pickup:[1,3], motif:0.35, arp:0.5,
+    bars:{1:2,2:4,3:2,4:1}, rest:[3,7], pickup:[1,3], motif:0.35, arp:0.45, active:0.4,
     cells:{arp:3,eighths:6,enclose:2.2,triplet:1.3,sixteenths:0.8,long:0.7,space:0.5}, tens:[2,9], oct:0, scoop:0.5, fall:0.25, swingAcc:0.12},
   corea:{name:'Chick Corea',inst:'Piano · fourths and Spanish colors',sound:'piano',lo:60,hi:94,color:'#1c7ed6',
     blurb:'Crisp sixteenth-note pentatonic patterns, stacked-fourth chords, Spanish (Phrygian) runs and rhythmic surprises.',
@@ -1302,17 +1302,33 @@ function composeTemplate(eng,abs){
   let prev=c0, prev2=null; const notes=[];
   const choose=(list,t,near=prev)=>{ let best=list[0],bs=1e9; for(const m of list){ const sc=Math.abs(m-desire(t))*0.55+Math.abs(m-near)*0.45+(m===prev?2.5:0)+(m===prev2?2.2:0); if(sc<bs){bs=sc;best=m;} } return best; };
   const blues=S.style==='blues';
-  let arpLeft=0, arpDir=1, arpTone=true, runDir=1, inRun=false;
+  let arpLeft=0, arpDir=1, arpTone=true, runDir=1, inRun=false, motQ=[];
   for(let i=0;i<on.length;i++){
     const o=on[i], h=harmAt(Math.floor(o.at),who,L); if(!h) continue;
     const beat=Math.abs(o.at%4)<0.01, nx=on[i+1], last=i===on.length-1;
     let m, extra={};
+    // Parker: highlight the two active tones (2nd and 4th), land on the 3rd, then arpeggiate the stable tones
+    // e.g. over C: D F E C G (descending) or D F E G C (ascending), all in swing eighths
+    if(!motQ.length && !arpLeft && L.active && beat && o.k==='x' && on.length-i>=6 && r()<L.active){
+      let ok=true; for(let j=i;j<i+4;j++){ if(on[j+1].k!=='x' || Math.abs(on[j+1].at-on[j].at-2)>0.01){ ok=false; break; } }
+      const hl=ok&&harmAt(Math.floor(on[i+2].at),who,L);
+      if(hl){ const c=hl.c, th=c.iv.find(x=>x%12===3||x%12===4), fi=c.iv.find(x=>[6,7,8].includes(x%12))??7;
+        if(th!=null){ const thI=th%12; let T=nearestIn(pitches([(hl.root+thI)%12],0,L.lo,L.hi),desire(on[i+2].at));
+          const down=r()<0.5; if(!down && T+9>L.hi && T-12>=L.lo+3) T-=12; if(down && T-thI-6<L.lo && T+12<=L.hi-6) T+=12;
+          const D=T-(thI-2), F=T+(5-thI), R=T-thI;
+          let seq=down?[D,F,T,R,R-(12-fi%12)]:[D,F,T,T+(fi%12-thI),R+12];
+          const lo=Math.min(...seq), hi2=Math.max(...seq); if(lo<L.lo) seq=seq.map(x=>x+12); else if(hi2>L.hi) seq=seq.map(x=>x-12);
+          if(Math.min(...seq)>=L.lo && Math.max(...seq)<=L.hi) motQ=seq; } }
+    }
+    if(motQ.length && o.k==='x' && !last){ m=motQ.shift(); extra.mot=true; if(!motQ.length) extra.motEnd=true; }
+    else if(motQ.length){ motQ=[]; }
     // start an arpeggio run: chord tones on the beats, each approached by a half step (below going up, above going down)
     if(!arpLeft && !last && beat && on.length-i>=4 && r()<L.arp){
       let dense=0; for(let j=i;j<Math.min(on.length-1,i+6);j++){ if(on[j+1].at-on[j].at<=2.01) dense++; else break; }
       if(dense>=3){ arpLeft=Math.min(dense+1,8); arpDir=desire(o.at+6)>=prev?1:-1; if(prev>L.hi-8) arpDir=-1; if(prev<L.lo+8) arpDir=1; arpTone=true; }
     }
-    if(arpLeft && !last){
+    if(extra.mot){}
+    else if(arpLeft && !last){
       const hn=nx?harmAt(Math.floor(nx.at),who,L)||h:h;
       if(arpTone){ m=stepIn(h.tones,prev,arpDir); if(m===prev) m=stepIn(h.tones,prev+arpDir,arpDir); }
       else { const nt=stepIn(hn.tones,prev,arpDir); m=(nt===prev?stepIn(hn.tones,prev+arpDir,arpDir):nt)-arpDir; extra.pre=true; }
@@ -1343,7 +1359,7 @@ function composeTemplate(eng,abs){
     }
     if(!(o.k==='s'||o.k==='t')) inRun=false;
     m=Math.max(L.lo,Math.min(L.hi,m));
-    if(!arpLeft && !beat && o.k==='x' && m===prev2){ const dir=Math.sign(m-prev)||1; m=stepIn(h.scale,prev,-dir); }   // keep the line moving
+    if(!extra.mot && !arpLeft && !beat && o.k==='x' && m===prev2){ const dir=Math.sign(m-prev)||1; m=stepIn(h.scale,prev,-dir); }   // keep the line moving
     prev2=prev; prev=m;
     const acc=(!beat&&o.k==='x')?L.swingAcc:0, ghost=(who==='parker'&&!beat&&o.k==='x'&&r()<0.12)?-0.25:0;
     notes.push({at:o.at,len:o.len,m,v:(0.76+acc+ghost)*dyn(o.at),...extra});
@@ -1364,7 +1380,7 @@ function parkerTurns(notes,r){
     const n=notes[i]; if(n.at<skipUntil) continue;
     const prev=out[out.length-1], lineStart=!prev || n.at-(prev.at+prev.len)>0.6 || prev.tail || prev.len>=4;
     const h=harmAt(Math.floor(n.at),'parker',L);
-    if(lineStart && h && !n.ch && !n.tail && Math.abs(n.at%2)<0.01){
+    if(lineStart && h && !n.ch && !n.tail && !n.mot && Math.abs(n.at%2)<0.01){
       const chordPcs=h.c.iv.map(v=>v%12), scale=scaleFor(h.c,'parker');
       const isMajBebop=scale.length===8&&scale.includes(8)&&scale.includes(11);   // major bebop: the chord is treated as a 6th chord
       const passing=isMajBebop?[2,5,8,11]:scale.filter(x=>!chordPcs.includes(x));
@@ -1373,7 +1389,8 @@ function parkerTurns(notes,r){
       if(!isPass(m) && r()<0.45){ const cands=h.scale.filter(isPass).filter(x=>Math.abs(x-n.m)<=7).sort((a,b)=>Math.abs(a-n.m)-Math.abs(b-n.m)).slice(0,3);
         if(cands.length) m=cands[Math.floor(r()*cands.length)]; }
       const up=stepIn(h.scale,m,1);
-      if(isPass(m) && up>m){
+      const clash=notes.some(x=>x.mot && x.at>=n.at && x.at<n.at+4);
+      if(isPass(m) && up>m && !clash){
         const sp=4/3, v=n.v;
         out.push({at:n.at,len:sp,m,v:v*0.95,first:n.first,turn:true},{at:n.at+sp,len:sp,m:up,v:v*0.82,turn:true},{at:n.at+2*sp,len:sp*1.05,m,v:v*0.9,turn:true});
         skipUntil=n.at+4-0.01; continue;
