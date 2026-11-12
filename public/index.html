@@ -304,7 +304,7 @@ audio{width:100%}
           <input type="text" id="title" aria-label="Track title" placeholder="Track title" style="flex:1;max-width:280px"></div>
         <div class="chartopts">
           <label>Time signature
-            <select id="meter"><option>4/4</option><option>3/4</option><option>2/4</option><option>5/4</option><option>6/8</option><option>12/8</option><option>7/8</option></select></label>
+            <select id="meter"><option>4/4</option><option>3/4</option><option>2/4</option><option>2/2</option><option>5/4</option><option>6/8</option><option>12/8</option><option>7/8</option></select></label>
           <label id="formWrap" hidden>Form
             <select id="form"><option value="free">Free (any length)</option><option value="phrase">Phrase · 4 bars</option><option value="sentence">Sentence · 8 bars</option><option value="song">Song · 16 bars</option></select></label>
           <button class="btn sm" id="sheetBtn" type="button">🖨 Print sheet music / diagrams</button>
@@ -340,7 +340,7 @@ audio{width:100%}
         <h2>Tempo and key</h2>
         <div class="field">
           <label for="bpm">Tempo (BPM)</label>
-          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes, so it matches the count you see and hear.</p>
+          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes; in 2/2 it counts half notes, so it always matches the count you see and hear.</p>
           <div class="row">
             <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
             <input type="number" id="bpm" min="30" max="320">
@@ -445,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-q (virtual drums)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-r (worship and gospel shout)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -532,15 +532,16 @@ const METERS={
   '4/4':{bar:16,beats:[0,4,8,12],q:1},
   '3/4':{bar:12,beats:[0,4,8],q:1},
   '2/4':{bar:8,beats:[0,4],q:1},
+  '2/2':{bar:16,beats:[0,8],q:0.5,mul:0.5,cut:true},
   '5/4':{bar:20,beats:[0,4,8,12,16],q:1},
   '6/8':{bar:12,beats:[0,6],q:2,mul:2.25,compound:true},
   '12/8':{bar:24,beats:[0,6,12,18],q:2,mul:2.25,compound:true},
   '7/8':{bar:14,beats:[0,4,8],q:2,mul:2,odd:true},
 };
-Object.values(METERS).forEach(M=>{ const step=(M.compound||M.odd)?2:4; M.count=[]; for(let p=0;p<M.bar;p+=step) M.count.push(p); });
+Object.values(METERS).forEach(M=>{ const step=M.cut?8:(M.compound||M.odd)?2:4; M.count=[]; for(let p=0;p<M.bar;p+=step) M.count.push(p); });
 const MET=()=>METERS[S.meter]||METERS['4/4'];
 const BPM_MIN=30, BPM_MAX=320, clampBpm=v=>Math.max(BPM_MIN,Math.min(BPM_MAX,Math.round(+v||96)));
-const styleBpm=st=>clampBpm(st.bpm*(MET().mul||1));
+const styleBpm=st=>clampBpm(st.bpm*((st.meter?METERS[st.meter]:MET()).mul||1));
 /* Custom voicings: [C / E G C] = left hand C, right hand E G C (stacked upward). Octave numbers optional (C4 = middle C). */
 const VTEMPL=[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['maj7',[0,4,7,11]],['m7',[0,3,7,10]],['m7b5',[0,3,6,10]],['dim7',[0,3,6,9]],['dim',[0,3,6]],
   ['aug',[0,4,8]],['sus4',[0,5,7]],['sus2',[0,2,7]],['7sus4',[0,5,7,10]],['6',[0,4,7,9]],['m6',[0,3,7,9]],['add9',[0,2,4,7]],['9',[0,2,4,7,10]],['maj9',[0,2,4,7,11]],
@@ -1019,6 +1020,41 @@ const STYLES={
       if(log[s]) E.bass(t,r+log[s][0]-(r+log[s][0]>45?12:0),e.sd*2,log[s][1],'log');
       if(v=hit('X.....x.......x.',s)||(e.evStep===0?1:0)) E.chord(t,e.vo,e.sd*3,v*0.7,'piano');
       if(e.evStep===0) E.chord(t,e.vo,e.evLeft*e.sd,0.3,'pad','extra'); }},
+  worship:{color:'#4263eb',label:'Worship',bpm:72,swing:0,keysName:'Piano',extraName:'Pad and delay guitar',sends:{drums:0.14,keys:0.3,extra:0.45},
+    gen:{back:'snare',hat:'hat',soft:0.8,bass:'finger',keys:'piano',comp:'sustain',extra:'pad'},
+    play(E,e){ const {s,t}=e; let v;
+      if(v=hit('X......xX.......',s)) E.kick(t,v*0.85);
+      if(v=hit('....X.......X...',s)) E.snare(t,v*0.72);
+      if(v=hit('x.x.x.x.x.x.x.x.',s)) E.hat(t,(s%4===0?0.5:0.36));
+      if(e.loop>0 && e.ss===e.ev.start && e.bar===0 && s===0) E.crash(t,0.35);
+      if(!e.chord) return;
+      const r=bassLow(e.chord.bass);
+      if(e.evStep===0) E.bass(t,r,Math.min(e.evLeft,8)*e.sd*0.95,0.9);
+      else if(s===8) E.bass(t,r,Math.min(e.evLeft,8)*e.sd*0.95,0.75);
+      else if(s===7 && e.evLeft>1) E.bass(t,r+12,e.sd*0.9,0.5);
+      if(e.evStep===0) E.chord(t,[r+24,...e.vo],Math.min(e.evLeft,8)*e.sd*0.98,0.62,'piano');
+      else if(s===8) E.chord(t,e.vo,Math.min(e.evLeft,8)*e.sd*0.98,0.42,'piano');
+      if(e.evStep===0) E.chord(t,e.vo.map(m=>m+12),e.evLeft*e.sd,0.3,'pad','extra');
+      if(v=hit('x..x..x.x..x..x.',s)){ const top=[...e.vo].sort((a,b)=>a-b).slice(-2).map(m=>m+12); E.note(t,top[(s>>1)%2],e.sd*2,0.1*v,'pluck','extra'); } }},
+  shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/2',keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.14,extra:0.1},
+    gen:{back:'clap',hat:'shaker',bass:'finger',keys:'organ',comp:'stab',extra:'pluck'},
+    play(E,e){ const {s,t}=e; let v;
+      if(v=hit('X...X...X...X...',s)) E.kick(t,s%8===0?1:0.85);
+      if(v=hit('..X...x...X...x.',s)) E.snare(t,v);
+      if(v=hit('.o.o.o.o.o.o.o.o',s)) E.snare(t,0.22);
+      if(v=hit('..x...x...x...x.',s)) E.clap(t,0.8);
+      if(v=hit('x.x.x.x.x.x.x.x.',s)) E.tamb(t,s%4===2?0.8:0.5);
+      if(v=hit('X...x...X...x...',s)) E.hat(t,0.35);
+      if(!e.chord) return;
+      const c=e.chord, r=bassLow(c.bass), th=isMinor(c)?3:4;
+      if(s%4===0){ const beatsLeft=Math.floor((e.evLeft-1)/4); let m;
+        if(e.evStep===0) m=r;
+        else if(beatsLeft===0 && e.nextChord){ const nb=bassLow(e.nextChord.bass); m=nb+(hash(e.ss+e.loop)>0.5?-1:1); }
+        else m=r+[0,12,7,th+12][(s/4)%4];
+        E.bass(t,m>52?m-12:m,e.sd*3.4,s%8===0?1:0.85); }
+      if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
+      if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
+      if(s===0||s===8||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra'); }},
 };
 
 /* Grooves for time signatures other than 4/4 (positions in 16ths) */
@@ -1087,6 +1123,8 @@ const EXAMPLES=[
   {title:'Canon ballad in D',chords:'| D | A/C# | Bm | F#m/A |\n| G | D/F# | G | A |',style:'ballad',bpm:70,transpose:0},
   {title:'Pushed pop in G (Professional)',chords:'| G . . . . . . Em | . |\n| C . . . . . . D | . |',style:'pop',bpm:92,transpose:0,meter:'4/4'},
   {title:'Custom voicings in C (Professional)',chords:'| [C / E G B D] . . . . . . [A / C E G B] | . |\n| [D / F A C E] . . . [G / F A B E] . . . | . |',style:'neosoul',bpm:80,transpose:0},
+  {title:'Worship in G',chords:'| G | D/F# | Em7 | Cadd9 |\n| G | D/F# | Cadd9 | Dsus4 D |',style:'worship',bpm:72,transpose:0},
+  {title:'Praise break in E♭ (2/2)',chords:'| Eb | Eb7 | Ab | Ab |\n| Eb/Bb | C7 | F7 Bb7 | Eb |',style:'shout',bpm:80,transpose:0,meter:'2/2'},
   {title:'Rock in A',chords:'| A | D/A | E | D |',style:'rock',bpm:120,transpose:0},
   {title:'Reggae in C',chords:'| C | F | G | F |',style:'reggae',bpm:76,transpose:0},
   {title:'Bossa in C',chords:'| Dm9 | G13 | Cmaj9 | A7b9 |',style:'bossa',bpm:126,transpose:0},
@@ -1139,7 +1177,7 @@ function scheduleStep(eng, step, t, bd, live){
   const e={t,bd,sd:bd/4,step,s,ss,loop,bar:Math.floor(ss/M.bar),ev,evStep,evLeft:ev.len-evStep,chord:ev.chord,
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
   eng.lockBass=!!(S.useHum && S.bassLine && S.bassLine.length);
-  if(S.meter==='4/4') style.play(eng,e); else genericPlay(eng,e,style);
+  if(M.bar===16) style.play(eng,e); else genericPlay(eng,e,style);
   if(eng.lockBass){ const tm=S.transpose>6?S.transpose-12:S.transpose, bt=(style.gen&&style.gen.bass)||'finger';
     for(const n of S.bassLine){ if(n.s===ss) eng.bass(t,n.m+tm,Math.max(1,n.l)*e.sd*0.95,0.95,bt,true); } }
   if(S.lead!=='none') soloStep(eng,e);
@@ -1237,7 +1275,7 @@ function renderBeats(){
   const M=MET(), w=$('beats'); w.replaceChildren();
   w.classList.toggle('many',M.count.length>7);
   M.count.forEach((p,i)=>{ const d=document.createElement('i'); d.textContent=i+1; if(M.beats.includes(p)) d.classList.add('acc'); w.appendChild(d); });
-  $('tempoNote').hidden=!(M.compound||M.odd);
+  $('tempoNote').hidden=!(M.compound||M.odd||M.cut);
 }
 function renderChart(){
   const ch=$('chart'); ch.replaceChildren(); const L=song.barLen;
@@ -1271,8 +1309,10 @@ function renderStyles(){
   const w=$('styles'); w.replaceChildren();
   Object.entries(STYLES).forEach(([k,st])=>{ const b=document.createElement('button'); b.className='sty'; b.setAttribute('aria-pressed',S.style===k);
     b.style.setProperty('--c',st.color||'#2445d4');
-    const t=document.createElement('b'); t.textContent=st.label; const sp=document.createElement('span'); sp.textContent=`${styleBpm(st)} BPM${st.swing&&!(MET().compound||MET().odd)?' · swung':''}`;
-    b.append(t,sp); b.onclick=()=>{ const same=S.style===k; S.style=k; if(!same && !playing){ S.bpm=styleBpm(st); syncTempo(); } renderStyles(); renderMix(); if(E) E.applyMix(S.mix,st); saveDraft(); };
+    const t=document.createElement('b'); t.textContent=st.label; const sp=document.createElement('span'); sp.textContent=`${styleBpm(st)} BPM${st.meter?' · '+st.meter:''}${st.swing&&!(MET().compound||MET().odd)?' · swung':''}`;
+    b.append(t,sp); b.onclick=()=>{ const same=S.style===k; S.style=k;
+      if(!same){ if(st.meter && S.meter!==st.meter){ setMeter(st.meter); toast(`${st.label} uses ${st.meter} time`); } else if(!st.meter && S.meter==='2/2'){ setMeter('4/4'); } }
+      if(!same && !playing){ S.bpm=styleBpm(st); syncTempo(); } renderStyles(); renderMix(); if(E) E.applyMix(S.mix,st); saveDraft(); };
     w.appendChild(b); });
 }
 function renderMix(){
@@ -1548,7 +1588,7 @@ function soloStep(eng,e){
   const abs=e.step;
   if(!eng.sq || eng.sq.who!==S.lead) eng.sq={who:S.lead,cur:Math.round(L.lo*0.45+L.hi*0.55),until:0,restUntil:abs+MET().bar/2,notes:[]};
   const q=eng.sq;
-  if(abs>=q.until && abs>=q.restUntil && abs%2===0){ eng.lseed=(eng.lseed||0)+1; q.notes=(S.meter==='4/4'||S.meter==='2/4')?composeTemplate(eng,abs):composePhrase(eng,abs); }
+  if(abs>=q.until && abs>=q.restUntil && abs%2===0){ eng.lseed=(eng.lseed||0)+1; q.notes=(S.meter==='4/4'||S.meter==='2/4'||S.meter==='2/2')?composeTemplate(eng,abs):composePhrase(eng,abs); }
   for(const n of q.notes){ if(Math.floor(n.at)!==abs) continue;
     const hum=(L.sound==='piano'?(hash(n.at*13+abs)-0.5)*0.014:0), t=e.t+(n.at-abs)*e.sd+hum, d=n.len*e.sd;
     if(L.sound==='sax'){
@@ -1573,7 +1613,7 @@ const FORMS={
                       ['Sentence 2 · Antecedent',8,12,'A new idea, or a variation of the first.'],['Sentence 2 · Consequent',12,16,'Final answer: a strong cadence to I.']]},
 };
 let GRID=[];
-function gridSp(){ const M=MET(); if(S.res==='beat') return M.compound?6:(M.odd?2:4); return S.res==='16'?1:2; }
+function gridSp(){ const M=MET(); if(S.res==='beat') return M.cut?8:M.compound?6:(M.odd?2:4); return S.res==='16'?1:2; }
 function chartToGrid(){
   const M=MET(), sp=gridSp(), n=M.bar/sp, sg=parseChart(S.chords,0,M.bar);
   const g=sg.bars.map((_,bi)=>{ const b0=bi*M.bar, toks=Array(n).fill('');
@@ -1585,7 +1625,8 @@ function gridToText(g){ const lines=[]; for(let i=0;i<g.length;i+=4) lines.push(
 const validTok=t=>!t||t==='.'||/^(N\.?C\.?|NC)$/i.test(t)||(/[\s\[]/.test(t)?!!parseVoicing(t.startsWith('[')?t:'['+t+']'):!!parseChord(t));
 const slotTok=v=>{ v=v.trim(); return (/\s/.test(v)&&!v.startsWith('['))?'['+v+']':v; };
 const slotShow=t=>t.startsWith('[')?t.slice(1,-1):t;
-function slotLabel(pos){ const M=MET(); if(M.compound||M.odd) return pos%2===0?String(pos/2+1):'+'; const r=pos%4; return r===0?String(pos/4+1):r===2?'&':r===1?'e':'a'; }
+function slotLabel(pos){ const M=MET(); if(M.compound||M.odd) return pos%2===0?String(pos/2+1):'+';
+  if(M.cut){ const r=pos%8; return r===0?String(pos/8+1):r===4?'&':r===2||r===6?'+':'·'; } const r=pos%4; return r===0?String(pos/4+1):r===2?'&':r===1?'e':'a'; }
 let gridDeb=null;
 function commitGrid(now){ clearTimeout(gridDeb); const go=()=>{ S.chords=gridToText(GRID); $('chords').value=S.chords; rebuild(); }; if(now) go(); else gridDeb=setTimeout(go,180); }
 function setBars(n){
@@ -1832,7 +1873,7 @@ async function renderSheet(target){
   const head=document.createElement('div'); head.className='sheet-head';
   const h1=document.createElement('h1'); h1.textContent=S.title||'Untitled track';
   const sub=document.createElement('p'); const st=STYLES[S.style];
-  sub.textContent=`${st.label} · ${S.meter} · ${M.compound||M.odd?'♪':'♩'} = ${S.bpm}${S.transpose?` · transposed ${S.transpose>0?'+':''}${S.transpose}`:''}`;
+  sub.textContent=`${st.label} · ${S.meter} · ${M.cut?'𝅗𝅥':M.compound||M.odd?'♪':'♩'} = ${S.bpm}${S.transpose?` · transposed ${S.transpose>0?'+':''}${S.transpose}`:''}`;
   head.append(h1,sub); target.appendChild(head);
   const wantMusic=$('sheetMusic').checked, wantDiag=$('sheetDiag').checked;
   if(!wantMusic && !wantDiag){ const p=document.createElement('p'); p.textContent='Tick Sheet music or Keyboard diagrams above.'; p.style.cssText='font:15px Arial;color:#555;text-align:center;margin:30px 0'; target.appendChild(p); return; }
@@ -1875,7 +1916,7 @@ async function renderSheet(target){
       });
       // first notes of a system may continue a chord from the previous system
 
-      const num=M.bar/(S.meter.endsWith('/8')?2:4), val=S.meter.endsWith('/8')?8:4;
+      const [num,val]=S.meter.split('/').map(Number);
       const tv=new VF.Voice({num_beats:num,beat_value:val}).setStrict(false).addTickables(tN);
       const bv=new VF.Voice({num_beats:num,beat_value:val}).setStrict(false).addTickables(bN);
       VF.Accidental.applyAccidentals([tv],'C'); VF.Accidental.applyAccidentals([bv],'C');
