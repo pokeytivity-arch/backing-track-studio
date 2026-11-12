@@ -272,10 +272,10 @@ audio{width:100%}
         <h2>Tempo and key</h2>
         <div class="field">
           <label for="bpm">Tempo (BPM)</label>
-          <p class="help" id="tempoNote" hidden>In 6/8 and 12/8 the count is in eighth notes, and BPM is the dotted quarter (one group of three counts).</p>
+          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes, so it matches the count you see and hear.</p>
           <div class="row">
-            <input type="range" id="bpmRange" min="40" max="220" aria-label="Tempo slider">
-            <input type="number" id="bpm" min="40" max="220">
+            <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
+            <input type="number" id="bpm" min="30" max="320">
             <button class="btn" id="tapBtn">Tap</button>
           </div>
         </div>
@@ -293,7 +293,7 @@ audio{width:100%}
           <div class="row" style="font-size:14px">
             Add <input type="number" id="trInc" value="4" min="1" max="20" aria-label="BPM to add"> BPM every
             <input type="number" id="trEvery" value="2" min="1" max="16" aria-label="Loops between speed-ups"> loops, up to
-            <input type="number" id="trMax" value="140" min="40" max="220" aria-label="Top tempo"> BPM
+            <input type="number" id="trMax" value="140" min="30" max="320" aria-label="Top tempo"> BPM
           </div>
         </div>
       </section>
@@ -431,12 +431,14 @@ const METERS={
   '3/4':{bar:12,beats:[0,4,8],q:1},
   '2/4':{bar:8,beats:[0,4],q:1},
   '5/4':{bar:20,beats:[0,4,8,12,16],q:1},
-  '6/8':{bar:12,beats:[0,6],q:2/3,compound:true},
-  '12/8':{bar:24,beats:[0,6,12,18],q:2/3,compound:true},
-  '7/8':{bar:14,beats:[0,4,8],q:1,odd:true},
+  '6/8':{bar:12,beats:[0,6],q:2,mul:2.25,compound:true},
+  '12/8':{bar:24,beats:[0,6,12,18],q:2,mul:2.25,compound:true},
+  '7/8':{bar:14,beats:[0,4,8],q:2,mul:2,odd:true},
 };
 Object.values(METERS).forEach(M=>{ const step=(M.compound||M.odd)?2:4; M.count=[]; for(let p=0;p<M.bar;p+=step) M.count.push(p); });
 const MET=()=>METERS[S.meter]||METERS['4/4'];
+const BPM_MIN=30, BPM_MAX=320, clampBpm=v=>Math.max(BPM_MIN,Math.min(BPM_MAX,Math.round(+v||96)));
+const styleBpm=st=>clampBpm(st.bpm*(MET().mul||1));
 /* Custom voicings: [C / E G C] = left hand C, right hand E G C (stacked upward). Octave numbers optional (C4 = middle C). */
 const VTEMPL=[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['maj7',[0,4,7,11]],['m7',[0,3,7,10]],['m7b5',[0,3,6,10]],['dim7',[0,3,6,9]],['dim',[0,3,6]],
   ['aug',[0,4,8]],['sus4',[0,5,7]],['sus2',[0,2,7]],['7sus4',[0,5,7,10]],['6',[0,4,7,9]],['m6',[0,3,7,9]],['add9',[0,2,4,7]],['9',[0,2,4,7,10]],['maj9',[0,2,4,7,11]],
@@ -973,10 +975,10 @@ const EXAMPLES=[
   {title:'Neo-soul in E♭',chords:'| Ebmaj9 | Dm7 G7#9 | Cm9 | Fm9 Bb13 |',style:'neosoul',bpm:82,transpose:0},
   {title:'Amapiano in F minor',chords:'| Fm9 | Ebmaj7 | Dbmaj7 | Cm7 |',style:'amapiano',bpm:112,transpose:0},
   {title:'Jazz waltz in F (3/4)',chords:'| Fmaj7 | Gm7 . C7 | Fmaj7 | Am7b5 . D7 |\n| Gm7 | C7 | Fmaj7 | Gm7 . C7 |',style:'jazz',bpm:150,transpose:0,meter:'3/4'},
-  {title:'Gospel 6/8 in E♭',chords:'| Eb | Ab/Eb | Bb/D | Cm7 |\n| Ab | Eb/G | Fm7 | Bb7sus4 Bb7 |',style:'gospel',bpm:56,transpose:0,meter:'6/8'},
-  {title:'12/8 slow blues in G',chords:'| G7 | C7 | G7 | G7 |\n| C7 | C7 | G7 | E7 |\n| Am7 | D7 | G7 E7 | Am7 D7 |',style:'blues',bpm:54,transpose:0,meter:'12/8'},
+  {title:'Gospel 6/8 in E♭',chords:'| Eb | Ab/Eb | Bb/D | Cm7 |\n| Ab | Eb/G | Fm7 | Bb7sus4 Bb7 |',style:'gospel',bpm:168,transpose:0,meter:'6/8'},
+  {title:'12/8 slow blues in G',chords:'| G7 | C7 | G7 | G7 |\n| C7 | C7 | G7 | E7 |\n| Am7 | D7 | G7 E7 | Am7 D7 |',style:'blues',bpm:162,transpose:0,meter:'12/8'},
   {title:'5/4 vamp in E♭ minor',chords:'| Ebm . . Bbm7 . | Ebm . . Bbm7 . |',style:'jazz',bpm:168,transpose:0,meter:'5/4'},
-  {title:'7/8 groove in D',chords:'| D . . . . . . | C . . . G . . |',style:'funk',bpm:100,transpose:0,meter:'7/8'},
+  {title:'7/8 groove in D',chords:'| D . . . . . . | C . . . G . . |',style:'funk',bpm:200,transpose:0,meter:'7/8'},
 ];
 const S={
   title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
@@ -1081,7 +1083,7 @@ function toggle(){ playing?stop():play(); }
 let curEi=-1;
 function draw(){
   if(!playing) return;
-  const now=ctx.currentTime;
+  const lat=Math.min(0.35,(ctx.outputLatency||0)+(ctx.baseLatency||0)), now=ctx.currentTime-lat;
   while(uiQ.length && uiQ[0].t<=now){ const u=uiQ.shift(); renderStage(u); }
   requestAnimationFrame(draw);
 }
@@ -1108,7 +1110,7 @@ function renderBeats(){
   const M=MET(), w=$('beats'); w.replaceChildren();
   w.classList.toggle('many',M.count.length>7);
   M.count.forEach((p,i)=>{ const d=document.createElement('i'); d.textContent=i+1; if(M.beats.includes(p)) d.classList.add('acc'); w.appendChild(d); });
-  $('tempoNote').hidden=!M.compound;
+  $('tempoNote').hidden=!(M.compound||M.odd);
 }
 function renderChart(){
   const ch=$('chart'); ch.replaceChildren(); const L=song.barLen;
@@ -1141,8 +1143,8 @@ function renderStyles(){
   const w=$('styles'); w.replaceChildren();
   Object.entries(STYLES).forEach(([k,st])=>{ const b=document.createElement('button'); b.className='sty'; b.setAttribute('aria-pressed',S.style===k);
     b.style.setProperty('--c',st.color||'#2445d4');
-    const t=document.createElement('b'); t.textContent=st.label; const sp=document.createElement('span'); sp.textContent=`${st.bpm} BPM${st.swing?' · swung':''}`;
-    b.append(t,sp); b.onclick=()=>{ const same=S.style===k; S.style=k; if(!same && !playing){ S.bpm=st.bpm; syncTempo(); } renderStyles(); renderMix(); if(E) E.applyMix(S.mix,st); saveDraft(); };
+    const t=document.createElement('b'); t.textContent=st.label; const sp=document.createElement('span'); sp.textContent=`${styleBpm(st)} BPM${st.swing&&!(MET().compound||MET().odd)?' · swung':''}`;
+    b.append(t,sp); b.onclick=()=>{ const same=S.style===k; S.style=k; if(!same && !playing){ S.bpm=styleBpm(st); syncTempo(); } renderStyles(); renderMix(); if(E) E.applyMix(S.mix,st); saveDraft(); };
     w.appendChild(b); });
 }
 function renderMix(){
@@ -1320,8 +1322,11 @@ function setMode(m){
   if(m==='pro') renderGrid(); else $('chords').value=S.chords;
   saveDraft();
 }
-function setMeter(v,{snap=true}={}){
+function setMeter(v,{snap=true,convert=true}={}){
+  const oldMul=MET().mul||1;
   S.meter=METERS[v]?v:'4/4'; $('meter').value=S.meter;
+  if(convert){ const nm=MET().mul||1; if(nm!==oldMul){ S.bpm=clampBpm(S.bpm*nm/oldMul); if(P) P.bpm=S.bpm; syncTempo(); } }
+  renderStyles();
   $('res').querySelector('option[value="beat"]').disabled=!!MET().odd; if(MET().odd && S.res==='beat'){ S.res='8'; $('res').value='8'; }
   if(E) E.vo=null; renderBeats();
   if(S.mode==='pro'){ GRID=chartToGrid(); if(snap){ S.chords=gridToText(GRID); $('chords').value=S.chords; } }
@@ -1345,9 +1350,9 @@ let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
 const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,meter:S.meter,form:S.form,lead:S.lead});
 function loadTrack(t){
   if(playing) stop();
-  S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=Math.max(40,Math.min(220,+t.bpm||96)); S.transpose=+t.transpose||0;
+  S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0;
   S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; if(t.lead&&SOLOISTS.hasOwnProperty(t.lead)) S.lead=t.lead;
-  $('title').value=S.title; $('chords').value=S.chords; syncTempo(); renderStyles(); renderSoloists(); renderMix(); setMeter(t.meter||'4/4',{snap:false});
+  $('title').value=S.title; $('chords').value=S.chords; syncTempo(); renderStyles(); renderSoloists(); renderMix(); setMeter(t.meter||'4/4',{snap:false,convert:false});
   toast(`Loaded “${S.title||'track'}”`);
 }
 function renderList(){
@@ -1466,7 +1471,7 @@ function init(){
   $('countBtn').setAttribute('aria-pressed',S.countIn); $('clickBtn').setAttribute('aria-pressed',S.metronome);
   $('trOn').checked=S.trainer.on; $('trInc').value=S.trainer.inc; $('trEvery').value=S.trainer.every; $('trMax').value=S.trainer.max;
   $('meter').value=S.meter; $('res').value=S.res; $('form').value=S.form;
-  syncTempo(); renderStyles(); renderSoloists(); renderMix(); renderBeats(); setMeter(S.meter,{snap:false}); setMode(S.mode); renderList();
+  syncTempo(); renderStyles(); renderSoloists(); renderMix(); renderBeats(); setMeter(S.meter,{snap:false,convert:false}); setMode(S.mode); renderList();
   $('modeEasy').onclick=()=>setMode('easy'); $('modePro').onclick=()=>setMode('pro');
   $('meter').onchange=e=>{ setMeter(e.target.value); saveDraft(); };
   $('res').onchange=e=>{ S.res=e.target.value; renderGrid(); saveDraft(); };
@@ -1486,7 +1491,7 @@ function init(){
   document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement && $('stage').classList.contains('projector')) $('projBtn').click(); });
   let deb; $('chords').oninput=e=>{ clearTimeout(deb); deb=setTimeout(()=>{ S.chords=e.target.value; rebuild(); },250); };
   $('title').oninput=e=>{ S.title=e.target.value; saveDraft(); };
-  const setBpm=v=>{ v=Math.round(+v); if(!(v>=40&&v<=220)) return; S.bpm=v; if(P) P.bpm=v; syncTempo(); };
+  const setBpm=v=>{ v=Math.round(+v); if(!(v>=BPM_MIN&&v<=BPM_MAX)) return; S.bpm=v; if(P) P.bpm=v; syncTempo(); };
   $('bpmRange').oninput=e=>setBpm(e.target.value);
   $('bpm').onchange=e=>setBpm(e.target.value);
   let taps=[]; $('tapBtn').onclick=()=>{ const n=performance.now(); taps=taps.filter(x=>n-x<2500); taps.push(n);
