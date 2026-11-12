@@ -304,7 +304,7 @@ audio{width:100%}
           <input type="text" id="title" aria-label="Track title" placeholder="Track title" style="flex:1;max-width:280px"></div>
         <div class="chartopts">
           <label>Time signature
-            <select id="meter"><option>4/4</option><option>3/4</option><option>2/4</option><option>2/2</option><option>5/4</option><option>6/8</option><option>12/8</option><option>7/8</option></select></label>
+            <select id="meter"><option>4/4</option><option>3/4</option><option>2/4</option><option>5/4</option><option>6/8</option><option>12/8</option><option>7/8</option></select></label>
           <label id="formWrap" hidden>Form
             <select id="form"><option value="free">Free (any length)</option><option value="phrase">Phrase · 4 bars</option><option value="sentence">Sentence · 8 bars</option><option value="song">Song · 16 bars</option></select></label>
           <button class="btn sm" id="sheetBtn" type="button">🖨 Print sheet music / diagrams</button>
@@ -340,7 +340,7 @@ audio{width:100%}
         <h2>Tempo and key</h2>
         <div class="field">
           <label for="bpm">Tempo (BPM)</label>
-          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes; in 2/2 it counts half notes, so it always matches the count you see and hear.</p>
+          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes; so it always matches the count you see and hear.</p>
           <div class="row">
             <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
             <input type="number" id="bpm" min="30" max="320">
@@ -445,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-s (shout bass walk)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-t (gospel shout in 2/4)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1036,27 +1036,27 @@ const STYLES={
       else if(s===8) E.chord(t,e.vo,Math.min(e.evLeft,8)*e.sd*0.98,0.42,'piano');
       if(e.evStep===0) E.chord(t,e.vo.map(m=>m+12),e.evLeft*e.sd,0.3,'pad','extra');
       if(v=hit('x..x..x.x..x..x.',s)){ const top=[...e.vo].sort((a,b)=>a-b).slice(-2).map(m=>m+12); E.note(t,top[(s>>1)%2],e.sd*2,0.1*v,'pluck','extra'); } }},
-  shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/2',keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.14,extra:0.1},
+  shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/4',bar8:true,keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.14,extra:0.1},
     gen:{back:'clap',hat:'shaker',bass:'finger',keys:'organ',comp:'stab',extra:'pluck'},
-    play(E,e){ const {s,t}=e; let v;
-      if(v=hit('X...X...X...X...',s)) E.kick(t,s%8===0?1:0.85);
-      if(v=hit('..X...x...X...x.',s)) E.snare(t,v);
-      if(v=hit('.o.o.o.o.o.o.o.o',s)) E.snare(t,0.22);
-      if(v=hit('..x...x...x...x.',s)) E.clap(t,0.8);
-      if(v=hit('x.x.x.x.x.x.x.x.',s)) E.tamb(t,s%4===2?0.8:0.5);
-      if(v=hit('X...x...X...x...',s)) E.hat(t,0.35);
+    play(E,e){ const {t}=e, s=e.s, s8=s%8; let v;
+      if(v=hit('X...X...',s8)) E.kick(t,s8===0?1:0.85);
+      if(v=hit('..X...x.',s8)) E.snare(t,v);
+      if(v=hit('.o.o.o.o',s8)) E.snare(t,0.22);
+      if(v=hit('..x...x.',s8)) E.clap(t,0.8);
+      if(v=hit('x.x.x.x.',s8)) E.tamb(t,s8%4===2?0.8:0.5);
+      if(v=hit('X...x...',s8)) E.hat(t,0.35);
       if(!e.chord) return;
       const c=e.chord, r=bassLow(c.bass), th=isMinor(c)?3:4;
       // chromatic walk-up: C E F Gb G A Bb B -> C (minor: C Eb F Gb G A Bb B)
       const walk=[0,th,5,6,7,9,10,11], L=e.ev.len, nb=e.nextChord?bassLow(e.nextChord.bass):r;
       const land=m=>{ const tgt=nb+12*Math.round((r+12-nb)/12); return (e.nextChord&&e.nextChord.bass!==c.bass)?tgt+(m>=tgt?1:-1):m; };
-      if(L>=16 && e.evStep<(L>=32?32:16)){
+      if(L>=8 && e.evStep<(L>=32?32:L>=16?16:8)){
         const unit=L>=32?4:2;
-        if(e.evStep%unit===0){ const k=e.evStep/unit; let m=r+walk[k]; if(k===7 && e.evLeft<=unit) m=land(m);
+        if(e.evStep%unit===0){ const k=e.evStep/unit; let m=r+walk[k]; if(e.evLeft<=unit) m=land(m);
           E.bass(t,m,e.sd*unit*0.88,k===0?1:0.86); }
         if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
         if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
-        if(s===0||s===8||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra');
+        if(s8===0||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra');
         return;
       }
       if(s%4===0){ const beatsLeft=Math.floor((e.evLeft-1)/4); let m;
@@ -1066,7 +1066,7 @@ const STYLES={
         E.bass(t,m>52?m-12:m,e.sd*3.4,s%8===0?1:0.85); }
       if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
       if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
-      if(s===0||s===8||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra'); }},
+      if(s8===0||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra'); }},
 };
 
 /* Grooves for time signatures other than 4/4 (positions in 16ths) */
@@ -1136,7 +1136,7 @@ const EXAMPLES=[
   {title:'Pushed pop in G (Professional)',chords:'| G . . . . . . Em | . |\n| C . . . . . . D | . |',style:'pop',bpm:92,transpose:0,meter:'4/4'},
   {title:'Custom voicings in C (Professional)',chords:'| [C / E G B D] . . . . . . [A / C E G B] | . |\n| [D / F A C E] . . . [G / F A B E] . . . | . |',style:'neosoul',bpm:80,transpose:0},
   {title:'Worship in G',chords:'| G | D/F# | Em7 | Cadd9 |\n| G | D/F# | Cadd9 | Dsus4 D |',style:'worship',bpm:72,transpose:0},
-  {title:'Praise break in E♭ (2/2)',chords:'| Eb | Eb7 | Ab | Ab |\n| Eb/Bb | C7 | F7 Bb7 | Eb |',style:'shout',bpm:80,transpose:0,meter:'2/2'},
+  {title:'Praise break in E♭ (2/4)',chords:'| Eb | . | Eb7 | . |\n| Ab | . | Ab | . |\n| Eb/Bb | . | C7 | . |\n| F7 | Bb7 | Eb | . |',style:'shout',bpm:152,transpose:0,meter:'2/4'},
   {title:'Rock in A',chords:'| A | D/A | E | D |',style:'rock',bpm:120,transpose:0},
   {title:'Reggae in C',chords:'| C | F | G | F |',style:'reggae',bpm:76,transpose:0},
   {title:'Bossa in C',chords:'| Dm9 | G13 | Cmaj9 | A7b9 |',style:'bossa',bpm:126,transpose:0},
@@ -1189,7 +1189,7 @@ function scheduleStep(eng, step, t, bd, live){
   const e={t,bd,sd:bd/4,step,s,ss,loop,bar:Math.floor(ss/M.bar),ev,evStep,evLeft:ev.len-evStep,chord:ev.chord,
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
   eng.lockBass=!!(S.useHum && S.bassLine && S.bassLine.length);
-  if(M.bar===16) style.play(eng,e); else genericPlay(eng,e,style);
+  if(M.bar===16 || (M.bar===8 && style.bar8)) style.play(eng,e); else genericPlay(eng,e,style);
   if(eng.lockBass){ const tm=S.transpose>6?S.transpose-12:S.transpose, bt=(style.gen&&style.gen.bass)||'finger';
     for(const n of S.bassLine){ if(n.s===ss) eng.bass(t,n.m+tm,Math.max(1,n.l)*e.sd*0.95,0.95,bt,true); } }
   if(S.lead!=='none') soloStep(eng,e);
@@ -1694,6 +1694,7 @@ function setMode(m){
   saveDraft();
 }
 function setMeter(v,{snap=true,convert=true}={}){
+  if(v==='2/2') v='2/4';
   const oldMul=MET().mul||1;
   S.meter=METERS[v]?v:'4/4'; $('meter').value=S.meter;
   if(convert){ const nm=MET().mul||1; if(nm!==oldMul){ S.bpm=clampBpm(S.bpm*nm/oldMul); if(P) P.bpm=S.bpm; syncTempo(); } }
