@@ -138,7 +138,9 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 
 .mix{display:grid;gap:10px}
 .ch{display:grid;grid-template-columns:110px 34px 34px 1fr 40px;gap:8px;align-items:center}
-.solo[aria-pressed="true"]{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
+.mute{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,var(--line))}
+.mute.solo{color:#d97706;border-color:color-mix(in srgb,#f59f00 50%,var(--line))}
+.mute.solo[aria-pressed="true"]{background:#f59f00;border-color:#f59f00;color:#1a1200}
 .ch.solo-off .nm{opacity:.45}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:2px;background:var(--bg)}
 .seg button{border:0;background:transparent;border-radius:999px;padding:5px 12px;font-weight:600;font-size:13.5px;color:var(--muted)}
