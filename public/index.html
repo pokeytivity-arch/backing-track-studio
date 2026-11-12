@@ -445,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-r (worship and gospel shout)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-s (shout bass walk)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1047,6 +1047,18 @@ const STYLES={
       if(v=hit('X...x...X...x...',s)) E.hat(t,0.35);
       if(!e.chord) return;
       const c=e.chord, r=bassLow(c.bass), th=isMinor(c)?3:4;
+      // chromatic walk-up: C E F Gb G A Bb B -> C (minor: C Eb F Gb G A Bb B)
+      const walk=[0,th,5,6,7,9,10,11], L=e.ev.len, nb=e.nextChord?bassLow(e.nextChord.bass):r;
+      const land=m=>{ const tgt=nb+12*Math.round((r+12-nb)/12); return (e.nextChord&&e.nextChord.bass!==c.bass)?tgt+(m>=tgt?1:-1):m; };
+      if(L>=16 && e.evStep<(L>=32?32:16)){
+        const unit=L>=32?4:2;
+        if(e.evStep%unit===0){ const k=e.evStep/unit; let m=r+walk[k]; if(k===7 && e.evLeft<=unit) m=land(m);
+          E.bass(t,m,e.sd*unit*0.88,k===0?1:0.86); }
+        if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
+        if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
+        if(s===0||s===8||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra');
+        return;
+      }
       if(s%4===0){ const beatsLeft=Math.floor((e.evLeft-1)/4); let m;
         if(e.evStep===0) m=r;
         else if(beatsLeft===0 && e.nextChord){ const nb=bassLow(e.nextChord.bass); m=nb+(hash(e.ss+e.loop)>0.5?-1:1); }
