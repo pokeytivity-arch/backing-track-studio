@@ -61,6 +61,11 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .beats{display:flex;gap:clamp(10px,2.4vw,22px);justify-content:center;align-items:center;padding:4px 0}
 .beats i{width:clamp(38px,6vw,58px);height:clamp(38px,6vw,58px);border-radius:50%;background:var(--stage-2);border:3px solid #3a4a74;display:grid;place-items:center;
   font:800 clamp(16px,2.4vw,24px)/1 var(--display);font-style:normal;color:var(--stage-muted);transition:background .05s,transform .05s}
+.beats i.acc{border-color:#7f93c9;color:var(--stage-ink)}
+.beats.many{gap:clamp(5px,1.2vw,12px);flex-wrap:wrap}
+.beats.many i{width:clamp(28px,4.2vw,44px);height:clamp(28px,4.2vw,44px);font-size:clamp(13px,1.8vw,18px)}
+.beats.many i.acc{margin-left:clamp(4px,1vw,10px)}
+.beats.many i:first-child{margin-left:0}
 .beats i.on{background:var(--hi);border-color:var(--hi);color:var(--hi-ink);transform:scale(1.12)}
 .beats i.on.one{background:#ff8a3d;border-color:#ff8a3d;box-shadow:0 0 0 6px rgba(255,138,61,.28)}
 .stage.projector .beats i{width:clamp(56px,8vw,96px);height:clamp(56px,8vw,96px);font-size:clamp(22px,3vw,38px)}
@@ -267,7 +272,7 @@ audio{width:100%}
         <h2>Tempo and key</h2>
         <div class="field">
           <label for="bpm">Tempo (BPM)</label>
-          <p class="help" id="tempoNote" hidden>In 6/8 and 12/8, BPM counts the dotted quarter note (each group of three eighths).</p>
+          <p class="help" id="tempoNote" hidden>In 6/8 and 12/8 the count is in eighth notes, and BPM is the dotted quarter (one group of three counts).</p>
           <div class="row">
             <input type="range" id="bpmRange" min="40" max="220" aria-label="Tempo slider">
             <input type="number" id="bpm" min="40" max="220">
@@ -430,6 +435,7 @@ const METERS={
   '12/8':{bar:24,beats:[0,6,12,18],q:2/3,compound:true},
   '7/8':{bar:14,beats:[0,4,8],q:1,odd:true},
 };
+Object.values(METERS).forEach(M=>{ const step=(M.compound||M.odd)?2:4; M.count=[]; for(let p=0;p<M.bar;p+=step) M.count.push(p); });
 const MET=()=>METERS[S.meter]||METERS['4/4'];
 /* Custom voicings: [C / E G C] = left hand C, right hand E G C (stacked upward). Octave numbers optional (C4 = middle C). */
 const VTEMPL=[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['maj7',[0,4,7,11]],['m7',[0,3,7,10]],['m7b5',[0,3,6,10]],['dim7',[0,3,6,9]],['dim',[0,3,6]],
@@ -990,15 +996,16 @@ function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('sho
 let ctx=null, E=null, timer=null, playing=false, P=null, uiQ=[];
 const swingOff=(sub,sw)=> sw? [0,sw/2,sw,sw+(1-sw)/2][sub] : sub*0.25;
 
-const beatIndex=(M,s)=>{ let b=0; M.beats.forEach((p,i)=>{ if(p<=s) b=i; }); return b; };
+const beatIndex=(M,s)=>{ let b=0; M.count.forEach((p,i)=>{ if(p<=s) b=i; }); return b; };
 const effSwing=style=> { const M=MET(); return (M.compound||M.odd)?0:style.swing; };
 function metroClick(eng,M,s,t){
-  if(M.beats.includes(s)) eng.click(t,s===0);
-  else if(M.compound && s%2===0){ const g=eng.gain(); eng.perc(g,t,0.08,0.03); const o=eng.osc('square',1180); o.connect(g).connect(eng.out('click')); o.start(t); o.stop(t+0.05); }
+  if(!M.count.includes(s)) return;
+  if(s===0 || M.beats.includes(s)) eng.click(t,s===0);
+  else { const g=eng.gain(); eng.perc(g,t,0.13,0.035); const o=eng.osc('square',1000); o.connect(g).connect(eng.out('click')); o.start(t); o.stop(t+0.05); }
 }
 function scheduleStep(eng, step, t, bd, live){
   const style=STYLES[S.style], M=MET();
-  if(step<0){ const k=step+M.bar; metroClick(eng,M,k,t); if(live && M.beats.includes(k)) uiQ.push({t,count:M.beats.indexOf(k)+1}); return; }
+  if(step<0){ const k=step+M.bar; metroClick(eng,M,k,t); if(live && M.count.includes(k)) uiQ.push({t,count:M.count.indexOf(k)+1}); return; }
   if(!song||!song.steps) return;
   const ss=step%song.steps, loop=Math.floor(step/song.steps);
   const ei=song.evAt[ss], ev=song.events[ei], evStep=ss-ev.start;
@@ -1012,7 +1019,7 @@ function scheduleStep(eng, step, t, bd, live){
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
   if(S.meter==='4/4') style.play(eng,e); else genericPlay(eng,e,style);
   if(S.lead!=='none') soloStep(eng,e);
-  if(live && (M.beats.includes(s) || evStep===0)) uiQ.push({t,ei,beat:beatIndex(M,s),bar:Math.floor(ss/M.bar)+1,loop:loop+1});
+  if(live && (M.count.includes(s) || evStep===0)) uiQ.push({t,ei,beat:beatIndex(M,s),bar:Math.floor(ss/M.bar)+1,loop:loop+1});
 }
 
 /* Timer runs in a Web Worker so background tabs don't throttle it */
@@ -1083,10 +1090,10 @@ function nameHTML(n){ const el=document.createElement('span'); const r=document.
 function renderStage(u){
   const nowEl=$('now'), beats=[...$('beats').children];
   if(!u){ nowEl.className='now'; nowEl.replaceChildren(song&&song.events[0]?nameHTML(song.events[0].name):document.createTextNode('–'));
-    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.className=''); $('voice').textContent=''; $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
-  if(u.count!=null){ nowEl.className='now count'; nowEl.textContent=String(u.count); beats.forEach((b,i)=>b.className=i===u.count-1?'on'+(i===0?' one':''):'');
+    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.classList.remove('on','one')); $('voice').textContent=''; $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
+  if(u.count!=null){ nowEl.className='now count'; nowEl.textContent=String(u.count); beats.forEach((b,i)=>{ b.classList.toggle('on',i===u.count-1); b.classList.toggle('one',i===0&&i===u.count-1); });
     setNext(song.events[0]); return; }
-  beats.forEach((b,i)=>b.className=i===u.beat?'on'+(i===0?' one':''):'');
+  beats.forEach((b,i)=>b.classList.toggle('on',i===u.beat)); beats.forEach((b,i)=>b.classList.toggle('one',i===0&&i===u.beat));
   $('barNo').textContent=`${u.bar}/${song.bars.length}`; $('loopNo').textContent=u.loop;
   if(u.ei!==curEi){ const ev=song.events[u.ei]; if(!ev) return; nowEl.className='now'; nowEl.replaceChildren(nameHTML(ev.name)); setNext(ev.nextEv); highlight(u.ei);
     $('voice').textContent=ev.chord&&ev.chord.voicing?(ev.chord.vlabel||'Custom voicing'):''; }
@@ -1099,7 +1106,8 @@ function highlight(ei){
 }
 function renderBeats(){
   const M=MET(), w=$('beats'); w.replaceChildren();
-  M.beats.forEach((_,i)=>{ const d=document.createElement('i'); d.textContent=i+1; w.appendChild(d); });
+  w.classList.toggle('many',M.count.length>7);
+  M.count.forEach((p,i)=>{ const d=document.createElement('i'); d.textContent=i+1; if(M.beats.includes(p)) d.classList.add('acc'); w.appendChild(d); });
   $('tempoNote').hidden=!M.compound;
 }
 function renderChart(){
