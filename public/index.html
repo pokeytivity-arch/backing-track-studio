@@ -222,7 +222,12 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .kit .tamb{fill:none;stroke:#e9ecef;stroke-width:6;stroke-dasharray:4 4}
 .kit .emoji{font-size:30px;text-anchor:middle}
 .kit .padlab{fill:var(--stage-muted);font:600 11px var(--body);text-anchor:middle;pointer-events:none}
-.stage-kbd{background:#0c1222;border-radius:10px;padding:8px}
+.stage-kbd{background:#0c1222;border-radius:10px;padding:8px;display:grid;gap:6px}
+.kbd-bar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kbd-bar span{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
+.seg.dark{background:#141c33;border-color:#2c3a5e}
+.seg.dark button{color:var(--stage-muted);padding:4px 10px;font-size:12.5px}
+.seg.dark button[aria-pressed="true"]{background:var(--hi);color:var(--hi-ink)}
 .diagrams{margin-top:18px}
 .diagrams h2{font:700 18px Georgia,serif;margin:6px 0 2px;color:#111;text-transform:none;letter-spacing:0}
 .diag-key{font:12px Arial,sans-serif;color:#444;margin:0 0 8px;display:flex;gap:6px;align-items:center}
@@ -279,7 +284,11 @@ audio{width:100%}
     </div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
-    <div class="stage-kbd" id="stageKbd" hidden></div>
+    <div class="stage-kbd" id="stageKbd" hidden>
+      <div class="kbd-bar"><span>Keyboard</span>
+        <div class="seg dark" role="group" aria-label="Keyboard size"><button data-k="88">88 keys</button><button data-k="76">76 keys</button><button data-k="61">61 keys</button></div></div>
+      <div id="kbdWrap"></div>
+    </div>
     <div class="stage-drums" id="stageDrums" hidden></div>
     <div class="transport">
       <button class="play" id="playBtn" aria-label="Play">
@@ -445,7 +454,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-y (energetic shout comping)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-z (keyboard sizes)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1994,6 +2003,7 @@ async function openSheet(){
    Keyboard chord diagrams
    ========================================================= */
 const KB_WHITE=[0,2,4,5,7,9,11];
+const KB_SIZES={88:[21,108],76:[28,103],61:[36,96]};
 function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70}={}){
   const all=[...lh,...rh]; if(lo==null){ lo=Math.min(...all); lo-=((lo%12)+12)%12; } if(hi==null){ hi=Math.max(...all); hi+=11-(((hi%12)+12)%12); }
   const NS='http://www.w3.org/2000/svg', whites=[]; for(let m=lo;m<=hi;m++) if(KB_WHITE.includes(((m%12)+12)%12)) whites.push(m);
@@ -2031,7 +2041,9 @@ let stageVz=null;
 function stageKeys(ei){
   const w=$('stageKbd'); if(!w || w.hidden) return;
   if(!stageVz || stageVz.song!==song) stageVz={song,vz:songVoicings(song)};
-  const v=ei!=null?stageVz.vz[ei]:null; w.replaceChildren(keyboardSVG(v?v.lh:[],v?v.rh:[],{lo:36,hi:95,height:64}));
+  const v=ei!=null?stageVz.vz[ei]:null, [lo,hi]=KB_SIZES[S.kbdSize]||KB_SIZES[61];
+  $('kbdWrap').replaceChildren(keyboardSVG(v?v.lh:[],v?v.rh:[],{lo,hi,height:S.kbdSize==88?58:64}));
+  w.querySelectorAll('.kbd-bar button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===+S.kbdSize)));
 }
 
 /* =========================================================
@@ -2223,6 +2235,8 @@ function init(){
   if(store.get('bt-drums',false)){ $('drumBtn').setAttribute('aria-pressed','true'); $('stageDrums').hidden=false; }
   $('kbdBtn').onclick=()=>{ const on=$('kbdBtn').getAttribute('aria-pressed')!=='true'; $('kbdBtn').setAttribute('aria-pressed',on); $('stageKbd').hidden=!on; store.set('bt-kbd',on); stageKeys(playing&&curEi>=0?curEi:0); };
   if(store.get('bt-kbd',false)){ $('kbdBtn').setAttribute('aria-pressed','true'); $('stageKbd').hidden=false; }
+  S.kbdSize=[88,76,61].includes(+store.get('bt-kbd-size',61))?+store.get('bt-kbd-size',61):61;
+  document.querySelectorAll('#stageKbd .kbd-bar button').forEach(b=>b.onclick=()=>{ S.kbdSize=+b.dataset.k; store.set('bt-kbd-size',S.kbdSize); stageKeys(playing&&curEi>=0?curEi:0); });
   stageKeys(0);
   $('sheetDiag').onchange=openSheet; $('sheetMusic').onchange=openSheet;
   $('sheetBtn').onclick=openSheet; $('sheetClose').onclick=()=>{ $('sheetModal').hidden=true; };
