@@ -293,11 +293,11 @@ audio{width:100%}
         <div class="field">
           <label for="sync">Sync lights to sound</label>
           <div class="row">
-            <input type="range" id="sync" min="-150" max="600" step="10" value="0" aria-describedby="syncHelp">
-            <span class="key" id="syncVal" style="min-width:90px">0 ms</span>
+            <input type="range" id="sync" min="-150" max="800" step="10" value="500" aria-describedby="syncHelp">
+            <span class="key" id="syncVal" style="min-width:90px">+500 ms</span>
             <button class="btn sm" id="syncReset">Reset</button>
           </div>
-          <p class="help" id="syncHelp">If the beat lights flash before you hear the beat, slide right until they land together. Bluetooth speakers often need 150–300 ms. Saved on this device.</p>
+          <p class="help" id="syncHelp">Starts at 500 ms. If the lights flash before you hear the beat, slide right; if they flash after, slide left. Reset returns to 500 ms. Saved on this device.</p>
         </div>
         <div class="field trainer">
           <label class="check"><input type="checkbox" id="trOn"> Speed trainer</label>
@@ -992,7 +992,7 @@ const EXAMPLES=[
   {title:'7/8 groove in D',chords:'| D . . . . . . | C . . . G . . |',style:'funk',bpm:200,transpose:0,meter:'7/8'},
 ];
 const S={
-  sync:0, title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
+  sync:500, title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
   countIn:true, metronome:false,
   mix:{drums:{vol:0.9,mute:false,solo:false},bass:{vol:0.9,mute:false,solo:false},keys:{vol:0.8,mute:false,solo:false},extra:{vol:0.7,mute:false,solo:false},lead:{vol:0.85,mute:false,solo:false},click:{vol:0.8,mute:false,solo:false}},
   trainer:{on:false,inc:4,every:2,max:140},
@@ -1486,11 +1486,11 @@ function init(){
   $('trOn').checked=S.trainer.on; $('trInc').value=S.trainer.inc; $('trEvery').value=S.trainer.every; $('trMax').value=S.trainer.max;
   $('meter').value=S.meter; $('res').value=S.res; $('form').value=S.form;
   syncTempo(); renderStyles(); renderSoloists(); renderMix(); renderBeats(); setMeter(S.meter,{snap:false,convert:false}); setMode(S.mode); renderList();
-  S.sync=+store.get('bt-sync',0)||0;
+  const SYNC_DEFAULT=500; { const v=store.get('bt-sync',null); S.sync=(v===null||isNaN(+v))?SYNC_DEFAULT:+v; }
   const showSync=()=>{ $('sync').value=S.sync; $('syncVal').textContent=(S.sync>0?'+':'')+S.sync+' ms'; };
   showSync();
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
-  $('syncReset').onclick=()=>{ S.sync=0; showSync(); store.set('bt-sync',0); };
+  $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
   $('modeEasy').onclick=()=>setMode('easy'); $('modePro').onclick=()=>setMode('pro');
   $('meter').onchange=e=>{ setMeter(e.target.value); saveDraft(); };
   $('res').onchange=e=>{ S.res=e.target.value; renderGrid(); saveDraft(); };
