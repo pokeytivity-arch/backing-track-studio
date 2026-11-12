@@ -164,6 +164,13 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .gin:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
 .gadd{display:flex;gap:8px;flex-wrap:wrap}
 .gsec{display:grid;gap:8px}
+.humrow{display:flex;align-items:center;gap:14px}
+.btn.rec{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:700;padding:9px 16px}
+.btn.rec.recording{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--danger) 30%,transparent)}}
+.humnote{font:800 30px/1 var(--display);min-width:70px;text-align:center;font-variant-numeric:tabular-nums}
+.meterbar{flex:1;height:10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.meterbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),#f59f00,var(--danger));transition:width .05s}
 .gsec-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:6px 2px 0;border-top:2px solid var(--line)}
 .gsec:first-child .gsec-h{border-top:0;padding-top:0}
 .gsec-h b{font:800 15px var(--display);color:var(--accent)}
@@ -256,6 +263,23 @@ audio{width:100%}
           <p class="help">Click a slot and type a chord. An empty slot holds the chord before it. Put a chord on an <code>&amp;</code> (or <code>e</code>/<code>a</code> in 16ths) to push it ahead of the beat. Type a voicing like <code>C / E G C</code> (left hand / right hand) for exact notes. <b>Enter</b> moves to the next slot.</p>
         </div>
         <p class="err" id="errs" hidden></p>
+      </section>
+
+      <section class="card hum">
+        <div class="card-h"><h2>Hum a bass line</h2><span class="help">Uses your microphone</span></div>
+        <p class="help">Press Record, wait for the one-bar count-in, then hum your bass line on the click. The studio writes the chords and can play your exact notes on the bass. It uses the current tempo and time signature.</p>
+        <div class="chartopts">
+          <label>Length <select id="humBars"><option value="4">4 bars</option><option value="8" selected>8 bars</option><option value="16">16 bars</option></select></label>
+          <label>New chord <select id="humPer"><option value="bar">every bar</option><option value="half">every half bar</option></select></label>
+          <label class="check"><input type="checkbox" id="humExact" checked> Play my exact bass line</label>
+        </div>
+        <div class="humrow">
+          <button class="btn rec" id="humBtn">● Record</button>
+          <div class="humnote" id="humNote" aria-live="polite">–</div>
+          <div class="meterbar" aria-hidden="true"><i id="humLevel"></i></div>
+        </div>
+        <p class="help" id="humMsg"></p>
+        <div class="row"><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
       </section>
 
       <section class="card">
@@ -683,7 +707,8 @@ class Engine{
   click(t,accent){ const o=this.osc('square',accent?1760:1180), g=this.gain(); this.perc(g,t,accent?0.32:0.2,0.04); o.connect(g).connect(this.out('click')); o.start(t); o.stop(t+0.06); }
 
   /* bass */
-  bass(t,midi,dur,v=1,type='finger'){
+  bass(t,midi,dur,v=1,type='finger',force=false){
+    if(this.lockBass && !force) return;
     if(type==='finger' && this.tuned('ebass',midi,t,dur,v,'bass',0.04)) return;
     if(type==='upright' && this.tuned('upright',midi,t,Math.max(dur,0.3),v,'bass',0.12)) return;
     if(type==='log'){ const f0=mtof(midi), o=this.osc('sine',f0*2), g=this.gain(0.0001), sh=this.ctx.createWaveShaper();
@@ -992,7 +1017,7 @@ const EXAMPLES=[
   {title:'7/8 groove in D',chords:'| D . . . . . . | C . . . G . . |',style:'funk',bpm:200,transpose:0,meter:'7/8'},
 ];
 const S={
-  sync:500, title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
+  sync:500, bassLine:null, useHum:false, title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
   countIn:true, metronome:false,
   mix:{drums:{vol:0.9,mute:false,solo:false},bass:{vol:0.9,mute:false,solo:false},keys:{vol:0.8,mute:false,solo:false},extra:{vol:0.7,mute:false,solo:false},lead:{vol:0.85,mute:false,solo:false},click:{vol:0.8,mute:false,solo:false}},
   trainer:{on:false,inc:4,every:2,max:140},
@@ -1030,7 +1055,10 @@ function scheduleStep(eng, step, t, bd, live){
   if(ss===0 && loop>0 && style!==STYLES.jazz) eng.crash(t,0.45);
   const e={t,bd,sd:bd/4,s,ss,loop,bar:Math.floor(ss/M.bar),ev,evStep,evLeft:ev.len-evStep,chord:ev.chord,
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
+  eng.lockBass=!!(S.useHum && S.bassLine && S.bassLine.length);
   if(S.meter==='4/4') style.play(eng,e); else genericPlay(eng,e,style);
+  if(eng.lockBass){ const tm=S.transpose>6?S.transpose-12:S.transpose, bt=(style.gen&&style.gen.bass)||'finger';
+    for(const n of S.bassLine){ if(n.s===ss) eng.bass(t,n.m+tm,Math.max(1,n.l)*e.sd*0.95,0.95,bt,true); } }
   if(S.lead!=='none') soloStep(eng,e);
   if(live && (M.count.includes(s) || evStep===0)) uiQ.push({t,ei,beat:beatIndex(M,s),bar:Math.floor(ss/M.bar)+1,loop:loop+1});
 }
@@ -1358,14 +1386,145 @@ function renderSoloists(){
 }
 
 /* =========================================================
+   Hum a bass line: microphone pitch tracking -> notes -> chords
+   ========================================================= */
+function detectPitch(raw,sr){
+  // downsample by 2 for speed
+  const n=raw.length>>1, buf=new Float32Array(n); for(let i=0;i<n;i++) buf[i]=(raw[2*i]+raw[2*i+1])*0.5; sr/=2;
+  let rms=0; for(let i=0;i<n;i++) rms+=buf[i]*buf[i]; rms=Math.sqrt(rms/n);
+  if(rms<0.004) return {f:0,rms,c:0};
+  const minLag=Math.floor(sr/480), maxLag=Math.min(n-2,Math.floor(sr/52)), ns=new Float32Array(maxLag+2);
+  let mx=0;
+  for(let lag=minLag;lag<=maxLag+1;lag++){ let ac=0,m=0; for(let i=0;i<n-lag;i++){ const a=buf[i],b=buf[i+lag]; ac+=a*b; m+=a*a+b*b; } ns[lag]=m?2*ac/m:0; if(lag<=maxLag&&ns[lag]>mx) mx=ns[lag]; }
+  if(mx<0.55) return {f:0,rms,c:mx};
+  const thr=0.86*mx; let L=0;
+  for(let lag=minLag+1;lag<=maxLag;lag++){ if(ns[lag]>=thr && ns[lag]>=ns[lag-1] && ns[lag]>=ns[lag+1]){ L=lag; break; } }
+  if(!L) return {f:0,rms,c:mx};
+  const a=ns[L-1],b=ns[L],c=ns[L+1], d=(a-2*b+c)?0.5*(a-c)/(a-2*b+c):0;
+  return {f:sr/(L+d),rms,c:mx};
+}
+const KS_MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88], KS_MIN=[6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+function detectKey(w,roots){
+  const first=roots.find(r=>r!=null), last=[...roots].reverse().find(r=>r!=null);
+  const MAJ=[0,2,4,5,7,9,11], MIN=[0,2,3,5,7,8,10], used=w.map((x,i)=>x>0?i:-1).filter(i=>i>=0), tot=w.reduce((a,b)=>a+b,0)||1;
+  let best=null;
+  for(let t=0;t<12;t++) for(const minor of [false,true]){
+    const sc=minor?MIN:MAJ, fit=used.reduce((a,p)=>a+(sc.includes((p-t+12)%12)?w[p]:0),0)/tot;
+    const Q=minor?{0:'m',2:'d',5:'m',7:'m'}:{2:'m',4:'m',9:'m',11:'d'};
+    let mins=0,dims=0; roots.forEach(r=>{ if(r==null) return; const q=Q[(r-t+12)%12]; if(q==='m') mins++; else if(q==='d') dims++; });
+    const ks=detectKeyKS(w,t,minor), score=fit*10+(t===first?1.5:0)+(t===last?1.5:0)-mins*1.0-dims*2.5+ks;
+    if(!best||score>best.score) best={score,tonic:t,minor}; }
+  return best;
+}
+function detectKeyKS(w,t,minor){
+  const corr=(x,y)=>{ const mx=x.reduce((a,b)=>a+b)/12, my=y.reduce((a,b)=>a+b)/12; let n=0,dx=0,dy=0; for(let i=0;i<12;i++){ n+=(x[i]-mx)*(y[i]-my); dx+=(x[i]-mx)**2; dy+=(y[i]-my)**2; } return dx&&dy?n/Math.sqrt(dx*dy):0; };
+  const rot=[...Array(12)].map((_,i)=>w[(i+t)%12]); return corr(rot,minor?KS_MIN:KS_MAJ);
+}
+/* frames: [{t (sec from first downbeat), f, rms}] -> {notes,[chart text],key} */
+function analyzeHum(frames,{bpm,meter,bars,per}){
+  const M=METERS[meter], sd=60/bpm*M.q/4, total=bars*M.bar;
+  const loud=frames.map(f=>f.rms).sort((a,b)=>a-b), gate=Math.max(0.006,0.18*(loud[Math.floor(loud.length*0.9)]||0));
+  const v=frames.map(f=>({t:f.t,m:(f.f>0&&f.rms>=gate)?69+12*Math.log2(f.f/440):null}));
+  for(let i=1;i<v.length-1;i++){ const a=v[i-1].m,b=v[i].m,c=v[i+1].m; if(a!=null&&b!=null&&c!=null) v[i].mm=[a,b,c].sort((x,y)=>x-y)[1]; else v[i].mm=b; }
+  if(v.length){ v[0].mm=v[0].m; v[v.length-1].mm=v[v.length-1].m; }
+  // segment into notes
+  const segs=[]; let cur=null;
+  for(const f of v){
+    if(f.mm==null){ if(cur && f.t-cur.end>0.07){ segs.push(cur); cur=null; } continue; }
+    if(cur && Math.abs(f.mm-cur.med)<0.8 && f.t-cur.end<=0.07){ cur.ps.push(f.mm); cur.end=f.t; cur.med=cur.ps.slice().sort((a,b)=>a-b)[cur.ps.length>>1]; }
+    else { if(cur) segs.push(cur); cur={start:f.t,end:f.t,ps:[f.mm],med:f.mm}; }
+  }
+  if(cur) segs.push(cur);
+  let notes=segs.filter(s=>s.end-s.start>=0.09).map(s=>({t0:s.start,t1:s.end+0.03,m:Math.round(s.med)}));
+  if(!notes.length) return {notes:[],text:'',key:null,heard:0};
+  // move into bass range, keep the contour
+  const med=notes.map(n=>n.m).sort((a,b)=>a-b)[notes.length>>1]; let shift=0; while(med+shift>45) shift-=12; while(med+shift<31) shift+=12;
+  notes.forEach(n=>n.m+=shift);
+  // quantize to 8th notes
+  const q=2, out=[];
+  notes.forEach(n=>{ let s=Math.round(n.t0/sd/q)*q; if(s<0) s=0; if(s>=total) return; let e=Math.max(s+1,Math.round(n.t1/sd)); e=Math.min(e,total);
+    const prev=out[out.length-1]; if(prev && prev.s===s){ if(e-s>prev.l) { prev.m=n.m; prev.l=e-s; } return; }
+    out.push({s,l:e-s,m:n.m}); });
+  for(let i=0;i<out.length-1;i++) out[i].l=Math.min(out[i].l,out[i+1].s-out[i].s);
+  // key
+  const w=Array(12).fill(0); out.forEach(n=>{ w[(n.m%12+12)%12]+=n.l*(n.s%M.bar===0?1.6:1); });
+  const roots=[]; for(let b=0;b<bars;b++){ const ww=Array(12).fill(0); out.forEach(n=>{ const a=Math.max(n.s,b*M.bar), e=Math.min(n.s+n.l,(b+1)*M.bar); if(e>a) ww[(n.m%12+12)%12]+=(e-a)+(n.s===b*M.bar?3:0); });
+    const mxw=Math.max(...ww); roots.push(mxw?ww.indexOf(mxw):null); }
+  const key=detectKey(w,roots), flats=useFlats({root:key.tonic,iv:key.minor?[0,3,7]:[0,4,7]}), N=flats?FLAT_N:SHARP_N;
+  const QMAJ={0:'',2:'m',4:'m',5:'',7:'',9:'m',11:'m7b5'}, QMIN={0:'m',2:'m7b5',3:'',5:'m',7:'m',8:'',10:''};
+  // chords per segment
+  const segLen=(per==='half' && M.bar%2===0 && (M.bar/2)%2===0)?M.bar/2:M.bar, lines=[];
+  let lastName=null; const barToks=[];
+  for(let b=0;b<bars;b++){ const toks=[];
+    for(let s0=b*M.bar;s0<(b+1)*M.bar;s0+=segLen){ const ww=Array(12).fill(0);
+      out.forEach(n=>{ const a=Math.max(n.s,s0), e=Math.min(n.s+n.l,s0+segLen); if(e>a) ww[(n.m%12+12)%12]+=(e-a)+(n.s===s0?3:0); });
+      const mxw=Math.max(...ww); if(!mxw){ toks.push(lastName?'.':N[key.tonic]+(key.minor?'m':'')); if(!lastName) lastName=toks[toks.length-1]; continue; }
+      const root=ww.indexOf(mxw), deg=(root-key.tonic+12)%12, Q=key.minor?QMIN:QMAJ, name=N[root]+(Q[deg]!=null?Q[deg]:'');
+      toks.push(name===lastName?'.':name); lastName=name; }
+    barToks.push(toks); }
+  for(let i=0;i<barToks.length;i+=4) lines.push('| '+barToks.slice(i,i+4).map(t=>compressBar(t)).join(' | ')+' |');
+  return {notes:out,text:lines.join('\n'),key:{name:N[key.tonic]+(key.minor?' minor':' major')},heard:out.length};
+}
+const HUM={rec:false};
+async function humStart(){
+  if(HUM.rec){ humStop(true); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ toast('This browser can’t use the microphone'); return; }
+  if(playing) stop();
+  try{ await ensureCtx(); }catch(_){ toast('Audio is blocked. Tap again.'); return; }
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:true}}); }
+  catch(err){ $('humMsg').textContent='Microphone access was blocked. Allow the microphone for this site in your browser settings, then try again.'; return; }
+  const bars=+$('humBars').value, M=MET(), bd=60/S.bpm*M.q, sd=bd/4, barDur=M.bar*sd;
+  const src=ctx.createMediaStreamSource(stream), an=ctx.createAnalyser(); an.fftSize=2048; src.connect(an);
+  const click=new Engine(ctx); click.applyMix(S.mix,STYLES[S.style]);
+  const t0=ctx.currentTime+0.25, start=t0+barDur, end=start+bars*barDur;
+  for(let b=-1;b<bars;b++) M.count.forEach(p=>metroClick(click,M,p,start+b*barDur+p*sd));
+  const lag=Math.min(0.9,visualDelay())+0.03; // you hum to what you hear (output delay) + microphone delay
+  Object.assign(HUM,{rec:true,stream,an,frames:[],start,end,bars,lag,buf:new Float32Array(an.fftSize),click});
+  $('humBtn').textContent='■ Stop'; $('humBtn').classList.add('recording'); $('humMsg').textContent='Count-in… then hum on the click.';
+  HUM.timer=setInterval(()=>{
+    const now=ctx.currentTime; an.getFloatTimeDomainData(HUM.buf);
+    const tc=now-an.fftSize/ctx.sampleRate/2-start-HUM.lag;
+    const p=detectPitch(HUM.buf,ctx.sampleRate);
+    if(now>=start-0.05) HUM.frames.push({t:tc,f:p.f,rms:p.rms});
+    const lv=Math.min(1,p.rms*12); $('humLevel').style.width=(lv*100)+'%';
+    if(now<start){ const k=Math.floor((now-(start-barDur))/(sd*(M.compound||M.odd?2:4))); $('humNote').textContent=k>=0?String(k+1):'…'; }
+    else { const el=now-start, bar=Math.floor(el/barDur)+1;
+      $('humNote').textContent=p.f>0&&p.rms>0.008?noteName(69+12*Math.log2(p.f/440)):'–';
+      $('humMsg').textContent=`Recording bar ${Math.min(bar,bars)} of ${bars}. Hum one note at a time.`; }
+    if(now>=end+0.15) humStop(false);
+  },25);
+}
+function noteName(m){ const r=Math.round(m); return SHARP_N[(r%12+12)%12]+(Math.floor(r/12)-1); }
+function humStop(cancel){
+  clearInterval(HUM.timer); HUM.rec=false; try{ HUM.stream.getTracks().forEach(t=>t.stop()); }catch(_){}
+  try{ HUM.click.master.disconnect(); }catch(_){}
+  $('humBtn').textContent='● Record'; $('humBtn').classList.remove('recording'); $('humLevel').style.width='0%'; $('humNote').textContent='–';
+  if(cancel){ $('humMsg').textContent='Stopped. Nothing was changed.'; return; }
+  const r=analyzeHum(HUM.frames,{bpm:S.bpm,meter:S.meter,bars:HUM.bars,per:$('humPer').value});
+  if(!r.heard){ $('humMsg').textContent='I couldn’t hear any notes. Hum louder or closer to the microphone, and hold each note.'; return; }
+  HUM.undo={chords:S.chords,bassLine:S.bassLine,useHum:S.useHum};
+  S.chords=r.text; S.bassLine=r.notes; S.useHum=$('humExact').checked; S.transpose=0;
+  $('chords').value=S.chords; if(E) E.vo=null; rebuild(); if(S.mode==='pro') renderGrid();
+  $('humUndo').hidden=false; $('humClear').hidden=false;
+  $('humMsg').textContent=`Heard ${r.heard} notes · Key: ${r.key.name} · Chart written below. Press Play to hear it.`;
+  saveDraft();
+}
+function humSync(){ const has=!!(S.bassLine&&S.bassLine.length); if(!$('humClear')) return;
+  $('humClear').hidden=!has; $('humClear').textContent=S.useHum?'Use the style’s bass instead':'Play my hummed bass line'; $('humExact').checked=S.useHum||!has; }
+function humUndo(){ if(!HUM.undo) return; Object.assign(S,HUM.undo); $('chords').value=S.chords; $('humExact').checked=!!S.useHum; rebuild(); if(S.mode==='pro') renderGrid();
+  HUM.undo=null; $('humUndo').hidden=true; $('humClear').hidden=!S.bassLine; $('humMsg').textContent='Put back the chart you had before.'; saveDraft(); }
+
+/* =========================================================
    Library: examples, class library (shared), my tracks (this browser)
    ========================================================= */
 let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
-const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,meter:S.meter,form:S.form,lead:S.lead});
+const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,meter:S.meter,form:S.form,lead:S.lead,...(S.bassLine?{bassLine:S.bassLine,useHum:S.useHum}:{})});
 function loadTrack(t){
   if(playing) stop();
   S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0;
   S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; if(t.lead&&SOLOISTS.hasOwnProperty(t.lead)) S.lead=t.lead;
+  S.bassLine=Array.isArray(t.bassLine)?t.bassLine:null; S.useHum=!!t.useHum&&!!S.bassLine; humSync();
   $('title').value=S.title; $('chords').value=S.chords; syncTempo(); renderStyles(); renderSoloists(); renderMix(); setMeter(t.meter||'4/4',{snap:false,convert:false});
   toast(`Loaded “${S.title||'track'}”`);
 }
@@ -1477,6 +1636,7 @@ function init(){
   const d=store.get('bt-draft',null);
   const base=d&&d.chords?d:EXAMPLES[0];
   S.title=base.title||''; S.chords=base.chords; S.style=STYLES[base.style]?base.style:'pop'; S.bpm=base.bpm||96; S.transpose=base.transpose||0;
+  S.bassLine=Array.isArray(base.bassLine)?base.bassLine:null; S.useHum=!!base.useHum&&!!S.bassLine;
   S.meter=METERS[base.meter]?base.meter:'4/4'; S.form=FORMS.hasOwnProperty(base.form)?base.form:'free'; S.lead=SOLOISTS.hasOwnProperty(base.lead)?base.lead:'none';
   if(d){ if(d.mix) CHANNELS.forEach(n=>{ if(d.mix[n]) S.mix[n]={vol:+d.mix[n].vol||0.8,mute:!!d.mix[n].mute,solo:!!d.mix[n].solo}; });
     if(d.mode==='pro') S.mode='pro'; if(['beat','8','16'].includes(d.res)) S.res=d.res;
@@ -1491,6 +1651,10 @@ function init(){
   showSync();
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
+  $('humBtn').onclick=humStart; $('humUndo').onclick=humUndo;
+  $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
+  $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
+  humSync();
   $('modeEasy').onclick=()=>setMode('easy'); $('modePro').onclick=()=>setMode('pro');
   $('meter').onchange=e=>{ setMeter(e.target.value); saveDraft(); };
   $('res').onchange=e=>{ S.res=e.target.value; renderGrid(); saveDraft(); };
