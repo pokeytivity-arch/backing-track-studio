@@ -165,6 +165,9 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .gadd{display:flex;gap:8px;flex-wrap:wrap}
 .gsec{display:grid;gap:8px}
 .humrow{display:flex;align-items:center;gap:14px}
+.tog.humjump{border-color:#ff8787;color:#ffc9c9}
+.card.flash{animation:flash 1.4s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--danger) 60%,transparent)}30%{box-shadow:0 0 0 8px color-mix(in srgb,var(--danger) 35%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
 .btn.rec{background:var(--danger);border-color:var(--danger);color:#fff;font-weight:700;padding:9px 16px}
 .btn.rec.recording{animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--danger) 30%,transparent)}}
@@ -235,6 +238,7 @@ audio{width:100%}
       <button class="tog" id="countBtn" aria-pressed="true">Count-in</button>
       <button class="tog" id="clickBtn" aria-pressed="false">Metronome</button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
+      <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
       <span class="tip">Space bar plays and stops</span>
     </div>
   </section>
@@ -265,22 +269,6 @@ audio{width:100%}
         <p class="err" id="errs" hidden></p>
       </section>
 
-      <section class="card hum">
-        <div class="card-h"><h2>Hum a bass line</h2><span class="help">Uses your microphone</span></div>
-        <p class="help">Press Record, wait for the one-bar count-in, then hum your bass line on the click. The studio writes the chords and can play your exact notes on the bass. It uses the current tempo and time signature.</p>
-        <div class="chartopts">
-          <label>Length <select id="humBars"><option value="4">4 bars</option><option value="8" selected>8 bars</option><option value="16">16 bars</option></select></label>
-          <label>New chord <select id="humPer"><option value="bar">every bar</option><option value="half">every half bar</option></select></label>
-          <label class="check"><input type="checkbox" id="humExact" checked> Play my exact bass line</label>
-        </div>
-        <div class="humrow">
-          <button class="btn rec" id="humBtn">● Record</button>
-          <div class="humnote" id="humNote" aria-live="polite">–</div>
-          <div class="meterbar" aria-hidden="true"><i id="humLevel"></i></div>
-        </div>
-        <p class="help" id="humMsg"></p>
-        <div class="row"><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
-      </section>
 
       <section class="card">
         <h2>Style</h2>
@@ -335,6 +323,23 @@ audio{width:100%}
     </div>
 
     <div class="col">
+      <section class="card hum" id="humCard">
+        <div class="card-h"><h2>Hum a bass line</h2><span class="help">Uses your microphone</span></div>
+        <p class="help">Press Record, wait for the one-bar count-in, then hum your bass line on the click. The studio writes the chords and can play your exact notes on the bass. It uses the current tempo and time signature.</p>
+        <div class="chartopts">
+          <label>Length <select id="humBars"><option value="4">4 bars</option><option value="8" selected>8 bars</option><option value="16">16 bars</option></select></label>
+          <label>New chord <select id="humPer"><option value="bar">every bar</option><option value="half">every half bar</option></select></label>
+          <label class="check"><input type="checkbox" id="humExact" checked> Play my exact bass line</label>
+        </div>
+        <div class="humrow">
+          <button class="btn rec" id="humBtn">● Record</button>
+          <div class="humnote" id="humNote" aria-live="polite">–</div>
+          <div class="meterbar" aria-hidden="true"><i id="humLevel"></i></div>
+        </div>
+        <p class="help" id="humMsg"></p>
+        <div class="row"><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
+      </section>
+
       <section class="card">
         <div class="card-h"><h2>Mixer</h2><span class="help"><b>M</b> mutes a part so students can play it. <b>S</b> solos it so they can hear it alone.</span></div>
         <div class="mix" id="mix"></div>
@@ -386,7 +391,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-h (with Hum a bass line)</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1651,6 +1656,7 @@ function init(){
   showSync();
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
+  $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
   $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
