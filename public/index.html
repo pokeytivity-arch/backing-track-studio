@@ -201,6 +201,27 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .savebox input[type=text],.savebox textarea{width:100%}
 .savebox textarea{min-height:60px;font:15px/1.4 var(--body)}
 .kbd{display:block;width:100%;height:auto}
+.stage-drums{background:radial-gradient(ellipse at 50% 30%,#1d2848,#0c1222 70%);border-radius:10px;padding:6px 8px}
+.kit{display:block;width:100%;max-height:340px;height:auto}
+.kit .pad{cursor:pointer;transform-box:fill-box;transform-origin:center;outline:none}
+.kit .pad:focus-visible{filter:drop-shadow(0 0 4px #fff)}
+.kit .cym{fill:url(#none);fill:#c99a2e;stroke:#f0c75e;stroke-width:1.5}
+.kit .cym.top{fill:#d8aa3c}
+.kit .bell{fill:#f0c75e}
+.kit .shell{stroke:#0b0f1d;stroke-width:2}
+.kit .kickc{fill:#c92a2a}.kit .snarec{fill:#adb5bd}.kit .tomc{fill:#c92a2a}
+.kit .head{fill:#f1f3f5;stroke:#ced4da;stroke-width:1.5}
+.kit .head.front{fill:#1b2440;stroke:#c92a2a;stroke-width:4}
+.kit .head.conga{fill:#e9d8a6;stroke:#8d6e3f;stroke-width:3}
+.kit .rimring{fill:none;stroke:#868e96;stroke-width:4}
+.kit .logo{fill:#f1f3f5;font:800 18px var(--display);text-anchor:middle;letter-spacing:.1em}
+.kit .stand{stroke:#5c677d;stroke-width:3}
+.kit .metal{fill:#adb5bd;stroke:#e9ecef;stroke-width:1.5}
+.kit .wood{fill:#b5651d;stroke:#7a3e10}
+.kit .shaker{fill:#ff922b;stroke:#d9480f;stroke-width:2}
+.kit .tamb{fill:none;stroke:#e9ecef;stroke-width:6;stroke-dasharray:4 4}
+.kit .emoji{font-size:30px;text-anchor:middle}
+.kit .padlab{fill:var(--stage-muted);font:600 11px var(--body);text-anchor:middle;pointer-events:none}
 .stage-kbd{background:#0c1222;border-radius:10px;padding:8px}
 .diagrams{margin-top:18px}
 .diagrams h2{font:700 18px Georgia,serif;margin:6px 0 2px;color:#111;text-transform:none;letter-spacing:0}
@@ -259,6 +280,7 @@ audio{width:100%}
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
     <div class="stage-kbd" id="stageKbd" hidden></div>
+    <div class="stage-drums" id="stageDrums" hidden></div>
     <div class="transport">
       <button class="play" id="playBtn" aria-label="Play">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="playIcon" d="M7 4.5v15l13-7.5z"/></svg>
@@ -268,6 +290,7 @@ audio{width:100%}
       <button class="tog" id="clickBtn" aria-pressed="false">Metronome</button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
+      <button class="tog" id="drumBtn" aria-pressed="false">🥁 Drums</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
       <span class="tip">Space bar plays and stops</span>
     </div>
@@ -422,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-p (sheet music and keyboard diagrams)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-q (virtual drums)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1165,7 +1188,8 @@ async function play(){
   try{ await ensureCtx(); }catch(err){ toast('This browser blocked audio. Tap Play again.'); return; }
   if(!BANK.ready && !BANK.failed){ starting=true; $('playTxt').textContent='Loading…';
     await Promise.race([loadBank(ctx),new Promise(r=>setTimeout(r,12000))]); starting=false; }
-  E.applyMix(S.mix,STYLES[S.style]); E.vo=null; E.sq=null;
+  E.applyMix(S.mix,STYLES[S.style]); E.vo=null; E.sq=null; drumQ=[];
+  E.viz=(pad,t,v,x)=>{ if(!$('stageDrums').hidden && !(S.mix.drums.mute) ) drumQ.push({t,pad,v,open:pad==='hat'&&x===true}); };
   P={step:S.countIn?-MET().bar:0,sub:0,beatTime:ctx.currentTime+0.1,bpm:S.bpm};
   uiQ=[]; playing=true; ticker.start(); tick(); setPlayUI(); requestAnimationFrame(draw);
 }
@@ -1187,6 +1211,7 @@ function draw(){
   if(!playing) return;
   const now=ctx.currentTime-visualDelay();
   while(uiQ.length && uiQ[0].t<=now){ const u=uiQ.shift(); renderStage(u); }
+  if(drumQ.length){ drumQ.sort((a,b)=>a.t-b.t); while(drumQ.length && drumQ[0].t<=now){ const d=drumQ.shift(); drumFlash(d.pad,d.v,d.open); } }
   requestAnimationFrame(draw);
 }
 function nameHTML(n){ const el=document.createElement('span'); const r=document.createElement('span'); r.textContent=n.root; el.appendChild(r);
@@ -1923,6 +1948,54 @@ function stageKeys(ei){
 }
 
 /* =========================================================
+   Virtual drum kit: lights up on every hit, tap a drum to play it
+   ========================================================= */
+const DRUM_PADS=['kick','snare','hat','ride','crash','tom','clap','rim','conga','shaker','cowbell','clave','tamb'];
+DRUM_PADS.forEach(n=>{ const f=Engine.prototype[n]; if(!f) return;
+  Engine.prototype[n]=function(t,v=1,x){ if(this.viz && !this.inViz){ this.inViz=true; try{ this.viz(n,t,v,x); }catch(_){} }
+    try{ return f.call(this,t,v,x); } finally{ this.inViz=false; } }; });
+let drumQ=[];
+function drumKitSVG(){
+  const NS='http://www.w3.org/2000/svg', svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 640 300'); svg.setAttribute('class','kit');
+  const g=(pad,label,lx,ly)=>{ const e=document.createElementNS(NS,'g'); e.setAttribute('class','pad'); e.dataset.pad=pad; e.setAttribute('role','button'); e.setAttribute('tabindex','0'); e.setAttribute('aria-label','Play '+label); svg.appendChild(e);
+    if(label){ const t=document.createElementNS(NS,'text'); t.setAttribute('x',lx); t.setAttribute('y',ly); t.setAttribute('class','padlab'); t.textContent=label; svg.appendChild(t); } return e; };
+  const add=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
+  // stands
+  [[70,128,70,250],[110,58,110,250],[520,66,520,150]].forEach(([x1,y1,x2,y2])=>add(svg,'line',{x1,y1,x2,y2,class:'stand'}));
+  let p;
+  p=g('crash','Crash',110,24); add(p,'ellipse',{cx:110,cy:52,rx:78,ry:15,class:'cym'}); add(p,'ellipse',{cx:110,cy:50,rx:8,ry:3,class:'bell'});
+  p=g('hat','Hi-hat',70,100); add(p,'ellipse',{cx:70,cy:128,rx:56,ry:11,class:'cym'}); add(p,'ellipse',{cx:70,cy:120,rx:56,ry:11,class:'cym top'});
+  p=g('ride','Ride',520,30); add(p,'ellipse',{cx:520,cy:62,rx:92,ry:17,class:'cym'}); add(p,'ellipse',{cx:520,cy:59,rx:12,ry:4,class:'bell'});
+  p=g('tom','Tom',300,62); add(p,'ellipse',{cx:300,cy:98,rx:40,ry:30,class:'shell tomc'}); add(p,'ellipse',{cx:300,cy:92,rx:40,ry:24,class:'head'});
+  p=g('kick','Kick',320,284); add(p,'circle',{cx:320,cy:200,r:74,class:'shell kickc'}); add(p,'circle',{cx:320,cy:200,r:62,class:'head front'}); add(p,'text',{x:320,y:208,class:'logo'}).textContent='BTS';
+  p=g('snare','Snare · rim',178,262); add(p,'ellipse',{cx:178,cy:200,rx:52,ry:32,class:'shell snarec'}); add(p,'ellipse',{cx:178,cy:192,rx:52,ry:24,class:'head'});
+  p=g('rim','',0,0); add(p,'ellipse',{cx:178,cy:192,rx:52,ry:24,class:'rimring'});
+  // percussion rack
+  p=g('conga','Congas',492,176); add(p,'ellipse',{cx:462,cy:200,rx:26,ry:12,class:'head conga'}); add(p,'ellipse',{cx:520,cy:204,rx:30,ry:13,class:'head conga'});
+  p=g('cowbell','Cowbell',600,118); add(p,'path',{d:'M586 128 L614 128 L620 156 L580 156 Z',class:'metal'});
+  p=g('shaker','Shaker',600,186); add(p,'rect',{x:588,y:192,width:24,height:44,rx:12,class:'shaker'});
+  p=g('clap','Clap',470,264); add(p,'text',{x:470,y:252,class:'emoji'}).textContent='👏';
+  p=g('clave','Clave',540,264); add(p,'rect',{x:516,y:240,width:48,height:8,rx:4,class:'wood'}); add(p,'rect',{x:522,y:250,width:48,height:8,rx:4,class:'wood'});
+  p=g('tamb','Tambourine',604,284); add(p,'circle',{cx:604,cy:256,r:18,class:'tamb'});
+  return svg;
+}
+const flashOpts={duration:200,easing:'ease-out'};
+function drumFlash(pad,v,open){
+  const el=document.querySelector(`#stageDrums .pad[data-pad="${pad}"]`); if(!el) return;
+  const s=Math.min(1,0.35+v*0.75);
+  el.animate([{filter:`brightness(${1+1.6*s}) drop-shadow(0 0 ${6+12*s}px rgba(255,212,59,${0.5+0.5*s}))`,transform:`scale(${1+0.06*s})`},{filter:'none',transform:'none'}],{...flashOpts,duration:open?420:200});
+  if(pad==='hat'){ const top=el.querySelector('.top'); if(top) top.animate([{transform:open?'translateY(-6px)':'translateY(4px)'},{transform:'none'}],{duration:open?420:160}); }
+}
+function setupDrums(){
+  const w=$('stageDrums'); w.replaceChildren(drumKitSVG());
+  const tap=async pad=>{ try{ await ensureCtx(); }catch(_){ return; } if(!BANK.ready&&!BANK.failed) loadBank(ctx);
+    if(!E) E=new Engine(ctx); E.applyMix(S.mix,STYLES[S.style]); const t=ctx.currentTime+0.01;
+    E[pad](t,0.95,pad==='conga'?Math.random()<0.5:undefined); if(!E.viz) drumFlash(pad,0.95); };
+  w.querySelectorAll('.pad').forEach(el=>{ el.addEventListener('pointerdown',e=>{ e.preventDefault(); tap(el.dataset.pad); });
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tap(el.dataset.pad); } }); });
+}
+
+/* =========================================================
    Library: examples, class library (shared), my tracks (this browser)
    ========================================================= */
 let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
@@ -2058,6 +2131,9 @@ function init(){
   showSync();
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
+  setupDrums();
+  $('drumBtn').onclick=()=>{ const on=$('drumBtn').getAttribute('aria-pressed')!=='true'; $('drumBtn').setAttribute('aria-pressed',on); $('stageDrums').hidden=!on; store.set('bt-drums',on); };
+  if(store.get('bt-drums',false)){ $('drumBtn').setAttribute('aria-pressed','true'); $('stageDrums').hidden=false; }
   $('kbdBtn').onclick=()=>{ const on=$('kbdBtn').getAttribute('aria-pressed')!=='true'; $('kbdBtn').setAttribute('aria-pressed',on); $('stageKbd').hidden=!on; store.set('bt-kbd',on); stageKeys(playing&&curEi>=0?curEi:0); };
   if(store.get('bt-kbd',false)){ $('kbdBtn').setAttribute('aria-pressed','true'); $('stageKbd').hidden=false; }
   stageKeys(0);
