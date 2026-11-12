@@ -391,7 +391,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-l (new soloists)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-m (Parker bebop scales)</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1255,9 +1255,10 @@ function scaleFor(c,who){
   const dom=has(4)&&has(10), min=has(3)&&!has(4), hdim=has(3)&&has(6)&&has(10), dim=has(3)&&has(6)&&!has(10)&&!has(7);
   if(hdim) return [0,2,3,5,6,8,10];                       // locrian #2
   if(dim) return [0,2,3,5,6,8,9,11];                      // whole-half diminished
-  if(dom) return (has(1)||has(8)||(has(3)&&has(4)))? [0,1,3,4,6,8,10] : [0,2,4,5,7,9,10];  // altered chord -> altered, else Mixolydian
+  if(dom) return (has(1)||has(8)||(has(3)&&has(4)))? [0,1,3,4,6,8,10] : who==='parker'? [0,2,4,5,7,9,10,11] : [0,2,4,5,7,9,10];  // altered; Parker: Mixolydian bebop (C D E F G A Bb B); others: Mixolydian
   if(min) return has(11)?[0,2,3,5,7,9,11]:[0,2,3,5,7,9,10]; // Dorian (melodic minor on m(maj7))
   if(has(6)&&has(4)) return [0,2,4,6,7,9,11];             // Lydian when the chord has #11
+  if(who==='parker') return [0,2,4,5,7,8,9,11];           // major bebop scale (C D E F G G# A B)
   return [0,2,4,5,7,9,11];                                // Ionian
 }
 const pitches=(pcs,root,lo,hi)=>{ const o=[]; for(let m=lo;m<=hi;m++) if(pcs.includes(((m-root)%12+12)%12)) o.push(m); return o; };
@@ -1298,8 +1299,8 @@ function composeTemplate(eng,abs){
   const peak=Math.min(hi,c0+5+Math.floor(r()*9)), endP=Math.max(lo,c0-4+Math.floor(r()*6)), peakAt=on[0].at+(end-on[0].at)*(0.3+r()*0.4);
   const desire=t=>t<peakAt? c0+(peak-c0)*((t-on[0].at)/(peakAt-on[0].at||1)) : peak+(endP-peak)*((t-peakAt)/(end-peakAt||1));
   const dyn=t=>0.8+0.15*Math.sin(Math.PI*Math.min(1,Math.max(0,(t-on[0].at)/(end-on[0].at||1))));
-  let prev=c0; const notes=[];
-  const choose=(list,t,near=prev)=>{ let best=list[0],bs=1e9; for(const m of list){ const sc=Math.abs(m-desire(t))*0.55+Math.abs(m-near)*0.45+(m===prev?2.5:0); if(sc<bs){bs=sc;best=m;} } return best; };
+  let prev=c0, prev2=null; const notes=[];
+  const choose=(list,t,near=prev)=>{ let best=list[0],bs=1e9; for(const m of list){ const sc=Math.abs(m-desire(t))*0.55+Math.abs(m-near)*0.45+(m===prev?2.5:0)+(m===prev2?2.2:0); if(sc<bs){bs=sc;best=m;} } return best; };
   const blues=S.style==='blues';
   let arpLeft=0, arpDir=1, arpTone=true, runDir=1, inRun=false;
   for(let i=0;i<on.length;i++){
@@ -1341,7 +1342,9 @@ function composeTemplate(eng,abs){
       else m=stepIn(h.scale,nt,nt>=prev?1:-1);   // approach from the other side, still in the scale
     }
     if(!(o.k==='s'||o.k==='t')) inRun=false;
-    m=Math.max(L.lo,Math.min(L.hi,m)); prev=m;
+    m=Math.max(L.lo,Math.min(L.hi,m));
+    if(!arpLeft && !beat && o.k==='x' && m===prev2){ const dir=Math.sign(m-prev)||1; m=stepIn(h.scale,prev,-dir); }   // keep the line moving
+    prev2=prev; prev=m;
     const acc=(!beat&&o.k==='x')?L.swingAcc:0, ghost=(who==='parker'&&!beat&&o.k==='x'&&r()<0.12)?-0.25:0;
     notes.push({at:o.at,len:o.len,m,v:(0.76+acc+ghost)*dyn(o.at),...extra});
   }
@@ -1350,7 +1353,35 @@ function composeTemplate(eng,abs){
   q.cur=prev; q.until=end;
   q.restUntil=q.until+(L.rest[0]+Math.floor(r()*(L.rest[1]-L.rest[0]+1)))*2;
   if(notes.length){ notes[0].first=true; notes[notes.length-1].last=true; }
-  return notes;
+  return who==='parker'?parkerTurns(notes,r):notes;
+}
+/* Parker: when a line starts on a bebop passing tone (not a chord tone), play a triplet turn on it:
+   D E D, F G F, G# A G#, B C B over Cmaj7 (and the same idea over dominant chords), then carry on in swing eighths. */
+function parkerTurns(notes,r){
+  const L=SOLOISTS.parker, out=[]; notes.sort((a,b)=>a.at-b.at);
+  let skipUntil=-1;
+  for(let i=0;i<notes.length;i++){
+    const n=notes[i]; if(n.at<skipUntil) continue;
+    const prev=out[out.length-1], lineStart=!prev || n.at-(prev.at+prev.len)>0.6 || prev.tail || prev.len>=4;
+    const h=harmAt(Math.floor(n.at),'parker',L);
+    if(lineStart && h && !n.ch && !n.tail && Math.abs(n.at%2)<0.01){
+      const chordPcs=h.c.iv.map(v=>v%12), scale=scaleFor(h.c,'parker');
+      const isMajBebop=scale.length===8&&scale.includes(8)&&scale.includes(11);   // major bebop: the chord is treated as a 6th chord
+      const passing=isMajBebop?[2,5,8,11]:scale.filter(x=>!chordPcs.includes(x));
+      const isPass=m=>passing.includes(((m-h.root)%12+12)%12);
+      let m=n.m;
+      if(!isPass(m) && r()<0.45){ const cands=h.scale.filter(isPass).filter(x=>Math.abs(x-n.m)<=7).sort((a,b)=>Math.abs(a-n.m)-Math.abs(b-n.m)).slice(0,3);
+        if(cands.length) m=cands[Math.floor(r()*cands.length)]; }
+      const up=stepIn(h.scale,m,1);
+      if(isPass(m) && up>m){
+        const sp=4/3, v=n.v;
+        out.push({at:n.at,len:sp,m,v:v*0.95,first:n.first,turn:true},{at:n.at+sp,len:sp,m:up,v:v*0.82,turn:true},{at:n.at+2*sp,len:sp*1.05,m,v:v*0.9,turn:true});
+        skipUntil=n.at+4-0.01; continue;
+      }
+    }
+    out.push(n);
+  }
+  return out;
 }
 /* Compose one phrase starting at absolute step `abs`. Returns notes [{at,len,m,v,ch?,oct?}] in absolute steps. */
 function composePhrase(eng,abs){
@@ -1429,7 +1460,7 @@ function composePhrase(eng,abs){
   q.cur=prev; q.until=end+2;
   q.restUntil=q.until+(L.rest[0]+Math.floor(r()*(L.rest[1]-L.rest[0]+1)))*pulse/2*2;
   if(notes.length){ notes[0].first=true; notes[notes.length-1].last=true; }
-  return notes;
+  return who==='parker'&&!M.compound?parkerTurns(notes,r):notes;
 }
 function soloStep(eng,e){
   const L=SOLOISTS[S.lead]; if(!L||e.step==null) return;
@@ -1440,7 +1471,7 @@ function soloStep(eng,e){
   for(const n of q.notes){ if(Math.floor(n.at)!==abs) continue;
     const hum=(L.sound==='piano'?(hash(n.at*13+abs)-0.5)*0.014:0), t=e.t+(n.at-abs)*e.sd+hum, d=n.len*e.sd;
     if(L.sound==='sax'){
-      const o={scoop:n.first&&hash(abs*7)<L.scoop||(n.len>=3&&hash(abs*3)<0.25), vib:d>0.32, fall:n.last&&hash(abs*5)<L.fall};
+      const o={scoop:!n.turn&&(n.first&&hash(abs*7)<L.scoop||(n.len>=3&&hash(abs*3)<0.25)), vib:d>0.32, fall:n.last&&hash(abs*5)<L.fall};
       if(!eng.saxNote(t,n.m,d,n.v,o)) eng.leadSynth(t,n.m,d,n.v);
     } else {
       const v=n.v*0.5; if(!eng.tuned('piano',n.m,t,d*1.15,v,'lead',0.12)) eng.note(t,n.m,d,v*0.3,'piano','lead');
