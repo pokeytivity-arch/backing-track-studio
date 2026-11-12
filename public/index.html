@@ -200,6 +200,34 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .savebox{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
 .savebox input[type=text],.savebox textarea{width:100%}
 .savebox textarea{min-height:60px;font:15px/1.4 var(--body)}
+.kbd{display:block;width:100%;height:auto}
+.stage-kbd{background:#0c1222;border-radius:10px;padding:8px}
+.diagrams{margin-top:18px}
+.diagrams h2{font:700 18px Georgia,serif;margin:6px 0 2px;color:#111;text-transform:none;letter-spacing:0}
+.diag-key{font:12px Arial,sans-serif;color:#444;margin:0 0 8px;display:flex;gap:6px;align-items:center}
+.diag-key i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-left:8px}
+.diag-key .lhk{background:#1c7ed6}.diag-key .rhk{background:#f76707}
+.diag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.diag{border:1px solid #ddd;border-radius:8px;padding:8px 10px;break-inside:avoid;page-break-inside:avoid;display:grid;gap:4px}
+.diag b{font:700 16px Arial,sans-serif;color:#111}
+.diag span{font:11px Arial,sans-serif;color:#555}
+.sheet-modal{position:fixed;inset:0;background:rgba(10,14,28,.6);z-index:90;display:flex;flex-direction:column;align-items:center;overflow:auto;padding:16px}
+.sheet-modal[hidden]{display:none}
+.sheet-bar{position:sticky;top:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border-radius:12px;padding:10px 14px;width:min(1000px,100%);box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:2}
+.sheet-bar b{font:800 16px var(--display);margin-right:auto}
+.sheet-page{background:#fff;color:#111;width:min(1000px,100%);margin-top:14px;border-radius:6px;padding:28px 26px 18px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.sheet-head{text-align:center;margin-bottom:6px}
+.sheet-head h1{font:700 28px Georgia,'Times New Roman',serif;margin:0 0 4px}
+.sheet-head p{font:14px Arial,sans-serif;color:#444;margin:0}
+.sheet-sys{break-inside:avoid;page-break-inside:avoid}
+.sheet-foot{text-align:center;font:11px Arial,sans-serif;color:#888;margin-top:10px}
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  body>*:not(.sheet-modal){display:none!important}
+  .sheet-modal{position:static;background:none;padding:0;overflow:visible;display:block!important}
+  .sheet-bar{display:none!important}
+  .sheet-page{box-shadow:none;width:100%;margin:0;padding:0;border-radius:0}
+}
 .credits{max-width:1200px;margin:8px auto 28px;padding:0 16px;font-size:12px;color:var(--muted);text-align:center}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -230,6 +258,7 @@ audio{width:100%}
     </div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
+    <div class="stage-kbd" id="stageKbd" hidden></div>
     <div class="transport">
       <button class="play" id="playBtn" aria-label="Play">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="playIcon" d="M7 4.5v15l13-7.5z"/></svg>
@@ -238,6 +267,7 @@ audio{width:100%}
       <button class="tog" id="countBtn" aria-pressed="true">Count-in</button>
       <button class="tog" id="clickBtn" aria-pressed="false">Metronome</button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
+      <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
       <span class="tip">Space bar plays and stops</span>
     </div>
@@ -254,6 +284,7 @@ audio{width:100%}
             <select id="meter"><option>4/4</option><option>3/4</option><option>2/4</option><option>5/4</option><option>6/8</option><option>12/8</option><option>7/8</option></select></label>
           <label id="formWrap" hidden>Form
             <select id="form"><option value="free">Free (any length)</option><option value="phrase">Phrase · 4 bars</option><option value="sentence">Sentence · 8 bars</option><option value="song">Song · 16 bars</option></select></label>
+          <button class="btn sm" id="sheetBtn" type="button">🖨 Print sheet music / diagrams</button>
           <label id="resWrap" hidden>Grid
             <select id="res"><option value="beat">Beats</option><option value="8" selected>8th notes</option><option value="16">16th notes</option></select></label>
         </div>
@@ -391,7 +422,15 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-n (Parker bebop vocabulary)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-p (sheet music and keyboard diagrams)</footer>
+<div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
+  <div class="sheet-bar"><b>Print</b>
+    <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
+    <label class="check"><input type="checkbox" id="sheetDiag" checked> Keyboard diagrams</label>
+    <span class="help">Then press Print and choose a printer or “Save as PDF”.</span>
+    <button class="btn pri" id="sheetPrint">🖨 Print</button><button class="btn" id="sheetClose">Close</button></div>
+  <div class="sheet-page" id="sheetBody"></div>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -513,7 +552,7 @@ function parseVoicing(tok){
   const nm=nameFromPcs(pcs,bass);
   const iv=[...new Set(pcs.map(p=>(p-nm.root+12)%12))].sort((a,b)=>a-b);
   const N=FLAT_N, nm2=n=>N[n%12];
-  return {root:nm.root,bass,iv,suffix:nm.suf,slash:bass!==nm.root,voicing:all,
+  return {root:nm.root,bass,iv,suffix:nm.suf,slash:bass!==nm.root,voicing:all,lh:L.length,
           vlabel:(L.length?`Left hand ${L.map(nm2).join(' ')} · `:'')+`Right hand ${R.map(nm2).join(' ')}`};
 }
 function tokenize(bar){ return bar.match(/\[[^\]]*\]|\S+/g)||[]; }
@@ -1155,13 +1194,13 @@ function nameHTML(n){ const el=document.createElement('span'); const r=document.
 function renderStage(u){
   const nowEl=$('now'), beats=[...$('beats').children];
   if(!u){ nowEl.className='now'; nowEl.replaceChildren(song&&song.events[0]?nameHTML(song.events[0].name):document.createTextNode('–'));
-    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.classList.remove('on','one')); $('voice').textContent=''; $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
+    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.classList.remove('on','one')); $('voice').textContent=''; stageKeys(song&&song.events.length?0:null); $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
   if(u.count!=null){ nowEl.className='now count'; nowEl.textContent=String(u.count); beats.forEach((b,i)=>{ b.classList.toggle('on',i===u.count-1); b.classList.toggle('one',i===0&&i===u.count-1); });
     setNext(song.events[0]); return; }
   beats.forEach((b,i)=>b.classList.toggle('on',i===u.beat)); beats.forEach((b,i)=>b.classList.toggle('one',i===0&&i===u.beat));
   $('barNo').textContent=`${u.bar}/${song.bars.length}`; $('loopNo').textContent=u.loop;
   if(u.ei!==curEi){ const ev=song.events[u.ei]; if(!ev) return; nowEl.className='now'; nowEl.replaceChildren(nameHTML(ev.name)); setNext(ev.nextEv); highlight(u.ei);
-    $('voice').textContent=ev.chord&&ev.chord.voicing?(ev.chord.vlabel||'Custom voicing'):''; }
+    $('voice').textContent=ev.chord&&ev.chord.voicing?(ev.chord.vlabel||'Custom voicing'):''; stageKeys(u.ei); }
 }
 function setNext(ev){ const n=$('next'); n.replaceChildren(document.createTextNode('Next ')); const b=document.createElement('b'); b.textContent=ev?ev.name.root+ev.name.q:'–'; n.appendChild(b); }
 function highlight(ei){
@@ -1186,7 +1225,7 @@ function renderChart(){
   if(!song.bars.length){ const d=document.createElement('div'); d.className='cell hold'; d.textContent='Type chords below'; ch.appendChild(d); }
 }
 function rebuild(){
-  song=parseChart(S.chords,S.transpose);
+  song=parseChart(S.chords,S.transpose); stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
   if(S.mode==='pro') updateGridMeta();
   const er=$('errs'); er.hidden=!song.errors.length; er.textContent=song.errors.join(' · ');
   renderChart();
@@ -1729,6 +1768,161 @@ function humUndo(){ if(!HUM.undo) return; Object.assign(S,HUM.undo); $('chords')
   HUM.undo=null; $('humUndo').hidden=true; $('humClear').hidden=!S.bassLine; $('humMsg').textContent='Put back the chart you had before.'; saveDraft(); }
 
 /* =========================================================
+   Sheet music: grand staff with chord symbols (VexFlow)
+   ========================================================= */
+function loadVex(){
+  if(window.Vex) return Promise.resolve();
+  return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='vendor/vexflow.js'; s.onload=()=>res(); s.onerror=rej; document.head.appendChild(s); });
+}
+const DUR=[[16,'w',0],[12,'h',1],[8,'h',0],[6,'q',1],[4,'q',0],[3,'8',1],[2,'8',0],[1,'16',0]];
+function splitDur(len,pos,M){
+  // split a length (16ths) into notatable values; don't let a value cross the middle of a 4/4 bar or a beat group in compound time
+  const out=[]; let p=pos;
+  while(len>0){ let pick=null;
+    for(const d of DUR){ if(d[0]>len) continue;
+      const end=p+d[0], beatLen=M.compound?6:4;
+      if(d[0]>=beatLen){ if(p%beatLen!==0) continue; if(M.bar===16 && d[0]===12 && p!==0) continue; if(M.bar===16 && d[0]===8 && p%8!==0) continue; }
+      else if(d[0]>1 && Math.floor(p/beatLen)!==Math.floor((end-1)/beatLen)) continue;
+      pick=d; break; }
+    if(!pick) pick=[1,'16',0];
+    out.push(pick); p+=pick[0]; len-=pick[0]; }
+  return out;
+}
+function vfKey(m,flats){ const N=flats?['c','db','d','eb','e','f','gb','g','ab','a','bb','b']:['c','c#','d','d#','e','f','f#','g','g#','a','a#','b']; return N[((m%12)+12)%12]+'/'+(Math.floor(m/12)-1); }
+function sheetVoicing(ev,prev){
+  const c=ev.chord; if(!c) return null;
+  if(c.voicing){ const n=c.lh||0, all=c.voicing.slice(); let lh=all.slice(0,n), rh=all.slice(n);
+    if(!lh.length){ lh=[bassLow(c.bass)]; while(lh[0]<36) lh[0]+=12; }
+    return {lh,rh}; }
+  let b=bassLow(c.bass); while(b<36) b+=12;
+  const rh=voiceChord(c,prev,false).filter(m=>m>=55);
+  const lh=[b]; const fifth=c.iv.find(x=>[6,7,8].includes(x%12)); if(fifth!=null && !c.slash) lh.push(b+fifth%12);
+  return {lh,rh:rh.length?rh:[b+24]};
+}
+async function renderSheet(target){
+  await loadVex();
+  const VF=Vex.Flow, M=MET(), sg=parseChart(S.chords,S.transpose,M.bar);
+  if(!sg.steps){ target.textContent='Add some chords first.'; return; }
+  target.replaceChildren();
+  const head=document.createElement('div'); head.className='sheet-head';
+  const h1=document.createElement('h1'); h1.textContent=S.title||'Untitled track';
+  const sub=document.createElement('p'); const st=STYLES[S.style];
+  sub.textContent=`${st.label} · ${S.meter} · ${M.compound||M.odd?'♪':'♩'} = ${S.bpm}${S.transpose?` · transposed ${S.transpose>0?'+':''}${S.transpose}`:''}`;
+  head.append(h1,sub); target.appendChild(head);
+  const wantMusic=$('sheetMusic').checked, wantDiag=$('sheetDiag').checked;
+  if(!wantMusic && !wantDiag){ const p=document.createElement('p'); p.textContent='Tick Sheet music or Keyboard diagrams above.'; p.style.cssText='font:15px Arial;color:#555;text-align:center;margin:30px 0'; target.appendChild(p); return; }
+  if(!wantMusic){ target.appendChild(chordDiagrams(sg)); const f=document.createElement('p'); f.className='sheet-foot'; f.textContent='Made with Backing Track Studio'; target.appendChild(f); return; }
+  const nBars=sg.bars.length, perSys=M.bar>16?2:(M.bar>=14?3:4), W=1000;
+  let prev=null; const voicings=sg.events.map(ev=>{ if(!ev.chord) return null; const v=sheetVoicing(ev,prev); prev=v.rh; return v; });
+  let pendingTie=null; // {t,b} notes waiting to tie into the next system
+  for(let s0=0;s0<nBars;s0+=perSys){
+    const div=document.createElement('div'); div.className='sheet-sys'; target.appendChild(div);
+    const R=new VF.Renderer(div,VF.Renderer.Backends.SVG); R.resize(W,250); const ctx=R.getContext(); ctx.setFont('Arial',10);
+    const bars=Math.min(perSys,nBars-s0), firstExtra=s0===0?70:40, bw=(W-20-firstExtra)/bars;
+    let x=10; const ties=[]; let lastT=null,lastB=null,lastEv=-1;
+    if(pendingTie){ /* tie from previous system: drawn as a partial tie on the first notes below */ }
+    for(let k=0;k<bars;k++){
+      const bi=s0+k, w=bw+(k===0?firstExtra:0);
+      const tr=new VF.Stave(x,30,w), bs=new VF.Stave(x,130,w);
+      if(k===0){ tr.addClef('treble'); bs.addClef('bass'); if(s0===0){ tr.addTimeSignature(S.meter); bs.addTimeSignature(S.meter); } }
+      if(bi===nBars-1){ tr.setEndBarType(VF.Barline.type.END); bs.setEndBarType(VF.Barline.type.END); }
+      tr.setContext(ctx).draw(); bs.setContext(ctx).draw();
+      if(k===0){ new VF.StaveConnector(tr,bs).setType('brace').setContext(ctx).draw(); new VF.StaveConnector(tr,bs).setType('singleLeft').setContext(ctx).draw(); }
+      new VF.StaveConnector(tr,bs).setType(bi===nBars-1?'boldDoubleRight':'singleRight').setContext(ctx).draw();
+      if(k===0){ const lab=s0+1; ctx.save(); ctx.setFont('Arial',10,'normal'); ctx.fillText(String(lab),x,22); ctx.restore(); }
+      const tN=[], bN=[]; const b0=bi*M.bar, b1=b0+M.bar;
+      sg.events.forEach((ev,ei)=>{ const st0=Math.max(ev.start,b0), en=Math.min(ev.start+ev.len,b1); if(en<=st0) return;
+        const v=voicings[ei], flats=ev.chord?useFlats(ev.chord):sg.flats, parts=splitDur(en-st0,st0-b0,M);
+        parts.forEach((d,pi)=>{
+          const dur=d[1]+(d[2]?'d':'');
+          let tn,bn;
+          if(!v){ tn=new VF.StaveNote({keys:['b/4'],duration:dur+'r',clef:'treble'}); bn=new VF.StaveNote({keys:['d/3'],duration:dur+'r',clef:'bass'}); }
+          else { tn=new VF.StaveNote({keys:v.rh.map(m=>vfKey(m,flats)),duration:dur,clef:'treble',auto_stem:true});
+                 bn=new VF.StaveNote({keys:v.lh.map(m=>vfKey(m,flats)),duration:dur,clef:'bass',auto_stem:true}); }
+          if(d[2]){ VF.Dot.buildAndAttach([tn],{all:true}); VF.Dot.buildAndAttach([bn],{all:true}); }
+          if(pi===0 && ev.start>=b0){ const nm=ev.chord?ev.name.root+ev.name.q:(ev.implicit?'':'N.C.');
+            if(nm){ const a=new VF.Annotation(nm).setVerticalJustification(VF.Annotation.VerticalJustify.TOP); a.setFont('Arial',15,'bold'); tn.addModifier(a,0); } }
+          if(v){ if(ei===lastEv && lastT) ties.push([lastT,tn,v.rh.length],[lastB,bn,v.lh.length]);
+            }
+          lastT=v?tn:null; lastB=v?bn:null; lastEv=v?ei:-1;
+          tN.push(tn); bN.push(bn); });
+        if(k===0 && s0>0 && ev.start<b0 && pendingTie && pendingTie.ei===ei){ /* handled via ties list */ }
+      });
+      // first notes of a system may continue a chord from the previous system
+
+      const num=M.bar/(S.meter.endsWith('/8')?2:4), val=S.meter.endsWith('/8')?8:4;
+      const tv=new VF.Voice({num_beats:num,beat_value:val}).setStrict(false).addTickables(tN);
+      const bv=new VF.Voice({num_beats:num,beat_value:val}).setStrict(false).addTickables(bN);
+      VF.Accidental.applyAccidentals([tv],'C'); VF.Accidental.applyAccidentals([bv],'C');
+      new VF.Formatter().joinVoices([tv]).joinVoices([bv]).format([tv,bv],w-(k===0?firstExtra+10:20));
+      tv.draw(ctx,tr); bv.draw(ctx,bs);
+      x+=w;
+    }
+    // ties
+    ties.forEach(([a,b,n])=>{ const idx=[...Array(n).keys()];
+      new VF.StaveTie({first_note:a,last_note:b,first_indices:idx,last_indices:idx}).setContext(ctx).draw(); });
+    // chord still sounding at the end of this system?
+    const endStep=(s0+bars)*M.bar, ei=song&&sg.evAt[endStep-1], ev=sg.events[ei];
+    if(ev && ev.chord && ev.start+ev.len>endStep && lastT){ const n1=voicings[ei].rh.length, n2=voicings[ei].lh.length;
+      new VF.StaveTie({first_note:lastT,last_note:null,first_indices:[...Array(n1).keys()],last_indices:[...Array(n1).keys()]}).setContext(ctx).draw();
+      new VF.StaveTie({first_note:lastB,last_note:null,first_indices:[...Array(n2).keys()],last_indices:[...Array(n2).keys()]}).setContext(ctx).draw();
+      pendingTie={ei}; } else pendingTie=null;
+    const svg=div.querySelector('svg'); svg.setAttribute('viewBox',`0 0 ${W} 250`); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.height='auto';
+  }
+  if(wantDiag) target.appendChild(chordDiagrams(sg));
+  const foot=document.createElement('p'); foot.className='sheet-foot'; foot.textContent='Made with Backing Track Studio'; target.appendChild(foot);
+}
+async function openSheet(){
+  const ov=$('sheetModal'), body=$('sheetBody'); ov.hidden=false; body.textContent='Writing the sheet music…';
+  try{ await renderSheet(body); }
+  catch(err){ body.textContent='Couldn’t draw the sheet music: '+(err&&err.message||err); console.error(err); }
+}
+
+/* =========================================================
+   Keyboard chord diagrams
+   ========================================================= */
+const KB_WHITE=[0,2,4,5,7,9,11];
+function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70}={}){
+  const all=[...lh,...rh]; if(lo==null){ lo=Math.min(...all); lo-=((lo%12)+12)%12; } if(hi==null){ hi=Math.max(...all); hi+=11-(((hi%12)+12)%12); }
+  const NS='http://www.w3.org/2000/svg', whites=[]; for(let m=lo;m<=hi;m++) if(KB_WHITE.includes(((m%12)+12)%12)) whites.push(m);
+  const ww=14, W=whites.length*ww, H=height, bw=9, bh=H*0.62;
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox',`0 0 ${W+2} ${H+2}`); svg.setAttribute('class','kbd'); svg.setAttribute('role','img');
+  const N=['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+  svg.setAttribute('aria-label','Left hand '+lh.map(m=>N[m%12]).join(' ')+', right hand '+rh.map(m=>N[m%12]).join(' '));
+  const col=m=>lh.includes(m)?'#1c7ed6':rh.includes(m)?'#f76707':null;
+  const el=(tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e; };
+  whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1});
+    if(c&&labels){ const t=el('text',{x:1+i*ww+ww/2,y:H-5,'text-anchor':'middle','font-size':8,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[m%12]; }
+    if(((m%12)+12)%12===0){ const t=el('text',{x:1+i*ww+2,y:H-(c?16:5),'font-size':6,'font-family':'Arial',fill:c?'#fff':'#999'}); t.textContent='C'+(Math.floor(m/12)-1); } });
+  for(let m=lo;m<=hi;m++){ const pc=((m%12)+12)%12; if(KB_WHITE.includes(pc)) continue;
+    const i=whites.indexOf(m-1); if(i<0) continue; const c=col(m), x=1+(i+1)*ww-bw/2;
+    el('rect',{x,y:1,width:bw,height:bh,rx:1.5,fill:c||'#222',stroke:'#111','stroke-width':0.8});
+    if(c&&labels){ const t=el('text',{x:x+bw/2,y:bh-4,'text-anchor':'middle','font-size':6,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[pc]; } }
+  return svg;
+}
+function songVoicings(sg){ let prev=null; return sg.events.map(ev=>{ if(!ev.chord) return null; const v=sheetVoicing(ev,prev); prev=v.rh; return v; }); }
+function chordDiagrams(sg){
+  const box=document.createElement('div'); box.className='diagrams';
+  const h=document.createElement('h2'); h.textContent='Chord diagrams'; box.appendChild(h);
+  const key=document.createElement('p'); key.className='diag-key'; key.innerHTML='<i class="lhk"></i> Left hand <i class="rhk"></i> Right hand'; box.appendChild(key);
+  const grid=document.createElement('div'); grid.className='diag-grid'; box.appendChild(grid);
+  const vz=songVoicings(sg), seen=new Set();
+  sg.events.forEach((ev,i)=>{ const v=vz[i]; if(!v) return; const name=ev.name.root+ev.name.q, id=name+'|'+v.lh.join(',')+'|'+v.rh.join(','); if(seen.has(id)) return; seen.add(id);
+    const card=document.createElement('div'); card.className='diag'; const b=document.createElement('b'); b.textContent=name;
+    const lo=Math.min(36,...v.lh,...v.rh), hi=Math.max(83,...v.lh,...v.rh);
+    card.append(b,keyboardSVG(v.lh,v.rh,{lo:lo-((lo%12)+12)%12,hi:hi+11-((hi%12)+12)%12}));
+    const n=document.createElement('span'); const N=ev.chord&&useFlats(ev.chord)?FLAT_N:SHARP_N; n.textContent=`LH ${v.lh.map(m=>N[m%12]).join(' ')} · RH ${v.rh.map(m=>N[m%12]).join(' ')}`; card.appendChild(n);
+    grid.appendChild(card); });
+  return box;
+}
+let stageVz=null;
+function stageKeys(ei){
+  const w=$('stageKbd'); if(!w || w.hidden) return;
+  if(!stageVz || stageVz.song!==song) stageVz={song,vz:songVoicings(song)};
+  const v=ei!=null?stageVz.vz[ei]:null; w.replaceChildren(keyboardSVG(v?v.lh:[],v?v.rh:[],{lo:36,hi:95,height:64}));
+}
+
+/* =========================================================
    Library: examples, class library (shared), my tracks (this browser)
    ========================================================= */
 let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
@@ -1864,6 +2058,13 @@ function init(){
   showSync();
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
+  $('kbdBtn').onclick=()=>{ const on=$('kbdBtn').getAttribute('aria-pressed')!=='true'; $('kbdBtn').setAttribute('aria-pressed',on); $('stageKbd').hidden=!on; store.set('bt-kbd',on); stageKeys(playing&&curEi>=0?curEi:0); };
+  if(store.get('bt-kbd',false)){ $('kbdBtn').setAttribute('aria-pressed','true'); $('stageKbd').hidden=false; }
+  stageKeys(0);
+  $('sheetDiag').onchange=openSheet; $('sheetMusic').onchange=openSheet;
+  $('sheetBtn').onclick=openSheet; $('sheetClose').onclick=()=>{ $('sheetModal').hidden=true; };
+  $('sheetPrint').onclick=()=>window.print();
+  $('sheetModal').addEventListener('click',e=>{ if(e.target.id==='sheetModal') $('sheetModal').hidden=true; });
   $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
   $('humPlay').onclick=()=>{ toggle(); $('stage').scrollIntoView({behavior:'smooth',block:'start'}); }; $('humUndo').onclick=humUndo;
