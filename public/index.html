@@ -445,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-v (double-time shout bass)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-w (double-time shout)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -620,6 +620,11 @@ function parseChart(text, tr, barLen){
     e.nextChordEv = n;
     e.nextEv = events[(i+1)%events.length];
   });
+  // a chord repeated in the next slot or bar counts as one longer chord for bass lines
+  const same=(a,b)=>a.chord&&b.chord&&(a.label.replace(/^\[|\]$/g,'').replace(/\s+/g,' ')===b.label.replace(/^\[|\]$/g,'').replace(/\s+/g,' ')
+    ||(a.chord.root===b.chord.root&&a.chord.bass===b.chord.bass&&a.chord.iv.join()===b.chord.iv.join()));
+  events.forEach((e,i)=>{ e.regionStart=(i>0&&same(events[i-1],e))?events[i-1].regionStart:e.start; });
+  for(let i=events.length-1;i>=0;i--){ const e=events[i], nx=events[i+1]; e.regionEnd=(nx&&nx.regionStart===e.regionStart)?nx.regionEnd:e.start+e.len; e.regionLen=e.regionEnd-e.regionStart; }
   return {events, bars, steps:step, errors, firstChord, flats, evAt, barLen};
 }
 
@@ -1039,38 +1044,35 @@ const STYLES={
   shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/4',bar8:true,keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.14,extra:0.1},
     gen:{back:'clap',hat:'shaker',bass:'finger',keys:'organ',comp:'stab',extra:'pluck'},
     play(E,e){ const {t}=e, s=e.s, s8=s%8; let v;
-      if(v=hit('X...X...',s8)) E.kick(t,s8===0?1:0.85);
-      if(v=hit('..X...x.',s8)) E.snare(t,v);
-      if(v=hit('.o.o.o.o',s8)) E.snare(t,0.22);
+      // double-time drums: kick on every eighth, snare on the off-beat sixteenths, claps on the off-beats, tambourine sixteenths
+      if(v=hit('X.x.X.x.',s8)) E.kick(t,s8===0?1:s8%4===0?0.9:0.72);
+      if(v=hit('.X.x.X.x',s8)) E.snare(t,s8%4===1?0.95:0.7);
       if(v=hit('..x...x.',s8)) E.clap(t,0.8);
-      if(v=hit('x.x.x.x.',s8)) E.tamb(t,s8%4===2?0.8:0.5);
-      if(v=hit('X...x...',s8)) E.hat(t,0.35);
+      if(v=hit('xoxoxoxo',s8)) E.tamb(t,s8%2===0?0.75:0.45);
+      if(v=hit('X.x.X.x.',s8)) E.hat(t,s8%4===0?0.4:0.28);
       if(!e.chord) return;
       const c=e.chord, r=bassLow(c.bass), th=isMinor(c)?3:4;
-      // chromatic walk-up: C E F Gb G A Bb B -> C (minor: C Eb F Gb G A Bb B)
-      const walk=[0,th,5,6,7,9,10,11], L=e.ev.len, nb=e.nextChord?bassLow(e.nextChord.bass):r;
-      const land=m=>{ const tgt=nb+12*Math.round((r+12-nb)/12); return (e.nextChord&&e.nextChord.bass!==c.bass)?tgt+(m>=tgt?1:-1):m; };
+      // a chord repeated bar after bar counts as one long chord
+      const walk=[0,th,5,6,7,9,10,11], L=e.ev.regionLen||e.ev.len, rStep=e.ss-(e.ev.regionStart??e.ev.start), rLeft=L-rStep;
+      const rEnd=e.ev.regionEnd??(e.ev.start+e.ev.len), nextEv=song.events.find(x=>x.start>=rEnd)||song.events[0], nxc=nextEv&&nextEv.chord;
+      const nb=nxc?bassLow(nxc.bass):r, changes=!!nxc && nxc.bass!==c.bass;
+      const land=m=>{ const tgt=nb+12*Math.round((r+12-nb)/12); return changes?tgt+(m>=tgt?1:-1):m; };
       const barLen=MET().bar;
-      const unit=L>=4*barLen?2:1, span=unit*8;              // double time: 16ths over 2+ bars, 8ths over 4+ bars
-      if(L>=2*barLen && e.evStep<span){                   // two bars or more: chromatic walk-up
-
-        if(e.evStep%unit===0){ const k=e.evStep/unit; let m=r+walk[k]; if(e.evLeft<=unit) m=land(m);
+      // two bars or more of one chord: double-time chromatic walk up and back down (C E F Gb G A Bb B C B Bb A G Gb F E)
+      const unit=L>=4*barLen?2:1, span=unit*16, line=[...walk,12,11,10,9,7,6,5,th];
+      if(L>=2*barLen && rStep<span){
+        if(rStep%unit===0){ const k=rStep/unit; let m=r+line[k]; if(rLeft<=unit) m=land(m);
           E.bass(t,m,e.sd*unit*0.85,k===0?1:k%2?0.8:0.88); E.lastShout=m; }
-        if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
-        if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
-        if(s8===0||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra');
-        return;
       }
-      // bar to bar: root and octave, then approach the next bass note by a half step (below when climbing, above when coming down)
-      const changes=e.nextChord && e.nextChord.bass!==c.bass;
-      if(changes && e.evLeft===2){
+      // bar to bar (or after the walk): root-octave bounce in eighths, half-step approach on the last eighth
+      else if(changes && rLeft===2){
         const prevNote=E.lastShout??r, tgt=nb+12*Math.round((prevNote-nb)/12);
         let m=tgt+(tgt>prevNote?-1:tgt<prevNote?1:(hash(e.ss+e.loop)>0.5?-1:1));
-        if(((m-c.bass)%12+12)%12===0) m=tgt+(m<tgt?1:-1);   // don't 'approach' with the note we're already on
+        if(((m-c.bass)%12+12)%12===0) m=tgt+(m<tgt?1:-1);     // never approach with the note already sounding
         E.bass(t,m,e.sd*1.7,0.92); E.lastShout=m;
-      } else if(s%2===0 || e.evStep===0){                 // double time: root-octave bounce in eighths
-        const k=Math.floor(e.evStep/2), m=r+(k%2?12:0), mm=m>52?m-12:m;
-        E.bass(t,mm,e.sd*Math.min(2,e.evLeft)*0.82,k%2?0.82:(s%4===0?1:0.9)); E.lastShout=mm;
+      } else if(s%2===0 || rStep===0){
+        const k=Math.floor(rStep/2), m=r+(k%2?12:0), mm=m>52?m-12:m;
+        E.bass(t,mm,e.sd*Math.min(2,rLeft)*0.82,k%2?0.82:(s%4===0?1:0.9)); E.lastShout=mm;
       }
       if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
       if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
