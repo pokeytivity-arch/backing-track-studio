@@ -337,7 +337,7 @@ audio{width:100%}
           <div class="meterbar" aria-hidden="true"><i id="humLevel"></i></div>
         </div>
         <p class="help" id="humMsg"></p>
-        <div class="row"><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
+        <div class="row"><button class="btn pri" id="humPlay" hidden>▶ Play it</button><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
       </section>
 
       <section class="card">
@@ -391,7 +391,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-h (with Hum a bass line)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-i (with Hum a bass line)</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1181,6 +1181,7 @@ function rebuild(){
   saveDraft();
 }
 function setPlayUI(){
+  if($('humPlay')) $('humPlay').textContent=playing?'■ Stop':'▶ Play it';
   $('playBtn').classList.toggle('on',playing); $('playTxt').textContent=playing?'Stop':'Play';
   $('playBtn').setAttribute('aria-label',playing?'Stop':'Play');
   $('playIcon').setAttribute('d',playing?'M6 5h12v14H6z':'M7 4.5v15l13-7.5z');
@@ -1511,11 +1512,11 @@ function humStop(cancel){
   HUM.undo={chords:S.chords,bassLine:S.bassLine,useHum:S.useHum};
   S.chords=r.text; S.bassLine=r.notes; S.useHum=$('humExact').checked; S.transpose=0;
   $('chords').value=S.chords; if(E) E.vo=null; rebuild(); if(S.mode==='pro') renderGrid();
-  $('humUndo').hidden=false; $('humClear').hidden=false;
-  $('humMsg').textContent=`Heard ${r.heard} notes · Key: ${r.key.name} · Chart written below. Press Play to hear it.`;
+  $('humUndo').hidden=false; $('humClear').hidden=false; $('humPlay').hidden=false;
+  $('humMsg').textContent=`Heard ${r.heard} notes · Key: ${r.key.name} · Chart written. Press ▶ Play it below to hear it.`;
   saveDraft();
 }
-function humSync(){ const has=!!(S.bassLine&&S.bassLine.length); if(!$('humClear')) return;
+function humSync(){ const has=!!(S.bassLine&&S.bassLine.length); if(!$('humClear')) return; $('humPlay').hidden=!has;
   $('humClear').hidden=!has; $('humClear').textContent=S.useHum?'Use the style’s bass instead':'Play my hummed bass line'; $('humExact').checked=S.useHum||!has; }
 function humUndo(){ if(!HUM.undo) return; Object.assign(S,HUM.undo); $('chords').value=S.chords; $('humExact').checked=!!S.useHum; rebuild(); if(S.mode==='pro') renderGrid();
   HUM.undo=null; $('humUndo').hidden=true; $('humClear').hidden=!S.bassLine; $('humMsg').textContent='Put back the chart you had before.'; saveDraft(); }
@@ -1657,7 +1658,8 @@ function init(){
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
   $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
-  $('humBtn').onclick=humStart; $('humUndo').onclick=humUndo;
+  $('humBtn').onclick=humStart;
+  $('humPlay').onclick=()=>{ toggle(); $('stage').scrollIntoView({behavior:'smooth',block:'start'}); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
   $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
   humSync();
