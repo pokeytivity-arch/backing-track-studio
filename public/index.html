@@ -391,7 +391,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-i (with Hum a bass line)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings.<br>Version 2026.11.12-j (with Hum a bass line)</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -1473,7 +1473,7 @@ function analyzeHum(frames,{bpm,meter,bars,per}){
 }
 const HUM={rec:false};
 async function humStart(){
-  if(HUM.rec){ humStop(true); return; }
+  if(HUM.rec){ humStop(ctx.currentTime<HUM.start+0.3); return; }
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ toast('This browser can’t use the microphone'); return; }
   if(playing) stop();
   try{ await ensureCtx(); }catch(_){ toast('Audio is blocked. Tap again.'); return; }
@@ -1487,7 +1487,7 @@ async function humStart(){
   for(let b=-1;b<bars;b++) M.count.forEach(p=>metroClick(click,M,p,start+b*barDur+p*sd));
   const lag=Math.min(0.9,visualDelay())+0.03; // you hum to what you hear (output delay) + microphone delay
   Object.assign(HUM,{rec:true,stream,an,frames:[],start,end,bars,lag,buf:new Float32Array(an.fftSize),click});
-  $('humBtn').textContent='■ Stop'; $('humBtn').classList.add('recording'); $('humMsg').textContent='Count-in… then hum on the click.';
+  $('humBtn').textContent='■ Finish'; $('humBtn').classList.add('recording'); $('humMsg').textContent='Count-in… then hum on the click.';
   HUM.timer=setInterval(()=>{
     const now=ctx.currentTime; an.getFloatTimeDomainData(HUM.buf);
     const tc=now-an.fftSize/ctx.sampleRate/2-start-HUM.lag;
@@ -1497,7 +1497,7 @@ async function humStart(){
     if(now<start){ const k=Math.floor((now-(start-barDur))/(sd*(M.compound||M.odd?2:4))); $('humNote').textContent=k>=0?String(k+1):'…'; }
     else { const el=now-start, bar=Math.floor(el/barDur)+1;
       $('humNote').textContent=p.f>0&&p.rms>0.008?noteName(69+12*Math.log2(p.f/440)):'–';
-      $('humMsg').textContent=`Recording bar ${Math.min(bar,bars)} of ${bars}. Hum one note at a time.`; }
+      $('humMsg').textContent=`Recording bar ${Math.min(bar,bars)} of ${bars}. Hum one note at a time. Press Finish to stop early.`; }
     if(now>=end+0.15) humStop(false);
   },25);
 }
@@ -1506,9 +1506,10 @@ function humStop(cancel){
   clearInterval(HUM.timer); HUM.rec=false; try{ HUM.stream.getTracks().forEach(t=>t.stop()); }catch(_){}
   try{ HUM.click.master.disconnect(); }catch(_){}
   $('humBtn').textContent='● Record'; $('humBtn').classList.remove('recording'); $('humLevel').style.width='0%'; $('humNote').textContent='–';
-  if(cancel){ $('humMsg').textContent='Stopped. Nothing was changed.'; return; }
-  const r=analyzeHum(HUM.frames,{bpm:S.bpm,meter:S.meter,bars:HUM.bars,per:$('humPer').value});
-  if(!r.heard){ $('humMsg').textContent='I couldn’t hear any notes. Hum louder or closer to the microphone, and hold each note.'; return; }
+  if(cancel){ $('humMsg').textContent='Stopped during the count-in, so nothing was recorded. Press Record and hum after the count-in.'; return; }
+  const M=MET(), barDur=M.bar*60/S.bpm*M.q/4, done=Math.max(1,Math.min(HUM.bars,Math.ceil((ctx.currentTime-HUM.start-0.25)/barDur)));
+  const r=analyzeHum(HUM.frames,{bpm:S.bpm,meter:S.meter,bars:done,per:$('humPer').value});
+  if(!r.heard){ $('humMsg').textContent='I couldn’t hear any notes. Hum louder or closer to the microphone, hold each note, and check the level bar moves while you hum.'; return; }
   HUM.undo={chords:S.chords,bassLine:S.bassLine,useHum:S.useHum};
   S.chords=r.text; S.bassLine=r.notes; S.useHum=$('humExact').checked; S.transpose=0;
   $('chords').value=S.chords; if(E) E.vo=null; rebuild(); if(S.mode==='pro') renderGrid();
