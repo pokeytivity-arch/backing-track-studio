@@ -1443,7 +1443,7 @@ function soloStep(eng,e){
       const o={scoop:n.first&&hash(abs*7)<L.scoop||(n.len>=3&&hash(abs*3)<0.25), vib:d>0.32, fall:n.last&&hash(abs*5)<L.fall};
       if(!eng.saxNote(t,n.m,d,n.v,o)) eng.leadSynth(t,n.m,d,n.v);
     } else {
-      const v=n.v*1.3; if(!eng.tuned('piano',n.m,t,d*1.15,v,'lead',0.12)) eng.note(t,n.m,d,v*0.3,'piano','lead');
+      const v=n.v*0.5; if(!eng.tuned('piano',n.m,t,d*1.15,v,'lead',0.12)) eng.note(t,n.m,d,v*0.3,'piano','lead');
       if(n.oct) eng.tuned('piano',n.m-12,t+0.004,d*1.15,v*0.6,'lead',0.12);
       if(n.ch) n.ch.forEach(m=>eng.tuned('piano',m,t+0.003,d*1.1,v*0.62,'lead',0.12));
     }
