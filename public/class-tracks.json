@@ -8,5 +8,16 @@
     "transpose": 0,
     "notes": "Improvise with F minor pentatonic for 3 bars, then aim for the E (major 3rd) over C7alt to pull back to Fm11.",
     "createdAt": 1794461340000
+  },
+  {
+    "id": "celebration",
+    "title": "Celebration (Kool & the Gang) · groove and chorus",
+    "chords": "| Ab7 | Ab7 | Gb/Ab | Ab7 |\n| Ab7 | Ab7 | Gb/Ab | Ab7 |\n| Db/Ab . Gb/Ab . | Db/Ab . Ab . | Db/Ab . Gb/Ab . | Db/Ab . Ab . |\n| Db/Ab . Gb/Ab . | Db/Ab . Ab . | Db/Ab . Gb/Ab . | Db/Ab . Ab . |",
+    "style": "funk",
+    "bpm": 122,
+    "transpose": 0,
+    "meter": "4/4",
+    "notes": "A♭ Mixolydian (G♭ instead of G). First 8 bars: the groove over A♭; last 8 bars: the chorus, D♭/A♭ and G♭/A♭ over an A♭ bass pedal. Chorus chords from published chord charts; the groove section is a simplified vamp.",
+    "createdAt": 1794503000000
   }
 ]
