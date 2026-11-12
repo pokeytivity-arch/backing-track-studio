@@ -445,7 +445,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-x (three-note chromatic approaches)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-y (energetic shout comping)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -837,6 +837,16 @@ class Engine{
       [['triangle',1,1],['sine',2,0.3],['sawtooth',1,0.12]].forEach(([ty,mul,lv])=>{ const o=this.osc(ty,f*mul), og=this.gain(lv); o.detune.value=(mul===2?3:0); o.connect(og).connect(lp); o.start(t); o.stop(end+0.6); });
       g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.003); g.gain.setTargetAtTime(0.0001,t+0.01,0.5+Math.min(1.2,180/f)); g.gain.setTargetAtTime(0.0001,end,0.1);
       lp.connect(g).connect(out);
+    } else if(type==='organhit'){
+      // punchy Hammond-style hit: fast attack, drawbars, decaying 3rd-harmonic percussion, key click, a little drive
+      const sh=this.ctx.createWaveShaper(), cv=new Float32Array(256); for(let i=0;i<256;i++){ const x=i/128-1; cv[i]=Math.tanh(1.8*x)/Math.tanh(1.8); } sh.curve=cv;
+      [[0.5,0.45],[1,1],[2,0.7],[4,0.35],[6,0.18]].forEach(([mul,lv])=>{ const o=this.osc('sine',f*mul), og=this.gain(lv); o.connect(og).connect(sh); o.start(t); o.stop(end+0.2); });
+      const pc=this.osc('sine',f*3), pg=this.gain(0.0001); pg.gain.setValueAtTime(0.0001,t); pg.gain.exponentialRampToValueAtTime(0.9,t+0.002); pg.gain.setTargetAtTime(0.0001,t+0.004,0.07);
+      pc.connect(pg).connect(sh); pc.start(t); pc.stop(t+0.4);
+      const ck=this.osc('square',f*8), cg=this.gain(0.0001); cg.gain.setValueAtTime(0.0001,t); cg.gain.exponentialRampToValueAtTime(0.12,t+0.001); cg.gain.exponentialRampToValueAtTime(0.0001,t+0.012);
+      ck.connect(cg).connect(sh); ck.start(t); ck.stop(t+0.02);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.004); g.gain.setValueAtTime(v*0.85,end); g.gain.exponentialRampToValueAtTime(0.0001,end+0.05);
+      sh.connect(g); g.connect(out);
     } else if(type==='organ'){
       [[0.5,0.4],[1,1],[2,0.55],[3,0.35],[4,0.25]].forEach(([mul,lv])=>{ const o=this.osc('sine',f*mul), og=this.gain(lv); o.connect(og).connect(g); o.start(t); o.stop(end+0.3); });
       g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.02); g.gain.setValueAtTime(v,end); g.gain.exponentialRampToValueAtTime(0.0001,end+0.09);
@@ -1041,8 +1051,8 @@ const STYLES={
       else if(s===8) E.chord(t,e.vo,Math.min(e.evLeft,8)*e.sd*0.98,0.42,'piano');
       if(e.evStep===0) E.chord(t,e.vo.map(m=>m+12),e.evLeft*e.sd,0.3,'pad','extra');
       if(v=hit('x..x..x.x..x..x.',s)){ const top=[...e.vo].sort((a,b)=>a-b).slice(-2).map(m=>m+12); E.note(t,top[(s>>1)%2],e.sd*2,0.1*v,'pluck','extra'); } }},
-  shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/4',bar8:true,keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.14,extra:0.1},
-    gen:{back:'clap',hat:'shaker',bass:'finger',keys:'organ',comp:'stab',extra:'pluck'},
+  shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/4',bar8:true,keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.12,extra:0.1},
+    gen:{back:'clap',hat:'shaker',bass:'finger',keys:'organhit',comp:'stab',extra:'pluck'},
     play(E,e){ const {t}=e, s=e.s, s8=s%8; let v;
       // double-time drums: kick on every eighth, snare on the off-beat sixteenths, claps on the off-beats, tambourine sixteenths
       if(v=hit('X.x.X.x.',s8)) E.kick(t,s8===0?1:s8%4===0?0.9:0.72);
@@ -1080,9 +1090,16 @@ const STYLES={
         const k=Math.floor(rStep/2), m=r+(k%2?12:0), mm=m>52?m-12:m;
         E.bass(t,mm,e.sd*Math.min(2,changes?rLeft-3:rLeft,2)*0.82||e.sd*0.8,k%2?0.82:(s%4===0?1:0.9)); E.lastShout=mm;
       }
-      if(s%4===2) E.chord(t,e.vo.map(m=>m+12),e.sd*1.2,0.5,'organ');
-      if(e.evStep===0) E.chord(t,e.vo,e.sd*3,0.55,'organ');
-      if(s8===0||e.evStep===0) E.chord(t,[r+24,...e.vo,e.vo[0]+12],e.sd*2,0.5,'piano','extra'); }},
+      // energetic comping, locked with the double-time bass and drums
+      const vo=[...e.vo].sort((a,b)=>a-b), top=vo[vo.length-1], ch=e.evStep===0;
+      // organ: chops on every off-beat sixteenth (with the snare), a full accented hit on every chord change
+      if(ch) E.chord(t,vo,e.sd*1.6,0.62,'organhit');
+      else if(s8%2===1) E.chord(t,vo,e.sd*0.55,s8%4===1?0.5:0.38,'organhit');
+      // piano: syncopated sixteenth stabs, top note doubled an octave up
+      const pPat='X..x.xX.', pv=hit(pPat,s8);
+      if(ch || pv){ const stack=[...vo,top+12]; E.chord(t,stack,e.sd*(ch?1.6:0.8),ch?0.62:0.48*pv,'piano','extra'); }
+      // a push into the next chord: hit the new chord a sixteenth early on the last off-beat before a change
+      if(changes && rLeft===1 && nxc){ const nv=voiceChord(nxc,vo,false); E.chord(t,[...nv].sort((a,b)=>a-b),e.sd*0.7,0.42,'organhit'); } }},
 };
 
 /* Grooves for time signatures other than 4/4 (positions in 16ths) */
