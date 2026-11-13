@@ -659,7 +659,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-m (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-n (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -911,7 +911,7 @@ class Engine{
     this.master.connect(comp); comp.connect(lim); lim.connect(trim); trim.connect(ctx.destination);
     this.rev=ctx.createConvolver(); this.rev.buffer=this.makeIR(2.4); const rg=ctx.createGain(); rg.gain.value=0.8; this.rev.connect(rg); rg.connect(this.master);
     this.ch={};
-    CHANNELS.forEach(n=>{ const g=ctx.createGain(), s=ctx.createGain(); g.connect(this.master); g.connect(s); s.connect(this.rev); s.gain.value=0.1; this.ch[n]={g,s}; });
+    const PAN={drums:0,bass:0,keys:-0.16,extra:0.22,lead:0.12,click:0}; CHANNELS.forEach(n=>{ const g=ctx.createGain(), s=ctx.createGain(); if(ctx.createStereoPanner){ const pn=ctx.createStereoPanner(); pn.pan.value=PAN[n]||0; g.connect(pn); pn.connect(this.master); } else g.connect(this.master); g.connect(s); s.connect(this.rev); s.gain.value=0.1; this.ch[n]={g,s}; });
     const len=ctx.sampleRate*2, nb=ctx.createBuffer(1,len,ctx.sampleRate), d=nb.getChannelData(0);
     for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
     this.noiseBuf=nb; this.vo=null; this.lastBass=36;
@@ -1087,6 +1087,38 @@ class Engine{
    ========================================================= */
 const VEL={X:1,x:0.72,o:0.42};
 const hit=(p,s)=>VEL[p[s]]||0;
+/* =========================================================
+   Human feel: small timing and level differences, rolled chords, drum-sample variation.
+   Makes the band sound played instead of programmed. Set Engine.prototype.noHuman=true to turn it off.
+   ========================================================= */
+(function(){
+  const P=Engine.prototype, rnd=a=>(Math.random()*2-1)*a;
+  const when=(eng,t,j)=>Math.max(t+rnd(j),eng.ctx.currentTime);
+  const drum=(name,j,vj)=>{ const o=P[name]; if(!o) return; P[name]=function(t,v,...r){ if(this.noHuman||typeof v!=='number') return o.call(this,t,v,...r); return o.call(this,when(this,t,j),Math.max(0.02,v*(1+rnd(vj))),...r); }; };
+  ['kick','snare','rim','clap','tom','conga'].forEach(n=>drum(n,0.004,0.09));
+  ['hat','shaker','ride'].forEach(n=>drum(n,0.006,0.14));
+  drum('crash',0.003,0.05);
+  const oBass=P.bass; P.bass=function(t,m,d,v,type,force){ if(this.noHuman||force) return oBass.call(this,t,m,d,v,type,force); return oBass.call(this,when(this,t,0.006),m,d,(typeof v==='number'?v:1)*(1+rnd(0.07)),type,force); };
+  const oNote=P.note; P.note=function(t,m,d,v,type,chn){ if(this.noHuman) return oNote.call(this,t,m,d,v,type,chn); return oNote.call(this,when(this,t,0.004),m,d,v*(1+rnd(0.09)),type,chn); };
+  const oChord=P.chord; P.chord=function(t,notes,d,v,type,chn='keys'){
+    if(this.noHuman) return oChord.call(this,t,notes,d,v,type,chn);
+    const base=when(this,t,0.009), each=v/Math.sqrt(notes.length)*0.55, sorted=[...notes].sort((a,b)=>a-b);
+    const roll=(type==='organ'||type==='pad')?0.004:0.005+Math.random()*0.014;
+    sorted.forEach((m,i)=>oNote.call(this,base+i*roll,m,d,each*(1+rnd(0.1)),type,chn)); };
+  const oSmp=P.smp; P.smp=function(inst,key,t,v,chn,opt){ if(!this.noHuman&&inst==='drums'){ opt=Object.assign({},opt||{}); opt.rate=(opt.rate||1)*(1+rnd(0.012)); } return oSmp.call(this,inst,key,t,v,chn,opt); };
+})();
+const FILL_STYLES={pop:1,eighties:1,gospel:1,ballad:1,worship:1,shout:1,funk:1,neosoul:1,blues:1};
+const CRASH_STYLES={pop:1,eighties:1,gospel:1,worship:1,shout:1};
+/* a short snare/tom fill at the end of every fourth bar, and a crash when a new eight-bar phrase starts */
+function phraseExtras(eng,e,style,M,sd){
+  if(eng.noHuman||M.bar!==16||!song||!song.steps) return;
+  const bars=Math.floor(song.steps/M.bar), name=S.style, b=e.bar%bars;
+  if(FILL_STYLES[name]&&bars>=4&&(b%4===3)&&e.s>=13){
+    const k=e.s-13, soft=name==='ballad'||name==='worship'||name==='neosoul';
+    if(soft){ if(e.s===15) eng.tom(e.t,0.28); }
+    else { eng.snare(e.t,[0.3,0.5,0.8][k]||0.5); if(e.s>=14) eng.tom(e.t+0.002,[0,0.45,0.7][k]||0.5); } }
+  if(CRASH_STYLES[name]&&bars>=8&&e.s===0&&b>0&&b%8===0&&(sd||1)) eng.crash(e.t,0.5);
+}
 const STYLES={
   pop:{color:'#e64980',label:'Pop',bpm:96,swing:0,gen:{back:'snare',hat:'hat',bass:'finger',keys:'piano',comp:'block',extra:'pad'},keysName:'Piano',extraName:'Pad',sends:{drums:0.06,keys:0.22,extra:0.35},
     play(E,e){ const {s,t}=e; let v;
@@ -1437,6 +1469,7 @@ function scheduleStep(eng, step, t, bd, live){
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
   eng.lockBass=!!(S.useHum && S.bassLine && S.bassLine.length);
   if(M.bar===16 || (M.bar===8 && style.bar8)) style.play(eng,e); else genericPlay(eng,e,style);
+  try{ phraseExtras(eng,e,style,M,e.sd); }catch(_){}
   if(eng.lockBass){ const tm=S.transpose>6?S.transpose-12:S.transpose, bt=(style.gen&&style.gen.bass)||'finger';
     for(const n of S.bassLine){ if(n.s===ss) eng.bass(t,n.m+tm,Math.max(1,n.l)*e.sd*0.95,0.95,bt,true); } }
   if(S.lead!=='none') soloStep(eng,e);
