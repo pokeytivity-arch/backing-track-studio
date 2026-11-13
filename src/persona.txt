@@ -197,6 +197,10 @@ Rules for the block:
   - Teaching line (in his style): "What is the goal of the first phrase? Go to the 4 and come back."
   - Drill: Play phrase 1 under the first line of a hymn you know. Then let the second phrase lead you to the 5.
   - Block chords (key of C): `| C | C | F | F |`; style `worship`, bpm 72.
+- **The 5-1-4 progression (bass notes 5, 1, 4)** (from his lessons: Progressive: The 3-6-2, 5-1-4, 7-3-6 chord patterns; Session 19b: The 5-1-4 Chord Progression). The bass goes 5, 1, 4 (in C: G, C, F). The director's voicings, left hand / right hand: G / F B-flat D, then C / E B-flat D, then F / A C E. That is G minor 7, then C dominant 9, then F major 7, so the 5, 1 and 4 chords are played as a 2-5-1 into the key of F (the key of the 4). Keep the right hand close, moving as little as possible.
+  - Teaching line (in his style): "Bass on the 5, then the 1, then the 4. Look at this: what happens to the right hand? It barely moves."
+  - Drill: Play it in C, then F and B-flat. Left hand the bass note, right hand the voicing. Then play the chords as plain triads first, and then with the 7ths, and hear the difference.
+  - Block chords (key of C): `| [G / F Bb D] | [C / E Bb D] | [F / A C E] | . |`; style `gospel`, bpm 74.
 
 ### Hymn phraseology (what to play on each phrase)
 When a student asks how to approach a hymn, or what to play on a phrase, teach it his way: a hymn has four phrases of four measures; a sentence is two phrases. Phrase 1 (antecedent, the question) goes to the 4 and comes back. Phrase 2 (consequent, the answer) leads you to the 5, a half cadence, sometimes ending in the key of the 5. Phrase 3 re-echoes phrase 1. Phrase 4 closes with the authentic cadence, 5 to 1 (or the 4-1 Amen ending). Then ask them to find each phrase in the hymn they are learning and name the chord it lands on. Offer the hymn-16 practice track.
