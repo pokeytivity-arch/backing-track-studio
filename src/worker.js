@@ -102,9 +102,16 @@ async function transcribePiano(request, env) {
   if (!up.ok) { const t = await up.text(); console.log('upload', up.status, t); return json({ error: 'upload_failed', status: up.status, detail: t.slice(0, 200) }, 502); }
   const file = await up.json();
   const fileUrl = (file.urls && file.urls.get) || file.url;
-  let pred = await fetch('https://api.replicate.com/v1/models/' + PIANO_MODEL + '/predictions', {
+  const mi = await fetch('https://api.replicate.com/v1/models/' + PIANO_MODEL, { headers: auth });
+  if (!mi.ok) { const t = await mi.text(); console.log('model', mi.status, t); return json({ error: 'model_lookup_failed', status: mi.status, detail: t.slice(0, 200) }, 502); }
+  const info = await mi.json(), ver = info.latest_version;
+  if (!ver || !ver.id) return json({ error: 'no_version' }, 502);
+  const props = (((ver.openapi_schema || {}).components || {}).schemas || {}).Input;
+  const names = props && props.properties ? Object.keys(props.properties) : [];
+  const field = names.includes('audio_input') ? 'audio_input' : (names.find(n => /audio|file|input/i.test(n)) || 'audio_input');
+  let pred = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST', headers: { ...auth, 'content-type': 'application/json', prefer: 'wait=50' },
-    body: JSON.stringify({ input: { audio_input: fileUrl } }),
+    body: JSON.stringify({ version: ver.id, input: { [field]: fileUrl } }),
   });
   if (!pred.ok) { const t = await pred.text(); console.log('predict', pred.status, t); return json({ error: 'predict_failed', status: pred.status, detail: t.slice(0, 200) }, 502); }
   pred = await pred.json();
