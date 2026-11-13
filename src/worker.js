@@ -99,14 +99,14 @@ async function transcribePiano(request, env) {
   const form = new FormData();
   form.append('content', new Blob([audio], { type: 'audio/wav' }), 'recording.wav');
   const up = await fetch('https://api.replicate.com/v1/files', { method: 'POST', headers: auth, body: form });
-  if (!up.ok) { console.log('upload', up.status, await up.text()); return json({ error: 'upload_failed', status: up.status }, 502); }
+  if (!up.ok) { const t = await up.text(); console.log('upload', up.status, t); return json({ error: 'upload_failed', status: up.status, detail: t.slice(0, 200) }, 502); }
   const file = await up.json();
   const fileUrl = (file.urls && file.urls.get) || file.url;
   let pred = await fetch('https://api.replicate.com/v1/models/' + PIANO_MODEL + '/predictions', {
     method: 'POST', headers: { ...auth, 'content-type': 'application/json', prefer: 'wait=50' },
     body: JSON.stringify({ input: { audio_input: fileUrl } }),
   });
-  if (!pred.ok) { console.log('predict', pred.status, await pred.text()); return json({ error: 'predict_failed', status: pred.status }, 502); }
+  if (!pred.ok) { const t = await pred.text(); console.log('predict', pred.status, t); return json({ error: 'predict_failed', status: pred.status, detail: t.slice(0, 200) }, 502); }
   pred = await pred.json();
   for (let i = 0; i < 40 && pred.status !== 'succeeded' && pred.status !== 'failed' && pred.status !== 'canceled'; i++) {
     await sleep(3000);

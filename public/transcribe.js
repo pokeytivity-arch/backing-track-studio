@@ -122,7 +122,7 @@ function parseMidi(ab){
 async function proTranscribe(buf){
   const wav=await wav16k(buf);
   const r=await fetch('/api/transcribe',{method:'POST',headers:{'content-type':'audio/wav'},body:wav});
-  if(!r.ok){ let e=''; try{ e=(await r.json()).error; }catch(_){} const err=new Error(e||('status '+r.status)); err.code=e; throw err; }
+  if(!r.ok){ let j={}; try{ j=await r.json(); }catch(_){} const err=new Error(j.error||('status '+r.status)); err.code=j.error; err.up=j.status; err.detail=j.detail; throw err; }
   return parseMidi(await r.arrayBuffer());
 }
 
@@ -138,14 +138,14 @@ async function transcribeBlob(blob,title){
         say('Listening with the piano model… this takes a minute, and it is worth the wait.');
         const pn=await proTranscribe(buf);
         if(pn.length>3){ S.raw=null; await showResult({blob,notes:pn,dur:buf.duration,title,long,fresh:true,pro:true}); saveItem({blob,notes:pn,dur:buf.duration,title:title||'Recording',pro:true}); return; }
-      }catch(e){ console.log('piano model unavailable',e); say(e&&e.code==='not_configured'?'The piano model is not switched on yet, so I am using the built-in note finder…':'The piano model could not be reached, so I am using the built-in note finder…'); }
+      }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; say('The piano model '+why+'. Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,2500)); }
       S.pro=false;
     }
     say('Loading the note-finder (first time only)…');
     const bp=await getModel();
     const mono=await toMono22k(buf);
     const careful=!!$('txCareful')&&$('txCareful').checked, passes=careful?[0,0.3,-0.3]:[0];
-    const base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:'');
+    let base; try{ base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:''); }catch(e){ if(/shader|webgl/i.test(String(e&&e.message))){ say('Retrying the note finder…'); base=await runPass(bp,mono,''); } else throw e; }
     let raw=base;
     if(careful){ const others=[]; for(let k=1;k<passes.length;k++){ const ratio=Math.pow(2,passes[k]/12), r=await runPass(bp,resample(mono,ratio),'pass '+(k+1)+' of '+passes.length); others.push({r,ratio}); } say('Comparing the passes…'); raw=fuse(base,others); }
     S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
