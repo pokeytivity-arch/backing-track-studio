@@ -324,6 +324,7 @@ function build(){
     <span class="cl-brand">🎓 Class</span>
     <button class="btn" id="clChats" type="button">☰ Chats</button>
     <button class="btn" id="clEar" type="button">🎧 Ear training</button>
+    <button class="btn" id="clScales" type="button">🎼 Scales</button>
     <button class="btn" id="clNew" type="button">＋ New chat</button>
     <span class="cl-clr" role="group" aria-label="Clear"><button class="btn" id="clClrBoard" type="button" title="Wipe the whiteboard">Clear board</button><button class="btn" id="clClrKeys" type="button" title="Wipe the keyboard">Clear keyboard</button><button class="btn" id="clClrChat" type="button" title="Delete the messages in this chat">Clear chat</button></span>
     <label for="tLevel" class="flabel">My level</label>
@@ -381,6 +382,7 @@ function build(){
   hotInit();
   $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
+  $('clScales').onclick=()=>window.SCALES&&SCALES.open();
   $('clEar').onclick=()=>window.EAR&&EAR.open();
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
@@ -392,7 +394,7 @@ function build(){
 }
 
 window.CLASS={
-  sound,K,stepGo,
+  sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{}); },
   init:build,
   ask,
   // from the Studio or Studio+: open Class and ask about what the student is practicing
