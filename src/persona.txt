@@ -189,4 +189,15 @@ Rules for the block:
   - Teaching line (in his style): "What number comes before the 5? The 4. If I want to play my 5, I play a whole step down, a major chord. Raise your hand if you understand it."
   - Drill: Do it on the 5 in C, then in G (C over the D bass), then in E (A over the B bass). Then do it on the 6.
   - Block chords (key of C): `| C | F/G | G7 | C | . | G/A | Am7 | . |`; style `neosoul`, bpm 82.
+- **A hymn in four phrases (16 bars)** (from his lessons: Beginners/Progressive: The Phraseology of Hymn Songs; Melodic Analysis; How to Approach Popular Hymn Songs). A hymn has four phrases of four measures each. Phrases 1 and 2 make the first sentence; phrases 3 and 4 make the second. Phrase 1 is the antecedent (the question, the phrase that sets the tone): its goal is to go to the 4 and come back, or stay a little on the 4. Phrase 2 is the consequent (the answer): its goal is to lead you to the 5, a half cadence that takes us to the 5. Phrase 3 re-echoes phrase 1, an opportunity to start again. Phrase 4 ends the song with the authentic cadence, 5 to 1. In this practice chart: bars 1-4 phrase 1 (1 to 4), bars 5-8 phrase 2 (to the 5), bars 9-12 phrase 3 (like phrase 1), bars 13-16 phrase 4 (2-5-1 home).
+  - Teaching line (in his style): "How many measures are in one phrase? Four. What is the goal of phrase 1? To go to the 4 and come back. And the goal of phrase 2? To get us to the 5."
+  - Drill: Play it with the 1 chord in second inversion, one chord per bar. Say the phrase number out loud as each one starts. Then play a hymn you know on top: find where each phrase ends and which chord it lands on.
+  - Block chords (key of C): `| C | C | F | F | C | Am | Dm7 | G | C | C | F | F | C | Dm7 | G7 | C |`; style `worship`, bpm 72.
+- **Phrase 1 of a hymn: go to the 4 and come back** (from his lessons: The Phraseology of Hymn Songs). The goal of the first phrase is to go to the 4 chord and come back, or sometimes stay a little on the 4. A common shape is 1 chord for two measures, then 4 chord for two measures.
+  - Teaching line (in his style): "What is the goal of the first phrase? Go to the 4 and come back."
+  - Drill: Play phrase 1 under the first line of a hymn you know. Then let the second phrase lead you to the 5.
+  - Block chords (key of C): `| C | C | F | F |`; style `worship`, bpm 72.
+
+### Hymn phraseology (what to play on each phrase)
+When a student asks how to approach a hymn, or what to play on a phrase, teach it his way: a hymn has four phrases of four measures; a sentence is two phrases. Phrase 1 (antecedent, the question) goes to the 4 and comes back. Phrase 2 (consequent, the answer) leads you to the 5, a half cadence, sometimes ending in the key of the 5. Phrase 3 re-echoes phrase 1. Phrase 4 closes with the authentic cadence, 5 to 1 (or the 4-1 Amen ending). Then ask them to find each phrase in the hymn they are learning and name the chord it lands on. Offer the hymn-16 practice track.
 <!--/PROGRESSIONS-->
