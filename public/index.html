@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#111a33">
+<meta name="theme-color" content="#0b0b0b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Pokeytivity Piano Suite</title>
@@ -16,7 +16,7 @@
 :root{
   /* Layout: a dark "stage" panel (now/next chord, beat, chart, transport) on top; below it a two-column workbench: chart + style + tempo on the left, mixer + library + export on the right. */
   --bg:#edf0f5; --surface:#ffffff; --ink:#151b28; --muted:#5a6479; --line:#d4dae5;
-  --accent:#2445d4; --accent-ink:#ffffff; --hi:#ffd43b; --hi-ink:#151b28; --danger:#c22e3a; --ok:#1d8448;
+  --accent:#b8892a; --accent-ink:#ffffff; --hi:#ffd43b; --hi-ink:#151b28; --danger:#c22e3a; --ok:#1d8448;
   --stage:#111a2f; --stage-2:#1b2642; --stage-ink:#f2f4fa; --stage-muted:#97a3c0;
   --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -27,14 +27,14 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0a0e17; --surface:#131a27; --ink:#e6eaf2; --muted:#98a2b7; --line:#253045;
-    --accent:#7390ff; --accent-ink:#0a0e17; --danger:#ff6f79; --ok:#4fc883;
+    --accent:#d4af37; --accent-ink:#0a0e17; --danger:#ff6f79; --ok:#4fc883;
     --stage:#060a14; --stage-2:#121a2e; --stage-ink:#f2f4fa; --stage-muted:#8490ab;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0a0e17; --surface:#131a27; --ink:#e6eaf2; --muted:#98a2b7; --line:#253045;
-  --accent:#7390ff; --accent-ink:#0a0e17; --danger:#ff6f79; --ok:#4fc883;
+  --accent:#d4af37; --accent-ink:#0a0e17; --danger:#ff6f79; --ok:#4fc883;
   --stage:#060a14; --stage-2:#121a2e; --stage-ink:#f2f4fa; --stage-muted:#8490ab;
   color-scheme:dark;
 }
@@ -71,7 +71,7 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .meter{display:grid;gap:10px;justify-items:end;text-align:right}
 .stage{position:relative}
 .corner-tools{position:absolute;top:18px;right:20px;display:flex;gap:8px;z-index:2}
-.icontog{height:42px;min-width:42px;padding:0 10px;border-radius:999px;border:2px solid #34446c;background:var(--stage-2);color:var(--stage-muted);display:inline-grid;place-items:center;cursor:pointer;transition:all .12s}
+.icontog{height:42px;min-width:42px;padding:0 10px;border-radius:999px;border:2px solid #6b5826;background:var(--stage-2);color:var(--stage-muted);display:inline-grid;place-items:center;cursor:pointer;transition:all .12s}
 .icontog svg{width:22px;height:22px}
 .icontog .cnt{font:800 12px/1 var(--display);letter-spacing:.06em;white-space:nowrap}
 .icontog:hover{color:var(--stage-ink);border-color:#5c6f9e}
@@ -84,18 +84,18 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .stage-tempo{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;padding:2px 0}
 .stage-tempo label,.stage-tempo .unit{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
 .stage-tempo input[type=range]{flex:1;min-width:180px;max-width:520px;accent-color:var(--hi)}
-.stage-tempo input[type=number]{width:76px;background:var(--stage-2);color:var(--stage-ink);border:1.5px solid #34446c;border-radius:8px;padding:6px 8px;font:800 18px var(--display);text-align:center}
+.stage-tempo input[type=number]{width:76px;background:var(--stage-2);color:var(--stage-ink);border:1.5px solid #6b5826;border-radius:8px;padding:6px 8px;font:800 18px var(--display);text-align:center}
 .stage-tempo .tapbig{min-width:72px;font-weight:800}
 .stage-tempo .tapbig:active{background:var(--hi);color:var(--hi-ink)}
 .stage.projector .stage-tempo{display:none}
 .stage-sync{margin-top:-4px}
-.stage-sync input[type=range]{accent-color:#91a7ff}
+.stage-sync input[type=range]{accent-color:#e8c25a}
 .stage-sync .syncval{min-width:76px;text-align:center;font:800 15px var(--display);color:var(--stage-ink)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .beats{display:flex;gap:clamp(10px,2.4vw,22px);justify-content:center;align-items:center;padding:4px 0}
-.beats i{width:clamp(38px,6vw,58px);height:clamp(38px,6vw,58px);border-radius:50%;background:var(--stage-2);border:3px solid #3a4a74;display:grid;place-items:center;
+.beats i{width:clamp(38px,6vw,58px);height:clamp(38px,6vw,58px);border-radius:50%;background:var(--stage-2);border:3px solid #6b5826;display:grid;place-items:center;
   font:800 clamp(16px,2.4vw,24px)/1 var(--display);font-style:normal;color:var(--stage-muted);transition:background .05s,transform .05s}
-.beats i.acc{border-color:#7f93c9;color:var(--stage-ink)}
+.beats i.acc{border-color:#c9a64a;color:var(--stage-ink)}
 .beats.many{gap:clamp(5px,1.2vw,12px);flex-wrap:wrap}
 .beats.many i{width:clamp(28px,4.2vw,44px);height:clamp(28px,4.2vw,44px);font-size:clamp(13px,1.8vw,18px)}
 .beats.many i.acc{margin-left:clamp(4px,1vw,10px)}
@@ -109,9 +109,9 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .bpmbig span{font:600 12px var(--body);letter-spacing:.12em;color:var(--stage-muted);margin-left:4px}
 
 .chart{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.bar{display:flex;min-width:calc(var(--L,16) * 9px);border-left:2px solid #34446c;padding-left:6px;gap:4px;align-items:stretch;flex:none}
+.bar{display:flex;min-width:calc(var(--L,16) * 9px);border-left:2px solid #6b5826;padding-left:6px;gap:4px;align-items:stretch;flex:none}
 .bar .cell{flex-shrink:0;white-space:nowrap}
-.bar:last-child{border-right:2px solid #34446c;padding-right:6px}
+.bar:last-child{border-right:2px solid #6b5826;padding-right:6px}
 .cell{font:700 16px/1 var(--display);padding:9px 10px;border-radius:8px;background:var(--stage-2);color:var(--stage-ink);min-width:44px;text-align:center}
 .cell.hold{color:var(--stage-muted);background:transparent;min-width:20px;padding:9px 4px}
 .cell.bad{outline:2px dashed var(--danger);color:#ffb3b9}
@@ -126,7 +126,7 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .stopbtn svg{width:20px;height:20px}
 .stopbtn:hover:not(:disabled){background:#ff5a64;color:#fff}
 .stopbtn:disabled{opacity:.35;cursor:default;border-color:#5c677d;color:#5c677d}
-.tog{background:transparent;border:1.5px solid #3a4a74;color:var(--stage-ink);border-radius:999px;padding:9px 14px;font-weight:500;font-size:14px}
+.tog{background:transparent;border:1.5px solid #6b5826;color:var(--stage-ink);border-radius:999px;padding:9px 14px;font-weight:500;font-size:14px}
 .tog[aria-pressed="true"]{background:var(--stage-2);border-color:var(--hi);color:var(--hi)}
 .tip{font-size:12.5px;color:var(--stage-muted);margin-left:auto}
 
@@ -146,7 +146,7 @@ textarea{width:100%;min-height:104px;resize:vertical;border:1.5px solid var(--li
 .help code{font:500 12.5px var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:0 4px}
 .err{font-size:13px;color:var(--danger);margin:0}
 .styles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
-.sty{--c:#2445d4;--d:color-mix(in srgb,var(--c) 62%,#000);position:relative;border:0;border-radius:14px;padding:12px 14px 13px;text-align:left;display:grid;gap:3px;color:#fff;
+.sty{--c:#b8892a;--d:color-mix(in srgb,var(--c) 62%,#000);position:relative;border:0;border-radius:14px;padding:12px 14px 13px;text-align:left;display:grid;gap:3px;color:#fff;
   background:linear-gradient(165deg,color-mix(in srgb,var(--c) 72%,#fff) 0%,var(--c) 48%,color-mix(in srgb,var(--c) 82%,#000) 100%);
   box-shadow:0 5px 0 var(--d),0 9px 16px -6px color-mix(in srgb,var(--c) 70%,transparent),inset 0 1px 0 rgba(255,255,255,.4);
   transform:translateY(0);transition:transform .09s ease,box-shadow .09s ease;text-shadow:0 1px 2px rgba(0,0,0,.28);margin-bottom:5px}
@@ -250,7 +250,7 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .savebox input[type=text],.savebox textarea{width:100%}
 .savebox textarea{min-height:60px;font:15px/1.4 var(--body)}
 .kbd{display:block;width:100%;height:auto}
-.stage-drums{background:radial-gradient(ellipse at 50% 30%,#1d2848,#0c1222 70%);border-radius:10px;padding:6px 8px}
+.stage-drums{background:radial-gradient(ellipse at 50% 30%,#1d2848,#0d0b07 70%);border-radius:10px;padding:6px 8px}
 .kit{display:block;width:100%;max-height:340px;height:auto}
 .kit .pad{cursor:pointer;transform-box:fill-box;transform-origin:center;outline:none}
 .kit .pad:focus-visible{filter:drop-shadow(0 0 4px #fff)}
@@ -271,7 +271,7 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .kit .tamb{fill:none;stroke:#e9ecef;stroke-width:6;stroke-dasharray:4 4}
 .kit .emoji{font-size:30px;text-anchor:middle}
 .kit .padlab{fill:var(--stage-muted);font:600 11px var(--body);text-anchor:middle;pointer-events:none}
-.stage-kbd{background:#0c1222;border-radius:10px;padding:8px;display:grid;gap:6px}
+.stage-kbd{background:#0d0b07;border-radius:10px;padding:8px;display:grid;gap:6px}
 .kbd-bar{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .fing-t{font:600 13px var(--body);color:var(--stage-muted);display:flex;gap:6px;align-items:center;margin-left:auto;margin-right:10px}.fing-line{font:600 13px var(--body);color:var(--stage-muted);min-height:18px}.fing-line b{color:var(--stage-ink)}
 .kbd-bar span{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
@@ -376,6 +376,7 @@ audio{width:100%}
 .t-form textarea{width:100%;resize:vertical;min-height:44px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div class="wrap">
@@ -539,13 +540,13 @@ audio{width:100%}
         <style>
         .tx .txrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
         .tx .txrow label{font:600 12px var(--body);color:var(--muted);display:flex;gap:6px;align-items:center}
-        .tx canvas{width:100%;height:250px;display:block;border-radius:10px;background:#0c1222;cursor:pointer}
+        .tx canvas{width:100%;height:250px;display:block;border-radius:10px;background:#0d0b07;cursor:pointer}
         .tx .btn.on{background:var(--danger);color:#fff}
         .tx #txSeek{flex:1;min-width:140px}
         .tx #txLegend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin:0 3px 0 8px;vertical-align:-1px}
         .tx .txitem{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.tx .txitem .txt{flex:1;min-width:160px;font:500 13px var(--body)}
         .tx #txTitle{font:600 13px var(--body)}
-        .tx .txwork{display:flex;gap:18px;align-items:center;margin:10px 0;padding:14px 16px;border:1.5px solid #34446c;border-radius:14px;background:linear-gradient(135deg,#0d1730,#141f3d)}
+        .tx .txwork{display:flex;gap:18px;align-items:center;margin:10px 0;padding:14px 16px;border:1.5px solid #6b5826;border-radius:14px;background:linear-gradient(135deg,#0d1730,#141f3d)}
         .tx .txwork[hidden]{display:none}
         .tx .eq{display:flex;gap:4px;align-items:flex-end;height:46px}
         .tx .eq i{width:6px;border-radius:3px;background:linear-gradient(#ffd84d,#ff9f43);height:12px;animation:txeq 1s ease-in-out infinite}
@@ -561,7 +562,7 @@ audio{width:100%}
         .tx .wline{display:flex;justify-content:space-between;margin-top:7px;font:600 13px var(--body);color:#9fb0d8}
         .tx .wpct{font:800 14px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums}
         .tx input[type=number]{width:64px}
-        .tx .stp{display:inline-flex;align-items:center;border:1.5px solid #34446c;border-radius:10px;overflow:hidden;background:#0b1224}
+        .tx .stp{display:inline-flex;align-items:center;border:1.5px solid #6b5826;border-radius:10px;overflow:hidden;background:#0b1224}
         .tx .stp button{width:34px;height:34px;border:0;background:#1b2745;color:#fff;font:800 18px var(--display);cursor:pointer}
         .tx .stp button:hover{background:#2a3b66}
         .tx .stp output,.tx .stpv{min-width:58px;text-align:center;font:800 17px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums;letter-spacing:.02em}
@@ -1670,7 +1671,7 @@ function syncTempo(){ $('bpm').value=S.bpm; $('bpmRange').value=S.bpm; $('bpmBig
 function renderStyles(){
   const w=$('styles'); w.replaceChildren();
   Object.entries(STYLES).forEach(([k,st])=>{ const b=document.createElement('button'); b.className='sty'; b.setAttribute('aria-pressed',S.style===k);
-    b.style.setProperty('--c',st.color||'#2445d4');
+    b.style.setProperty('--c',st.color||'#b8892a');
     const t=document.createElement('b'); t.textContent=st.label; const sp=document.createElement('span'); sp.textContent=`${styleBpm(st)} BPM${st.meter?' · '+st.meter:''}${st.swing&&!(MET().compound||MET().odd)?' · swung':''}`;
     b.append(t,sp); b.onclick=()=>{ const same=S.style===k; S.style=k;
       if(!same){ if(st.meter && S.meter!==st.meter){ setMeter(st.meter); toast(`${st.label} uses ${st.meter} time`); } else if(!st.meter && S.meter==='2/2'){ setMeter('4/4'); } }
@@ -2733,7 +2734,7 @@ function renderList(){
     const acts=document.createElement('div'); acts.className='acts';
     const lb=document.createElement('button'); lb.className='btn sm pri'; lb.textContent='Load'; lb.onclick=()=>loadTrack(it); acts.appendChild(lb);
     if(tab==='mine'){ const rn=document.createElement('button'); rn.className='btn sm'; rn.textContent='Rename'; rn.onclick=()=>{
-        const inp=document.createElement('input'); inp.type='text'; inp.value=it.title||''; inp.maxLength=80; inp.setAttribute('aria-label','Track name'); inp.style.cssText='width:100%;font:inherit;padding:4px 8px;border:1.5px solid var(--hi,#2445d4);border-radius:8px';
+        const inp=document.createElement('input'); inp.type='text'; inp.value=it.title||''; inp.maxLength=80; inp.setAttribute('aria-label','Track name'); inp.style.cssText='width:100%;font:inherit;padding:4px 8px;border:1.5px solid var(--hi,#b8892a);border-radius:8px';
         let done=false; const save=ok=>{ if(done) return; done=true; const nm=inp.value.trim().slice(0,80); if(ok&&nm){ const a=store.get('bt-mine',[]); if(a[i]){ a[i].title=nm; store.set('bt-mine',a); } toast('Renamed'); } renderList(); };
         inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); save(true); } else if(e.key==='Escape') save(false); }; inp.onblur=()=>save(true);
         tt.textContent=''; tt.appendChild(inp); inp.focus(); inp.select(); };

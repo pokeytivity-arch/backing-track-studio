@@ -1,0 +1,19 @@
+/* Black and gold theme. Loaded last so it overrides the blue tokens. */
+html:root:root:root{
+  --bg:#070707; --surface:#121110; --ink:#f3ead8; --muted:#b5a98a; --line:#3a3220;
+  --accent:#d4af37; --accent-ink:#111111; --hi:#e8c25a; --hi-ink:#111111; --danger:#ff7a6b; --ok:#6fcf8a;
+  --stage:#0a0a09; --stage-2:#16130c; --stage-ink:#f6eedc; --stage-muted:#b5a98a;
+  color-scheme:dark;
+}
+html:root:root:root body{color:var(--ink)}
+body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:var(--bg)}
+:root:root a{color:#e8c25a}
+::selection{background:#d4af37;color:#111}
+
+/* style tiles: brass and black instead of a rainbow */
+.sty{--c:#b8892a!important}
+.sty:nth-child(3n+2){--c:#8f6b1c!important}
+.sty:nth-child(3n){--c:#d4af37!important;color:#111}
+.sty:nth-child(3n) *{color:#111}
+#suiteHub .dcard .ic,#suiteHub .dcard[data-k] .ic{background:linear-gradient(160deg,#f3d77a,#b8892a 55%,#6e4f10)!important;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -6px 10px rgba(0,0,0,.3) inset,0 14px 24px -8px rgba(0,0,0,.7)!important}
+#suiteHub .dcard .ic svg{filter:brightness(.14) contrast(1.4)}
