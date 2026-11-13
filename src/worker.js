@@ -110,17 +110,25 @@ async function transcribePiano(request, env) {
   const names = props && props.properties ? Object.keys(props.properties) : [];
   const field = names.includes('audio_input') ? 'audio_input' : (names.find(n => /audio|file|input/i.test(n)) || 'audio_input');
   let pred = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST', headers: { ...auth, 'content-type': 'application/json', prefer: 'wait=50' },
+    method: 'POST', headers: { ...auth, 'content-type': 'application/json', },
     body: JSON.stringify({ version: ver.id, input: { [field]: fileUrl } }),
   });
   if (!pred.ok) { const t = await pred.text(); console.log('predict', pred.status, t); return json({ error: 'predict_failed', status: pred.status, detail: t.slice(0, 200) }, 502); }
   pred = await pred.json();
-  for (let i = 0; i < 40 && pred.status !== 'succeeded' && pred.status !== 'failed' && pred.status !== 'canceled'; i++) {
-    await sleep(3000);
-    const r = await fetch(pred.urls.get, { headers: auth });
-    pred = await r.json();
+  return json({ id: pred.id, status: pred.status });
+}
+async function pianoStatus(request, env) {
+  if (!env.REPLICATE_API_TOKEN) return json({ error: 'not_configured' }, 503);
+  const id = new URL(request.url).searchParams.get('id') || '';
+  if (!/^[a-z0-9]{10,40}$/i.test(id)) return json({ error: 'bad_id' }, 400);
+  const auth = { authorization: 'Bearer ' + env.REPLICATE_API_TOKEN };
+  const pred = await (await fetch('https://api.replicate.com/v1/predictions/' + id, { headers: auth })).json();
+  if (pred.status === 'failed' || pred.status === 'canceled') return json({ error: 'model_failed', detail: String(pred.error || pred.status).slice(0, 200) }, 502);
+  if (pred.status !== 'succeeded') {
+    const m = String(pred.logs || '').match(/(\d{1,3})\s*%/g);
+    const pct = m ? Math.min(99, parseInt(m[m.length - 1], 10)) : null;
+    return json({ status: pred.status, pct });
   }
-  if (pred.status !== 'succeeded') { console.log('pred', pred.status, pred.error); return json({ error: 'model_failed', detail: String(pred.error || pred.status) }, 502); }
   const urls = collectUrls(pred.output);
   urls.sort((a, b) => (/\.midi?(\?|$)/i.test(b) ? 1 : 0) - (/\.midi?(\?|$)/i.test(a) ? 1 : 0));
   for (const u of urls.slice(0, 4)) {
@@ -147,8 +155,7 @@ export default {
       try { return await teacher(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     if (url.pathname === '/api/transcribe') {
-      if (request.method !== 'POST') return json({ error: 'method' }, 405);
-      try { return await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+      try { return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     return env.ASSETS.fetch(request);
   },

@@ -119,11 +119,24 @@ function parseMidi(ab){
   }
   notes.sort((x,y)=>x.t-y.t||x.p-y.p); return notes.filter(n=>n.p>=21&&n.p<=108);
 }
-async function proTranscribe(buf){
+async function proTranscribe(buf,onProg){
+  const t0=Date.now(), est=40+Math.min(buf.duration,MAX_SEC)*0.6;
+  onProg(2,'Sending the recording…');
   const wav=await wav16k(buf);
+  const fail=async r=>{ let j={}; try{ j=await r.json(); }catch(_){} const err=new Error(j.error||('status '+r.status)); err.code=j.error; err.up=j.status; err.detail=j.detail; return err; };
   const r=await fetch('/api/transcribe',{method:'POST',headers:{'content-type':'audio/wav'},body:wav});
-  if(!r.ok){ let j={}; try{ j=await r.json(); }catch(_){} const err=new Error(j.error||('status '+r.status)); err.code=j.error; err.up=j.status; err.detail=j.detail; throw err; }
-  return parseMidi(await r.arrayBuffer());
+  if(!r.ok) throw await fail(r);
+  const {id}=await r.json(); if(!id) throw Object.assign(new Error('no id'),{code:'no_id'});
+  for(let i=0;i<150;i++){
+    await new Promise(res=>setTimeout(res,2500));
+    const q=await fetch('/api/transcribe?id='+encodeURIComponent(id));
+    if(!q.ok) throw await fail(q);
+    if((q.headers.get('content-type')||'').includes('midi')){ onProg(100,'Reading the notes…'); return parseMidi(await q.arrayBuffer()); }
+    const j=await q.json(), el=(Date.now()-t0)/1000;
+    if(j.status==='starting') onProg(Math.min(12,4+el/10),'Waking the piano model (first run can take a few minutes)…');
+    else { const pct=j.pct!=null?j.pct:Math.round(15+80*(1-Math.exp(-el/est))); onProg(Math.max(15,Math.min(97,pct)),'Listening to the piano…'); }
+  }
+  throw Object.assign(new Error('timeout'),{code:'timeout'});
 }
 
 async function transcribeBlob(blob,title){
@@ -135,8 +148,8 @@ async function transcribeBlob(blob,title){
     const long=buf.duration>MAX_SEC;
     if(!$('txPro')||$('txPro').checked){
       try{
-        say('Listening with the piano model… this takes a minute, and it is worth the wait.');
-        const pn=await proTranscribe(buf);
+        say('Starting the piano model… 0%');
+        const pn=await proTranscribe(buf,(p,m)=>say(m+' '+Math.round(p)+'%'));
         if(pn.length>3){ S.raw=null; await showResult({blob,notes:pn,dur:buf.duration,title,long,fresh:true,pro:true}); saveItem({blob,notes:pn,dur:buf.duration,title:title||'Recording',pro:true}); return; }
       }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; say('The piano model '+why+'. Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,2500)); }
       S.pro=false;
