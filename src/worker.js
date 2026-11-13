@@ -83,7 +83,7 @@ async function adminLessons(request, env) {
 
 
 /* ---------- Studio+ piano transcription (hosted piano model on Replicate) ---------- */
-const PIANO_MODEL = 'bytedance/piano-transcription';
+const PIANO_MODEL_DEFAULT = 'e7mac/piano_transcription'; // returns a MIDI file; override with env PIANO_MODEL
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function collectUrls(o, out = []) {
   if (typeof o === 'string') { if (/^https?:\/\//.test(o)) out.push(o); }
@@ -102,7 +102,7 @@ async function transcribePiano(request, env) {
   if (!up.ok) { const t = await up.text(); console.log('upload', up.status, t); return json({ error: 'upload_failed', status: up.status, detail: t.slice(0, 200) }, 502); }
   const file = await up.json();
   const fileUrl = (file.urls && file.urls.get) || file.url;
-  const mi = await fetch('https://api.replicate.com/v1/models/' + PIANO_MODEL, { headers: auth });
+  const mi = await fetch('https://api.replicate.com/v1/models/' + (env.PIANO_MODEL || PIANO_MODEL_DEFAULT), { headers: auth });
   if (!mi.ok) { const t = await mi.text(); console.log('model', mi.status, t); return json({ error: 'model_lookup_failed', status: mi.status, detail: t.slice(0, 200) }, 502); }
   const info = await mi.json(), ver = info.latest_version;
   if (!ver || !ver.id) return json({ error: 'no_version' }, 502);
@@ -111,7 +111,7 @@ async function transcribePiano(request, env) {
   const field = names.includes('audio_input') ? 'audio_input' : (names.find(n => /audio|file|input/i.test(n)) || 'audio_input');
   let pred = await fetch('https://api.replicate.com/v1/predictions', {
     method: 'POST', headers: { ...auth, 'content-type': 'application/json', },
-    body: JSON.stringify({ version: ver.id, input: { [field]: fileUrl } }),
+    body: JSON.stringify({ version: ver.id, input: { [field]: fileUrl, ...(names.includes('make_video') ? { make_video: false } : {}) } }),
   });
   if (!pred.ok) { const t = await pred.text(); console.log('predict', pred.status, t); return json({ error: 'predict_failed', status: pred.status, detail: t.slice(0, 200) }, 502); }
   pred = await pred.json();
