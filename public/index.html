@@ -283,6 +283,26 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
   .sheet-bar{display:none!important}
   .sheet-page{box-shadow:none;width:100%;margin:0;padding:0;border-radius:0}
 }
+.menubar{position:sticky;top:0;z-index:70;display:flex;gap:2px;align-items:center;padding:0 10px;height:36px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.menubar::-webkit-scrollbar{display:none}
+.menu-btn{border:0;background:transparent;color:var(--ink);font:500 14px var(--body);padding:5px 10px;border-radius:6px;white-space:nowrap;cursor:default}
+.menu-btn.brand{font-weight:800}
+.menu-btn:hover,.menu-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.menu-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.menu-pop{position:fixed;z-index:95;min-width:260px;max-width:92vw;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 12px 32px rgba(0,0,0,.22);display:grid}
+.menu-item{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;border:0;background:transparent;color:var(--ink);text-align:left;padding:7px 10px;border-radius:6px;font:14px var(--body);cursor:default}
+.menu-item:hover:not(:disabled),.menu-item:focus-visible{background:var(--accent);color:var(--accent-ink);outline:none}
+.menu-item:disabled{opacity:.4}
+.mi-check{font-weight:800;text-align:center}
+.mi-key{font:12px var(--mono);color:inherit;opacity:.6}
+.menu-sep{height:1px;background:var(--line);margin:4px 6px}
+.info-dlg{border:1px solid var(--line);border-radius:14px;padding:20px 22px;max-width:520px;background:var(--surface);color:var(--ink)}
+.info-dlg::backdrop{background:rgba(10,14,28,.5)}
+.info-dlg h2{margin:0 0 10px}
+.info-dlg table.keys{border-collapse:collapse;margin:6px 0 10px}
+.info-dlg table.keys td{padding:5px 12px 5px 0;font-size:14px}
+.info-dlg kbd{font:12px var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:2px 7px;background:var(--bg)}
+@media print{ .menubar,.menu-pop{display:none!important} }
 .credits{max-width:1200px;margin:8px auto 28px;padding:0 16px;font-size:12px;color:var(--muted);text-align:center}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:80;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
@@ -489,7 +509,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-g (pendulum synced to the counter)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-h (menu bar)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2169,6 +2189,121 @@ function setupDrums(){
 }
 
 /* =========================================================
+   Menu bar (File, Edit, View, Playback, Tools, Help)
+   ========================================================= */
+const goTo=id=>{ const el=$(id); if(!el) return; const card=el.closest('.card')||el; card.scrollIntoView({behavior:'smooth',block:'center'}); card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); };
+const press=id=>{ const el=$(id); if(el && !el.disabled) el.click(); };
+function setTempo(v){ S.bpm=clampBpm(v); if(P&&playing) P.bpm=S.bpm; syncTempo(); }
+function newTrack(){
+  if(S.chords.trim() && !confirm('Start a new, empty track? The current chart will be cleared. Save it to My tracks first if you want to keep it.')) return;
+  if(playing||paused) stop();
+  S.chords=''; S.title=''; S.bassLine=null; S.useHum=false; $('title').value=''; $('chords').value=''; humSync(); rebuild(); if(S.mode==='pro') renderGrid(); saveDraft(); toast('New track');
+}
+function infoDialog(title,html){
+  let d=$('infoDlg'); if(!d){ d=document.createElement('dialog'); d.id='infoDlg'; d.className='info-dlg'; document.body.appendChild(d); }
+  d.innerHTML=''; const h=document.createElement('h2'); h.textContent=title; const body=document.createElement('div'); body.innerHTML=html;
+  const c=document.createElement('button'); c.className='btn pri'; c.textContent='Close'; c.onclick=()=>d.close(); d.append(h,body,c); d.showModal();
+}
+const SHORTCUTS=[['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['Esc','Close a menu or leave projector view']];
+const MENUS=[
+  {label:'Backing Track Studio',brand:true,items:[
+    {label:'About Backing Track Studio',run:()=>infoDialog('Backing Track Studio',`<p>Type a chord chart, pick a style, and a band plays it. Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
+    {sep:true},
+    {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
+  {label:'File',items:[
+    {label:'New track',run:newTrack},
+    {sep:true},
+    {label:'Save to My tracks',run:()=>{ goTo('saveMine'); press('saveMine'); }},
+    {label:'Copy track code',run:()=>press('copyCode')},
+    {label:'Paste a track code…',run:()=>{ goTo('loadCodeBtn'); press('loadCodeBtn'); }},
+    {label:'Open the library',run:()=>goTo('list')},
+    {sep:true},
+    {label:'Make WAV file…',run:()=>goTo('renderBtn')},
+    {label:'Print sheet music / diagrams…',run:()=>press('sheetBtn')}]},
+  {label:'Edit',items:[
+    {label:'Transpose up ½ step',key:']',run:()=>press('trUp')},
+    {label:'Transpose down ½ step',key:'[',run:()=>press('trDown')},
+    {label:'Back to the original key',run:()=>press('trReset')},
+    {sep:true},
+    {label:'Undo hummed bass line',enabled:()=>!$('humUndo').hidden,run:()=>press('humUndo')},
+    {label:'Clear the chart',run:newTrack}]},
+  {label:'View',items:[
+    {label:'Easy mode',check:()=>S.mode==='easy',run:()=>setMode('easy')},
+    {label:'Professional mode',check:()=>S.mode==='pro',run:()=>setMode('pro')},
+    {sep:true},
+    {label:'Projector view',key:'P',check:()=>$('projBtn').getAttribute('aria-pressed')==='true',run:()=>press('projBtn')},
+    {label:'Keyboard',key:'K',check:()=>$('kbdBtn').getAttribute('aria-pressed')==='true',run:()=>press('kbdBtn')},
+    {label:'Keyboard size: 88 keys',check:()=>+S.kbdSize===88,run:()=>{ if($('kbdBtn').getAttribute('aria-pressed')!=='true') press('kbdBtn'); document.querySelector('#stageKbd button[data-k="88"]').click(); }},
+    {label:'Keyboard size: 76 keys',check:()=>+S.kbdSize===76,run:()=>{ if($('kbdBtn').getAttribute('aria-pressed')!=='true') press('kbdBtn'); document.querySelector('#stageKbd button[data-k="76"]').click(); }},
+    {label:'Keyboard size: 61 keys',check:()=>+S.kbdSize===61,run:()=>{ if($('kbdBtn').getAttribute('aria-pressed')!=='true') press('kbdBtn'); document.querySelector('#stageKbd button[data-k="61"]').click(); }}]},
+  {label:'Playback',items:[
+    {label:()=>playing?'Pause':'Play',key:'Space',run:toggle},
+    {label:'Stop',key:'S',enabled:()=>playing||!!paused,run:stop},
+    {sep:true},
+    {label:'Count-in',key:'C',check:()=>S.countIn,run:()=>press('countBtn')},
+    {label:'Metronome',key:'M',check:()=>S.metronome,run:()=>press('clickBtn')},
+    {sep:true},
+    {label:'Tap tempo',key:'T',run:()=>press('tapBtn')},
+    {label:'Tempo up 1 BPM',key:'=',run:()=>setTempo(S.bpm+1)},
+    {label:'Tempo down 1 BPM',key:'−',run:()=>setTempo(S.bpm-1)},
+    {label:'Speed trainer…',run:()=>goTo('trOn')}]},
+  {label:'Tools',items:[
+    {label:'Hum a bass line…',key:'H',run:()=>press('humJump')},
+    {sep:true},
+    ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
+    {sep:true},
+    {label:'Mixer…',run:()=>goTo('mix')},
+    {label:'Styles…',run:()=>goTo('styles')}]},
+  {label:'Help',items:[
+    {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
+    {label:'How to write a chord chart',run:()=>{ goTo('chords'); }},
+    {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
+];
+function MENUS_HELP_SHORTCUTS(){ infoDialog('Keyboard shortcuts','<table class="keys">'+SHORTCUTS.map(([k,v])=>`<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')+'</table><p class="help">Shortcuts work when you are not typing in a box.</p>'); }
+function buildMenubar(){
+  const bar=document.createElement('nav'); bar.className='menubar'; bar.setAttribute('role','menubar'); bar.setAttribute('aria-label','Studio menu');
+  let open=null;
+  const close=()=>{ if(!open) return; open.btn.setAttribute('aria-expanded','false'); open.pop.remove(); open=null; };
+  const show=(m,btn,focusFirst)=>{
+    close(); const pop=document.createElement('div'); pop.className='menu-pop'; pop.setAttribute('role','menu');
+    m.items.forEach(it=>{
+      if(it.sep){ const h=document.createElement('div'); h.className='menu-sep'; h.setAttribute('role','separator'); pop.appendChild(h); return; }
+      const b=document.createElement('button'); b.className='menu-item'; const isCheck=!!it.check;
+      b.setAttribute('role',isCheck?'menuitemcheckbox':'menuitem'); if(isCheck) b.setAttribute('aria-checked',String(!!it.check()));
+      const chk=document.createElement('span'); chk.className='mi-check'; chk.textContent=isCheck&&it.check()?'✓':'';
+      const lb=document.createElement('span'); lb.className='mi-label'; lb.textContent=typeof it.label==='function'?it.label():it.label;
+      const k=document.createElement('span'); k.className='mi-key'; k.textContent=it.key||'';
+      b.append(chk,lb,k); if(it.enabled && !it.enabled()){ b.disabled=true; }
+      b.onclick=()=>{ close(); it.run(); };
+      pop.appendChild(b); });
+    const r=btn.getBoundingClientRect(); pop.style.left=Math.max(6,Math.min(r.left,window.innerWidth-280))+'px'; pop.style.top=(r.bottom+4)+'px';
+    document.body.appendChild(pop); btn.setAttribute('aria-expanded','true'); open={m,btn,pop};
+    pop.addEventListener('keydown',ev=>{ const items=[...pop.querySelectorAll('.menu-item:not(:disabled)')], i=items.indexOf(document.activeElement);
+      if(ev.key==='ArrowDown'){ ev.preventDefault(); items[(i+1)%items.length].focus(); }
+      else if(ev.key==='ArrowUp'){ ev.preventDefault(); items[(i-1+items.length)%items.length].focus(); }
+      else if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ ev.preventDefault(); const bs=[...bar.querySelectorAll('.menu-btn')], j=bs.indexOf(btn), nb=bs[(j+(ev.key==='ArrowRight'?1:-1)+bs.length)%bs.length]; nb.focus(); show(MENUS[bs.indexOf(nb)],nb,true); }
+      else if(ev.key==='Escape'){ ev.preventDefault(); close(); btn.focus(); }
+      else if(ev.key==='Tab'){ close(); } });
+    if(focusFirst){ const f=pop.querySelector('.menu-item:not(:disabled)'); f&&f.focus(); }
+  };
+  MENUS.forEach(m=>{ const b=document.createElement('button'); b.className='menu-btn'+(m.brand?' brand':''); b.textContent=m.label; b.setAttribute('role','menuitem'); b.setAttribute('aria-haspopup','menu'); b.setAttribute('aria-expanded','false');
+    b.onclick=e=>{ e.stopPropagation(); if(open&&open.btn===b) close(); else show(m,b,e.detail===0); };
+    b.onmouseenter=()=>{ if(open&&open.btn!==b) show(m,b,false); };
+    b.onkeydown=ev=>{ if(ev.key==='ArrowDown'){ ev.preventDefault(); show(m,b,true); } };
+    bar.appendChild(b); });
+  document.addEventListener('click',e=>{ if(open && !open.pop.contains(e.target)) close(); });
+  window.addEventListener('resize',close); window.addEventListener('scroll',close,{passive:true});
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  document.body.prepend(bar);
+  // single-key shortcuts (not while typing, not with Ctrl/Cmd/Alt)
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey) return; if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; if(document.querySelector('dialog[open]')) return;
+    const k=e.key, map={s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>press('humJump'),
+      ']':()=>press('trUp'),'[':()=>press('trDown'),'=':()=>setTempo(S.bpm+1),'+':()=>setTempo(S.bpm+1),'-':()=>setTempo(S.bpm-1),'?':MENUS_HELP_SHORTCUTS};
+    const f=map[k.toLowerCase()]||map[k]; if(f){ e.preventDefault(); f(); } });
+}
+
+/* =========================================================
    Library: examples, class library (shared), my tracks (this browser)
    ========================================================= */
 let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
@@ -2317,7 +2452,7 @@ function init(){
   $('sheetModal').addEventListener('click',e=>{ if(e.target.id==='sheetModal') $('sheetModal').hidden=true; });
   $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
-  $('stopBtn').onclick=stop;
+  $('stopBtn').onclick=stop; buildMenubar();
   $('humPlay').onclick=()=>{ toggle(); $('stage').scrollIntoView({behavior:'smooth',block:'start'}); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
   $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
