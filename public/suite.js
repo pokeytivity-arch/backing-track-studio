@@ -226,7 +226,8 @@ function boot(){
   setInterval(()=>{ if(busyPlaying()) touchActive(); else idleCheck(); },60000);
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) idleCheck(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&hub.classList.contains('on')&&cur){ e.preventDefault(); go(cur); } },true);
-  const last=get(); if(last){ go(last); } else showHub();
+  const last=get(); if(last){ cur=null; document.body.dataset.dest=last; }
+  showHub();
 }
 // the menu bar is built by the main script on load; wait for it
 function ready(n){ if(document.querySelector('.menubar')&&typeof openPanel==='function'&&document.querySelector('[data-panel="teacher"]')) boot(); else if(n<80) setTimeout(()=>ready(n+1),50); else boot(); }
