@@ -420,6 +420,7 @@ audio{width:100%}
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
+      <button class="tog" id="txJump" onclick="openPanel('transcribe')">🎧 Transcribe a recording</button>
       <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
@@ -508,6 +509,47 @@ audio{width:100%}
         </div>
         <p class="help" id="humMsg"></p>
         <div class="row"><button class="btn pri" id="humPlay" hidden>▶ Play it</button><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
+      </section>
+
+      <section data-panel="transcribe" class="card tx" id="txCard">
+        <style>
+        .tx .txrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+        .tx .txrow label{font:600 12px var(--body);color:var(--muted);display:flex;gap:6px;align-items:center}
+        .tx canvas{width:100%;height:250px;display:block;border-radius:10px;background:#0d1320;cursor:pointer}
+        .tx .btn.on{background:var(--danger);color:#fff}
+        .tx #txSeek{flex:1;min-width:140px}
+        .tx #txTitle{font:600 13px var(--body)}
+        .tx input[type=number]{width:64px}
+        </style>
+        <div class="card-h"><h2>Transcribe a recording</h2><span class="help">Turns audio into notes</span></div>
+        <p class="help">Choose an audio file or record with the microphone. The Studio finds the notes and drops them onto a keyboard in time with the recording. Works best with one instrument or a clear piano part. It reads the first five minutes. Everything stays in your browser; the audio is not uploaded.</p>
+        <div class="txrow">
+          <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac" hidden>
+          <button class="btn rec" id="txRec">● Record with the microphone</button>
+        </div>
+        <p class="help" id="txMsg" aria-live="polite"></p>
+        <div id="txTitle"></div>
+        <canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
+        <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
+        <div class="txrow">
+          <label>Speed <select id="txSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.7">70%</option><option value="0.8">80%</option><option value="0.9">90%</option><option value="1" selected>100%</option><option value="1.1">110%</option><option value="1.25">125%</option></select></label>
+          <label>Transpose <select id="txTr"><option value="-12">-12</option><option value="-11">-11</option><option value="-10">-10</option><option value="-9">-9</option><option value="-8">-8</option><option value="-7">-7</option><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select></label>
+          <label>Look-ahead <select id="txLook"><option value="2">2 s</option><option value="4" selected>4 s</option><option value="8">8 s</option></select></label>
+          <label class="check"><input type="checkbox" id="txNames"> Note names</label>
+          <span class="help" id="txKey">Key: –</span>
+        </div>
+        <div class="txrow">
+          <label>Recording <input type="range" id="txMix" min="0" max="100" value="50" aria-label="Mix between the recording and the notes"> Notes</label>
+          <label>Tuning A4 <input type="number" id="txA4" min="415" max="466" value="440"> Hz</label>
+        </div>
+        <div class="txrow">
+          <button class="btn sm" id="txSetA">Loop start</button><button class="btn sm" id="txSetB">Loop end</button><button class="btn sm" id="txClearLoop" disabled>Clear loop</button>
+          <label class="check"><input type="checkbox" id="txMet"> Metronome</label>
+          <label><input type="number" id="txBpm" min="30" max="240" value="100"> BPM</label>
+          <label><select id="txBpb"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option></select> beats</label>
+          <button class="btn sm" id="txBeat1" title="Press at the first beat of a bar while the recording plays">Beat 1 is here</button>
+        </div>
+        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
       </section>
 
       <section data-panel="mixer" class="card">
@@ -2268,8 +2310,8 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',teacher:'Ask Piano Study Suite',mixer:'Mixer',library:'Library',export:'Export audio'};
-const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],teacher:[520,640],mixer:[560,470],export:[520,300]};
+const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Transcribe a recording',teacher:'Ask Piano Study Suite',mixer:'Mixer',library:'Library',export:'Export audio'};
+const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
 const winState=name=>store.get('bt-win-'+name,null);
@@ -2406,6 +2448,7 @@ const MENUS=[
     {label:'Soloist…',run:()=>openPanel('soloist')},
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
+    {label:'Transcribe a recording…',key:'R',run:()=>openPanel('transcribe')},
     {label:'Ask Piano Study Suite…',key:'A',run:()=>openPanel('teacher')},
     {sep:true},
     ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
@@ -2529,7 +2572,7 @@ function buildMenubar(){
   // single-key shortcuts (not while typing, not with Ctrl/Cmd/Alt)
   document.addEventListener('keydown',e=>{
     if(e.ctrlKey||e.metaKey||e.altKey) return; if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; if(document.querySelector('dialog[open]')) return;
-    const k=e.key, map={e:()=>openPanel('chart'),s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>openPanel('hum'),a:()=>openPanel('teacher'),
+    const k=e.key, map={e:()=>openPanel('chart'),s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>openPanel('hum'),r:()=>openPanel('transcribe'),a:()=>openPanel('teacher'),
       ']':()=>press('trUp'),'[':()=>press('trDown'),'=':()=>setTempo(S.bpm+1),'+':()=>setTempo(S.bpm+1),'-':()=>setTempo(S.bpm-1),'?':MENUS_HELP_SHORTCUTS};
     const f=map[k.toLowerCase()]||map[k]; if(f){ e.preventDefault(); f(); } });
 }
@@ -2732,5 +2775,6 @@ function init(){
 }
 init();
 </script>
+<script src="transcribe.js" defer></script>
 </body>
 </html>
