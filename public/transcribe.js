@@ -108,7 +108,9 @@ function detectKey(){
 }
 
 /* ---------- note range for the keyboard ---------- */
+const KB={61:[36,96],76:[28,103],88:[21,108]};
 function fitRange(){
+  if(S.kbd&&KB[S.kbd]){ S.lo=KB[S.kbd][0]; S.hi=KB[S.kbd][1]; return; }
   if(!S.notes.length){ S.lo=48; S.hi=84; return; }
   const ps=S.notes.map(n=>n.p).sort((a,b)=>a-b), lo=ps[Math.floor(ps.length*0.01)], hi=ps[Math.ceil(ps.length*0.99)-1];
   let a=Math.floor(lo/12)*12, b=Math.ceil((hi+1)/12)*12-1; while(b-a<35){ if(a>21) a-=12; if(b-a<35&&b<108) b+=12; if(a<=21&&b>=108) break; } S.lo=Math.max(21,a); S.hi=Math.min(108,b);
@@ -152,8 +154,8 @@ function draw(t){
   const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); const cs=getComputedStyle(document.documentElement);
   const bg=cs.getPropertyValue('--surface').trim()||'#fff', ink=cs.getPropertyValue('--ink').trim()||'#111', line=cs.getPropertyValue('--line').trim()||'#ccc';
   g.fillStyle='#0d1320'; g.fillRect(0,0,W,H);
-  const KH=Math.min(84,H*0.26), fallH=H-KH, lo=S.lo, hi=S.hi, whites=[]; for(let p=lo;p<=hi;p++) if(!isBlack(p)) whites.push(p);
-  const kw=W/whites.length, pos={}; whites.forEach((p,i)=>pos[p]={x:i*kw,w:kw}); for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.62; pos[p]={x:(left?left.x+kw:0)-bw/2,w:bw}; }
+  const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p); const kw=W/whites.length, KH=Math.max(56,Math.min(kw*4.6,H*0.42)), fallH=H-KH, lo=S.lo, hi=S.hi;
+  const pos={}; whites.forEach((p,i)=>pos[p]={x:i*kw,w:kw}); for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.64; pos[p]={x:(left?left.x+kw:0)-bw/2,w:bw}; }
   // octave guide lines
   g.strokeStyle='rgba(255,255,255,.06)'; g.lineWidth=1; for(const p of whites){ if(p%12===0){ g.beginPath(); g.moveTo(pos[p].x,0); g.lineTo(pos[p].x,fallH); g.stroke(); } }
   const look=S.look, pps=fallH/look, active=new Map();
@@ -167,11 +169,14 @@ function draw(t){
     g.fillStyle=`hsl(${hue} 85% ${on?62:50}%)`; const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill();
     if(on) active.set(p,hue);
     if(S.names&&h>13&&w>12){ g.fillStyle='#fff'; g.font=`600 ${Math.min(12,w*0.62)}px system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-3,fallH-3)); } }
-  // keyboard
-  g.fillStyle='#fff'; g.fillRect(0,fallH,W,KH);
-  for(const p of whites){ const b=pos[p]; if(active.has(p)){ g.fillStyle=`hsl(${active.get(p)} 85% 60%)`; g.fillRect(b.x,fallH,b.w,KH); } g.strokeStyle='#8a93a6'; g.strokeRect(b.x+.5,fallH+.5,b.w-1,KH-1);
-    if(S.names&&(p%12===0||active.has(p))){ g.fillStyle='#333'; g.font=`600 ${Math.min(11,kw*0.55)}px system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats)+(p%12===0?oct(p):''),b.x+b.w/2,fallH+KH-5); } }
-  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p]; g.fillStyle=active.has(p)?`hsl(${active.get(p)} 85% 45%)`:'#161a24'; g.fillRect(b.x,fallH,b.w,KH*0.62); }
+  // keyboard, drawn like the Studio keyboard: white keys with a dark outline, short black keys, C labels, note names on pressed keys
+  const rr=(x,y,w,h,r)=>{ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
+  const fs=Math.max(8,Math.min(12,kw*0.5));
+  for(const p of whites){ const b=pos[p], on=active.has(p); rr(b.x+0.5,fallH+0.5,b.w-1,KH-1,2); g.fillStyle=on?`hsl(${active.get(p)} 85% 55%)`:'#fff'; g.fill(); g.strokeStyle='#333'; g.lineWidth=1; g.stroke();
+    g.textAlign='center'; if(on){ g.fillStyle='#fff'; g.font=`700 ${fs}px Arial,sans-serif`; g.fillText(nm(p,flats),b.x+b.w/2,fallH+KH-5); }
+    if(p%12===0){ g.fillStyle=on?'#fff':'#999'; g.font=`${Math.max(7,fs-3)}px Arial,sans-serif`; g.textAlign='left'; g.fillText('C'+oct(p),b.x+3,fallH+KH-(on?fs+7:5)); } }
+  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62; rr(b.x,fallH,b.w,bh,1.5); g.fillStyle=on?`hsl(${active.get(p)} 85% 45%)`:'#222'; g.fill(); g.strokeStyle='#111'; g.lineWidth=0.8; g.stroke();
+    if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-4); } }
   g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2; g.beginPath(); g.moveTo(0,fallH); g.lineTo(W,fallH); g.stroke();
   if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.7)'; g.font='600 14px system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W/2,fallH/2); }
 }
@@ -201,6 +206,8 @@ function init(){
   $('txBack').onclick=()=>seek(S.loopA!=null?S.loopA:cur()-5);
   $('txSeek').oninput=e=>seek(+e.target.value/100);
   $('txSpeed').onchange=e=>{ S.rate=+e.target.value; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
+  try{ const k=+localStorage.getItem('tx-kbd'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
+  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd',e.target.value); }catch(_){} fitRange(); draw(cur()); };
   $('txLook').onchange=e=>{ S.look=+e.target.value; draw(cur()); };
   $('txTr').onchange=e=>{ S.tr=+e.target.value; resetSched(); draw(cur()); };
   $('txMix').oninput=e=>{ S.mixNote=+e.target.value/100; applyMix(); };
