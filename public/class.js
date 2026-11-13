@@ -178,7 +178,7 @@ function mic(){
 function renderChat(extra){
   const c=chat(), log=$('tLog'); log.textContent='';
   $('clName').textContent=c.title;
-  if(!c.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. How many of us are ready? Let's go!"); log.appendChild(d); }
+  if(!c.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. Are you ready? Let's go!"); log.appendChild(d); }
   c.log.forEach((m,i)=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot');
     if(m.role==='user') d.textContent=m.content;
     else { const sp=splitReply(m.content); d.innerHTML=tFormat(sp.text); const row=document.createElement('div'); row.className='cl-acts';
