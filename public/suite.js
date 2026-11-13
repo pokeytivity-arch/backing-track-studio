@@ -88,7 +88,7 @@ body[data-dest="class"] #psMini{display:flex}
  box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 -1px 0 rgba(0,0,0,.4) inset,0 2px 4px rgba(0,0,0,.35),0 18px 36px -8px rgba(0,0,0,.55),0 44px 70px -24px rgba(0,0,0,.6);
  transform-style:preserve-3d;transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .18s ease-out,box-shadow .25s,border-color .25s}
 #suiteHub .dcard:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px circle at var(--mx) var(--my),rgba(255,255,255,.16),transparent 55%);opacity:0;transition:opacity .25s}
-#suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px);background:linear-gradient(160deg,rgba(52,64,104,.86),rgba(14,20,40,.9) 62%);border-color:rgba(255,255,255,.4);box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -1px 0 rgba(0,0,0,.4) inset,0 4px 8px rgba(0,0,0,.35),0 30px 50px -10px rgba(0,0,0,.6),0 60px 90px -26px rgba(0,0,0,.65)}
+#suiteHub .dcard:hover{transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px);background:linear-gradient(160deg,rgba(52,64,104,.86),rgba(14,20,40,.9) 62%);border-color:rgba(255,255,255,.4);box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -1px 0 rgba(0,0,0,.4) inset,0 4px 8px rgba(0,0,0,.35),0 30px 50px -10px rgba(0,0,0,.6),0 60px 90px -26px rgba(0,0,0,.65)}
 #suiteHub .dcard:hover:before,#suiteHub .dcard:focus-visible:before{opacity:1}
 #suiteHub .dcard.last{border-color:rgba(255,212,59,.75);background:linear-gradient(160deg,rgba(74,60,20,.78),rgba(16,16,28,.88) 62%)}
 #suiteHub .dcard .ic{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;margin-bottom:6px;font-size:0;transform:translateZ(46px);
@@ -101,7 +101,7 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard .nm{font-size:27px;letter-spacing:-.01em;transform:translateZ(28px);text-shadow:0 2px 10px rgba(0,0,0,.45)}
 #suiteHub .dcard .bl{transform:translateZ(14px)}
 #suiteHub .dcard .go{align-self:flex-start;margin-top:4px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;transform:translateZ(30px);transition:background .2s,color .2s,border-color .2s}
-#suiteHub .dcard:hover .go,#suiteHub .dcard:focus-visible .go{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
+#suiteHub .dcard:hover .go{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
 #suiteHub .badge{transform:translateZ(40px);box-shadow:0 6px 14px -4px rgba(0,0,0,.5)}
 @media (prefers-reduced-motion:reduce),(hover:none){#suiteHub .dcard,#suiteHub .dcard:hover{transform:none}}
 
@@ -117,6 +117,24 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .sub{width:min(1240px,94vw);max-width:none;position:relative;left:50%;transform:translateX(-50%);font-size:clamp(14px,1.45vw,17px);display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;color:#d0d7e6;text-shadow:0 2px 10px rgba(0,0,0,.5)}
 #suiteHub .sub i{font-style:normal;color:var(--hi,#ffd43b);opacity:.9}
 @media (max-width:1060px){#suiteHub .sub{width:auto;left:0;transform:none;flex-direction:column;align-items:center;gap:4px}#suiteHub .sub i{display:none}}
+
+/* bold colour + spotlight */
+#suiteHub .dcard[data-k=class]{--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255}
+#suiteHub .dcard[data-k=studio]{--g1:#e0911a;--g2:#3b2205;--gl:255,190,70}
+#suiteHub .dcard[data-k=plus]{--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255}
+#suiteHub .dcard,#suiteHub .dcard.last{background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.45);
+ box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 -2px 0 rgba(0,0,0,.45) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -10px rgba(0,0,0,.75),0 60px 80px -28px rgba(0,0,0,.8)}
+#suiteHub .dcard.last{border-color:rgba(255,212,59,.9)}
+#suiteHub .dcard:after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:rgba(4,6,16,.62);opacity:0;transition:opacity .35s ease}
+#suiteHub .cards:has(.dcard:hover) .dcard:not(:hover):after{opacity:1}
+#suiteHub .cards:has(.dcard:hover) .dcard:not(:hover) .ph{filter:saturate(.6) brightness(.7)}
+#suiteHub .dcard:hover{background:linear-gradient(165deg,var(--g1) -20%,var(--g2) 68%);border-color:rgba(var(--gl),.95);
+ box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 -2px 0 rgba(0,0,0,.4) inset,0 0 0 1px rgba(var(--gl),.55),0 0 46px 2px rgba(var(--gl),.55),0 0 120px 10px rgba(var(--gl),.28),0 40px 60px -12px rgba(0,0,0,.8),0 80px 110px -30px rgba(0,0,0,.85)}
+#suiteHub .dcard:hover .ph{filter:saturate(1.2) brightness(1.12)}
+#suiteHub .dcard:hover .ic{box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -6px 10px rgba(0,0,0,.25) inset,0 0 28px 4px rgba(var(--gl),.8),0 18px 26px -10px rgba(0,0,0,.6)}
+#suiteHub .dcard:hover:before,#suiteHub .dcard:focus-visible:before{background:radial-gradient(520px circle at var(--mx) var(--my),rgba(255,255,255,.26),transparent 58%)}
+#suiteHub .dcard[data-k]:focus-visible:not(:hover){background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.8);outline:2px solid rgba(var(--gl),.55);outline-offset:3px}
+@media (hover:none){#suiteHub .dcard:after{display:none}}
 `; document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
