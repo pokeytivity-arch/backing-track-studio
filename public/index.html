@@ -314,7 +314,7 @@ audio{width:100%}
         <div class="seg dark" role="group" aria-label="Keyboard size"><button data-k="88">88 keys</button><button data-k="76">76 keys</button><button data-k="61">61 keys</button></div></div>
       <div id="kbdWrap"></div>
     </div>
-    <div class="stage-drums" id="stageDrums" hidden></div>
+    <div class="stage-drums" id="stageDrums" hidden style="display:none"></div>
     <div class="transport">
       <button class="play" id="playBtn" aria-label="Play">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="playIcon" d="M7 4.5v15l13-7.5z"/></svg>
@@ -324,7 +324,6 @@ audio{width:100%}
       <button class="tog" id="clickBtn" aria-pressed="false">Metronome</button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
-      <button class="tog" id="drumBtn" aria-pressed="false">🥁 Drums</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
       <span class="tip">Space bar plays and stops</span>
     </div>
@@ -467,7 +466,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-b (tempo and sync on the stage)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-c (drums removed from the stage)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2244,8 +2243,7 @@ function init(){
   $('sync').oninput=e=>{ S.sync=+e.target.value; showSync(); store.set('bt-sync',S.sync); };
   $('syncReset').onclick=()=>{ S.sync=SYNC_DEFAULT; showSync(); store.set('bt-sync',SYNC_DEFAULT); };
   setupDrums();
-  $('drumBtn').onclick=()=>{ const on=$('drumBtn').getAttribute('aria-pressed')!=='true'; $('drumBtn').setAttribute('aria-pressed',on); $('stageDrums').hidden=!on; store.set('bt-drums',on); };
-  if(store.get('bt-drums',false)){ $('drumBtn').setAttribute('aria-pressed','true'); $('stageDrums').hidden=false; }
+
   $('kbdBtn').onclick=()=>{ const on=$('kbdBtn').getAttribute('aria-pressed')!=='true'; $('kbdBtn').setAttribute('aria-pressed',on); $('stageKbd').hidden=!on; store.set('bt-kbd',on); stageKeys(playing&&curEi>=0?curEi:0); };
   if(store.get('bt-kbd',false)){ $('kbdBtn').setAttribute('aria-pressed','true'); $('stageKbd').hidden=false; }
   S.kbdSize=[88,76,61].includes(+store.get('bt-kbd-size',61))?+store.get('bt-kbd-size',61):61;
