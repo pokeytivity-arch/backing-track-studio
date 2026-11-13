@@ -18,8 +18,13 @@ function say(t,err){ const e=$('txMsg'); if(e){ e.textContent=t||''; e.style.col
 /* ---------- loading the model (only when first needed) ---------- */
 function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Could not load '+src)); document.head.appendChild(s); }); }
 let bpP=null;
+let noGL=false, proWhy='';
+function useSafeMode(){
+  if(!noGL){ noGL=true; const g=HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext=function(t,...a){ if(/webgl/i.test(t)) return null; return g.call(this,t,...a); }; }
+  window.BP=null; bpP=null;
+}
 async function getModel(){
-  if(!bpP) bpP=(async()=>{ if(!window.BP) await loadScript('vendor/basic-pitch.js'); return new window.BP.BasicPitch(new URL('vendor/basic-pitch/model.json',location.href).href); })();
+  if(!bpP) bpP=(async()=>{ if(!window.BP) await loadScript('vendor/basic-pitch.js'+(noGL?'?safe='+Date.now():'')); return new window.BP.BasicPitch(new URL('vendor/basic-pitch/model.json',location.href).href); })();
   return bpP;
 }
 
@@ -146,19 +151,20 @@ async function transcribeBlob(blob,title){
     const ab=await blob.arrayBuffer(), ctx=ensureCtx();
     const buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab.slice(0),res,()=>rej(new Error('This audio file could not be read. Try an mp3, m4a, wav or ogg file.'))));
     const long=buf.duration>MAX_SEC;
+    proWhy='';
     if(!$('txPro')||$('txPro').checked){
       try{
         say('Starting the piano model… 0%');
         const pn=await proTranscribe(buf,(p,m)=>say(m+' '+Math.round(p)+'%'));
         if(pn.length>3){ S.raw=null; await showResult({blob,notes:pn,dur:buf.duration,title,long,fresh:true,pro:true}); saveItem({blob,notes:pn,dur:buf.duration,title:title||'Recording',pro:true}); return; }
-      }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; say('The piano model '+why+'. Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,2500)); }
+      }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; proWhy='The piano model '+why+'.'; say(proWhy+' Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,1500)); }
       S.pro=false;
     }
     say('Loading the note-finder (first time only)…');
     const bp=await getModel();
     const mono=await toMono22k(buf);
     const careful=!!$('txCareful')&&$('txCareful').checked, passes=careful?[0,0.3,-0.3]:[0];
-    let base; try{ base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:''); }catch(e){ if(/shader|webgl/i.test(String(e&&e.message))){ say('Retrying the note finder…'); base=await runPass(bp,mono,''); } else throw e; }
+    let base; try{ base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:''); }catch(e){ if(/shader|webgl|context/i.test(String(e&&e.message))){ say('Your graphics card rejected the note finder. Switching to a slower safe mode…'); useSafeMode(); const bp2=await getModel(); base=await runPass(bp2,mono,''); } else throw e; }
     let raw=base;
     if(careful){ const others=[]; for(let k=1;k<passes.length;k++){ const ratio=Math.pow(2,passes[k]/12), r=await runPass(bp,resample(mono,ratio),'pass '+(k+1)+' of '+passes.length); others.push({r,ratio}); } say('Comparing the passes…'); raw=fuse(base,others); }
     S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
@@ -190,7 +196,7 @@ function showResult({blob,notes,dur,title,long,fresh,pro}){
   setNorm(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
   $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; $('txClearLoop').disabled=false;
-  say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
+  say((proWhy?proWhy+' ':'')+(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.'),!!proWhy);
   draw(0);
 }
 
