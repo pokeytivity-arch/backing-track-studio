@@ -110,7 +110,12 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .transport{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .play{display:inline-flex;align-items:center;gap:10px;background:var(--hi);color:var(--hi-ink);border:0;border-radius:999px;padding:12px 26px 12px 20px;font:800 18px var(--display)}
 .play svg{width:22px;height:22px}
-.play.on{background:#ff5a64;color:#fff}
+.play.on{background:#ff922b;color:#1a0f00}
+.play.paused{box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 40%,transparent)}
+.stopbtn{width:50px;height:50px;border-radius:50%;border:2px solid #ff5a64;background:transparent;color:#ff5a64;display:inline-grid;place-items:center;cursor:pointer}
+.stopbtn svg{width:20px;height:20px}
+.stopbtn:hover:not(:disabled){background:#ff5a64;color:#fff}
+.stopbtn:disabled{opacity:.35;cursor:default;border-color:#5c677d;color:#5c677d}
 .tog{background:transparent;border:1.5px solid #3a4a74;color:var(--stage-ink);border-radius:999px;padding:9px 14px;font-weight:500;font-size:14px}
 .tog[aria-pressed="true"]{background:var(--stage-2);border-color:var(--hi);color:var(--hi)}
 .tip{font-size:12.5px;color:var(--stage-muted);margin-left:auto}
@@ -337,10 +342,13 @@ audio{width:100%}
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="playIcon" d="M7 4.5v15l13-7.5z"/></svg>
         <span id="playTxt">Play</span>
       </button>
+      <button class="stopbtn" id="stopBtn" aria-label="Stop" title="Stop and go back to the start" disabled>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
-      <span class="tip">Space bar plays and stops</span>
+      <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
 
@@ -481,7 +489,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-e (swinging metronome)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-f (play, pause, stop)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1293,6 +1301,7 @@ function tick(){
       }
     }
     scheduleStep(E,P.step,t,bd,true);
+    (P.hist||(P.hist=[])).push([P.step,t,P.sub]); if(P.hist.length>160) P.hist.splice(0,80);
     P.step++; P.sub=(P.sub+1)%4; if(P.sub===0) P.beatTime+=bd;
   }
 }
@@ -1300,8 +1309,9 @@ async function ensureCtx(){
   if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC(); E=new Engine(ctx); }
   if(ctx.state!=='running') await ctx.resume();
 }
-let starting=false;
+let starting=false, paused=null;
 async function play(){
+  if(paused) return resume();
   if(!song || !song.steps){ toast('Add some chords first'); return; }
   if(starting) return;
   try{ await ensureCtx(); }catch(err){ toast('This browser blocked audio. Tap Play again.'); return; }
@@ -1312,12 +1322,35 @@ async function play(){
   P={step:S.countIn?-MET().bar:0,sub:0,beatTime:ctx.currentTime+0.1,bpm:S.bpm};
   uiQ=[]; playing=true; ticker.start(); tick(); setPlayUI(); requestAnimationFrame(draw);
 }
+function silenceEngine(){
+  if(!E) return; const g=E.master.gain; g.setTargetAtTime(0.0001,ctx.currentTime,0.03); const old=E; setTimeout(()=>{ try{old.master.disconnect();}catch(_){}},400);
+  const keep={vo:old.vo,sq:old.sq,lastBass:old.lastBass,lastShout:old.lastShout,appr:old.appr,lseed:old.lseed,rr:old.rr};
+  E=new Engine(ctx); return keep;
+}
 function stop(){
-  playing=false; ticker.stop(); uiQ=[];
-  if(E){ const g=E.master.gain; g.setTargetAtTime(0.0001,ctx.currentTime,0.03); const old=E; setTimeout(()=>{ try{old.master.disconnect();}catch(_){}},400); E=new Engine(ctx); }
+  playing=false; paused=null; ticker.stop(); uiQ=[];
+  silenceEngine();
   setPlayUI(); renderStage(null);
 }
-function toggle(){ playing?stop():play(); }
+/* Pause: stop the sound right where it is and remember the spot */
+function pause(){
+  if(!playing) return;
+  const now=ctx.currentTime, h=(P.hist||[]).find(x=>x[1]>now+0.005);   // first step not heard yet
+  const at=h?{step:h[0],sub:h[2]}:{step:P.step,sub:P.sub};
+  playing=false; ticker.stop(); uiQ=[]; drumQ=[];
+  const keep=silenceEngine();
+  paused={...at,bpm:P.bpm,keep};
+  setPlayUI(); pendulumIdle();
+}
+function resume(){
+  const z=paused; paused=null; if(!z) return play();
+  E.applyMix(S.mix,STYLES[S.style]); Object.assign(E,z.keep||{});
+  E.viz=(pad,t,v,x)=>{ if(!$('stageDrums').hidden && !(S.mix.drums.mute) ) drumQ.push({t,pad,v,open:pad==='hat'&&x===true}); };
+  const bpm=S.bpm, bd=60/bpm*MET().q, start=ctx.currentTime+0.08;
+  P={step:z.step,sub:z.sub,bpm,beatTime:start-swingOff(z.sub,z.step<0?0:effSwing(STYLES[S.style]))*bd};
+  uiQ=[]; playing=true; ticker.start(); tick(); setPlayUI(); requestAnimationFrame(draw);
+}
+function toggle(){ playing?pause():play(); }
 
 /* =========================================================
    UI rendering
@@ -1385,10 +1418,12 @@ function rebuild(){
   saveDraft();
 }
 function setPlayUI(){
-  if($('humPlay')) $('humPlay').textContent=playing?'■ Stop':'▶ Play it';
-  $('playBtn').classList.toggle('on',playing); $('playTxt').textContent=playing?'Stop':'Play';
-  $('playBtn').setAttribute('aria-label',playing?'Stop':'Play');
-  $('playIcon').setAttribute('d',playing?'M6 5h12v14H6z':'M7 4.5v15l13-7.5z');
+  if($('humPlay')) $('humPlay').textContent=playing?'❚❚ Pause':'▶ Play it';
+  const lbl=playing?'Pause':'Play';
+  $('playBtn').classList.toggle('on',playing); $('playBtn').classList.toggle('paused',!!paused); $('playTxt').textContent=lbl;
+  $('playBtn').setAttribute('aria-label',playing?'Pause':paused?'Play from where you paused':'Play');
+  $('playIcon').setAttribute('d',playing?'M6.5 5h3.8v14H6.5zM13.7 5h3.8v14h-3.8z':'M7 4.5v15l13-7.5z');
+  $('stopBtn').disabled=!(playing||paused);
 }
 function syncTempo(){ $('bpm').value=S.bpm; $('bpmRange').value=S.bpm; $('bpmBig').firstChild.nodeValue=S.bpm; setPendulumTempo(); saveDraft(); }
 function renderStyles(){
@@ -2275,6 +2310,7 @@ function init(){
   $('sheetModal').addEventListener('click',e=>{ if(e.target.id==='sheetModal') $('sheetModal').hidden=true; });
   $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
+  $('stopBtn').onclick=stop;
   $('humPlay').onclick=()=>{ toggle(); $('stage').scrollIntoView({behavior:'smooth',block:'start'}); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
   $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
