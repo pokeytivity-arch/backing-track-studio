@@ -545,6 +545,7 @@ audio{width:100%}
         <div class="txrow">
           <label>Recording <input type="range" id="txMix" min="0" max="100" value="50" aria-label="Mix between the recording and the notes"> Notes</label>
           <label>Tuning A4 <input type="number" id="txA4" min="415" max="466" value="440"> Hz</label>
+          <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="50" aria-label="How many notes to find"> <span id="txSensV" class="help">Balanced</span></label>
         </div>
         <div class="txrow">
           <button class="btn sm" id="txSetA">Loop start</button><button class="btn sm" id="txSetB">Loop end</button><button class="btn sm" id="txClearLoop" disabled>Clear loop</button>
@@ -553,7 +554,7 @@ audio{width:100%}
           <label><select id="txBpb"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option></select> beats</label>
           <button class="btn sm" id="txBeat1" title="Press at the first beat of a bar while the recording plays">Beat 1 is here</button>
         </div>
-        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
+        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
         <h3 style="margin:14px 0 4px;font:700 13px var(--body)">Your saved transcriptions</h3>
         <div id="txLib"></div>
       </section>

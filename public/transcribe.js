@@ -30,6 +30,35 @@ async function toMono22k(buf){
   const off=new OfflineAudioContext(1,n,sr), src=off.createBufferSource(); src.buffer=buf; src.connect(off.destination); src.start(0);
   const out=await off.startRendering(); return out.getChannelData(0);
 }
+
+/* ---------- note finding: sensitivity + cleanup ---------- */
+function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
+function extract(raw,s){
+  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), minLen=Math.max(2,Math.round(8.5-7*s));
+  const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thr,thr,minLen,true,null,null,false)));
+  const notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.p>=21&&n.p<=108);
+  return cleanup(notes,s);
+}
+function keyPcs(notes){
+  if(notes.length<8) return null; const h=new Array(12).fill(0); notes.forEach(n=>h[n.p%12]+=n.d*(0.5+n.a));
+  let best=null; for(let r=0;r<12;r++){ for(const [prof,minor] of [[MAJ,0],[MIN,1]]){ let sx=0,sy=0,sxx=0,syy=0,sxy=0; for(let i=0;i<12;i++){ const x=h[(i+r)%12],y=prof[i]; sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y; } const d=Math.sqrt((sxx-sx*sx/12)*(syy-sy*sy/12)), c=d?(sxy-sx*sy/12)/d:0; if(!best||c>best.c) best={c,r,minor}; } }
+  if(best.c<0.5) return null;
+  const sc=best.minor?[0,2,3,5,7,8,10,11]:[0,2,4,5,7,9,11]; return new Set(sc.map(i=>(i+best.r)%12));
+}
+function cleanup(notes,s){
+  const minD=0.14-0.1*s, minA=0.34-0.3*s; // lower sensitivity: stricter
+  let n=notes.filter(x=>x.d>=minD).sort((a,b)=>a.t-b.t||a.p-b.p);
+  // overtone ghosts: short notes an octave, twelfth or two octaves above a stronger note that starts together
+  n=n.filter(x=>!(x.d<0.3&&n.some(m=>m!==x&&Math.abs(m.t-x.t)<0.06&&m.d>x.d*1.5&&m.a>=x.a*0.8&&[12,19,24,28,31].includes(x.p-m.p))));
+  // merge repeats: the same pitch re-found after a tiny gap, without a stronger new onset, is one note
+  const last={}, out=[];
+  for(const x of n){ const l=last[x.p]; if(l&&x.t-(l.t+l.d)<0.07&&x.a<=l.a*1.15){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } const c={...x}; last[x.p]=c; out.push(c); }
+  // drop weak notes
+  let r=out.filter(x=>x.a>=minA||x.d>=0.4);
+  // key-aware: short, quiet notes outside the key are most likely mistakes
+  const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.25||x.a>=0.5);
+  return r.sort((a,b)=>a.t-b.t||a.p-b.p);
+}
 async function transcribeBlob(blob,title){
   if(S.busy) return; S.busy=true; stopPlay(); setBusy(true);
   try{
@@ -43,17 +72,15 @@ async function transcribeBlob(blob,title){
     const frames=[],onsets=[],contours=[];
     say('Listening… 0%');
     await bp.evaluateModel(mono,(f,o,c)=>{ frames.push(...f); onsets.push(...o); contours.push(...c); },p=>say('Listening… '+Math.round(p*100)+'%'));
-    const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(contours,window.BP.outputToNotesPoly(frames,onsets,0.3,0.3,5,true,null,null,false)));
-    let notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.d>=0.06&&n.p>=21&&n.p<=108).sort((a,b)=>a.t-b.t||a.p-b.p);
-    // drop short ghost notes that are just overtones (an octave, 12th or two octaves above a stronger note that starts at the same time)
-    notes=notes.filter(n=>!(n.d<0.3&&notes.some(m=>m!==n&&Math.abs(m.t-n.t)<0.06&&m.d>n.d*1.5&&m.a>=n.a*0.8&&[12,19,24,28,31].includes(n.p-m.p))));
-    await showResult({blob,notes,dur:buf.duration,title,long});
+    S.raw={frames,onsets,contours}; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
+    await showResult({blob,notes,dur:buf.duration,title,long,fresh:true});
     saveItem({blob,notes,dur:buf.duration,title:title||'Recording'});
   }catch(e){ say(e&&e.message?e.message:'Something went wrong while reading the audio.',true); }
   finally{ S.busy=false; setBusy(false); }
 }
 
-function showResult({blob,notes,dur,title,long}){
+function showResult({blob,notes,dur,title,long,fresh}){
+  if(!fresh) S.raw=null; S.baseNotes=notes; S.itemId=null; loadPiano();
   if(S.url) URL.revokeObjectURL(S.url);
   S.url=URL.createObjectURL(blob); S.notes=notes; S.dur=dur; S.title=title||'Recording';
   stopPlay(); if(S.audio){ S.audio.pause(); }
@@ -62,7 +89,7 @@ function showResult({blob,notes,dur,title,long}){
   S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
   assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
-  $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txClearLoop').disabled=false;
+  $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txClearLoop').disabled=false;
   say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
   draw(0);
 }
@@ -71,7 +98,7 @@ function showResult({blob,notes,dur,title,long}){
 let dbP=null;
 function db(){ if(!dbP) dbP=new Promise((res,rej)=>{ const r=indexedDB.open('bts-transcribe',1); r.onupgradeneeded=()=>r.result.createObjectStore('items',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); return dbP; }
 const tx=(mode,fn)=>db().then(d=>new Promise((res,rej)=>{ const t=d.transaction('items',mode), st=t.objectStore('items'), q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }));
-async function saveItem(it){ try{ const id=Date.now()+'-'+Math.random().toString(36).slice(2,6); try{ localStorage.setItem('tx-last',id); }catch(_){} await tx('readwrite',st=>st.put({id,when:Date.now(),title:it.title,dur:it.dur,notes:it.notes,blob:it.blob})); renderLib(); }catch(e){ say('Done, but this browser would not save it to your library (private browsing?).',true); } }
+async function saveItem(it){ try{ const id=Date.now()+'-'+Math.random().toString(36).slice(2,6); S.itemId=id; try{ localStorage.setItem('tx-last',id); }catch(_){} await tx('readwrite',st=>st.put({id,when:Date.now(),title:it.title,dur:it.dur,notes:it.notes,blob:it.blob})); renderLib(); }catch(e){ say('Done, but this browser would not save it to your library (private browsing?).',true); } }
 async function renderLib(){
   const box=$('txLib'); if(!box) return; let items=[]; try{ items=(await tx('readonly',st=>st.getAll()))||[]; }catch(e){ box.textContent='Your library is not available in this browser mode.'; return; }
   items.sort((a,b)=>b.when-a.when); box.textContent='';
@@ -120,11 +147,49 @@ function fitRange(){
 const cur=()=>S.audio?S.audio.currentTime:0;
 function applyMix(){ const m=S.mixNote; if(S.audio) S.audio.volume=Math.min(1,Math.max(0,1-m*1.0)); if(S.gain) S.gain.gain.value=Math.min(1,m*1.2+0.0001); }
 function freq(p){ return S.a4*Math.pow(2,(p-69)/12); }
+let pianoReady=false;
+function loadPiano(){ try{ if(typeof BANK==='undefined'||typeof loadBank!=='function') return; if(BANK.ready){ pianoReady=true; return; } loadBank(S.ac).then(()=>{ pianoReady=!!BANK.ready; }); }catch(_){} }
+// one piano note, from the Studio's own recorded piano samples (nearest sample, pitch-shifted), into any context
+function pianoNote(ac,dest,midi,at,dur,vel,a4){
+  const keys=BANK.keys.piano, buf=BANK.buf.piano; let k=keys[0]; for(const x of keys) if(Math.abs(x-midi)<Math.abs(k-midi)) k=x;
+  const src=ac.createBufferSource(); src.buffer=buf[k]; src.playbackRate.value=Math.pow(2,(midi-k)/12)*(a4/440);
+  const v=Math.max(0.05,Math.min(1,vel)), g=ac.createGain(), lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1800+6000*Math.min(1,v*1.6);
+  const hold=Math.max(0.15,dur), end=Math.min(at+hold+0.25,at+2.4);
+  g.gain.setValueAtTime(0.9*(0.25+0.75*v),at); g.gain.setValueAtTime(0.9*(0.25+0.75*v),Math.min(at+hold,end-0.05)); g.gain.exponentialRampToValueAtTime(0.0001,end);
+  src.connect(lp); lp.connect(g); g.connect(dest); src.start(at); src.stop(end+0.05);
+}
 function playNote(p,at,dur,vel){
+  const m=p+S.tr;
+  if(pianoReady&&BANK.ready&&BANK.keys.piano){ pianoNote(S.ac,S.gain,m,at,dur/S.rate,vel,S.a4); return; }
   const ac=S.ac, o=ac.createOscillator(), o2=ac.createOscillator(), g=ac.createGain();
-  o.type='triangle'; o2.type='sine'; const f=freq(p+S.tr); o.frequency.value=f; o2.frequency.value=f*2;
+  o.type='triangle'; o2.type='sine'; const f=freq(m); o.frequency.value=f; o2.frequency.value=f*2;
   const v=0.08+0.22*Math.min(1,vel), end=at+Math.max(0.12,dur/S.rate); g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(v,at+0.01); g.gain.exponentialRampToValueAtTime(v*0.35,at+Math.min(0.4,(end-at)*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,end+0.12);
   const g2=ac.createGain(); g2.gain.value=0.25; o.connect(g); o2.connect(g2); g2.connect(g); g.connect(S.gain); o.start(at); o2.start(at); o.stop(end+0.15); o2.stop(end+0.15);
+}
+// Save the notes as a clean piano WAV file (transposition and tuning applied)
+async function saveWav(){
+  if(!S.notes.length) return; const btn=$('txWav'); btn.disabled=true; const old=btn.textContent; btn.textContent='Making the audio file…';
+  try{
+    const ac=ensureCtx(); if(typeof loadBank==='function') await loadBank(ac); if(!(BANK.ready&&BANK.keys.piano)) throw new Error('The piano sounds did not load. Reload and try again.');
+    const sr=44100, len=Math.ceil((S.dur+3)*sr), off=new OfflineAudioContext(2,len,sr), mast=off.createGain(); mast.gain.value=0.7; mast.connect(off.destination);
+    S.notes.forEach(n=>pianoNote(off,mast,n.p+S.tr,n.t,n.d,n.a,S.a4));
+    const r=await off.startRendering(); let L=r.getChannelData(0), R=r.getChannelData(1), end=L.length; while(end>sr&&Math.abs(L[end-1])<0.0005&&Math.abs(R[end-1])<0.0005) end--;
+    end=Math.min(L.length,end+Math.round(sr*0.3)); let pk=0; for(let i=0;i<end;i++){ pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i])); } const gn=pk>0?0.89/pk:1; const data=new DataView(new ArrayBuffer(44+end*4)); const w=(o,t)=>{ for(let i=0;i<t.length;i++) data.setUint8(o+i,t.charCodeAt(i)); };
+    w(0,'RIFF'); data.setUint32(4,36+end*4,true); w(8,'WAVEfmt '); data.setUint32(16,16,true); data.setUint16(20,1,true); data.setUint16(22,2,true); data.setUint32(24,sr,true); data.setUint32(28,sr*4,true); data.setUint16(32,4,true); data.setUint16(34,16,true); w(36,'data'); data.setUint32(40,end*4,true);
+    for(let i=0;i<end;i++){ data.setInt16(44+i*4,Math.max(-1,Math.min(1,L[i]*gn))*32767,true); data.setInt16(46+i*4,Math.max(-1,Math.min(1,R[i]*gn))*32767,true); }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data.buffer],{type:'audio/wav'})); a.download=(S.title||'recording').replace(/[^\w\- ]+/g,'')+' (piano).wav'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },2000);
+    say('Saved a clean piano version of the notes as a WAV file.');
+  }catch(e){ say(e&&e.message?e.message:'Could not make the audio file.',true); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+}
+// move the sensitivity slider: look again at the original analysis when it is still here, otherwise just tidy harder
+function applySens(){
+  if(!S.audio) return; const s=sensVal(); let notes;
+  if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
+  S.notes=notes; stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
+  $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; draw(cur());
+  say(notes.length+' notes at this sensitivity.'+(S.raw?'':' (On a reopened recording the slider can only remove notes.)'));
+  if(S.itemId){ const id=S.itemId; tx('readwrite',st=>{ const q=st.get(id); q.onsuccess=()=>{ if(q.result){ q.result.notes=notes; st.put(q.result); } }; }).catch(()=>{}); }
 }
 function click(at,accent){ const ac=S.ac, o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=accent?1500:1000; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(accent?0.6:0.4,at+0.002); g.gain.exponentialRampToValueAtTime(0.0001,at+0.05); o.connect(g); g.connect(S.ac.destination); o.start(at); o.stop(at+0.06); }
 function resetSched(){ S.sched.clear(); S.metNext=null; }
@@ -249,7 +314,8 @@ function init(){
   $('txBpm').onchange=e=>{ S.bpm=Math.max(30,Math.min(240,+e.target.value||100)); e.target.value=S.bpm; resetSched(); };
   $('txBpb').onchange=e=>{ S.bpb=+e.target.value; resetSched(); };
   $('txBeat1').onclick=()=>{ S.metOrigin=cur(); resetSched(); say('Beat 1 is now at '+fmt(cur())+'.'); draw(cur()); };
-  $('txMidi').onclick=downloadMidi;
+  $('txMidi').onclick=downloadMidi; $('txWav').onclick=saveWav;
+  $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=['Fewer notes','Fewer notes','Balanced','More notes','More notes'][Math.min(4,Math.floor(sensVal()*5))]; };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
   new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
