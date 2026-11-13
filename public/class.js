@@ -195,6 +195,21 @@ function applyBoard(sp,force){ if(sp.board||force){ const c=chat(); if(sp.board)
   if(sp.keys) setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{}); }
 function restoreRoom(){ const c=chat(); renderBoard(c.board||null); if(c.keys&&c.keys.steps&&c.keys.steps.length) setSteps(c.keys.title,c.keys.steps.map(s=>({...s})),{}); else setSteps('',[],{}); }
 let pendingCtx=null;
+
+const HOT=[
+ {id:'phraseology',t:'Hymn phraseology',q:'Teach me the phraseology of a hymn: antecedent and consequent, the four phrases, and what to play on each phrase.'},
+ {id:'melody',t:'Melody determination',q:'Teach me melody determination: how do I find the notes of a melody by ear? Walk me through it step by step.'},
+ {id:'bass',t:'Bass note determination',q:'Teach me bass note determination: how do I find the bass note under a melody? Walk me through it step by step.'},
+ {id:'scales34',t:'The 3+4 scale method',q:'Teach me the 3+4 method of learning scales, including how knowing C gives me G, D gives me A, and E gives me B.'},
+ {id:'neighborhood',t:'The neighborhood method',q:'Teach me the neighborhood method of learning chords in C major.'},
+ {id:'run736',t:'7-3-6-2-5-1-4-3-6-2-5-1',q:'Teach me the full 7-3-6-2-5-1-4-3-6-2-5-1 progression and how to know which key I am in.'},
+ {id:'251',t:'The 2-5-1 progression',q:'Teach me the 2-5-1 progression.'},
+ {id:'cadences',t:'Cadences',q:'Teach me cadences: perfect, plagal, and deceptive, and how to play them.'}];
+let hotCounts={};
+function hotDraw(){ const box=$('hotL'); if(!box) return; const list=HOT.map((h,i)=>({h,i,n:hotCounts[h.id]||0})).sort((a,b)=>b.n-a.n||a.i-b.i);
+  box.innerHTML=''; list.forEach((x,r)=>{ const b=document.createElement('button'); b.type='button'; b.className='hot-b'+(r===0&&x.n>0?' top':''); b.textContent=x.h.t+' '; const s=document.createElement('i'); s.textContent=x.n+' '+(x.n===1?'view':'views'); b.appendChild(s);
+    b.onclick=()=>{ hotCounts[x.h.id]=(hotCounts[x.h.id]||0)+1; try{ fetch('/api/hot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:x.h.id})}).catch(()=>{}); }catch(e){} ask(x.h.q); }; box.appendChild(b); }); }
+function hotInit(){ hotDraw(); try{ fetch('/api/hot').then(r=>r.json()).then(d=>{ hotCounts=d.counts||{}; hotDraw(); }).catch(()=>{}); }catch(e){} }
 async function ask(q,opts){
   q=(q||'').trim(); if(!q||busy) return; stopSpeak();
   if(opts&&opts.fresh){ const c=chat(); if(c.log.length){ newChat(); restoreRoom(); } }
@@ -265,6 +280,7 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-term{font-weight:800;margin-right:8px;color:#b34100}
 .cl-chord{font:800 inherit;font-family:var(--display);color:#c2410c;background:#fff1e6;border:1.5px solid #f4b183;border-radius:8px;padding:0 7px;margin:0 1px;cursor:pointer}
 .cl-chord:hover{background:#ffe0c7}
+.hot{width:100%;margin:0 0 8px}.hot-h{font:800 15px var(--display);color:#ffd54a;margin-bottom:6px}.hot-h span{font:500 12px system-ui;color:#a9b6cf;margin-left:6px}.hot-l{display:flex;flex-wrap:wrap;gap:6px}.hot-b{border:1px solid #f0b3a0;background:linear-gradient(180deg,#fff7f2,#ffe9df);color:#7a2a10;border-radius:999px;padding:7px 12px;font:600 14px system-ui;cursor:pointer;display:inline-flex;gap:7px;align-items:center}.hot-b:hover{background:#ffe0d2}.hot-b i{font:700 11px system-ui;font-style:normal;background:#fff;border-radius:99px;padding:1px 7px;color:#b4421f}.hot-b.top{border-color:#e8743f;box-shadow:0 0 0 2px rgba(232,116,63,.18)}
 .cl-empty{display:grid;gap:6px;color:#5b6577;font-size:15px}.cl-empty b{font:800 20px var(--display);color:#1c4fa0}
 .cl-tray{height:12px;margin:10px -10px 0;background:#aab4c6;border-radius:0 0 14px 14px;display:flex;gap:8px;align-items:center;padding-left:18px}
 .cl-tray i{display:block;width:34px;height:5px;border-radius:3px}
@@ -337,6 +353,7 @@ function build(){
       <div class="cl-chatname" id="clName"></div>
       <div id="tLog" class="t-log" aria-live="polite"></div>
       <div class="t-chips" id="tChips">
+        <div class="hot" id="hot"><div class="hot-h">🔥 Hot topics <span>the more students open a topic, the higher it climbs</span></div><div class="hot-l" id="hotL"></div></div>
         <button class="btn chip" type="button">Explain the chords in my chart</button>
         <button class="btn chip" type="button">Teach me the 2-5-1 progression</button>
         <button class="btn chip" type="button">Quiz me on what I'm learning</button>
@@ -359,6 +376,7 @@ function build(){
   $('tInput').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); ask($('tInput').value); } };
   $('tCopyAll').onclick=()=>{ const c=chat(); if(!c.log.length){ toast('Nothing to copy yet'); return; } tCopy(c.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:splitReply(m.content).text)).join('\n\n')); };
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>ask(b.textContent));
+  hotInit();
   $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });

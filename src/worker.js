@@ -143,12 +143,28 @@ async function pianoStatus(request, env) {
   return json({ error: 'no_midi', detail: JSON.stringify(pred.output).slice(0, 180) }, 502);
 }
 
+const HOT_IDS = ['phraseology','melody','bass','scales34','neighborhood','run736','251','cadences'];
+async function hotTopics(request, env) {
+  let counts = {};
+  try { counts = (await env.LESSONS.get('hot', 'json')) || {}; } catch (e) {}
+  if (request.method === 'POST') {
+    let id = ''; try { id = String((await request.json()).id || ''); } catch (e) {}
+    if (!HOT_IDS.includes(id)) return json({ error: 'bad_id' }, 400);
+    counts[id] = (counts[id] || 0) + 1;
+    try { await env.LESSONS.put('hot', JSON.stringify(counts)); } catch (e) {}
+  }
+  return json({ counts }, 200);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/admin/lessons') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405);
       try { return await adminLessons(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
+    if (url.pathname === '/api/hot') {
+      try { return await hotTopics(request, env); } catch (e) { console.log(e); return json({ counts: {} }, 200); }
     }
     if (url.pathname === '/api/teacher') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405);
