@@ -159,6 +159,7 @@ function renderHub(){
   });
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
+  try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
 }
 function showHub(){ renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }

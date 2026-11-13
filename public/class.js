@@ -208,9 +208,10 @@ const HOT=[
 let hotCounts={};
 function hotDraw(){ const box=$('hotL'); if(!box) return; const list=HOT.map((h,i)=>({h,i,n:hotCounts[h.id]||0})).sort((a,b)=>b.n-a.n||a.i-b.i);
   box.innerHTML=''; list.forEach((x,r)=>{ const b=document.createElement('button'); b.type='button'; b.className='hot-b'+(r===0&&x.n>0?' top':''); b.textContent=x.h.t+' '; const s=document.createElement('i'); s.textContent=x.n+' '+(x.n===1?'view':'views'); b.appendChild(s);
-    b.onclick=()=>{ hotCounts[x.h.id]=(hotCounts[x.h.id]||0)+1; try{ fetch('/api/hot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:x.h.id})}).catch(()=>{}); }catch(e){} ask(x.h.q); }; box.appendChild(b); }); }
+    b.onclick=()=>{ hotCounts[x.h.id]=(hotCounts[x.h.id]||0)+1; try{ if(window.PSPROG) PSPROG.topic(x.h.id); }catch(_){} try{ fetch('/api/hot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:x.h.id})}).catch(()=>{}); }catch(e){} ask(x.h.q); }; box.appendChild(b); }); }
 function hotInit(){ hotDraw(); try{ fetch('/api/hot').then(r=>r.json()).then(d=>{ hotCounts=d.counts||{}; hotDraw(); }).catch(()=>{}); }catch(e){} }
 async function ask(q,opts){
+  try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
   q=(q||'').trim(); if(!q||busy) return; stopSpeak();
   if(opts&&opts.fresh){ const c=chat(); if(c.log.length){ newChat(); restoreRoom(); } }
   busy=true; $('tSend').disabled=true; const c=chat(); c.log.push({role:'user',content:q}); if(c.title==='New chat') c.title=autoTitle(c.log); c.when=Date.now(); renderChat({cls:'bot wait',text:'Thinking…'});
