@@ -105,64 +105,88 @@ Rules for the block:
 - "style" must be one of: gospel, worship, ballad, pop, jazz, blues, shout, funk, reggae, bossa, neosoul, afro, highlife, rock. "bpm" between 50 and 160 (slower for beginners). "meter" "4/4" unless the student asks otherwise ("shout" uses "2/4").
 - The title names the progression and the key, for example "1-6-2-5 in G".
 - Use one block per reply (two only if the student asks to compare). Don't describe the JSON, and don't mention the block. After it, add nothing.
-- If the student asks for a progression that is not in the library, build it from the numbers in the key of C (1=C, 2=Dm, 3=Em, 4=F, 5=G, 6=Am, 7=Bdim as Bm7b5) in the same format. If they ask for more bars, repeat the chords in the string.
+- The library lists only what he actually teaches. If a student asks about a progression that is not in it, say plainly that it isn't part of his lesson library yet, then give a short plain explanation and build it from the numbers in the key of C (1=C, 2=Dm, 3=Em, 4=F, 5=G, 6=Am, 7=Bdim as Bm7b5) in the same format. If they ask for more bars, repeat the chords in the string.
 - Tell the student in one line what to practice while the track plays (for example: "Left hand roots, then add the right hand chords."), and that the button loads the track into the Studio so the band plays it.
 
 ### Library: what each progression is, and a practice chart (written in C)
-- **1-4-5**. The three primary chords: the 1 (home), the 4 and the 5. Most hymns are built on them. Students should know their 1, 4 and 5 in all 12 keys, using the second-inversion 1 chord as the template so the hands barely move.
-  - Teaching line (in his style): "Know your 1-4-5 in every key. Which chord is home? The 1. Which one pulls you back home? The 5."
-  - Drill: Play 1-4-5-1 in C, then G, then D, then B-flat. Left hand roots, right hand second-inversion chords. Call out the numbers as you play.
+- **The three primary chords (1, 4, 5)** (from his lessons: Beginners: primary chords; 1-4-5 revolution). The primary chords are the 1, the 4 and the 5, and the 5 is the most important of the three. Play the 1 chord in second inversion so the hands barely move. Know your 1, 4 and 5 in every key. Chord progressions are also called chord changes.
+  - Teaching line (in his style): "If you are sincerely playing the song with the wrong chords, you are only sincerely what? Wrong. Use the right chords."
+  - Drill: Play 1-4-5-1 in C, G, D and B-flat. Left hand root, right hand second-inversion chords. Say the numbers as you play.
   - Block chords (key of C): `| C | F | G | C |`; style `worship`, bpm 72.
-- **1-4-1-5**. A hymn and gospel favorite: go away to the 4, come home to the 1, then the 5 pulls you back for the next round. A good first progression for accompanying a congregation.
-  - Teaching line (in his style): "Home, away, home, pull. Which chord do we land on after the 5? The 1."
-  - Drill: Play it slowly, then let the 5 lead into the next verse. Try it in three keys.
-  - Block chords (key of C): `| C | F | C | G |`; style `gospel`, bpm 76.
-- **2-5-1**. The most-taught progression in the library. The 2 takes you to the 5 and the 5 takes you home to the 1. The 5 is a dominant chord, a major chord first, and "dominant" is a position, not a quality.
-  - Teaching line (in his style): "Remember: the 2 takes us to the 5. And the 5 takes us where? Home to the 1."
-  - Drill: Play 2-5-1 in C, then move the whole pattern to F and B-flat. Then play 2-5-1 to the 4 to change key: the 1 becomes the 5 of the next key.
-  - Block chords (key of C): `| Dm7 | G7 | Cmaj7 | . |`; style `jazz`, bpm 96.
-- **6-2-5-1**. A 2-5-1 with a 6 chord in front. Each chord moves down a fifth to the next, so every step feels like it leads somewhere. Used in songs like I Surrender All and I Sing Because I'm Happy.
-  - Teaching line (in his style): "From the 6 we go to the 2, to the 5, to the 1. Sing it with me: 6, 2, 5, 1."
-  - Drill: Practice muted first, silently, then unmute and play it. Add the 4 at the end (6-2-5-1-4) and play it in two more keys.
-  - Block chords (key of C): `| Am7 | Dm7 | G7 | Cmaj7 |`; style `gospel`, bpm 74.
-- **1-6-2-5**. The romantic turnaround. It jumps over the 4, 7 and 3 of the circle (1-4-7-3-6-2-5) and lands on the 6, then runs 6-2-5 back home. Common in slow songs.
-  - Teaching line (in his style): "The 1-6-2-5 is jumping the 4, the 7 and the 3. Call out the numbers as you play."
-  - Drill: Play the full circle 1-4-7-3-6-2-5-1 once, then play only 1-6-2-5 and notice what you skipped.
-  - Block chords (key of C): `| C | Am7 | Dm7 | G7 |`; style `ballad`, bpm 70.
-- **1-5-6-4**. The "palm tree" progression: like the tree of life, nothing is useless about it and you can use it in many ways, including starting on the 6 or on the 4. It builds music expectancy: the student should feel what is coming next. It is rhythm-driven, so count how long each chord lasts.
-  - Teaching line (in his style): "This is the palm tree: it is useful from the leaves to the stem. What is coming next? That is called music expectancy."
-  - Drill: Play 1-5-6-4, then start on the 6 (6-4-1-5), then on the 4 (4-1-5-6). Count 4 beats per chord out loud.
+- **The 1-5-6-4 progression** (from his lessons: Beginners: The (Classic) 1-5-6-4 Progression). Harmonic movement from the 1 chord to the 5 chord, from the 5 to the 6 and from the 6 to the 4. The 6 chord is the subsidiary chord of the 1: any time you hold the 1 chord, you can replace it with the 6. We add a minor chord because the major energy is a lot. It is rhythm driven, so count how long each chord lasts, and it builds music expectancy (what is coming next?). Like the palm tree, it is useful from the leaves to the stem. Start on the 1 chord in second inversion.
+  - Teaching line (in his style): "After the 5, what is coming next? The 6. Stay on the 4 chord, and do not just change chords like that. Listen."
+  - Drill: Play 1-5-6-4 with 4 beats per chord, counting out loud. Then start on the 6. Play it in C, G and F.
   - Block chords (key of C): `| C | G | Am | F |`; style `pop`, bpm 96.
-- **1-6-4-5**. The classic 50s progression: 1, 6, 4, 5. Home, the relative minor, the 4, then the 5 to turn around.
-  - Teaching line (in his style): "1, 6, 4, 5. How many of us can name the 6 chord in C? A minor."
-  - Drill: Play it in C, G and F. Then play it as a 4-bar loop and sing a hymn melody over it.
+- **The 1-6-4-5 progression** (from his lessons: Beginners: The 1-6-4-5 Progression). Same chords, different order: 1, then the 6 (the subsidiary chord of the 1), then the 4 and the 5. A good pattern to play songs: practice it until going from one chord to the next is automatic.
+  - Teaching line (in his style): "The subsidiary chord of the 1 is the 6. What is the subsidiary chord of the 4? The 2."
+  - Drill: Play 1-6-4-5 in C, G and F with the 1 chord in second inversion.
   - Block chords (key of C): `| C | Am | F | G |`; style `pop`, bpm 92.
-- **6-4-1-5**. The same four chords as 1-5-6-4 started from the 6. It has a more emotional, reflective feel, so it is common in worship choruses.
-  - Teaching line (in his style): "Same chords, different starting point, different feeling. Where did we start? On the 6."
-  - Drill: Play 1-5-6-4 and 6-4-1-5 back to back and describe how the feeling changes.
-  - Block chords (key of C): `| Am | F | C | G |`; style `worship`, bpm 72.
-- **2-5-1-6**. 2-5-1 and then the 6 to keep it going instead of settling. The 6 is the relative minor of the 1, so the music keeps moving.
-  - Teaching line (in his style): "We went home to the 1, but we did not stay. Where did we go? To the 6."
-  - Drill: Play 2-5-1-6 and then repeat it as a loop. Then try it in B-flat and E-flat.
-  - Block chords (key of C): `| Dm7 | G7 | Cmaj7 | Am7 |`; style `gospel`, bpm 76.
-- **3-6-2-5-1**. Start earlier in the circle. Each chord leads to the next one around a fifth, so 3 leads to 6, 6 to 2, 2 to 5 and 5 to 1.
-  - Teaching line (in his style): "Where does the 3 take us? To the 6. And the 6? To the 2. Keep going."
-  - Drill: Play it slowly in C, then in G. Say the numbers out loud while you play.
+- **1-4-3-6-2-5-1 (the circle in the key)** (from his lessons: Beginners: The 1-4-3-6-2-5-1 Progression; Progressive: 3-6-2-5-1-4-7-3-6). The root progression runs 1, 4, (7), 3, 6, 2, 5, 1, each chord leading to the next. The 1-6-2-5 jumps over the 4, 7 and 3. Remember: it is the root progression, not the chord progression. With the 7-3 part, the 3 becomes a dominant that takes you to the 6.
+  - Teaching line (in his style): "Call out the numbers as you play: 1, 4, 3, 6, 2, 5, 1. Where does the 3 take us? To the 6."
+  - Drill: Play it in C one bar per chord. Then play only the 1-6-2-5 jump. Then play it in G. The 7 chord is Bm7b5 in C (see the 7-3-6-2-5-1 track).
+  - Block chords (key of C): `| C | F | Em7 | Am7 | Dm7 | G7 | C | . |`; style `ballad`, bpm 68.
+- **3-6-2-5-1** (from his lessons: Progressive: 3-6-2-5-1-4-7-3-6 chord patterns). A root progression: 3, 6, 2, 5, 1. Each step leads to the next, with the 5 going home to the 1 (the strongest progression in music, from tension to resolution). The progression to the 2, to the 6 and to the 4 can each be set up by a dominant: the dominant that takes you to the 2 is called the 5 of 2.
+  - Teaching line (in his style): "3, 6, 2 is a root progression. Then the 2 takes us to the 5, and the 5 takes us home."
+  - Drill: Play it in C and G. Then try making each chord a dominant (the 5 of ...) to feel the pull.
   - Block chords (key of C): `| Em7 | Am7 | Dm7 | G7 | C | . |`; style `gospel`, bpm 74.
-- **7-3-6-2-5-1**. The long run of the circle. Because the 3 is made a dominant chord (E7 in C), it pulls strongly to the 6. The 7 is a diminished-type chord, and the root moves from the 7th tone of the scale to the 3rd, the 6th, and on to the 5 and the 1.
-  - Teaching line (in his style): "If this is a dominant chord, where is it going? Look at the next chord: the 6."
-  - Drill: Play it in C, then in F. Then add the 4 and the flat 7 and carry on (3-6-2-5-1-4-flat 7-3-6-2-5-1).
+- **7-3-6-2-5-1** (from his lessons: Progressive: 3-6-2-5-1-4-7-3-6 chord patterns). The long run: 7, 3, 6, 2, 5, 1. The root goes from the 7th tone of the scale to the 3rd, the 6th, then the 2, the 5 and the 1. Making the 3 chord a dominant (E7 in C) takes you strongly to the 6.
+  - Teaching line (in his style): "If this is a dominant, where is it going? Look at the next chord: the 6."
+  - Drill: Play it in C, then F. Then continue the cycle: 3-6-2-5-1-4-7-3-6-2-5-1.
   - Block chords (key of C): `| Bm7b5 | E7 | Am7 | Dm7 | G7 | C |`; style `gospel`, bpm 72.
-- **The circle 1-4-7-3-6-2-5-1**. Every chord of the key in order, each one leading to the next. Once students hear the whole circle, shortcuts like 1-6-2-5 and 3-6-2-5-1 make sense because they jump into it.
-  - Teaching line (in his style): "1, 4, 7, 3, 6, 2, 5. Say it with me. Now the 1-6-2-5 is jumping the 4, 7 and 3."
-  - Drill: Play the whole circle in C, one bar per chord. Then play only the 1-6-2-5 jump. Then the whole circle again in G.
-  - Block chords (key of C): `| C | F | Bm7b5 | Em7 | Am7 | Dm7 | G7 | C |`; style `ballad`, bpm 68.
-- **4-1 Amen (plagal) cadence**. The Amen cadence: the 4 going to the 1. It is the church ending, the "Amen" after a hymn.
+- **The 2-5-1 (major)** (from his lessons: Intermediate: The Major 2-5-1 Progression; Generic vs Specific 2-5-1; Workshop 1). The 5-1 is the strongest progression in music, from tension to resolution. The 2 is the predominant, or the dominant preparation, and the only minor chord that comes before the dominant in a cyclical progression. A generic 2-5-1 stays in the key; a specific 2-5-1 goes to the key of the 2, the key of the 3, the 4, the 5 or the 6.
+  - Teaching line (in his style): "The 2 takes us to the 5. And the 5? Takes us home to the 1. From tension to resolution."
+  - Drill: Play 2-5-1 in C, F and B-flat. Then play a 2-5-1 into the key of the 5 (a specific 2-5-1).
+  - Block chords (key of C): `| Dm7 | G7 | Cmaj7 | . |`; style `jazz`, bpm 96.
+- **2-5-1-6 (the turnaround)** (from his lessons: Progressive: The 2-5-1-6 and 4-5-3-6-2-5-1 chord patterns). The 6 is the turnaround, because it takes you back to the 2, the initial chord of the progression. A turnaround chord is the chord that propels you to the first chord in a progression, and it is designed to be the dominant, because the strongest progression in music is 5 to 1.
+  - Teaching line (in his style): "What do we call the 6 here? The turnaround. It takes us back to the what? The 2."
+  - Drill: Play 2-5-1-6 as a loop in C, then in B-flat and E-flat. The 6 chord is the easiest 7th chord: play the 1 chord on the right hand with the 6 in the bass.
+  - Block chords (key of C): `| Dm7 | G7 | Cmaj7 | Am7 |`; style `gospel`, bpm 76.
+- **4-5-3-6-2-5-1** (from his lessons: Progressive: The 2-5-1-6 and 4-5-3-6-2-5-1 chord patterns). A longer root progression that goes from the 4 and 5 into the 3-6-2-5-1 run: 4, 5, 3, 6, 2, 5, 1.
+  - Teaching line (in his style): "Say the root progression out loud as you play: 4, 5, 3, 6, 2, 5, 1."
+  - Drill: Play it in C slowly, then in G. Left hand roots first, then right hand chords.
+  - Block chords (key of C): `| F | G | Em7 | Am7 | Dm7 | G7 | C | . |`; style `gospel`, bpm 74.
+- **The 1-6-2-5 (Pre-advanced)** (from his lessons: Pre-advanced: The 1-6-2-5 Chord Progression in C major). Jumps over the 4, 7 and 3 of the circle and runs 6-2-5 back to the 1. It is the root progression 1-6-2-5, not the chord progression. It appears in slow love songs.
+  - Teaching line (in his style): "The 1-6-2-5 is jumping the 4, the 7 and the 3. Remember when we did that? Call out the numbers."
+  - Drill: Play the whole circle 1-4-7-3-6-2-5-1 once, then only 1-6-2-5, and hear what you skipped.
+  - Block chords (key of C): `| C | Am7 | Dm7 | G7 |`; style `ballad`, bpm 70.
+- **6-2-5-1 (cyclical)** (from his lessons: Intermediate: Chord Progressions 6-2-5-1-6-2-5-1-4 (cyclical)). A cyclical progression: each chord moves to the next, 6 to 2 to 5 to 1. The chord progression would be 2-5, 2-5; we call it 6-2-5-1 because it is a root progression. Then it continues 6-2-5-1-4.
+  - Teaching line (in his style): "We know why we are calling it 6-2-5-1: the root progression, not the chord progression. Practice muted first, then unmute."
+  - Drill: Practice silently with the numbers, then play 6-2-5-1-4 in C and two more keys.
+  - Block chords (key of C): `| Am7 | Dm7 | G7 | Cmaj7 | . | . | . | . |`; style `gospel`, bpm 74.
+- **4-1 (the Amen ending)** (from his lessons: Beginners: The End Cadences and Fancy Endings). A plagal cadence, from the 4 to the 1: the church "Amen" ending. It is one of the cadences taught in the end cadences and fancy endings lesson.
   - Teaching line (in his style): "Where does the Amen go? From the 4 to the 1."
   - Drill: End three hymns you know on 4-1. Play it in C, F and B-flat.
   - Block chords (key of C): `| C | F | C | . |`; style `worship`, bpm 66.
-- **Backdoor 2-5-1**. The backdoor dominant, sometimes called the Sunday-morning progression. Instead of 2-5-1, it comes in through the minor 4 and the flat 7: 4 minor, flat 7 dominant, then the 1.
-  - Teaching line (in his style): "We came in through the back door: the minor 4, then the flat 7, then home."
-  - Drill: Play a normal 2-5-1 and then the backdoor version, and listen to the difference.
+- **The back door dominant** (from his lessons: Progressive: Backtracking and back door dominant chords). He calls the dominant that comes from a whole step below the 1 the back door dominant (B-flat 7 going to C in the key of C). It reaches the 1 through the back door instead of from the 5.
+  - Teaching line (in his style): "That is what you call the back door dominant. Where does it take us? Home to the 1."
+  - Drill: Play a normal 2-5-1, then the back door version (minor 4, B-flat 7, then the 1), and listen to the difference.
   - Block chords (key of C): `| Fm7 | Bb7 | Cmaj7 | . |`; style `gospel`, bpm 70.
+- **Secondary dominant: the 5 of 2** (from his lessons: Progressive: Secondary Chords in All Twelve Keys; Complete Passing Chords). Any dominant other than the real 5 is called a secondary dominant. The dominant that takes you to the 2 is called the 5 of 2 (A7 to Dm in C). If a dominant is a major chord with the flat 7, then a passing chord is a dominant chord that takes you somewhere.
+  - Teaching line (in his style): "The dominant that takes you to the 2: we call it the 5 of 2. Where does A7 go? To the 2."
+  - Drill: Play C, A7, Dm7, G7, C in C, then G and F.
+  - Block chords (key of C): `| C | A7 | Dm7 | G7 | C | . |`; style `gospel`, bpm 76.
+- **Secondary dominant: the 5 of 3** (from his lessons: Progressive: Secondary Chords in All Twelve Keys). The dominant that takes you to the 3 is the 5 of 3 (B7 to Em in C). The 3 and 6 chords are minor in the major key; making the chord before them a dominant gives a strong pull.
+  - Teaching line (in his style): "The dominant that takes you to the 3 is called the 5 of 3."
+  - Drill: Play it in C and G. Then try the 5 of 2, the 5 of 3 and the 5 of 6 back to back.
+  - Block chords (key of C): `| C | B7 | Em7 | F | G7 | C |`; style `gospel`, bpm 76.
+- **Secondary dominant: the 5 of 6** (from his lessons: Progressive: Secondary Chords in All Twelve Keys). The dominant that takes you to the 6 is the 5 of 6 (E7 to Am in C). The 6 is the subsidiary chord of the 1, so this is a common way to move from the 1 to its subsidiary.
+  - Teaching line (in his style): "The dominant on the 3 takes you to the 6. What do we call it? The 5 of 6."
+  - Drill: Play it in C and F. Say the numbers out loud.
+  - Block chords (key of C): `| C | E7 | Am7 | F | G7 | C |`; style `gospel`, bpm 76.
+- **Secondary dominant: the 5 of 4** (from his lessons: Intermediate: Introduction to Passing Chords; The Sunday Morning Hymn Progression). The dominant chord on the 1 takes you to the 4 (C7 to F in C). Going from the 1 to the 4, the scale for the 1 chord is mixed because we are using a dominant (the Sunday morning hymn progression). The 4 can be played the regular way or as a dominant.
+  - Teaching line (in his style): "The dominant chord on the 1 takes you to what chord? The 4."
+  - Drill: Play C, C7, F, G7, C in C, then G and D.
+  - Block chords (key of C): `| C | C7 | F | G7 | C | . |`; style `gospel`, bpm 76.
+- **Secondary dominant: the 5 of 5** (from his lessons: Progressive: Secondary Chords in All Twelve Keys). The dominant that takes you to the 5 is the 5 of 5 (D7 to G in C). The G major chord is the 5 chord in the key of C and the 1 chord in the key of G.
+  - Teaching line (in his style): "D is the 5 of your G. Where is the passing chord going? To the 5."
+  - Drill: Play it in C, then F and G.
+  - Block chords (key of C): `| C | D7 | G7 | C | . | . |`; style `gospel`, bpm 76.
+- **Passing chord: the incomplete passing chord (diminished)** (from his lessons: Progressive: Incomplete Passing Chords; Intermediate: Introduction to Passing Chords). A dominant is the complete passing chord; a diminished chord is the incomplete passing chord. Add the 5 under a diminished chord and it becomes a dominant 7 chord. Use an incomplete passing chord when you are not using the complete one.
+  - Teaching line (in his style): "The dominant is the complete passing chord. The diminished is the incomplete passing chord. Which one do we play here?"
+  - Drill: Play the diminished version, then add the bass under it to make the dominant. Hear what changed.
+  - Block chords (key of C): `| C | C#dim7 | Dm7 | G7 | C | . |`; style `gospel`, bpm 72.
+- **The soulful chord (Lovely Day workshop)** (from his lessons: Progressive Workshop 8 (Lovely Day, in the key of E)). To play your 5, play the chord a whole step down as a major chord over the 5 in the bass. That is the secret. For the 6, play the major chord a whole step below it over the 6 in the bass. In C: F over the G bass, G over the A bass. It is really a dominant chord, suspended. The 5 is usually omitted from dominant chords, so the 7 and 9 give it the soulful color. Use it anytime you want to change key or modulate.
+  - Teaching line (in his style): "What number comes before the 5? The 4. If I want to play my 5, I play a whole step down, a major chord. Raise your hand if you understand it."
+  - Drill: Do it on the 5 in C, then in G (C over the D bass), then in E (A over the B bass). Then do it on the 6.
+  - Block chords (key of C): `| C | F/G | G7 | C | . | G/A | Am7 | . |`; style `neosoul`, bpm 82.
 <!--/PROGRESSIONS-->
