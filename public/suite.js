@@ -104,6 +104,15 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard:hover .go,#suiteHub .dcard:focus-visible .go{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
 #suiteHub .badge{transform:translateZ(40px);box-shadow:0 6px 14px -4px rgba(0,0,0,.5)}
 @media (prefers-reduced-motion:reduce),(hover:none){#suiteHub .dcard,#suiteHub .dcard:hover{transform:none}}
+
+#suiteHub .dcard{padding-top:176px}
+#suiteHub .dcard .ph{position:absolute;left:0;right:0;top:0;height:200px;border-radius:25px 25px 0 0;background-size:cover;background-position:var(--pp,center 30%);pointer-events:none;
+ -webkit-mask-image:linear-gradient(#000 52%,transparent);mask-image:linear-gradient(#000 52%,transparent);transition:transform .5s ease,filter .3s;filter:saturate(1.05) brightness(.92)}
+#suiteHub .dcard:hover .ph,#suiteHub .dcard:focus-visible .ph{filter:saturate(1.12) brightness(1.02)}
+#suiteHub .dcard[data-k=class]{--pp:center 28%}
+#suiteHub .dcard[data-k=studio]{--pp:center 55%}
+#suiteHub .dcard[data-k=plus]{--pp:35% 30%}
+#suiteHub .dcard .ic{margin-top:-6px}
 `; document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
@@ -119,7 +128,7 @@ function renderHub(){
   const last=get(), box=document.getElementById('psCards'); box.textContent='';
   ORDER.forEach(k=>{ const d=DEST[k], b=document.createElement('button'); b.type='button'; b.className='dcard'+(k===last?' last':'');
     b.innerHTML=(k===last?'<span class="badge">Continue where you left off</span>':'')+'<div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go"></div>';
-    b.dataset.k=k; b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
+    b.dataset.k=k; { const p=document.createElement('div'); p.className='ph'; p.style.backgroundImage='url(card-'+k+'.webp)'; b.insertBefore(p,b.firstChild); } b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
     b.onclick=()=>go(k); box.appendChild(b); });
 
   if(!matchMedia('(hover:none)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches) box.querySelectorAll('.dcard').forEach(c=>{
