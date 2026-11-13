@@ -13,6 +13,24 @@ const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:0.5,rate:1
 const nm=(p,flats)=>(flats?NAMES_F:NAMES_S)[((p%12)+12)%12];
 const oct=p=>Math.floor(p/12)-1;
 const isBlack=p=>[1,3,6,8,10].includes(((p%12)+12)%12);
+
+/* ---------- the "working" panel ---------- */
+const STAGES=[['Listening',['Hearing every note…','Taking in the whole recording…']],['Analyzing',['Separating the melody from the harmony…','Tracking each key and the sustain…','Finding where every note begins…']],['Transcribing',['Writing down each note…','Placing every note in time…','Getting the lengths right…']],['Cross-checking',['Weeding out stray notes…','Checking the notes against the recording…','Tidying the high notes…']]];
+let wk={on:false,i:0,pct:0,tick:null,n:0};
+function work(i,pct){
+  let box=$('txWork');
+  if(!box){ box=document.createElement('div'); box.id='txWork'; box.className='txwork'; const m=$('txMsg'); m.parentNode.insertBefore(box,m); }
+  if(!wk.on){ wk.on=true; box.hidden=false; box.innerHTML='<div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="wmain"><ol class="wst"></ol><div class="wbar"><b></b></div><div class="wline"><span class="wsub"></span><span class="wpct"></span></div></div>'; box.querySelector('.wst').innerHTML=STAGES.map(s=>'<li>'+s[0]+'</li>').join(''); wk.tick=setInterval(()=>{ wk.n++; paintWork(); },2200); }
+  wk.i=Math.max(wk.i,i); wk.pct=Math.max(wk.pct,Math.round(pct)); paintWork();
+}
+function paintWork(){
+  const box=$('txWork'); if(!box||!wk.on) return;
+  box.querySelectorAll('.wst li').forEach((li,k)=>{ li.className=k<wk.i?'wdone':k===wk.i?'wnow':''; });
+  const subs=STAGES[wk.i][1]; box.querySelector('.wsub').textContent=subs[wk.n%subs.length];
+  box.querySelector('.wpct').textContent=wk.pct+'%'; box.querySelector('.wbar b').style.width=wk.pct+'%';
+}
+function workEnd(){ if(wk.tick) clearInterval(wk.tick); wk={on:false,i:0,pct:0,tick:null,n:0}; const b=$('txWork'); if(b){ b.hidden=true; b.innerHTML=''; } }
+
 function say(t,err){ const e=$('txMsg'); if(e){ e.textContent=t||''; e.style.color=err?'var(--danger)':''; } }
 
 /* ---------- loading the model (only when first needed) ---------- */
@@ -166,31 +184,32 @@ async function proTranscribe(buf,onProg){
 async function transcribeBlob(blob,title){
   if(S.busy) return; S.busy=true; clearCurrent(true); setBusy(true);
   try{
-    say('Reading the audio…');
+    work(0,1); say('');
     const ab=await blob.arrayBuffer(), ctx=ensureCtx();
     const buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab.slice(0),res,()=>rej(new Error('This audio file could not be read. Try an mp3, m4a, wav or ogg file.'))));
     const long=buf.duration>MAX_SEC;
     proWhy='';
     if(!$('txPro')||$('txPro').checked){
       try{
-        say('Starting the piano model… 0%');
-        const pn=await proTranscribe(buf,(p,m)=>say(m+' '+Math.round(p)+'%'));
+        work(0,2);
+        const pn=await proTranscribe(buf,(p,m)=>{ work(p<12?0:p<50?1:2,p); });
+        work(3,98); await new Promise(r=>setTimeout(r,900));
         if(pn.length>3){ S.raw=null; const cl=cleanupPro(pn,sensVal()); await showResult({blob,notes:cl,dur:buf.duration,title,long,fresh:true,pro:true}); S.baseNotes=pn; saveItem({blob,notes:cl,dur:buf.duration,title:title||'Recording',pro:true}); return; }
       }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; proWhy='The piano model '+why+'.'; say(proWhy+' Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,1500)); }
       S.pro=false;
     }
-    say('Loading the note-finder (first time only)…');
+    work(0,3);
     const bp=await getModel();
-    const mono=await toMono22k(buf);
+    const mono=await toMono22k(buf); work(1,10);
     const careful=!!$('txCareful')&&$('txCareful').checked, passes=careful?[0,0.3,-0.3]:[0];
     let base; try{ base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:''); }catch(e){ if(/shader|webgl|context/i.test(String(e&&e.message))){ say('Your graphics card rejected the note finder. Switching to a slower safe mode…'); useSafeMode(); const bp2=await getModel(); base=await runPass(bp2,mono,''); } else throw e; }
     let raw=base;
     if(careful){ const others=[]; for(let k=1;k<passes.length;k++){ const ratio=Math.pow(2,passes[k]/12), r=await runPass(bp,resample(mono,ratio),'pass '+(k+1)+' of '+passes.length); others.push({r,ratio}); } say('Comparing the passes…'); raw=fuse(base,others); }
-    S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
+    work(2,80); S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens); work(3,96);
     await showResult({blob,notes,dur:buf.duration,title,long,fresh:true,pro:false});
     saveItem({blob,notes,dur:buf.duration,title:title||'Recording'});
   }catch(e){ say(e&&e.message?e.message:'Something went wrong while reading the audio.',true); }
-  finally{ S.busy=false; setBusy(false); }
+  finally{ workEnd(); S.busy=false; setBusy(false); }
 }
 
 
@@ -352,17 +371,24 @@ function scheduleAhead(t){
   if(S.met){ const sp=60/S.bpm; if(S.metNext==null){ S.metNext=Math.max(0,Math.ceil((t-S.metOrigin)/sp-1e-6)); }
     while(S.metOrigin+S.metNext*sp<=t+ahead){ const bt=S.metOrigin+S.metNext*sp; if(bt>=t-0.02) click(now+Math.max(0,(bt-t)/S.rate),S.metNext%S.bpb===0); S.metNext++; } }
 }
-function startPlay(){ if(!S.audio) return; ensureCtx(); applyMix(); S.audio.playbackRate=S.rate; resetSched(); S.audio.play().then(()=>{ S.playing=true; $('txPlay').textContent='❚❚ Pause'; loop(); }).catch(()=>say('Press Play again to start the sound.',true)); }
-function pausePlay(){ if(S.audio) S.audio.pause(); S.playing=false; $('txPlay').textContent='▶ Play'; cancelAnimationFrame(S.raf); draw(cur()); }
+function startPlay(){ if(!S.audio) return; ensureCtx(); applyMix(); S.audio.playbackRate=S.rate; resetSched(); S.audio.play().then(()=>{ S.playing=true; $('txPlay').textContent='❚❚ Pause'; bgTick.start(); loop(); }).catch(()=>say('Press Play again to start the sound.',true)); }
+function pausePlay(){ if(S.audio) S.audio.pause(); S.playing=false; bgTick.stop(); $('txPlay').textContent='▶ Play'; cancelAnimationFrame(S.raf); draw(cur()); }
 function stopPlay(){ if(S.audio&&S.playing) pausePlay(); }
 function seek(t){ if(!S.audio) return; S.audio.currentTime=Math.max(0,Math.min(S.dur,t)); resetSched(); draw(cur()); $('txSeek').value=String(Math.floor(cur()*100)); $('txTime').textContent=fmt(cur())+' / '+fmt(S.dur); }
 const fmt=t=>{ t=Math.max(0,t); const m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+String(s).padStart(2,'0'); };
+// Scheduling runs on a worker timer, not requestAnimationFrame, so playback keeps going (in time) when you switch tabs.
+const bgTick=(()=>{ let w=null,iv=null; const run=()=>{ if(!S.playing||!S.audio) return; const t=cur();
+    if(S.loopA!=null&&S.loopB!=null&&S.loopB>S.loopA&&t>=S.loopB){ seek(S.loopA); return; }
+    scheduleAhead(t); };
+  const mk=()=>{ try{ const u=URL.createObjectURL(new Blob(["let i=null;onmessage=e=>{clearInterval(i);i=null;if(e.data==='start')i=setInterval(()=>postMessage(0),25);};"],{type:'text/javascript'})); w=new Worker(u); w.onmessage=run; }catch(_){ w=null; } };
+  return { start(){ if(!w&&!iv) mk(); if(w) w.postMessage('start'); else { clearInterval(iv); iv=setInterval(run,25); } }, stop(){ if(w) w.postMessage('stop'); if(iv){ clearInterval(iv); iv=null; } } };
+})();
 function loop(){
   const t=cur();
-  if(S.loopA!=null&&S.loopB!=null&&S.loopB>S.loopA&&t>=S.loopB){ seek(S.loopA); S.raf=requestAnimationFrame(loop); return; }
-  scheduleAhead(t); draw(t); $('txSeek').value=String(Math.floor(t*100)); $('txTime').textContent=fmt(t)+' / '+fmt(S.dur);
+  draw(t); $('txSeek').value=String(Math.floor(t*100)); $('txTime').textContent=fmt(t)+' / '+fmt(S.dur);
   if(S.playing) S.raf=requestAnimationFrame(loop);
 }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&S.playing){ cancelAnimationFrame(S.raf); loop(); } });
 
 
 /* ---------- left and right hand (two colours, like the Studio keyboard) ---------- */
