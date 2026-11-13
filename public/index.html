@@ -2413,10 +2413,10 @@ function restoreFromDock(name,remove){
 const goTo=id=>{ const el=$(id); if(!el) return; const card=el.closest('.card[data-panel]'); if(card) openPanel(card.dataset.panel, el.closest('.field,.row,.chartopts,.card-h')||null); };
 const press=id=>{ const el=$(id); if(el && !el.disabled) el.click(); };
 function setTempo(v){ S.bpm=clampBpm(v); if(P&&playing) P.bpm=S.bpm; syncTempo(); }
-function newTrack(){
-  if(S.chords.trim() && !confirm('Start a new, empty track? The current chart will be cleared. Save it to My tracks first if you want to keep it.')) return;
+function newTrack(auto){
+  if(!auto && S.chords.trim() && !confirm('Start a new, empty track? The current chart will be cleared. Save it to My tracks first if you want to keep it.')) return;
   if(playing||paused) stop();
-  S.chords=''; S.title=''; S.bassLine=null; S.useHum=false; $('title').value=''; $('chords').value=''; humSync(); rebuild(); if(S.mode==='pro') renderGrid(); saveDraft(); toast('New track');
+  S.chords=''; S.title=''; S.bassLine=null; S.useHum=false; $('title').value=''; $('chords').value=''; humSync(); rebuild(); if(S.mode==='pro') renderGrid(); saveDraft(); toast(auto===true?'Cleared after an hour away':'New track');
 }
 function infoDialog(title,html){
   let d=$('infoDlg'); if(!d){ d=document.createElement('dialog'); d.id='infoDlg'; d.className='info-dlg'; document.body.appendChild(d); }

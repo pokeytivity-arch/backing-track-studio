@@ -230,12 +230,25 @@ function drawer(open){
 }
 function startNew(){ const c=chat(); if(c.log.length){ newChat(); saveDB(); } stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); $('tInput').focus(); }
 
+
+/* ---------- clearing ---------- */
+function clearBoard(){ const c=chat(); c.board=null; saveDB(); renderBoard(null); }
+function clearKeys(){ stopProg(); setSteps('',[],{}); }
+function clearChat(quiet){ const c=chat(); if(!quiet&&c.log.length&&!confirm('Delete the messages in this chat?')) return; stopSpeak(); c.log=[]; c.title='New chat'; c.when=Date.now(); saveDB(); renderChat(); }
+// auto = true after an hour away: start a fresh chat (the old one stays in Chats), with a blank board and keyboard
+function clearAll(auto){
+  if(!auto&&(chat().log.length||chat().board||K.steps.length)&&!confirm('Clear the whiteboard, keyboard and chat?')) return;
+  if(auto){ if(chat().log.length) newChat(); saveDB(); stopProg(); stopSpeak(); restoreRoom(); renderChat(); return; }
+  clearBoard(); clearKeys(); clearChat(true);
+}
+
 /* ---------- build the page ---------- */
 const CSS=`
 body[data-dest="class"] .card[data-panel="teacher"] .ps-head{display:none!important}
 body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:column}
 #clRoot{flex:1 1 0!important;min-height:0}
 .cl{display:flex;flex-direction:column;gap:12px;min-height:0;flex:1;position:relative;overflow:hidden}
+.cl-clr{display:inline-flex;gap:6px}
 .cl-bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .cl-bar .cl-brand{font:800 22px var(--display);letter-spacing:-.01em;color:var(--stage-ink);margin-right:4px}
 .cl-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;flex:1;min-height:0}
@@ -294,6 +307,7 @@ function build(){
     <span class="cl-brand">🎓 Class</span>
     <button class="btn" id="clChats" type="button">☰ Chats</button>
     <button class="btn" id="clNew" type="button">＋ New chat</button>
+    <span class="cl-clr" role="group" aria-label="Clear"><button class="btn" id="clClrBoard" type="button" title="Wipe the whiteboard">Clear board</button><button class="btn" id="clClrKeys" type="button" title="Wipe the keyboard">Clear keyboard</button><button class="btn" id="clClrChat" type="button" title="Delete the messages in this chat">Clear chat</button></span>
     <label for="tLevel" class="flabel">My level</label>
     <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
     <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
@@ -345,7 +359,7 @@ function build(){
   $('tInput').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); ask($('tInput').value); } };
   $('tCopyAll').onclick=()=>{ const c=chat(); if(!c.log.length){ toast('Nothing to copy yet'); return; } tCopy(c.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:splitReply(m.content).text)).join('\n\n')); };
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>ask(b.textContent));
-  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew;
+  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
   $('clPrev').onclick=()=>stepGo(-1); $('clNext').onclick=()=>stepGo(1); $('clPlayProg').onclick=playProg;
@@ -360,6 +374,7 @@ window.CLASS={
   ask,
   // from the Studio or Studio+: open Class and ask about what the student is practicing
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
+  clearAll,clearBoard,clearKeys,clearChat,
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }
 };
 build();

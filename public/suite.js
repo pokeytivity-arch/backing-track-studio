@@ -131,8 +131,35 @@ function heads(){
 }
 window.SUITE={go,home:showHub,current:()=>cur,DEST,ORDER};
 
+
+/* ---------- clear buttons + clear after an hour away ---------- */
+const HOUR=3600e3, ACT='ps-active';
+function busyPlaying(){ try{ return (typeof playing!=='undefined'&&playing)||(window.TX&&TX.S&&TX.S.playing); }catch(_){ return false; } }
+function clearRoom(k,auto){
+  try{
+    if(k==='class'){ if(window.CLASS) CLASS.clearAll(auto); }
+    else if(k==='plus'){ if(window.TX){ if(auto||!(TX.S.notes||[]).length||confirm('Clear the keyboard? Your saved transcriptions stay in the list below.')) TX.clear(); } }
+    else if(typeof newTrack==='function') newTrack(auto?true:undefined);
+  }catch(e){ console.log('clear',e); }
+}
+function clearEverything(){ ['class','plus','studio'].forEach(k=>clearRoom(k,true)); }
+function idleCheck(){
+  let last=0; try{ last=+localStorage.getItem(ACT)||0; }catch(_){}
+  if(last&&Date.now()-last>HOUR&&!busyPlaying()){ clearEverything(); try{ localStorage.setItem(ACT,String(Date.now())); }catch(_){} }
+}
+function touchActive(){ try{ localStorage.setItem(ACT,String(Date.now())); }catch(_){} }
+function addClear(){
+  const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psClear')) return;
+  const b=document.createElement('button'); b.id='psClear'; b.type='button'; b.className='menu-btn ps-clear'; b.textContent='Clear'; b.title='Clear this room (Class: board, keyboard and chat)';
+  b.onclick=()=>clearRoom(cur||'studio',false); const chipEl=document.getElementById('psChip'); if(chipEl) chipEl.after(b); else mb.appendChild(b);
+}
+
 function boot(){
-  addChip(); mini(); heads();
+  addChip(); addClear(); mini(); heads();
+  const first=()=>setTimeout(()=>{ idleCheck(); touchActive(); },400); if(document.readyState==='complete') first(); else window.addEventListener('load',first);
+  let lt=0; ['pointerdown','keydown','touchstart','input'].forEach(ev=>document.addEventListener(ev,()=>{ const n=Date.now(); if(n-lt>20000){ lt=n; touchActive(); } },true));
+  setInterval(()=>{ if(busyPlaying()) touchActive(); else idleCheck(); },60000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) idleCheck(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&hub.classList.contains('on')&&cur){ e.preventDefault(); go(cur); } },true);
   const last=get(); if(last){ cur=null; document.body.dataset.dest=last; }
   showHub();
