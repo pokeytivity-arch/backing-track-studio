@@ -73,12 +73,13 @@ async function teacher(request, env) {
         found.map((d, i) => `\n[${i + 1}] ${d.k} (${d.d}, ${d.l})\n${d.t}`).join('\n');
     }
   } catch (e) { console.log('lessons', e); }
-  const system = PERSONA + '\n\n## Setting\nYou are inside Class, one of the three places in Piano Suite. Class has a whiteboard, a keyboard and this chat. The other two places are the Studio (students create what they want to practice: they type a chord chart and a band plays it) and Studio+ (students upload a recording they want to break down, and see its notes). A student can move between the three at any time, so when it helps, point them to the right room. Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
+  const system = [{ type: 'text', text: PERSONA + '\n\n## Setting\nYou are inside Class, one of the three places in Piano Suite. Class has a whiteboard, a keyboard and this chat. The other two places are the Studio (students create what they want to practice: they type a chord chart and a band plays it) and Studio+ (students upload a recording they want to break down, and see its notes). A student can move between the three at any time, so when it helps, point them to the right room. Keep replies short enough to read in a small window (about 60–140 words unless the student asks for more; say one idea, then one thing to play or answer). Plain text with simple **bold** and line breaks; no tables.', cache_control: { type: 'ephemeral' } }];
+  { const dyn = (ctx ? ctx.replace(/^\n/, '') : '') + lessons; if (dyn.trim()) system.push({ type: 'text', text: dyn.trim() }); }
 
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: env.TEACHER_MODEL || MODEL_DEFAULT, max_tokens: 3000, system, messages: msgs }),
+    body: JSON.stringify({ model: env.TEACHER_MODEL || MODEL_DEFAULT, max_tokens: 2000, system, messages: msgs }),
   });
   if (!r.ok) { const t = await r.text(); console.log('anthropic error', r.status, t.slice(0, 300)); return json({ error: 'upstream', status: r.status }, 502); }
   const data = await r.json();

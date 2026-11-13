@@ -51,9 +51,9 @@ function stepsFrom(list){
   let prev=null; const vz=out.map(o=>{ const v=sheetVoicing(o.ev,prev); if(v) prev=v.rh; return v; });
   return out.map((o,i)=>{ let lh=vz[i].lh, rh=vz[i].rh;
     if(o.obj){ const l=notesList(o.obj.lh), r=notesList(o.obj.rh); if(l.length||r.length){ lh=l; rh=r; } }
-    const n=o.ev.name; return {name:n?(n.root+n.q):o.src,src:o.src,lh,rh}; });
+    const n=o.ev.name; return {name:n?(n.root+n.q):o.src,src:o.src,lh,rh,fing:(o.obj&&o.obj.fing!=null)?String(o.obj.fing).slice(0,10):''}; });
 }
-function cleanKeys(o){ if(!o) return null; const st=stepsFrom(o.steps||o.chords&&String(o.chords).split(/[|\s]+/).filter(Boolean)); return st.length?{title:String(o.title||'').slice(0,80),steps:st.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name}))}:null; }
+function cleanKeys(o){ if(!o) return null; const st=stepsFrom(o.steps||o.chords&&String(o.chords).split(/[|\s]+/).filter(Boolean)); return st.length?{title:String(o.title||'').slice(0,80),steps:st.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing}))}:null; }
 
 /* ---------- the whiteboard ---------- */
 const CHORD_RE=/(?<![A-Za-z0-9#♯♭])[A-G][b#♭♯]?(?:maj13|maj11|maj9|maj7|maj|M7|m7b5|m7♭5|m13|m11|m9|m7|m6|m|dim7|dim|aug|sus4|sus2|sus|add9|13|11|9|7|6)[0-9#b♭♯+\-]*(?:\/[A-G][b#♭♯]?)?(?![A-Za-z])/g;
@@ -97,7 +97,7 @@ function drawKeys(){
   wrap.replaceChildren(svg);
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===K.size)));
   const nm=$('clStepName'); if(nm) nm.textContent=s?s.name:'';
-  const notes=$('clStepNotes'); if(notes){ const N=useFlatsText(s); notes.textContent=s?('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Fingers: RH '+fingerText(s.lh,s.rh).rh+', LH '+fingerText(s.lh,s.rh).lh):'Tap any key to hear it, or type chords below.'; }
+  const notes=$('clStepNotes'); if(notes){ const N=useFlatsText(s); notes.textContent=s?(s.fing?('Note '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Right-hand finger '+s.fing):('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Fingers: RH '+fingerText(s.lh,s.rh).rh+', LH '+fingerText(s.lh,s.rh).lh)):'Tap any key to hear it, or type chords below.'; }
   document.querySelectorAll('#clSteps button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===K.i)));
 }
 function useFlatsText(s){ return s&&/b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
@@ -107,7 +107,7 @@ function setSteps(title,steps,{play}={}){
   const box=$('clSteps'); box.textContent='';
   K.steps.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='cl-step'; b.textContent=s.name; b.onclick=()=>{ stopProg(); K.i=i; drawKeys(); playStep(s); }; box.appendChild(b); });
   $('clKbdTools').hidden=!K.steps.length; drawKeys(); if(play&&K.steps.length) playStep(K.steps[0]);
-  const c=chat(); c.keys=K.steps.length?{title:K.title,steps:K.steps.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name}))}:null; saveDB();
+  const c=chat(); c.keys=K.steps.length?{title:K.title,steps:K.steps.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing}))}:null; saveDB();
 }
 function showChordNow(name){ const st=stepsFrom([name]); if(!st.length) return; const cur=K.steps.findIndex(s=>s.src===name||s.name===st[0].name);
   if(cur>=0){ stopProg(); K.i=cur; drawKeys(); playStep(K.steps[cur]); } else setSteps(name,st,{play:true}); }
