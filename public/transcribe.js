@@ -45,6 +45,25 @@ function extract(raw,s){
   const notes=ev.map(n=>{const t=Math.max(0,n.startTimeSeconds-LAT);return {p:n.pitchMidi,t,d:n.durationSeconds+(n.startTimeSeconds-t),a:n.amplitude};}).filter(n=>n.p>=21&&n.p<=108);
   return cleanup(notes,s);
 }
+
+/* ---------- piano-model cleanup: only weed out stray high notes and overtone ghosts ---------- */
+function cleanupPro(notes,s){
+  if(notes.length<12) return notes;
+  const as=notes.map(n=>n.a).sort((x,y)=>x-y), med=as[Math.floor(as.length/2)]||0.5;
+  const k=0.75+0.5*(1-s);                       // higher sensitivity keeps more
+  const by=notes.slice().sort((x,y)=>x.t-y.t);
+  const near=(n,span,pr)=>by.some(o=>o!==n&&Math.abs(o.t-n.t)<span&&Math.abs(o.p-n.p)<=pr);
+  const HARM=[12,19,24,28,31,34];
+  return notes.filter(n=>{
+    // overtone ghost: a clearly louder note 12/19/24/28/31 semitones below starting at the same moment
+    if(n.p>=60 && by.some(o=>o!==n&&Math.abs(o.t-n.t)<0.06&&HARM.includes(n.p-o.p)&&o.a>n.a*1.15)) return false;
+    if(n.p>=96) return n.a>=med*1.1*k&&n.d>=0.15;
+    if(n.p>=84) return !(n.a<med*0.9*k&&(n.d<0.25||!near(n,0.8,9)));
+    if(n.p>=79) return !(n.a<med*0.75*k&&n.d<0.2&&!near(n,0.6,9));
+    return true;
+  });
+}
+
 function keyPcs(notes){
   if(notes.length<8) return null; const h=new Array(12).fill(0); notes.forEach(n=>h[n.p%12]+=n.d*(0.5+n.a));
   let best=null; for(let r=0;r<12;r++){ for(const [prof,minor] of [[MAJ,0],[MIN,1]]){ let sx=0,sy=0,sxx=0,syy=0,sxy=0; for(let i=0;i<12;i++){ const x=h[(i+r)%12],y=prof[i]; sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y; } const d=Math.sqrt((sxx-sx*sx/12)*(syy-sy*sy/12)), c=d?(sxy-sx*sy/12)/d:0; if(!best||c>best.c) best={c,r,minor}; } }
@@ -156,7 +175,7 @@ async function transcribeBlob(blob,title){
       try{
         say('Starting the piano model… 0%');
         const pn=await proTranscribe(buf,(p,m)=>say(m+' '+Math.round(p)+'%'));
-        if(pn.length>3){ S.raw=null; await showResult({blob,notes:pn,dur:buf.duration,title,long,fresh:true,pro:true}); saveItem({blob,notes:pn,dur:buf.duration,title:title||'Recording',pro:true}); return; }
+        if(pn.length>3){ S.raw=null; const cl=cleanupPro(pn,sensVal()); await showResult({blob,notes:cl,dur:buf.duration,title,long,fresh:true,pro:true}); S.baseNotes=pn; saveItem({blob,notes:cl,dur:buf.duration,title:title||'Recording',pro:true}); return; }
       }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; proWhy='The piano model '+why+'.'; say(proWhy+' Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,1500)); }
       S.pro=false;
     }
@@ -297,11 +316,11 @@ async function saveWav(){
 }
 // move the sensitivity slider: look again at the original analysis when it is still here, otherwise just tidy harder
 function applySens(){
-  if(!S.audio) return; if(S.pro){ say('The piano model already found the notes, so sensitivity is not needed here.'); return; } const s=sensVal(); let notes;
-  if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
+  if(!S.audio) return; const s=sensVal(); let notes;
+  if(S.pro){ notes=cleanupPro(S.baseNotes||S.notes,s); } else if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
   S.notes=notes; setNorm(); stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; draw(cur());
-  say(notes.length+' notes at this sensitivity.'+(S.raw?'':' (On a reopened recording the slider can only remove notes.)'));
+  say(notes.length+' notes at this sensitivity.'+(S.raw||S.pro&&S.baseNotes?'':' (On a reopened recording the slider can only remove notes.)'));
   if(S.itemId){ const id=S.itemId; tx('readwrite',st=>{ const q=st.get(id); q.onsuccess=()=>{ if(q.result){ q.result.notes=notes; st.put(q.result); } }; }).catch(()=>{}); }
 }
 
