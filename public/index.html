@@ -58,6 +58,13 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .next b{color:var(--stage-ink);font-weight:700}
 .voice{font:600 15px var(--mono);color:var(--hi);margin-top:8px;min-height:1.3em}
 .meter{display:grid;gap:10px;justify-items:end;text-align:right}
+.stage-tempo{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;padding:2px 0}
+.stage-tempo label,.stage-tempo .unit{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
+.stage-tempo input[type=range]{flex:1;min-width:180px;max-width:520px;accent-color:var(--hi)}
+.stage-tempo input[type=number]{width:76px;background:var(--stage-2);color:var(--stage-ink);border:1.5px solid #34446c;border-radius:8px;padding:6px 8px;font:800 18px var(--display);text-align:center}
+.stage-tempo .tapbig{min-width:72px;font-weight:800}
+.stage-tempo .tapbig:active{background:var(--hi);color:var(--hi-ink)}
+.stage.projector .stage-tempo{display:none}
 .beats{display:flex;gap:clamp(10px,2.4vw,22px);justify-content:center;align-items:center;padding:4px 0}
 .beats i{width:clamp(38px,6vw,58px);height:clamp(38px,6vw,58px);border-radius:50%;background:var(--stage-2);border:3px solid #3a4a74;display:grid;place-items:center;
   font:800 clamp(16px,2.4vw,24px)/1 var(--display);font-style:normal;color:var(--stage-muted);transition:background .05s,transform .05s}
@@ -282,6 +289,13 @@ audio{width:100%}
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
       </div>
     </div>
+    <div class="stage-tempo">
+      <label for="bpm">Tempo</label>
+      <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
+      <input type="number" id="bpm" min="30" max="320" aria-label="Tempo in BPM">
+      <span class="unit">BPM</span>
+      <button class="tog tapbig" id="tapBtn" title="Tap 4 times in time to set the tempo">Tap</button>
+    </div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
     <div class="stage-kbd" id="stageKbd" hidden>
@@ -348,13 +362,9 @@ audio{width:100%}
       <section class="card">
         <h2>Tempo and key</h2>
         <div class="field">
-          <label for="bpm">Tempo (BPM)</label>
-          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes; so it always matches the count you see and hear.</p>
-          <div class="row">
-            <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
-            <input type="number" id="bpm" min="30" max="320">
-            <button class="btn" id="tapBtn">Tap</button>
-          </div>
+          <span class="flabel">Tempo</span>
+          <p class="help">The tempo slider and Tap button are on the stage, above the beat counter.</p>
+          <p class="help" id="tempoNote" hidden>In 6/8, 12/8 and 7/8 the BPM counts eighth notes, so it always matches the count you see and hear.</p>
         </div>
         <div class="field">
           <span class="flabel">Transpose</span>
@@ -454,7 +464,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.12-z (keyboard sizes)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-a (tempo on the stage)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
