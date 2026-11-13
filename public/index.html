@@ -58,6 +58,14 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .next b{color:var(--stage-ink);font-weight:700}
 .voice{font:600 15px var(--mono);color:var(--hi);margin-top:8px;min-height:1.3em}
 .meter{display:grid;gap:10px;justify-items:end;text-align:right}
+.stage{position:relative}
+.corner-tools{position:absolute;top:18px;right:20px;display:flex;gap:8px;z-index:2}
+.icontog{height:42px;min-width:42px;padding:0 10px;border-radius:999px;border:2px solid #34446c;background:var(--stage-2);color:var(--stage-muted);display:inline-grid;place-items:center;cursor:pointer;transition:all .12s}
+.icontog svg{width:22px;height:22px}
+.icontog .cnt{font:800 12px/1 var(--display);letter-spacing:.06em;white-space:nowrap}
+.icontog:hover{color:var(--stage-ink);border-color:#5c6f9e}
+.icontog[aria-pressed="true"]{color:var(--hi);border-color:var(--hi);background:color-mix(in srgb,var(--hi) 14%,var(--stage-2));box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 18%,transparent)}
+.icontog:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .stage-tempo{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;padding:2px 0}
 .stage-tempo label,.stage-tempo .unit{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
 .stage-tempo input[type=range]{flex:1;min-width:180px;max-width:520px;accent-color:var(--hi)}
@@ -289,6 +297,10 @@ audio{width:100%}
         <div class="voice" id="voice"></div>
       </div>
       <div class="meter">
+        <div class="corner-tools">
+          <button class="icontog" id="countBtn" aria-pressed="true" aria-label="Count-in" title="Count-in (one bar before the band starts)"><span class="cnt">1 2 3 4</span></button>
+          <button class="icontog" id="clickBtn" aria-pressed="false" aria-label="Metronome" title="Metronome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2.5h6l4.2 18a1 1 0 0 1-1 1.2H5.8a1 1 0 0 1-1-1.2L9 2.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6.6 16.5h10.8" stroke="currentColor" stroke-width="1.8"/><path d="M12 16.5 17.8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16.3" cy="8.7" r="1.6" fill="currentColor"/></svg></button>
+        </div>
         <div class="pos">Bar <b id="barNo">–</b> · Loop <b id="loopNo">–</b></div>
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
       </div>
@@ -320,8 +332,6 @@ audio{width:100%}
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="playIcon" d="M7 4.5v15l13-7.5z"/></svg>
         <span id="playTxt">Play</span>
       </button>
-      <button class="tog" id="countBtn" aria-pressed="true">Count-in</button>
-      <button class="tog" id="clickBtn" aria-pressed="false">Metronome</button>
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
@@ -466,7 +476,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-c (drums removed from the stage)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-d (metronome and count-in icons)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
