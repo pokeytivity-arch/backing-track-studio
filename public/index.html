@@ -546,6 +546,7 @@ audio{width:100%}
         <div class="txrow">
           <label>Recording <input type="range" id="txMix" min="0" max="100" value="50" aria-label="Mix between the recording and the notes"> Notes</label>
           <label>Tuning A4 <input type="number" id="txA4" min="415" max="466" value="440"> Hz</label>
+          <label class="check"><input type="checkbox" id="txMerge" checked> Merge repeated notes</label>
           <label>Note timing <input type="number" id="txNudge" min="-250" max="250" step="10" value="0" title="Nudge the notes earlier (-) or later (+) against the recording"> ms</label>
           <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="50" aria-label="How many notes to find"> <span id="txSensV" class="help">Balanced</span></label>
         </div>

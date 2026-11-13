@@ -51,8 +51,9 @@ function cleanup(notes,s){
   // overtone ghosts: short notes an octave, twelfth or two octaves above a stronger note that starts together
   n=n.filter(x=>!(x.d<0.3&&n.some(m=>m!==x&&Math.abs(m.t-x.t)<0.06&&m.d>x.d*1.5&&m.a>=x.a*0.8&&[12,19,24,28,31].includes(x.p-m.p))));
   // merge repeats: the same pitch re-found after a tiny gap, without a stronger new onset, is one note
-  const last={}, out=[];
-  for(const x of n){ const l=last[x.p]; if(l&&x.t-(l.t+l.d)<0.07&&x.a<=l.a*1.15){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } const c={...x}; last[x.p]=c; out.push(c); }
+  // (a piano note that rings on is often "heard" again as it fades: a re-trigger that is weaker than the note before it, or that starts almost at once, is the same note)
+  const last={}, out=[], merge=S.merge!==false, gapMax=0.06+0.1*(1-s);
+  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*0.92)||onset<0.09||(gap<0.03&&x.a<=l.a*1.1)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
   // drop weak notes
   let r=out.filter(x=>x.a>=minA||x.d>=0.4);
   // key-aware: short, quiet notes outside the key are most likely mistakes
@@ -352,6 +353,8 @@ function init(){
   $('txBpb').onchange=e=>{ S.bpb=+e.target.value; resetSched(); };
   $('txBeat1').onclick=()=>{ S.metOrigin=cur(); resetSched(); say('Beat 1 is now at '+fmt(cur())+'.'); draw(cur()); };
   $('txMidi').onclick=downloadMidi; $('txWav').onclick=saveWav; $('txAsk').onclick=askClass;
+  try{ S.merge=localStorage.getItem('tx-merge')!=='0'; $('txMerge').checked=S.merge; }catch(_){}
+  $('txMerge').onchange=e=>{ S.merge=e.target.checked; try{ localStorage.setItem('tx-merge',S.merge?'1':'0'); }catch(_){} applySens(); };
   $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=['Fewer notes','Fewer notes','Balanced','More notes','More notes'][Math.min(4,Math.floor(sensVal()*5))]; };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
@@ -359,6 +362,6 @@ function init(){
   draw(0);
 }
 async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
-window.TX={init,restoreLast,S,_test:{transcribeBlob,midiBytes,detectKey,draw,assignHands}};
+window.TX={init,restoreLast,S,_test:{cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
