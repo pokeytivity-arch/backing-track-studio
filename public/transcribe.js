@@ -81,6 +81,51 @@ function fuse(base,others){
   for(let j=0;j<n;j++){ const Fj=F[j], Oj=O[j]; for(let p=0;p<Fj.length;p++){ Fj[p]/=cnt; Oj[p]/=cnt; } }
   return {frames:F,onsets:O,contours:base.contours};
 }
+
+/* ---------- hosted piano model (server route /api/transcribe) ---------- */
+function wav16k(buf){
+  const secs=Math.min(buf.duration,MAX_SEC), sr=16000, n=Math.ceil(secs*sr);
+  const off=new OfflineAudioContext(1,n,sr), src=off.createBufferSource(); src.buffer=buf; src.connect(off.destination); src.start(0);
+  return off.startRendering().then(out=>{
+    const d=out.getChannelData(0), ab=new ArrayBuffer(44+d.length*2), v=new DataView(ab), w=(o,t)=>{ for(let i=0;i<t.length;i++) v.setUint8(o+i,t.charCodeAt(i)); };
+    w(0,'RIFF'); v.setUint32(4,36+d.length*2,true); w(8,'WAVEfmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,d.length*2,true);
+    for(let i=0;i<d.length;i++){ const x=Math.max(-1,Math.min(1,d[i])); v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true); }
+    return new Blob([ab],{type:'audio/wav'});
+  });
+}
+function parseMidi(ab){
+  const v=new DataView(ab); let p=0; const u32=()=>{ const x=v.getUint32(p); p+=4; return x; }, u16=()=>{ const x=v.getUint16(p); p+=2; return x; };
+  if(u32()!==0x4d546864) throw new Error('not midi'); u32(); u16(); const nt=u16(); const div=u16();
+  const tempos=[[0,500000]], evs=[];
+  for(let t=0;t<nt;t++){
+    if(u32()!==0x4d54726b) break; const len=u32(), end=p+len; let tick=0, run=0;
+    const vlq=()=>{ let x=0,b; do{ b=v.getUint8(p++); x=(x<<7)|(b&127); }while(b&128); return x; };
+    while(p<end){
+      tick+=vlq(); let st=v.getUint8(p);
+      if(st===0xff){ p++; const ty=v.getUint8(p++), l=vlq(); if(ty===0x51&&l===3) tempos.push([tick,(v.getUint8(p)<<16)|(v.getUint8(p+1)<<8)|v.getUint8(p+2)]); p+=l; continue; }
+      if(st===0xf0||st===0xf7){ p++; p+=vlq(); continue; }
+      if(st&128){ run=st; p++; } else st=run;
+      const hi=st&0xf0, a=v.getUint8(p++), b=(hi===0xc0||hi===0xd0)?0:v.getUint8(p++);
+      if(hi===0x90||hi===0x80) evs.push({tick,on:hi===0x90&&b>0,p:a,vel:b});
+    }
+    p=end;
+  }
+  tempos.sort((x,y)=>x[0]-y[0]);
+  const sec=tick=>{ let s=0,lt=0,tp=500000; for(const [tt,tv] of tempos){ if(tt>tick) break; s+=(tt-lt)*tp/1e6/div; lt=tt; tp=tv; } return s+(tick-lt)*tp/1e6/div; };
+  evs.sort((x,y)=>x.tick-y.tick); const open={}, notes=[];
+  for(const e of evs){
+    if(e.on){ if(open[e.p]){ const o=open[e.p]; notes.push({p:e.p,t:sec(o.tick),d:Math.max(0.03,sec(e.tick)-sec(o.tick)),a:o.vel/127}); } open[e.p]={tick:e.tick,vel:e.vel}; }
+    else if(open[e.p]){ const o=open[e.p]; delete open[e.p]; notes.push({p:e.p,t:sec(o.tick),d:Math.max(0.03,sec(e.tick)-sec(o.tick)),a:o.vel/127}); }
+  }
+  notes.sort((x,y)=>x.t-y.t||x.p-y.p); return notes.filter(n=>n.p>=21&&n.p<=108);
+}
+async function proTranscribe(buf){
+  const wav=await wav16k(buf);
+  const r=await fetch('/api/transcribe',{method:'POST',headers:{'content-type':'audio/wav'},body:wav});
+  if(!r.ok){ let e=''; try{ e=(await r.json()).error; }catch(_){} const err=new Error(e||('status '+r.status)); err.code=e; throw err; }
+  return parseMidi(await r.arrayBuffer());
+}
+
 async function transcribeBlob(blob,title){
   if(S.busy) return; S.busy=true; stopPlay(); setBusy(true);
   try{
@@ -88,6 +133,14 @@ async function transcribeBlob(blob,title){
     const ab=await blob.arrayBuffer(), ctx=ensureCtx();
     const buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab.slice(0),res,()=>rej(new Error('This audio file could not be read. Try an mp3, m4a, wav or ogg file.'))));
     const long=buf.duration>MAX_SEC;
+    if(!$('txPro')||$('txPro').checked){
+      try{
+        say('Listening with the piano model… this takes a minute, and it is worth the wait.');
+        const pn=await proTranscribe(buf);
+        if(pn.length>3){ S.raw=null; await showResult({blob,notes:pn,dur:buf.duration,title,long,fresh:true,pro:true}); saveItem({blob,notes:pn,dur:buf.duration,title:title||'Recording',pro:true}); return; }
+      }catch(e){ console.log('piano model unavailable',e); say(e&&e.code==='not_configured'?'The piano model is not switched on yet, so I am using the built-in note finder…':'The piano model could not be reached, so I am using the built-in note finder…'); }
+      S.pro=false;
+    }
     say('Loading the note-finder (first time only)…');
     const bp=await getModel();
     const mono=await toMono22k(buf);
@@ -96,13 +149,14 @@ async function transcribeBlob(blob,title){
     let raw=base;
     if(careful){ const others=[]; for(let k=1;k<passes.length;k++){ const ratio=Math.pow(2,passes[k]/12), r=await runPass(bp,resample(mono,ratio),'pass '+(k+1)+' of '+passes.length); others.push({r,ratio}); } say('Comparing the passes…'); raw=fuse(base,others); }
     S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
-    await showResult({blob,notes,dur:buf.duration,title,long,fresh:true});
+    await showResult({blob,notes,dur:buf.duration,title,long,fresh:true,pro:false});
     saveItem({blob,notes,dur:buf.duration,title:title||'Recording'});
   }catch(e){ say(e&&e.message?e.message:'Something went wrong while reading the audio.',true); }
   finally{ S.busy=false; setBusy(false); }
 }
 
-function showResult({blob,notes,dur,title,long,fresh}){
+function showResult({blob,notes,dur,title,long,fresh,pro}){
+  S.pro=!!pro;
   if(!fresh) S.raw=null; S.baseNotes=notes; S.itemId=null; loadPiano();
   if(S.url) URL.revokeObjectURL(S.url);
   S.url=URL.createObjectURL(blob); S.notes=notes; S.dur=dur; S.title=title||'Recording';
@@ -128,7 +182,7 @@ async function renderLib(){
   if(!items.length){ box.innerHTML='<span class="help">Nothing saved yet. Every transcription you make is saved here, in this browser only.</span>'; return; }
   items.forEach(it=>{ const row=document.createElement('div'); row.className='txitem';
     const t=document.createElement('span'); t.className='txt'; t.textContent=it.title+' · '+it.notes.length+' notes · '+fmt(it.dur)+' · '+new Date(it.when).toLocaleDateString();
-    const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ try{ localStorage.setItem('tx-last',it.id); }catch(_){} showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
+    const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ try{ localStorage.setItem('tx-last',it.id); }catch(_){} showResult({pro:it.pro,blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
     const r=document.createElement('button'); r.className='btn sm'; r.textContent='Rename'; r.onclick=async()=>{ const n=window.prompt('Name for this transcription',it.title); if(n&&n.trim()){ it.title=n.trim().slice(0,80); await tx('readwrite',st=>st.put(it)); renderLib(); } };
     const x=document.createElement('button'); x.className='btn sm'; x.textContent='Delete'; x.onclick=async()=>{ if(window.confirm('Delete "'+it.title+'" from your library?')){ await tx('readwrite',st=>st.delete(it.id)); renderLib(); } };
     row.append(t,o,r,x); box.appendChild(row); });
@@ -214,7 +268,7 @@ async function saveWav(){
 }
 // move the sensitivity slider: look again at the original analysis when it is still here, otherwise just tidy harder
 function applySens(){
-  if(!S.audio) return; const s=sensVal(); let notes;
+  if(!S.audio) return; if(S.pro){ say('The piano model already found the notes, so sensitivity is not needed here.'); return; } const s=sensVal(); let notes;
   if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
   S.notes=notes; setNorm(); stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; draw(cur());
@@ -390,7 +444,7 @@ function init(){
   new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
   draw(0);
 }
-async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
+async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({pro:it.pro,blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
 window.TX={init,restoreLast,S,_test:{extract,cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();

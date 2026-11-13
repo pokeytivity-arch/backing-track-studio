@@ -41,3 +41,7 @@ They live in a private Cloudflare KV namespace:
 4. Open `/lessons-admin.html` on your site, enter the token, choose `lessons-kv.json`, and click **Upload**.
 
 Without the library the coach still works, using its teaching profile alone.
+
+## Piano model for Studio+ (optional, best accuracy)
+Studio+ can transcribe with a model built only for piano (Replicate, `bytedance/piano-transcription`, about 8 cents per recording).
+Add a **Secret** named `REPLICATE_API_TOKEN` to the Worker (Settings → Variables and Secrets). Without it, Studio+ quietly uses the built-in note finder.
