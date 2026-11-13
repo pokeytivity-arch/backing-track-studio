@@ -37,7 +37,7 @@ async function toMono22k(buf){
 }
 
 /* ---------- note finding: sensitivity + cleanup ---------- */
-function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
+function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.38; }
 function extract(raw,s){
   const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.3,Math.min(0.85,0.85-0.46*s)), minLen=Math.max(3,Math.round(11-8*s));
   const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thrO,thr,minLen,true,null,null,false)));

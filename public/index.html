@@ -552,7 +552,7 @@ audio{width:100%}
           <label class="check" title="Uses a model built only for piano. Cleaner notes and exact timing. Takes about a minute."><input type="checkbox" id="txPro" checked> Piano model (best accuracy)</label>
           <label class="check" title="Listens three times and keeps what the passes agree on. Slower, cleaner."><input type="checkbox" id="txCareful"> Careful analysis (slower)</label>
           <label>Note timing <input type="number" id="txNudge" min="-250" max="250" step="10" value="0" title="Nudge the notes earlier (-) or later (+) against the recording"> ms</label>
-          <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="50" aria-label="How many notes to find"> <span id="txSensV" class="help">Balanced</span></label>
+          <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="38" aria-label="How many notes to find"> <span id="txSensV" class="help">Fewer notes</span></label>
         </div>
         <div class="txrow">
           <button class="btn sm" id="txSetA">Loop start</button><button class="btn sm" id="txSetB">Loop end</button><button class="btn sm" id="txClearLoop" disabled>Clear loop</button>
