@@ -65,6 +65,11 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .icontog .cnt{font:800 12px/1 var(--display);letter-spacing:.06em;white-space:nowrap}
 .icontog:hover{color:var(--stage-ink);border-color:#5c6f9e}
 .icontog[aria-pressed="true"]{color:var(--hi);border-color:var(--hi);background:color-mix(in srgb,var(--hi) 14%,var(--stage-2));box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 18%,transparent)}
+.icontog .pend{transform-box:view-box;transform-origin:12px 16.5px;transform:rotate(18deg)}
+#clickBtn[aria-pressed="true"]:not(.live) .pend{animation:swing var(--beat,0.5s) ease-in-out infinite alternate}
+#clickBtn.live .pend{transition:transform var(--beat,0.5s) ease-in-out}
+@keyframes swing{from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
+@media (prefers-reduced-motion: reduce){ .icontog .pend{animation:none!important;transition:none!important} }
 .icontog:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .stage-tempo{display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;padding:2px 0}
 .stage-tempo label,.stage-tempo .unit{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
@@ -299,7 +304,7 @@ audio{width:100%}
       <div class="meter">
         <div class="corner-tools">
           <button class="icontog" id="countBtn" aria-pressed="true" aria-label="Count-in" title="Count-in (one bar before the band starts)"><span class="cnt">1 2 3 4</span></button>
-          <button class="icontog" id="clickBtn" aria-pressed="false" aria-label="Metronome" title="Metronome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2.5h6l4.2 18a1 1 0 0 1-1 1.2H5.8a1 1 0 0 1-1-1.2L9 2.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6.6 16.5h10.8" stroke="currentColor" stroke-width="1.8"/><path d="M12 16.5 17.8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16.3" cy="8.7" r="1.6" fill="currentColor"/></svg></button>
+          <button class="icontog" id="clickBtn" aria-pressed="false" aria-label="Metronome" title="Metronome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2.5h6l4.2 18a1 1 0 0 1-1 1.2H5.8a1 1 0 0 1-1-1.2L9 2.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6.6 16.5h10.8" stroke="currentColor" stroke-width="1.8"/><g class="pend"><path d="M12 16.5 12 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.4" r="1.7" fill="currentColor"/></g></svg></button>
         </div>
         <div class="pos">Bar <b id="barNo">–</b> · Loop <b id="loopNo">–</b></div>
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
@@ -476,7 +481,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-d (metronome and count-in icons)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-e (swinging metronome)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1333,10 +1338,10 @@ function nameHTML(n){ const el=document.createElement('span'); const r=document.
 function renderStage(u){
   const nowEl=$('now'), beats=[...$('beats').children];
   if(!u){ nowEl.className='now'; nowEl.replaceChildren(song&&song.events[0]?nameHTML(song.events[0].name):document.createTextNode('–'));
-    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.classList.remove('on','one')); $('voice').textContent=''; stageKeys(song&&song.events.length?0:null); $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
-  if(u.count!=null){ nowEl.className='now count'; nowEl.textContent=String(u.count); beats.forEach((b,i)=>{ b.classList.toggle('on',i===u.count-1); b.classList.toggle('one',i===0&&i===u.count-1); });
+    setNext(song&&song.events[1]?song.events[1]:null); beats.forEach(b=>b.classList.remove('on','one')); $('voice').textContent=''; pendulumIdle(); lastPendBeat=-1; stageKeys(song&&song.events.length?0:null); $('barNo').textContent='–'; $('loopNo').textContent='–'; highlight(-1); return; }
+  if(u.count!=null){ pendulumBeat(); nowEl.className='now count'; nowEl.textContent=String(u.count); beats.forEach((b,i)=>{ b.classList.toggle('on',i===u.count-1); b.classList.toggle('one',i===0&&i===u.count-1); });
     setNext(song.events[0]); return; }
-  beats.forEach((b,i)=>b.classList.toggle('on',i===u.beat)); beats.forEach((b,i)=>b.classList.toggle('one',i===0&&i===u.beat));
+  beats.forEach((b,i)=>b.classList.toggle('on',i===u.beat)); if(u.beat!==lastPendBeat){ lastPendBeat=u.beat; pendulumBeat(); } beats.forEach((b,i)=>b.classList.toggle('one',i===0&&i===u.beat));
   $('barNo').textContent=`${u.bar}/${song.bars.length}`; $('loopNo').textContent=u.loop;
   if(u.ei!==curEi){ const ev=song.events[u.ei]; if(!ev) return; nowEl.className='now'; nowEl.replaceChildren(nameHTML(ev.name)); setNext(ev.nextEv); highlight(u.ei);
     $('voice').textContent=ev.chord&&ev.chord.voicing?(ev.chord.vlabel||'Custom voicing'):''; stageKeys(u.ei); }
@@ -1347,6 +1352,11 @@ function highlight(ei){
   document.querySelectorAll('#chart .cell').forEach(c=>c.classList.toggle('on',+c.dataset.ei===ei));
   const on=document.querySelector('#chart .cell.on'); if(on){ const ch=$('chart'); const l=on.offsetLeft-ch.offsetLeft; if(l<ch.scrollLeft||l>ch.scrollLeft+ch.clientWidth-80) ch.scrollLeft=l-20; }
 }
+function setPendulumTempo(){ const b=$('clickBtn'); if(b) b.style.setProperty('--beat',(60/Math.max(30,S.bpm||96)).toFixed(3)+'s'); }
+let pendSide=1, lastPendBeat=-1;
+function pendulumBeat(){ const b=$('clickBtn'); if(!b || !S.metronome) return; const g=b.querySelector('.pend'); if(!g) return;
+  b.classList.add('live'); pendSide=-pendSide; g.style.transform=`rotate(${24*pendSide}deg)`; }
+function pendulumIdle(){ const b=$('clickBtn'); if(!b) return; b.classList.remove('live'); const g=b.querySelector('.pend'); if(g) g.style.transform=''; }
 function renderBeats(){
   const M=MET(), w=$('beats'); w.replaceChildren();
   w.classList.toggle('many',M.count.length>7);
@@ -1380,7 +1390,7 @@ function setPlayUI(){
   $('playBtn').setAttribute('aria-label',playing?'Stop':'Play');
   $('playIcon').setAttribute('d',playing?'M6 5h12v14H6z':'M7 4.5v15l13-7.5z');
 }
-function syncTempo(){ $('bpm').value=S.bpm; $('bpmRange').value=S.bpm; $('bpmBig').firstChild.nodeValue=S.bpm; saveDraft(); }
+function syncTempo(){ $('bpm').value=S.bpm; $('bpmRange').value=S.bpm; $('bpmBig').firstChild.nodeValue=S.bpm; setPendulumTempo(); saveDraft(); }
 function renderStyles(){
   const w=$('styles'); w.replaceChildren();
   Object.entries(STYLES).forEach(([k,st])=>{ const b=document.createElement('button'); b.className='sty'; b.setAttribute('aria-pressed',S.style===k);
