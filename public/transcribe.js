@@ -34,7 +34,7 @@ async function toMono22k(buf){
 /* ---------- note finding: sensitivity + cleanup ---------- */
 function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
 function extract(raw,s){
-  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.15,Math.min(0.6,0.55-0.5*s)), minLen=Math.max(2,Math.round(8-6*s));
+  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.3,Math.min(0.85,0.85-0.46*s)), minLen=Math.max(3,Math.round(11-8*s));
   const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thrO,thr,minLen,true,null,null,false)));
   const notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.p>=21&&n.p<=108);
   return cleanup(notes,s);
@@ -46,18 +46,18 @@ function keyPcs(notes){
   const sc=best.minor?[0,2,3,5,7,8,10,11]:[0,2,4,5,7,9,11]; return new Set(sc.map(i=>(i+best.r)%12));
 }
 function cleanup(notes,s){
-  const minD=0.07-0.04*s, minA=0.2-0.15*s; // very short notes are kept: this player plays fast, so most of them are real
+  const minD=0.17-0.1*s, minA=0.34-0.3*s;
   let n=notes.filter(x=>x.d>=minD).sort((a,b)=>a.t-b.t||a.p-b.p);
   // overtone ghosts: short notes an octave, twelfth or two octaves above a stronger note that starts together
   n=n.filter(x=>!(x.d<0.3&&n.some(m=>m!==x&&Math.abs(m.t-x.t)<0.06&&m.d>x.d*1.5&&m.a>=x.a*0.8&&[12,19,24,28,31].includes(x.p-m.p))));
   // merge repeats: the same pitch re-found after a tiny gap, without a stronger new onset, is one note
   // (a piano note that rings on is often "heard" again as it fades: a re-trigger that is weaker than the note before it, or that starts almost at once, is the same note)
-  const last={}, out=[], merge=S.merge!==false, gapMax=0.06+0.1*(1-s);
-  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*(0.92+0.9*(1-s)))||onset<0.09||(gap<0.05&&x.a<=l.a*1.7)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
+  const last={}, out=[], merge=S.merge!==false, gapMax=0.1+0.12*(1-s);
+  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*(0.92+1.2*(1-s)))||onset<0.12||(gap<0.07&&x.a<=l.a*2.2)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
   // drop weak notes
-  let r=out.filter(x=>x.a>=minA||x.d>=0.12);
+  let r=out.filter(x=>x.a>=minA||x.d>=0.4);
   // key-aware: short, quiet notes outside the key are most likely mistakes
-  const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.12||x.a>=0.3);
+  const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.25||x.a>=0.5);
   return r.sort((a,b)=>a.t-b.t||a.p-b.p);
 }
 async function transcribeBlob(blob,title){
@@ -155,7 +155,7 @@ function loadPiano(){ try{ if(typeof BANK==='undefined'||typeof loadBank!=='func
 function makeFx(ac,dest){
   const inp=ac.createGain(), conv=ac.createConvolver(), wet=ac.createGain(), sr=ac.sampleRate, len=Math.floor(sr*1.7), buf=ac.createBuffer(2,len,sr);
   for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
-  conv.buffer=buf; wet.gain.value=0.2; inp.connect(dest); inp.connect(conv); conv.connect(wet); wet.connect(dest); return inp;
+  conv.buffer=buf; wet.gain.value=0.13; inp.connect(dest); inp.connect(conv); conv.connect(wet); wet.connect(dest); return inp;
 }
 function pianoNote(ac,dest,midi,at,dur,vel,a4){
   const keys=BANK.keys.piano, buf=BANK.buf.piano; let k=keys[0]; for(const x of keys) if(Math.abs(x-midi)<Math.abs(k-midi)) k=x;
