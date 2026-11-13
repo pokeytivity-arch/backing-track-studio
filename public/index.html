@@ -197,6 +197,16 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .gin.bad{border-color:var(--danger);color:var(--danger)}
 .gin:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
 .gadd{display:flex;gap:8px;flex-wrap:wrap}
+.gkb{margin:14px 0 6px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg)}
+.gkb-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.gkb-h>b{font:800 15px var(--display)}
+.gkb-h .seg button{padding:5px 12px;font:700 13px var(--display);border:0;border-radius:999px;background:transparent;cursor:pointer;color:var(--muted)}
+.gkb-h .seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.gkb-keys svg{width:100%;height:auto;max-height:130px;cursor:pointer;display:block;touch-action:manipulation}
+.gkb-keys svg rect{transition:fill .08s}
+.gkb-f{display:flex;gap:10px;align-items:center;margin-top:8px}
+.gkb-f output{flex:1;font:800 17px var(--display);min-height:1.3em}
+
 .gsec{display:grid;gap:8px}
 .humrow{display:flex;align-items:center;gap:14px}
 .tog.humjump{border-color:#ff8787;color:#ffc9c9}
@@ -449,6 +459,13 @@ audio{width:100%}
         <div id="proBox" hidden>
           <div class="grid" id="grid"></div>
           <div class="gadd"><button class="btn" id="addBar">+ Add bar</button><button class="btn" id="add4">+ Add 4 bars</button></div>
+          <div class="gkb" id="gkb">
+            <div class="gkb-h"><b>Or play it in</b><span id="gkbTarget" class="help">Click a blue box above, then click keys.</span>
+              <div class="seg" id="gkbAcc" role="group" aria-label="Sharps or flats"><button type="button" data-a="#" aria-pressed="true">♯ Sharps</button><button type="button" data-a="b" aria-pressed="false">♭ Flats</button></div>
+              <div class="seg" id="gkbMode" role="group" aria-label="What goes in the box"><button type="button" data-m="name" aria-pressed="true">Chord name</button><button type="button" data-m="notes" aria-pressed="false">Exact notes</button></div></div>
+            <div id="gkbKeys" class="gkb-keys"></div>
+            <div class="gkb-f"><output id="gkbOut">Nothing pressed yet</output><button class="btn" type="button" id="gkbClear">Clear box</button><button class="btn pri" type="button" id="gkbNext">Next box ▸</button></div>
+          </div>
           <p class="help">Click a slot and type a chord. An empty slot holds the chord before it. Put a chord on an <code>&amp;</code> (or <code>e</code>/<code>a</code> in 16ths) to push it ahead of the beat. Type a voicing like <code>C / E G C</code> (left hand / right hand) for exact notes. <b>Enter</b> moves to the next slot.</p>
         </div>
         <p class="err" id="errs" hidden></p>
@@ -1940,12 +1957,49 @@ function renderGrid(){
           if(ev.key==='Enter'){ ev.preventDefault(); commitGrid(true); const nx=all[k+(ev.shiftKey?-1:1)]; if(nx){ nx.focus(); nx.select(); } }
           else if(ev.key==='ArrowRight' && inp.selectionStart===inp.value.length && all[k+1]){ ev.preventDefault(); all[k+1].focus(); }
           else if(ev.key==='ArrowLeft' && inp.selectionStart===0 && all[k-1]){ ev.preventDefault(); all[k-1].focus(); } };
-        inp.onfocus=()=>inp.select();
+        inp.onfocus=()=>{ inp.select(); if(window.gkTarget) gkTarget(bi,i); };
         sl.append(lab,inp); slots.appendChild(sl); }
       bar.append(head,slots); bars.appendChild(bar); }
     sec.appendChild(bars); wrap.appendChild(sec); });
   updateGridMeta();
 }
+
+/* ---------- play chords into the chart: click keys, the box fills in ---------- */
+const GK={bi:0,i:0,notes:new Set(),acc:(store.get('bt-gkb',{})||{}).acc||'#',mode:(store.get('bt-gkb',{})||{}).mode||'name'};
+function gkNames(){ return (GK.acc==='b'?FLAT_N:SHARP_N).map(n=>n.replace('♯','#').replace('♭','b')); }
+function gkToken(){
+  const ms=[...GK.notes].sort((a,b)=>a-b); if(!ms.length) return '';
+  const N=gkNames(), pcs=[...new Set(ms.map(m=>m%12))];
+  if(GK.mode==='name'&&pcs.length>=3){ const bass=ms[0]%12, r=nameFromPcs(pcs,bass); const tok=N[r.root]+r.suf+(bass!==r.root?'/'+N[bass]:''); if(parseChord(tok)) return tok; }
+  const nm=m=>N[m%12]+(Math.floor(m/12)-1), lh=ms.filter(m=>m<60), rh=ms.filter(m=>m>=60);
+  const L=lh.map(nm).join(' '), R=rh.map(nm).join(' ');
+  return L&&R?L+' / '+R:(L||R);
+}
+function gkDraw(){
+  const ms=[...GK.notes], lh=ms.filter(m=>m<60), rh=ms.filter(m=>m>=60), box=$('gkbKeys'); if(!box) return;
+  const svg=keyboardSVG(lh,rh,{lo:36,hi:83,labels:false,height:74}); svg.removeAttribute('role'); box.replaceChildren(svg);
+}
+function gkSlot(){ return document.querySelector(`#grid .gin[data-bi="${GK.bi}"][data-i="${GK.i}"]`); }
+function gkApply(){
+  const tok=gkToken(), inp=gkSlot(); if(!inp) return;
+  GRID[GK.bi][GK.i]=tok?slotTok(tok):''; inp.value=slotShow(GRID[GK.bi][GK.i]); commitGrid(false); updateGridMeta();
+  const out=$('gkbOut'); out.textContent=tok||'Nothing pressed yet';
+}
+window.gkTarget=(bi,i)=>{ GK.bi=bi; GK.i=i; GK.notes.clear(); gkDraw(); const t=$('gkbTarget'); if(t) t.textContent='Filling bar '+(bi+1)+', box '+(i+1)+'. Click keys.'; const o=$('gkbOut'); if(o) o.textContent='Nothing pressed yet'; };
+function gkNext(){ const all=[...document.querySelectorAll('#grid .gin')], k=all.indexOf(gkSlot()); const nx=all[k+1]; commitGrid(true); if(nx){ nx.focus(); } else gkTarget(GK.bi,GK.i); }
+function gkInit(){
+  const box=$('gkbKeys'); if(!box||box.dataset.on) return; box.dataset.on='1';
+  box.addEventListener('click',async e=>{ const r=e.target.closest('[data-m]'); if(!r) return; const m=+r.dataset.m;
+    if(!gkSlot()){ const f=document.querySelector('#grid .gin'); if(f){ GK.bi=+f.dataset.bi; GK.i=+f.dataset.i; } }
+    if(GK.notes.has(m)) GK.notes.delete(m); else { GK.notes.add(m); try{ await ensureCtx(); try{ loadBank(ctx); }catch(_){} E.note(ctx.currentTime+0.02,m,1.2,0.7,'piano','keys'); }catch(_){} }
+    gkDraw(); gkApply(); });
+  const seg=(id,key)=>{ const el=$(id); el.querySelectorAll('button').forEach(b=>{ const v=b.dataset.a||b.dataset.m; b.setAttribute('aria-pressed',String(v===GK[key])); b.onclick=()=>{ GK[key]=v; store.set('bt-gkb',{acc:GK.acc,mode:GK.mode}); el.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String((x.dataset.a||x.dataset.m)===GK[key]))); gkApply(); }; }); };
+  seg('gkbAcc','acc'); seg('gkbMode','mode');
+  $('gkbNext').onclick=gkNext; $('gkbClear').onclick=()=>{ GK.notes.clear(); gkDraw(); gkApply(); };
+  gkDraw();
+}
+setTimeout(gkInit,0);
+
 function updateGridMeta(){
   let last=''; document.querySelectorAll('#grid .gin').forEach(inp=>{ const v=inp.value.trim();
     inp.classList.toggle('bad',!validTok(v)); if(v && v!=='.' && validTok(v)) last=v.length>9?v.slice(0,8)+'…':v; inp.placeholder=v?'':(last||'–'); inp.title=v; });
