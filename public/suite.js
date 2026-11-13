@@ -34,20 +34,53 @@ const css=document.createElement('style'); css.textContent=`
 #suiteHub .foot{margin-top:30px;font-size:13px;color:#8d98ae}
 #suiteHub .back{margin-top:18px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#e6eaf2;font:600 14px var(--body);padding:9px 16px;border-radius:999px;cursor:pointer}
 .ps-chip{border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important;font-weight:700!important;border-radius:999px!important;padding:3px 12px!important;margin-left:6px}
-/* destinations other than the Studio hide the chord stage and show one big window */
+/* Class with Coach and Studio+ use the Studio's dark stage look: same fonts, colours, pill buttons */
 body[data-dest="class"] header.top,body[data-dest="class"] #stage,body[data-dest="plus"] header.top,body[data-dest="plus"] #stage{display:none}
 body[data-dest="class"] .card[data-panel="teacher"].panel-active,
-body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{position:fixed!important;left:max(8px,calc(50% - 480px))!important;top:46px!important;width:min(960px,calc(100vw - 16px))!important;height:calc(100vh - 56px)!important;resize:none!important;border-radius:14px}
-body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{left:max(8px,calc(50% - 520px))!important;width:min(1040px,calc(100vw - 16px))!important}
-body[data-dest="class"] .card[data-panel="teacher"] .panel-bar .panel-btn,
-body[data-dest="plus"] .card[data-panel="transcribe"] .panel-bar .panel-btn{display:none}
-body[data-dest="class"] .card[data-panel="teacher"] .panel-bar,body[data-dest="plus"] .card[data-panel="transcribe"] .panel-bar{cursor:default}
-body[data-dest="plus"] .tx canvas{height:clamp(200px,32vh,360px)}
-#psMini{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:120;display:none;gap:8px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:600 13px var(--body)}
+body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{position:fixed!important;left:max(12px,calc(50% - 590px))!important;top:48px!important;width:min(1180px,calc(100vw - 24px))!important;height:calc(100vh - 60px)!important;resize:none!important;border-radius:18px;background:var(--stage)!important;color:var(--stage-ink);border:0;padding:clamp(16px,3vw,28px)!important;overflow:auto;box-shadow:none;display:flex;flex-direction:column;gap:12px}
+body[data-dest="class"] .card[data-panel="teacher"] .panel-bar,body[data-dest="plus"] .card[data-panel="transcribe"] .panel-bar,
+body[data-dest="class"] .card[data-panel="teacher"] .card-h,body[data-dest="plus"] .card[data-panel="transcribe"] .card-h{display:none}
+.ps-head{display:none}
+body[data-dest="class"] .card[data-panel="teacher"] .ps-head,body[data-dest="plus"] .card[data-panel="transcribe"] .ps-head{display:block}
+.ps-head .lbl{display:block;margin-bottom:2px}
+.ps-head h1{font:800 clamp(30px,5vw,52px)/1 var(--display);letter-spacing:-.02em;margin:0;color:var(--stage-ink)}
+.ps-head p{margin:6px 0 0;color:var(--stage-muted);font-size:14px}
+body[data-dest="class"] .teacher,body[data-dest="plus"] .tx{--ink:var(--stage-ink);--muted:var(--stage-muted);--line:#34446c;--bg:var(--stage-2);--surface:var(--stage-2)}
+body[data-dest="class"] .teacher .help,body[data-dest="plus"] .tx .help{color:var(--stage-muted)}
+/* buttons: the Studio's outlined pills, yellow for the main action */
+body[data-dest="class"] .teacher .btn,body[data-dest="plus"] .tx .btn,body[data-dest="class"] .t-chips .chip{background:transparent;border:1.5px solid #3a4a74;color:var(--stage-ink);border-radius:999px;padding:8px 14px;font-weight:500;font-size:14px;box-shadow:none}
+body[data-dest="class"] .teacher .btn:hover,body[data-dest="plus"] .tx .btn:hover:not(:disabled),body[data-dest="class"] .t-chips .chip:hover{background:var(--stage-2);border-color:var(--hi);color:var(--hi)}
+body[data-dest="class"] .teacher .btn.pri,body[data-dest="plus"] .tx .btn.pri{background:var(--hi);color:var(--hi-ink);border:0;font:800 16px var(--display);padding:11px 22px}
+body[data-dest="class"] .teacher .btn.pri:hover,body[data-dest="plus"] .tx .btn.pri:hover:not(:disabled){background:var(--hi);color:var(--hi-ink);filter:brightness(1.06)}
+body[data-dest="plus"] .tx .btn:disabled{opacity:.4}
+body[data-dest="plus"] .tx .btn.rec{border-color:#ff5a64;color:#ff8a92}
+body[data-dest="plus"] .tx .btn.on{background:#ff5a64;color:#fff;border-color:#ff5a64}
+/* fields */
+body[data-dest="class"] .teacher select,body[data-dest="class"] .teacher textarea,body[data-dest="plus"] .tx select,body[data-dest="plus"] .tx input[type=number]{background:var(--stage-2);color:var(--stage-ink);border:1.5px solid #34446c;border-radius:8px;padding:7px 10px}
+body[data-dest="class"] .teacher textarea{font-family:var(--body);font-size:16px}
+body[data-dest="class"] .teacher textarea::placeholder{color:var(--stage-muted)}
+body[data-dest="class"] .t-opts label,body[data-dest="class"] .t-chk,body[data-dest="plus"] .tx .txrow label{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
+body[data-dest="plus"] .tx .txrow label.check,body[data-dest="class"] .t-chk{text-transform:none;letter-spacing:0;font-weight:500;font-size:14px;color:var(--stage-ink)}
+body[data-dest="plus"] .tx input[type=range],body[data-dest="plus"] .tx #txSeek{accent-color:var(--hi)}
+/* the conversation */
+body[data-dest="class"] .t-log{flex:1}
+body[data-dest="class"] .t-msg{font-size:16px;line-height:1.55}
+body[data-dest="class"] .t-msg.bot{background:var(--stage-2);border:0;color:var(--stage-ink)}
+body[data-dest="class"] .t-msg.user{background:var(--hi);color:var(--hi-ink);font-weight:500}
+body[data-dest="class"] .t-msg.err{border-color:#ff6f79;color:#ff8a92}
+body[data-dest="class"] .t-load{background:var(--hi);color:var(--hi-ink);border-radius:999px;font-family:var(--display);font-weight:800;padding:8px 16px}
+body[data-dest="class"] .t-copy{color:var(--stage-muted);border-color:#34446c}
+body[data-dest="class"] .t-form{margin-top:auto}
+body[data-dest="plus"] .tx #txTitle{font:700 14px var(--display);color:var(--stage-ink)}
+body[data-dest="plus"] .tx canvas{height:clamp(200px,32vh,360px);border-radius:12px}
+body[data-dest="plus"] .tx .txitem{border-top-color:#34446c;color:var(--stage-ink)}
+body[data-dest="plus"] .tx h3{color:var(--stage-muted);text-transform:uppercase;letter-spacing:.12em;font:600 12px var(--body)!important}
+body[data-dest="plus"] .tx .help{color:var(--stage-muted)}
+#psMini{position:fixed;right:28px;bottom:22px;z-index:120;display:none;gap:8px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:600 13px var(--body)}
 body[data-dest="class"] #psMini{display:flex}
 #psMini button{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
 #psMini button.pri{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
-@media(max-width:700px){body[data-dest="class"] .card[data-panel="teacher"].panel-active,body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{left:0!important;top:40px!important;width:100vw!important;height:calc(100vh - 40px)!important;border-radius:0}#psMini{bottom:8px}}
+@media(max-width:700px){body[data-dest="class"] .card[data-panel="teacher"].panel-active,body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{left:0!important;top:40px!important;width:100vw!important;height:calc(100vh - 40px)!important;border-radius:0}#psMini{right:10px;bottom:10px}}
 `; document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
@@ -90,10 +123,16 @@ function mini(){
   setInterval(()=>{ const t=document.getElementById('playTxt'); const b=document.getElementById('psMPlay'); if(t&&b) b.textContent=(/pause/i.test(t.textContent)?'❚❚ ':'▶ ')+t.textContent; },400);
 }
 
+function heads(){
+  [['teacher','Class','Class with Coach','Ask anything. Learn by ear and by understanding.'],['transcribe','Studio+','Transcription','Turn any recording into notes you can see and practice.']].forEach(([p,lbl,t,sub])=>{
+    const c=document.querySelector('[data-panel="'+p+'"]'); if(!c||c.querySelector('.ps-head')) return;
+    const d=document.createElement('div'); d.className='ps-head'; d.innerHTML='<span class="lbl"></span><h1></h1><p></p>'; d.querySelector('.lbl').textContent=lbl; d.querySelector('h1').textContent=t; d.querySelector('p').textContent=sub;
+    const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });
+}
 window.SUITE={go,home:showHub,current:()=>cur,DEST,ORDER};
 
 function boot(){
-  addChip(); mini();
+  addChip(); mini(); heads();
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&hub.classList.contains('on')&&cur){ e.preventDefault(); go(cur); } },true);
   const last=get(); if(last){ cur=null; document.body.dataset.dest=last; }
   showHub();
