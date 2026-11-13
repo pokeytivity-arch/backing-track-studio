@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111a33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Piano Suite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2546,6 +2551,7 @@ const MENUS=[
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
     {label:'Class…',run:()=>SUITE.go('class')},
+    {label:'Install the app…',run:()=>window.PSINSTALL&&PSINSTALL.open()},
     {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
 ];
@@ -2830,5 +2836,6 @@ init();
 <script src="transcribe.js" defer></script>
 <script src="suite.js" defer></script>
 <script src="class.js" defer></script>
+<script src="install.js" defer></script>
 </body>
 </html>
