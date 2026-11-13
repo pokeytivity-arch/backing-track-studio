@@ -47,7 +47,7 @@ async function teacher(request, env) {
         found.map((d, i) => `\n[${i + 1}] ${d.k} (${d.d}, ${d.l})\n${d.t}`).join('\n');
     }
   } catch (e) { console.log('lessons', e); }
-  const system = PERSONA + '\n\n## Setting\nYou are inside Backing Track Studio, a web app where students type chord charts and a band plays them. Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
+  const system = PERSONA + '\n\n## Setting\nYou are inside Class with Coach, one of the three places in Piano Suite. The other two are the Studio (students type chord charts and a band plays them) and Studio+ (transcription of recordings). Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
 
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

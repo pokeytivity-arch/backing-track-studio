@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Backing Track Studio</title>
+<title>Piano Suite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -364,7 +364,7 @@ audio{width:100%}
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Backing Track Studio <small>chord charts in, band out</small></h1>
+    <h1>Studio <small>chord charts in, band out</small></h1>
     <div class="status" id="status">No sound on iPhone? Switch off silent mode.</div>
   </header>
 
@@ -521,7 +521,7 @@ audio{width:100%}
         .tx #txTitle{font:600 13px var(--body)}
         .tx input[type=number]{width:64px}
         </style>
-        <div class="card-h"><h2>Transcribe a recording</h2><span class="help">Turns audio into notes</span></div>
+        <div class="card-h"><h2>Studio+ · Transcription</h2><span class="help">Turns audio into notes</span></div>
         <p class="help">Choose an audio file or record with the microphone. The Studio finds the notes and drops them onto a keyboard in time with the recording. Works best with one instrument or a clear piano part. It reads the first five minutes. Everything stays in your browser; the audio is not uploaded.</p>
         <div class="txrow">
           <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac" hidden>
@@ -587,7 +587,7 @@ audio{width:100%}
       </section>
 
       <section data-panel="teacher" class="card teacher" id="teacherCard">
-        <div class="card-h"><h2>Ask Piano Study Suite</h2><span class="help">Your AI piano coach</span></div>
+        <div class="card-h"><h2>Class with Coach</h2><span class="help">Your AI piano coach</span></div>
         <div class="row t-opts">
           <label for="tLevel" class="flabel">My level</label>
           <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
@@ -2312,7 +2312,7 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Transcribe a recording',teacher:'Ask Piano Study Suite',mixer:'Mixer',library:'Library',export:'Export audio'};
+const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class with Coach',mixer:'Mixer',library:'Library',export:'Export audio'};
 const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
@@ -2353,6 +2353,7 @@ function placeWin(card,name){
   Object.assign(card.style,{width:w+'px',height:h+'px',left:x+'px',top:y+'px',right:'auto'}); clampWin(card);
 }
 function openPanel(name,focusEl){
+  if(window.SUITE&&SUITE.current()){ const c=SUITE.current(); if(name==='transcribe'&&c!=='plus'){ SUITE.go('plus'); return; } if(name==='teacher'&&c==='plus'){ SUITE.go('class'); return; } if(c!=='studio'&&name!=='teacher'&&name!=='transcribe') SUITE.go('studio'); }
   const card=document.querySelector(`.bench .card[data-panel="${name}"]`); if(!card) return;
   const wasOpen=card.classList.contains('panel-active');
   restoreFromDock(name,false);
@@ -2399,8 +2400,9 @@ function infoDialog(title,html){
 }
 const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['A','Ask Piano Study Suite'],['Esc','Close a menu or panel, or leave projector view']];
 const MENUS=[
-  {label:'Backing Track Studio',brand:true,items:[
-    {label:'About Backing Track Studio',run:()=>infoDialog('Backing Track Studio',`<p>Type a chord chart, pick a style, and a band plays it. Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
+  {label:'Piano Suite',brand:true,items:[
+    {label:'Piano Suite home…',run:()=>SUITE.home()},
+    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has three places: Class with Coach, Studio (backing tracks) and Studio+ (transcription). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
     {sep:true},
     {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
   {label:'File',items:[
@@ -2450,14 +2452,20 @@ const MENUS=[
     {label:'Soloist…',run:()=>openPanel('soloist')},
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
-    {label:'Transcribe a recording…',key:'R',run:()=>openPanel('transcribe')},
-    {label:'Ask Piano Study Suite…',key:'A',run:()=>openPanel('teacher')},
+    {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
+    {label:'Class with Coach…',key:'A',run:()=>SUITE.go('class')},
     {sep:true},
     ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
     ]},
+  {label:'Window',items:[
+    {label:'Piano Suite home…',run:()=>SUITE.home()},
+    {sep:true},
+    {label:'Class with Coach',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
+    {label:'Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
+    {label:'Studio+ (Transcription)',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')}]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
-    {label:'Ask Piano Study Suite…',run:()=>openPanel('teacher')},
+    {label:'Class with Coach…',run:()=>SUITE.go('class')},
     {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
 ];
@@ -2729,7 +2737,6 @@ function init(){
   $('humJump').onclick=()=>{ openPanel('hum'); return; const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
   $('stopBtn').onclick=stop; buildMenubar(); setupPanels(); setupTeacher();
-  { const tb=document.createElement('button'); tb.className='menu-btn'; tb.id='txTop'; tb.type='button'; tb.textContent='🎧 Transcribe'; tb.title='Turn a recording into notes (R)'; tb.style.cssText='font-weight:700;color:var(--accent)'; tb.onclick=()=>openPanel('transcribe'); const mb=document.querySelector('.menubar'), br=mb.querySelector('.brand'); if(br&&br.nextSibling) mb.insertBefore(tb,br.nextSibling); else mb.appendChild(tb); }
   { const st=$('status'); if(st){ st.classList.add('menu-status'); document.querySelector('.menubar').appendChild(st); } }
   $('humPlay').onclick=()=>{ closePanel(); toggle(); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
@@ -2779,5 +2786,6 @@ function init(){
 init();
 </script>
 <script src="transcribe.js" defer></script>
+<script src="suite.js" defer></script>
 </body>
 </html>

@@ -71,14 +71,14 @@ function showResult({blob,notes,dur,title,long}){
 let dbP=null;
 function db(){ if(!dbP) dbP=new Promise((res,rej)=>{ const r=indexedDB.open('bts-transcribe',1); r.onupgradeneeded=()=>r.result.createObjectStore('items',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); return dbP; }
 const tx=(mode,fn)=>db().then(d=>new Promise((res,rej)=>{ const t=d.transaction('items',mode), st=t.objectStore('items'), q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }));
-async function saveItem(it){ try{ await tx('readwrite',st=>st.put({id:Date.now()+'-'+Math.random().toString(36).slice(2,6),when:Date.now(),title:it.title,dur:it.dur,notes:it.notes,blob:it.blob})); renderLib(); }catch(e){ say('Done, but this browser would not save it to your library (private browsing?).',true); } }
+async function saveItem(it){ try{ const id=Date.now()+'-'+Math.random().toString(36).slice(2,6); try{ localStorage.setItem('tx-last',id); }catch(_){} await tx('readwrite',st=>st.put({id,when:Date.now(),title:it.title,dur:it.dur,notes:it.notes,blob:it.blob})); renderLib(); }catch(e){ say('Done, but this browser would not save it to your library (private browsing?).',true); } }
 async function renderLib(){
   const box=$('txLib'); if(!box) return; let items=[]; try{ items=(await tx('readonly',st=>st.getAll()))||[]; }catch(e){ box.textContent='Your library is not available in this browser mode.'; return; }
   items.sort((a,b)=>b.when-a.when); box.textContent='';
   if(!items.length){ box.innerHTML='<span class="help">Nothing saved yet. Every transcription you make is saved here, in this browser only.</span>'; return; }
   items.forEach(it=>{ const row=document.createElement('div'); row.className='txitem';
     const t=document.createElement('span'); t.className='txt'; t.textContent=it.title+' · '+it.notes.length+' notes · '+fmt(it.dur)+' · '+new Date(it.when).toLocaleDateString();
-    const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
+    const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ try{ localStorage.setItem('tx-last',it.id); }catch(_){} showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
     const r=document.createElement('button'); r.className='btn sm'; r.textContent='Rename'; r.onclick=async()=>{ const n=window.prompt('Name for this transcription',it.title); if(n&&n.trim()){ it.title=n.trim().slice(0,80); await tx('readwrite',st=>st.put(it)); renderLib(); } };
     const x=document.createElement('button'); x.className='btn sm'; x.textContent='Delete'; x.onclick=async()=>{ if(window.confirm('Delete "'+it.title+'" from your library?')){ await tx('readwrite',st=>st.delete(it.id)); renderLib(); } };
     row.append(t,o,r,x); box.appendChild(row); });
@@ -219,6 +219,7 @@ function init(){
   new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
   draw(0);
 }
-window.TX={init,S,_test:{transcribeBlob,midiBytes,detectKey,draw}};
+async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
+window.TX={init,restoreLast,S,_test:{transcribeBlob,midiBytes,detectKey,draw}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
