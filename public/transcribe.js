@@ -9,7 +9,7 @@ const MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88], MIN=[6.
 const MAX_SEC=300;
 let X=null; // state
 const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:0.5,rate:1,tr:0,names:false,look:4,loopA:null,loopB:null,
-  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false};
+  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto'};
 const nm=(p,flats)=>(flats?NAMES_F:NAMES_S)[((p%12)+12)%12];
 const oct=p=>Math.floor(p/12)-1;
 const isBlack=p=>[1,3,6,8,10].includes(((p%12)+12)%12);
@@ -60,7 +60,7 @@ function showResult({blob,notes,dur,title,long}){
   S.audio=new Audio(S.url); S.audio.preservesPitch=true; S.audio.mozPreservesPitch=true; S.audio.webkitPreservesPitch=true; S.audio.preload='auto';
   S.audio.onended=()=>{ if(S.playing) pausePlay(); };
   S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
-  fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
+  assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
   $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txClearLoop').disabled=false;
   say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
@@ -146,6 +146,31 @@ function loop(){
   if(S.playing) S.raf=requestAnimationFrame(loop);
 }
 
+
+/* ---------- left and right hand (two colours, like the Studio keyboard) ---------- */
+const LH_COL='#1c7ed6', RH_COL='#f76707';
+function assignHands(){
+  const N=S.notes; if(!N.length) return;
+  if(S.hands==='c4'){ N.forEach(n=>n.h=n.p<60?0:1); return; }
+  let lc=48, rc=72; const groups=[]; let g=null;
+  N.forEach(n=>{ if(g&&n.t-g.t<0.07){ g.n.push(n); } else { g={t:n.t,n:[n]}; groups.push(g); } });
+  groups.forEach(gr=>{
+    const ns=gr.n.slice().sort((a,b)=>a.p-b.p);
+    if(ns.length>=2){
+      // look for a clear gap between the hands inside the middle of the keyboard
+      let best=-1,gap=0,bs=-1e9; for(let i=0;i<ns.length-1;i++){ const d=ns[i+1].p-ns[i].p, mid=(ns[i].p+ns[i+1].p)/2; if(mid<45||mid>75) continue; const lo=ns.slice(0,i+1).reduce((a,n)=>a+n.p,0)/(i+1), hi=ns.slice(i+1).reduce((a,n)=>a+n.p,0)/(ns.length-i-1), sc=d-Math.abs(lo-lc)*0.15-Math.abs(hi-rc)*0.15; if(sc>bs){ bs=sc; gap=d; best=i; } }
+      if(best>=0&&gap>=5){ ns.forEach((n,i)=>n.h=i<=best?0:1); }
+      else{ const m=ns.reduce((a,n)=>a+n.p,0)/ns.length, h=Math.abs(m-lc)<=Math.abs(m-rc)?0:1; ns.forEach(n=>n.h=h); }
+    } else { const n=ns[0]; n.h=n.p<=47?0:n.p>=73?1:(Math.abs(n.p-lc)<=Math.abs(n.p-rc)-1?0:1); }
+    ns.forEach(n=>{ if(n.h===0) lc=lc*0.8+n.p*0.2; else rc=rc*0.8+n.p*0.2; });
+    lc=Math.min(lc,60); rc=Math.max(rc,60);
+  });
+}
+const noteHue=(n)=>HUES[((n.p+S.tr)%12+12)%12];
+function noteFill(n,on,black){
+  if(S.hands==='note'){ const hue=noteHue(n); return `hsl(${hue} 85% ${on?(black?45:62):50}%)`; }
+  const base=n.h===0?LH_COL:RH_COL; return on?(n.h===0?'#4aa3f0':'#ff9442'):base;
+}
 /* ---------- falling notes ---------- */
 const HUES=[210,255,300,345,25,50,95,150,175,190,230,280];
 function draw(t){
@@ -165,17 +190,17 @@ function draw(t){
   if(S.met){ const sp=60/S.bpm; let k=Math.ceil((t-S.metOrigin)/sp); for(;;k++){ const bt=S.metOrigin+k*sp; if(bt>t+look) break; const y=fallH-(bt-t)*pps; g.strokeStyle=k%S.bpb===0?'rgba(255,255,255,.25)':'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
   const flats=!!S.flats;
   for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+look) break; const end=n.t+n.d; if(end<t) continue; const p=n.p+S.tr; if(p<lo||p>hi||!pos[p]) continue;
-    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(4,y2-y1); const hue=HUES[((p%12)+12)%12], on=n.t<=t&&end>=t;
-    g.fillStyle=`hsl(${hue} 85% ${on?62:50}%)`; const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill();
-    if(on) active.set(p,hue);
+    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(4,y2-y1); const on=n.t<=t&&end>=t;
+    g.fillStyle=noteFill(n,on,false); const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill();
+    if(on) active.set(p,n);
     if(S.names&&h>13&&w>12){ g.fillStyle='#fff'; g.font=`600 ${Math.min(12,w*0.62)}px system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-3,fallH-3)); } }
   // keyboard, drawn like the Studio keyboard: white keys with a dark outline, short black keys, C labels, note names on pressed keys
   const rr=(x,y,w,h,r)=>{ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
   const fs=Math.max(8,Math.min(12,kw*0.5));
-  for(const p of whites){ const b=pos[p], on=active.has(p); rr(b.x+0.5,fallH+0.5,b.w-1,KH-1,2); g.fillStyle=on?`hsl(${active.get(p)} 85% 55%)`:'#fff'; g.fill(); g.strokeStyle='#333'; g.lineWidth=1; g.stroke();
+  for(const p of whites){ const b=pos[p], on=active.has(p); rr(b.x+0.5,fallH+0.5,b.w-1,KH-1,2); g.fillStyle=on?noteFill(active.get(p),false,false):'#fff'; g.fill(); g.strokeStyle='#333'; g.lineWidth=1; g.stroke();
     g.textAlign='center'; if(on){ g.fillStyle='#fff'; g.font=`700 ${fs}px Arial,sans-serif`; g.fillText(nm(p,flats),b.x+b.w/2,fallH+KH-5); }
     if(p%12===0){ g.fillStyle=on?'#fff':'#999'; g.font=`${Math.max(7,fs-3)}px Arial,sans-serif`; g.textAlign='left'; g.fillText('C'+oct(p),b.x+3,fallH+KH-(on?fs+7:5)); } }
-  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62; rr(b.x,fallH,b.w,bh,1.5); g.fillStyle=on?`hsl(${active.get(p)} 85% 45%)`:'#222'; g.fill(); g.strokeStyle='#111'; g.lineWidth=0.8; g.stroke();
+  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62; rr(b.x,fallH,b.w,bh,1.5); g.fillStyle=on?noteFill(active.get(p),false,true):'#222'; g.fill(); g.strokeStyle='#111'; g.lineWidth=0.8; g.stroke();
     if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-4); } }
   g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2; g.beginPath(); g.moveTo(0,fallH); g.lineTo(W,fallH); g.stroke();
   if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.7)'; g.font='600 14px system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W/2,fallH/2); }
@@ -197,6 +222,7 @@ function downloadMidi(){
 }
 
 /* ---------- wiring ---------- */
+function updLegend(){ const l=$('txLegend'); if(!l) return; l.innerHTML=S.hands==='note'?'':'<i style="background:'+LH_COL+'"></i> Left hand <i style="background:'+RH_COL+'"></i> Right hand'; }
 function init(){
   if(!$('txCanvas')||X) return; X=1;
   $('txFileBtn').onclick=()=>$('txFile').click();
@@ -208,6 +234,9 @@ function init(){
   $('txSpeed').onchange=e=>{ S.rate=+e.target.value; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
   try{ const k=+localStorage.getItem('tx-kbd'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
   $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd',e.target.value); }catch(_){} fitRange(); draw(cur()); };
+  $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
+  try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
+  updLegend();
   $('txLook').onchange=e=>{ S.look=+e.target.value; draw(cur()); };
   $('txTr').onchange=e=>{ S.tr=+e.target.value; resetSched(); draw(cur()); };
   $('txMix').oninput=e=>{ S.mixNote=+e.target.value/100; applyMix(); };
@@ -227,6 +256,6 @@ function init(){
   draw(0);
 }
 async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
-window.TX={init,restoreLast,S,_test:{transcribeBlob,midiBytes,detectKey,draw}};
+window.TX={init,restoreLast,S,_test:{transcribeBlob,midiBytes,detectKey,draw,assignHands}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
