@@ -2732,7 +2732,12 @@ function renderList(){
     const tt=document.createElement('div'); tt.className='t'; tt.textContent=it.title||'Untitled';
     const acts=document.createElement('div'); acts.className='acts';
     const lb=document.createElement('button'); lb.className='btn sm pri'; lb.textContent='Load'; lb.onclick=()=>loadTrack(it); acts.appendChild(lb);
-    if(tab==='mine'){ const del=document.createElement('button'); del.className='btn sm danger'; del.textContent='Delete'; del.onclick=()=>{ const a=store.get('bt-mine',[]); a.splice(i,1); store.set('bt-mine',a); renderList(); }; acts.appendChild(del); }
+    if(tab==='mine'){ const rn=document.createElement('button'); rn.className='btn sm'; rn.textContent='Rename'; rn.onclick=()=>{
+        const inp=document.createElement('input'); inp.type='text'; inp.value=it.title||''; inp.maxLength=80; inp.setAttribute('aria-label','Track name'); inp.style.cssText='width:100%;font:inherit;padding:4px 8px;border:1.5px solid var(--hi,#2445d4);border-radius:8px';
+        let done=false; const save=ok=>{ if(done) return; done=true; const nm=inp.value.trim().slice(0,80); if(ok&&nm){ const a=store.get('bt-mine',[]); if(a[i]){ a[i].title=nm; store.set('bt-mine',a); } toast('Renamed'); } renderList(); };
+        inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); save(true); } else if(e.key==='Escape') save(false); }; inp.onblur=()=>save(true);
+        tt.textContent=''; tt.appendChild(inp); inp.focus(); inp.select(); };
+      acts.appendChild(rn); const del=document.createElement('button'); del.className='btn sm danger'; del.textContent='Delete'; del.onclick=()=>{ const a=store.get('bt-mine',[]); a.splice(i,1); store.set('bt-mine',a); renderList(); }; acts.appendChild(del); }
     if(tab==='class' && canTeach){ const del=document.createElement('button'); del.className='btn sm danger'; del.textContent='Remove'; del.onclick=()=>removeClass(it.id,del); acts.appendChild(del); }
     const mm=document.createElement('div'); mm.className='m'; mm.textContent=`${(STYLES[it.style]||STYLES.pop).label} · ${it.bpm} BPM${it.transpose?` · ${it.transpose>0?'+':''}${it.transpose}`:''}`;
     const cc=document.createElement('div'); cc.className='c'; cc.textContent=(it.chords||'').replace(/\n/g,' ');
