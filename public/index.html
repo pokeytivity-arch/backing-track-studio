@@ -66,7 +66,6 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .icontog:hover{color:var(--stage-ink);border-color:#5c6f9e}
 .icontog[aria-pressed="true"]{color:var(--hi);border-color:var(--hi);background:color-mix(in srgb,var(--hi) 14%,var(--stage-2));box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 18%,transparent)}
 .icontog .pend{transform-box:view-box;transform-origin:12px 16.5px;transform:rotate(18deg)}
-#clickBtn[aria-pressed="true"]:not(.live) .pend{animation:swing var(--beat,0.5s) ease-in-out infinite alternate}
 #clickBtn.live .pend{transition:none}
 @keyframes swing{from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
 @media (prefers-reduced-motion: reduce){ .icontog .pend{animation:none!important;transition:none!important} }
@@ -525,7 +524,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-i (stage-only layout with menu panels)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-j (metronome pauses with the band)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1376,7 +1375,7 @@ function pause(){
   playing=false; ticker.stop(); uiQ=[]; drumQ=[];
   const keep=silenceEngine();
   paused={...at,bpm:P.bpm,keep};
-  setPlayUI(); pendulumIdle();
+  setPlayUI(); pendBeatT=null;   // pendulum freezes where it is
 }
 function resume(){
   const z=paused; paused=null; if(!z) return play();
