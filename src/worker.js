@@ -38,6 +38,8 @@ async function teacher(request, env) {
   if (c.level) ctx += `\nStudent level: ${clip(c.level, 40)}.`;
   if (c.chart) ctx += `\nThe student's current Backing Track Studio session (chords are typed one per bar, '.' = hold, [L / R] = a voicing with left and right hand):\n` +
     `Title: ${clip(c.title, 120) || '(untitled)'}\nStyle: ${clip(c.style, 40)} · Tempo: ${clip(c.bpm, 8)} BPM · Time: ${clip(c.meter, 8)} · Transpose: ${clip(c.transpose, 6)}\nChart:\n${clip(c.chart, 3000)}`;
+  if (c.keyboard) ctx += `\nThe student's Class keyboard is currently showing these chords: ${clip(c.keyboard, 300)}.`;
+  if (c.heard) ctx += `\nFrom Studio+ (the student took this to Class): ${clip(c.heard, 900)}\nThe notes come from software that listens to a recording, so treat them as a good but imperfect guess: name the chord or run they most likely make, say what to double-check by ear, and teach it in your method.`;
   let lessons = '';
   try {
     {
@@ -47,7 +49,7 @@ async function teacher(request, env) {
         found.map((d, i) => `\n[${i + 1}] ${d.k} (${d.d}, ${d.l})\n${d.t}`).join('\n');
     }
   } catch (e) { console.log('lessons', e); }
-  const system = PERSONA + '\n\n## Setting\nYou are inside Class with Coach, one of the three places in Piano Suite. The other two are the Studio (students type chord charts and a band plays them) and Studio+ (transcription of recordings). Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
+  const system = PERSONA + '\n\n## Setting\nYou are inside Class, one of the three places in Piano Suite. Class has a whiteboard, a keyboard and this chat. The other two places are the Studio (students create what they want to practice: they type a chord chart and a band plays it) and Studio+ (students upload a recording they want to break down, and see its notes). A student can move between the three at any time, so when it helps, point them to the right room. Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
 
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',

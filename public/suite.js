@@ -1,5 +1,5 @@
 /* Piano Suite: one home with three destinations.
-   Class with Coach  = the coach, full size
+   Class = the coach with whiteboard, keyboard and chat
    Studio            = backing tracks
    Studio+           = transcription
    Remembers the last destination, and the Window menu switches between them. */
@@ -7,7 +7,7 @@
 'use strict';
 const KEY='ps-dest';
 const DEST={
-  class:{name:'Class with Coach',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
+  class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Bring in a recording or play into the microphone and see the notes fall onto the keys.',panel:'transcribe'}
 };
@@ -124,7 +124,7 @@ function mini(){
 }
 
 function heads(){
-  [['teacher','Class','Class with Coach','Ask anything. Learn by ear and by understanding.'],['transcribe','Studio+','Transcription','Turn any recording into notes you can see and practice.']].forEach(([p,lbl,t,sub])=>{
+  [['teacher','Class','Class','Ask anything. Learn by ear and by understanding.'],['transcribe','Studio+','Transcription','Turn any recording into notes you can see and practice.']].forEach(([p,lbl,t,sub])=>{
     const c=document.querySelector('[data-panel="'+p+'"]'); if(!c||c.querySelector('.ps-head')) return;
     const d=document.createElement('div'); d.className='ps-head'; d.innerHTML='<span class="lbl"></span><h1></h1><p></p>'; d.querySelector('.lbl').textContent=lbl; d.querySelector('h1').textContent=t; d.querySelector('p').textContent=sub;
     const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });

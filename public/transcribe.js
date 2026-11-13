@@ -89,7 +89,7 @@ function showResult({blob,notes,dur,title,long,fresh}){
   S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
   assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
-  $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txClearLoop').disabled=false;
+  $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; $('txClearLoop').disabled=false;
   say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
   draw(0);
 }
@@ -187,9 +187,26 @@ function applySens(){
   if(!S.audio) return; const s=sensVal(); let notes;
   if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
   S.notes=notes; stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
-  $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; draw(cur());
+  $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; draw(cur());
   say(notes.length+' notes at this sensitivity.'+(S.raw?'':' (On a reopened recording the slider can only remove notes.)'));
   if(S.itemId){ const id=S.itemId; tx('readwrite',st=>{ const q=st.get(id); q.onsuccess=()=>{ if(q.result){ q.result.notes=notes; st.put(q.result); } }; }).catch(()=>{}); }
+}
+
+// take the part of the recording the student is stuck on to Class
+function askClass(){
+  if(!S.notes.length||!window.CLASS) return; const t=cur(), flats=!!S.flats;
+  const name=n=>nm(n.p+S.tr,flats)+oct(n.p+S.tr), inRange=(a,b)=>S.notes.filter(n=>n.t<b&&n.t+n.d>a);
+  let a,b,what;
+  if(S.loopA!=null&&S.loopB!=null&&S.loopB>S.loopA){ a=S.loopA; b=S.loopB; what='the section from '+fmt(a)+' to '+fmt(b)+' (my loop)'; }
+  else { a=Math.max(0,t-0.05); b=t+0.6; what='the moment at '+fmt(t); }
+  let ns=inRange(a,b).sort((x,y)=>x.t-y.t||x.p-y.p).slice(0,40);
+  if(!ns.length){ say('I could not find notes there. Move to a spot where notes are falling, or set a loop around the part you want to ask about.',true); return; }
+  const list=ns.map(name).join(' '), key=($('txKey').textContent||'').replace(/^Key:\s*/,'');
+  const range=S.loopA!=null&&S.loopB!=null;
+  const q=range?`I'm breaking down "${S.title}" in Studio+ and I'm stuck on ${what}. The notes there, in order, are: ${list}. The key looks like ${key}. What chords or run is this, and how do I play and practice it?`
+               :`I'm breaking down "${S.title}" in Studio+. At ${fmt(t)} these notes sound together: ${list}. The key looks like ${key}. What chord or run is this, and how do I play it?`;
+  const heard='Studio+ transcription of "'+S.title+'" (notes found by software, so a few may be wrong). Key: '+key+'. '+what+': '+list;
+  window.CLASS.askAbout(q,{heard,fresh:false});
 }
 function click(at,accent){ const ac=S.ac, o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=accent?1500:1000; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(accent?0.6:0.4,at+0.002); g.gain.exponentialRampToValueAtTime(0.0001,at+0.05); o.connect(g); g.connect(S.ac.destination); o.start(at); o.stop(at+0.06); }
 function resetSched(){ S.sched.clear(); S.metNext=null; }
@@ -315,7 +332,7 @@ function init(){
   $('txBpm').onchange=e=>{ S.bpm=Math.max(30,Math.min(240,+e.target.value||100)); e.target.value=S.bpm; resetSched(); };
   $('txBpb').onchange=e=>{ S.bpb=+e.target.value; resetSched(); };
   $('txBeat1').onclick=()=>{ S.metOrigin=cur(); resetSched(); say('Beat 1 is now at '+fmt(cur())+'.'); draw(cur()); };
-  $('txMidi').onclick=downloadMidi; $('txWav').onclick=saveWav;
+  $('txMidi').onclick=downloadMidi; $('txWav').onclick=saveWav; $('txAsk').onclick=askClass;
   $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=['Fewer notes','Fewer notes','Balanced','More notes','More notes'][Math.min(4,Math.floor(sensVal()*5))]; };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);

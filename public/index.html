@@ -420,6 +420,7 @@ audio{width:100%}
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
+      <button class="tog" id="askClassBtn" title="Talk about these chords with your coach">🎓 Ask Class</button>
       <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
@@ -554,7 +555,7 @@ audio{width:100%}
           <label><select id="txBpb"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option></select> beats</label>
           <button class="btn sm" id="txBeat1" title="Press at the first beat of a bar while the recording plays">Beat 1 is here</button>
         </div>
-        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
+        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask Class about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
         <h3 style="margin:14px 0 4px;font:700 13px var(--body)">Your saved transcriptions</h3>
         <div id="txLib"></div>
       </section>
@@ -591,29 +592,7 @@ audio{width:100%}
         </div>
       </section>
 
-      <section data-panel="teacher" class="card teacher" id="teacherCard">
-        <div class="card-h"><h2>Class with Coach</h2><span class="help">Your AI piano coach</span></div>
-        <div class="row t-opts">
-          <label for="tLevel" class="flabel">My level</label>
-          <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
-          <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
-          <button class="btn" id="tCopyAll" type="button">Copy chat</button>
-          <button class="btn" id="tClear" type="button">New conversation</button>
-        </div>
-        <div id="tLog" class="t-log" aria-live="polite"></div>
-        <div class="t-chips" id="tChips">
-          <button class="btn chip" type="button">Explain the chords in my chart</button>
-          <button class="btn chip" type="button">Give me a practice plan for this song</button>
-          <button class="btn chip" type="button">Quiz me on what I'm learning</button>
-          <button class="btn chip" type="button">How do I find the bass note for a melody?</button>
-        </div>
-        <form id="tForm" class="t-form">
-          <label for="tInput" class="sr">Your question</label>
-          <textarea id="tInput" rows="2" maxlength="2000" placeholder="Ask anything about piano, chords or your chart…"></textarea>
-          <button class="btn pri" id="tSend" type="submit">Ask</button>
-        </form>
-        <p class="help">AI coach trained from real music lessons with real people all around the world.</p>
-      </section>
+      <section data-panel="teacher" class="card teacher" id="teacherCard"></section>
 
       <section data-panel="export" class="card">
         <h2>Export audio</h2>
@@ -2151,7 +2130,7 @@ async function renderSheet(target){
   head.append(h1,sub); target.appendChild(head);
   const wantMusic=$('sheetMusic').checked, wantDiag=$('sheetDiag').checked;
   if(!wantMusic && !wantDiag){ const p=document.createElement('p'); p.textContent='Tick Sheet music or Keyboard diagrams above.'; p.style.cssText='font:15px Arial;color:#555;text-align:center;margin:30px 0'; target.appendChild(p); return; }
-  if(!wantMusic){ target.appendChild(chordDiagrams(sg)); const f=document.createElement('p'); f.className='sheet-foot'; f.textContent='Made with Backing Track Studio'; target.appendChild(f); return; }
+  if(!wantMusic){ target.appendChild(chordDiagrams(sg)); const f=document.createElement('p'); f.className='sheet-foot'; f.textContent='Made with Piano Suite'; target.appendChild(f); return; }
   const nBars=sg.bars.length, perSys=M.bar>16?2:(M.bar>=14?3:4), W=1000;
   let prev=null; const voicings=sg.events.map(ev=>{ if(!ev.chord) return null; const v=sheetVoicing(ev,prev); prev=v.rh; return v; });
   let pendingTie=null; // {t,b} notes waiting to tie into the next system
@@ -2210,7 +2189,7 @@ async function renderSheet(target){
     const svg=div.querySelector('svg'); svg.setAttribute('viewBox',`0 0 ${W} 250`); svg.removeAttribute('width'); svg.removeAttribute('height'); svg.style.width='100%'; svg.style.height='auto';
   }
   if(wantDiag) target.appendChild(chordDiagrams(sg));
-  const foot=document.createElement('p'); foot.className='sheet-foot'; foot.textContent='Made with Backing Track Studio'; target.appendChild(foot);
+  const foot=document.createElement('p'); foot.className='sheet-foot'; foot.textContent='Made with Piano Suite'; target.appendChild(foot);
 }
 async function openSheet(){
   const ov=$('sheetModal'), body=$('sheetBody'); ov.hidden=false; body.textContent='Writing the sheet music…';
@@ -2232,12 +2211,12 @@ function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70}={}){
   svg.setAttribute('aria-label','Left hand '+lh.map(m=>N[m%12]).join(' ')+', right hand '+rh.map(m=>N[m%12]).join(' '));
   const col=m=>lh.includes(m)?'#1c7ed6':rh.includes(m)?'#f76707':null;
   const el=(tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e; };
-  whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1});
+  whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1,'data-m':m});
     if(c&&labels){ const t=el('text',{x:1+i*ww+ww/2,y:H-5,'text-anchor':'middle','font-size':8,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[m%12]; }
     if(((m%12)+12)%12===0){ const t=el('text',{x:1+i*ww+2,y:H-(c?16:5),'font-size':6,'font-family':'Arial',fill:c?'#fff':'#999'}); t.textContent='C'+(Math.floor(m/12)-1); } });
   for(let m=lo;m<=hi;m++){ const pc=((m%12)+12)%12; if(KB_WHITE.includes(pc)) continue;
     const i=whites.indexOf(m-1); if(i<0) continue; const c=col(m), x=1+(i+1)*ww-bw/2;
-    el('rect',{x,y:1,width:bw,height:bh,rx:1.5,fill:c||'#222',stroke:'#111','stroke-width':0.8});
+    el('rect',{x,y:1,width:bw,height:bh,rx:1.5,fill:c||'#222',stroke:'#111','stroke-width':0.8,'data-m':m});
     if(c&&labels){ const t=el('text',{x:x+bw/2,y:bh-4,'text-anchor':'middle','font-size':6,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[pc]; } }
   return svg;
 }
@@ -2317,7 +2296,7 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class with Coach',mixer:'Mixer',library:'Library',export:'Export audio'};
+const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class',mixer:'Mixer',library:'Library',export:'Export audio'};
 const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
@@ -2407,7 +2386,7 @@ const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Sto
 const MENUS=[
   {label:'Piano Suite',brand:true,items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
-    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has three places: Class with Coach, Studio (backing tracks) and Studio+ (transcription). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
+    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has three places: Class, Studio (backing tracks) and Studio+ (transcription). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
     {sep:true},
     {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
   {label:'File',items:[
@@ -2458,19 +2437,20 @@ const MENUS=[
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
-    {label:'Class with Coach…',key:'A',run:()=>SUITE.go('class')},
+    {label:'Class…',key:'A',run:()=>SUITE.go('class')},
+    {label:'Ask Class about this chord…',run:()=>askClassFromStudio()},
     {sep:true},
     ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
     ]},
   {label:'Window',items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
     {sep:true},
-    {label:'Class with Coach',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
+    {label:'Class',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
     {label:'Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
     {label:'Studio+ (Transcription)',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')}]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
-    {label:'Class with Coach…',run:()=>SUITE.go('class')},
+    {label:'Class…',run:()=>SUITE.go('class')},
     {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
 ];
@@ -2478,7 +2458,6 @@ const MENUS=[
 /* =========================================================
    Ask Piano Study Suite (AI coach via /api/teacher)
    ========================================================= */
-const T={log:store.get('bt-teacher',[]), busy:false};
 function tCopy(text){
   const done=()=>toast('Copied');
   if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(text).then(done,()=>tCopyFallback(text,done)); } else tCopyFallback(text,done);
@@ -2489,14 +2468,6 @@ function tCopyFallback(text,done){
   ta.remove();
 }
 const T_KEYS={'-6':'G♭','-5':'G','-4':'A♭','-3':'A','-2':'B♭','-1':'B','0':'C','1':'D♭','2':'D','3':'E♭','4':'E','5':'F','6':'G♭'};
-function tSplit(txt){
-  const blocks=[]; let t=String(txt||'');
-  t=t.replace(/```studio\s*([\s\S]*?)```/g,(m,j)=>{ blocks.push(j); return ''; });
-  t=t.replace(/```studio[\s\S]*$/,'').trim();   // an unfinished block is dropped
-  const tracks=[];
-  blocks.forEach(j=>{ try{ const o=JSON.parse(j.trim()); const tr=tCleanTrack(o); if(tr) tracks.push(tr); }catch(e){} });
-  return {text:t, tracks};
-}
 function tCleanTrack(o){
   if(!o||typeof o.chords!=='string') return null;
   const chords=o.chords.slice(0,1500).trim(); if(!chords) return null;
@@ -2508,46 +2479,16 @@ function tCleanTrack(o){
   const old=S.flatsHint; S.flatsHint=t.flats; let bad; try{ bad=parseChart(chords,tr,METERS[meter].bar).errors.length; }catch(e){ bad=1; } S.flatsHint=old;
   return bad?null:t;
 }
-function tChatText(){ return T.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:tSplit(m.content).text)).join('\n\n'); }
 function tFormat(txt){
   const esc=txt.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   return esc.split(/\n{2,}/).map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</p>').join('');
 }
-function tRender(extra){
-  const log=$('tLog'); log.innerHTML='';
-  if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
-  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else { const sp=tSplit(m.content); d.innerHTML=tFormat(sp.text); sp.tracks.forEach(tk=>{ const lb=document.createElement('button'); lb.type='button'; lb.className='t-load'; const kn=T_KEYS[String(tk.transpose)]||''; lb.innerHTML='▶ Load into the Studio <small></small>'; lb.querySelector('small').textContent='· '+tk.title+(kn?' ('+kn+')':''); lb.onclick=()=>{ loadTrack(tk); S.flatsHint=tk.flats; rebuild(); toast('Loaded. Press Play to practice.'); }; d.appendChild(lb); }); const b=document.createElement('button'); b.type='button'; b.className='t-copy'; b.textContent='Copy'; b.onclick=()=>tCopy(sp.text); d.appendChild(b); } log.appendChild(d); });
-  if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
-  log.scrollTop=log.scrollHeight;
-  $('tChips').hidden=T.log.length>0;
+function askClassFromStudio(){
+  const ev=(typeof song!=='undefined'&&song&&song.events&&curEi>=0)?song.events[curEi]:null, nm=ev&&ev.chord&&ev.name?ev.name.root+ev.name.q:'';
+  const q=nm?`I'm practicing in the Studio and I'm on the ${nm} chord. How is it built, how should I voice it, and what should I practice with it in this chart?`:`I'm practicing this chart in the Studio. Can you explain the chords and how I should practice them?`;
+  if(window.CLASS) CLASS.askAbout(q);
 }
-async function tAsk(q){
-  q=(q||'').trim(); if(!q||T.busy) return;
-  T.busy=true; $('tSend').disabled=true; T.log.push({role:'user',content:q}); tRender({cls:'bot wait',text:'Thinking…'});
-  const context={level:$('tLevel').value};
-  if($('tShare').checked && S.chords.trim()) Object.assign(context,{chart:S.chords,title:S.title,style:(STYLES[S.style]&&STYLES[S.style].label)||S.style,bpm:S.bpm,meter:S.meter,transpose:S.transpose});
-  let err='';
-  try{
-    const r=await fetch('/api/teacher',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:T.log.slice(-20),context})});
-    const d=await r.json().catch(()=>({}));
-    if(r.ok && d.reply){ T.log.push({role:'assistant',content:d.reply}); }
-    else err= d.error==='not_configured' ? 'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.' : d.error==='slow_down' ? 'Lots of questions! Give it a minute, then ask again.' : 'Something went wrong reaching the coach. Please try again.';
-  }catch(_){ err='Couldn\'t reach the coach. Check your internet connection and try again.'; }
-  if(err) T.log.pop();
-  T.log=T.log.slice(-40); store.set('bt-teacher',T.log); T.busy=false; $('tSend').disabled=false;
-  tRender(err?{cls:'err',text:err}:null);
-  if(err) $('tInput').value=q; else $('tInput').value='';
-}
-function setupTeacher(){
-  $('tLevel').value=store.get('bt-teacher-level','');
-  $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
-  $('tForm').onsubmit=e=>{ e.preventDefault(); tAsk($('tInput').value); };
-  $('tInput').onkeydown=e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); tAsk($('tInput').value); } };
-  $('tCopyAll').onclick=()=>{ if(!T.log.length){ toast('Nothing to copy yet'); return; } tCopy(tChatText()); };
-  $('tClear').onclick=()=>{ T.log=[]; store.set('bt-teacher',[]); tRender(); $('tInput').focus(); };
-  $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>tAsk(b.textContent));
-  tRender();
-}
+function setupTeacher(){ /* the Class room builds itself in class.js */ }
 function MENUS_HELP_SHORTCUTS(){ infoDialog('Keyboard shortcuts','<table class="keys">'+SHORTCUTS.map(([k,v])=>`<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')+'</table><p class="help">Shortcuts work when you are not typing in a box.</p>'); }
 function buildMenubar(){
   const bar=document.createElement('nav'); bar.className='menubar'; bar.setAttribute('role','menubar'); bar.setAttribute('aria-label','Studio menu');
@@ -2757,7 +2698,7 @@ function init(){
   $('add4').onclick=()=>{ GRID=chartToGrid(); for(let k=0;k<4;k++) GRID.push(Array(MET().bar/gridSp()).fill('')); commitGrid(true); renderGrid(); };
   setTimeout(()=>{ try{ if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC(); E=new Engine(ctx); } loadBank(ctx); }catch(_){} },400);
 
-  $('playBtn').onclick=toggle;
+  $('playBtn').onclick=toggle; $('askClassBtn').onclick=askClassFromStudio;
   $('countBtn').onclick=e=>{ S.countIn=!S.countIn; e.currentTarget.setAttribute('aria-pressed',S.countIn); saveDraft(); };
   $('clickBtn').onclick=e=>{ S.metronome=!S.metronome; e.currentTarget.setAttribute('aria-pressed',S.metronome); saveDraft(); };
   $('projBtn').onclick=e=>{ const st=$('stage'), on=!st.classList.contains('projector'); st.classList.toggle('projector',on); e.currentTarget.setAttribute('aria-pressed',on);
@@ -2792,5 +2733,6 @@ init();
 </script>
 <script src="transcribe.js" defer></script>
 <script src="suite.js" defer></script>
+<script src="class.js" defer></script>
 </body>
 </html>
