@@ -18,11 +18,35 @@ function limited(ip) {
   return arr.length > max;
 }
 
+// ---- access code + daily limits ----
+// ACCESS_CODE (secret, optional): when set, every coach/transcribe call needs it.
+// ADMIN_TOKEN as the code skips the daily limits (for the owner).
+// DAILY_COACH (default 40 messages/device, 150/IP) and DAILY_TRANSCRIBE (default 3/device, 8/IP).
+function same(a, b) { a = String(a || ''); b = String(b || ''); if (a.length !== b.length) return false; let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; }
+async function gate(request, env, kind) {
+  const code = request.headers.get('x-access') || '';
+  if (env.ACCESS_CODE && !same(code, env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(code, env.ADMIN_TOKEN))) return json({ error: 'access' }, 401);
+  if (env.ADMIN_TOKEN && code && same(code, env.ADMIN_TOKEN)) return null;
+  const dev = (request.headers.get('x-device') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+  const ip = request.headers.get('cf-connecting-ip') || 'x';
+  const day = new Date().toISOString().slice(0, 10);
+  const perDev = +(kind === 'coach' ? env.DAILY_COACH : env.DAILY_TRANSCRIBE) || (kind === 'coach' ? 40 : 3);
+  const perIp = perDev * (kind === 'coach' ? 4 : 3);
+  const checks = [['d', dev, perDev], ['i', ip, perIp]].filter(c => c[1]);
+  try {
+    const vals = await Promise.all(checks.map(c => env.LESSONS.get(`lim:${kind}:${day}:${c[0]}:${c[1]}`)));
+    for (let i = 0; i < checks.length; i++) if ((+vals[i] || 0) >= checks[i][2]) return json({ error: 'daily_limit' }, 429);
+    await Promise.all(checks.map((c, i) => env.LESSONS.put(`lim:${kind}:${day}:${c[0]}:${c[1]}`, String((+vals[i] || 0) + 1), { expirationTtl: 172800 })));
+  } catch (e) { console.log('gate', e); }
+  return null;
+}
+
 async function teacher(request, env) {
   const origin = request.headers.get('origin');
   if (origin && new URL(origin).host !== new URL(request.url).host) return json({ error: 'forbidden' }, 403);
   if (!env.ANTHROPIC_API_KEY) return json({ error: 'not_configured' }, 503);
   if (limited(request.headers.get('cf-connecting-ip') || 'x')) return json({ error: 'slow_down' }, 429);
+  { const g = await gate(request, env, 'coach'); if (g) return g; }
 
   let body; try { body = await request.json(); } catch { return json({ error: 'bad_json' }, 400); }
   let msgs = Array.isArray(body.messages) ? body.messages.slice(-MAX_MSGS) : [];
@@ -171,7 +195,7 @@ export default {
       try { return await teacher(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     if (url.pathname === '/api/transcribe') {
-      try { return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+      try { if (request.method !== 'GET') { const g = await gate(request, env, 'transcribe'); if (g) return g; } else if (env.ACCESS_CODE && !same(request.headers.get('x-access'), env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(request.headers.get('x-access'), env.ADMIN_TOKEN))) return json({ error: 'access' }, 401); return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     return env.ASSETS.fetch(request);
   },

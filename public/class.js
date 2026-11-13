@@ -223,7 +223,7 @@ async function ask(q,opts){
     const r=await fetch('/api/teacher',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:c.log.slice(-20),context})});
     const d=await r.json().catch(()=>({}));
     if(r.ok&&d.reply){ reply=d.reply; c.log.push({role:'assistant',content:reply}); }
-    else err=d.error==='not_configured'?'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.':d.error==='slow_down'?'Lots of questions! Give it a minute, then ask again.':'Something went wrong reaching the coach. Please try again.';
+    else err=d.error==='not_configured'?'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.':d.error==='slow_down'?'Lots of questions! Give it a minute, then ask again.':d.error==='daily_limit'?'You\'ve used today\'s questions for the coach on this device. Come back tomorrow and Pokey will be ready for you.':d.error==='access'?'The coach needs the access code. Ask your question again and enter the code when it appears.':'Something went wrong reaching the coach. Please try again.';
   }catch(_){ err='Couldn\'t reach the coach. Check your internet connection and try again.'; }
   if(err) c.log.pop();
   busy=false; $('tSend').disabled=false; c.when=Date.now();
