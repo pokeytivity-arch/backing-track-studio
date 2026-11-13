@@ -350,6 +350,8 @@ audio{width:100%}
 .t-msg.bot p{margin:0 0 .5em}.t-msg.bot p:last-child{margin:0}
 .t-msg.err{background:transparent;border:1px dashed var(--danger);color:var(--danger)}
 .t-msg.wait{opacity:.7;font-style:italic}
+.t-copy{display:block;margin:8px 0 0;padding:2px 8px;font:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit;opacity:.75;cursor:pointer}
+.t-copy:hover,.t-copy:focus-visible{opacity:1}
 .t-chips{display:flex;flex-wrap:wrap;gap:6px}
 .t-chips .chip{font-size:.85rem;padding:6px 10px}
 .t-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
@@ -544,6 +546,7 @@ audio{width:100%}
           <label for="tLevel" class="flabel">My level</label>
           <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
           <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
+          <button class="btn" id="tCopyAll" type="button">Copy chat</button>
           <button class="btn" id="tClear" type="button">New conversation</button>
         </div>
         <div id="tLog" class="t-log" aria-live="polite"></div>
@@ -2416,6 +2419,16 @@ const MENUS=[
    Ask Piano Study Suite (AI coach via /api/teacher)
    ========================================================= */
 const T={log:store.get('bt-teacher',[]), busy:false};
+function tCopy(text){
+  const done=()=>toast('Copied');
+  if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(text).then(done,()=>tCopyFallback(text,done)); } else tCopyFallback(text,done);
+}
+function tCopyFallback(text,done){
+  const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;top:0;left:0'; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('Could not copy. Select the text and copy it by hand.'); }
+  ta.remove();
+}
+function tChatText(){ return T.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+m.content).join('\n\n'); }
 function tFormat(txt){
   const esc=txt.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   return esc.split(/\n{2,}/).map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</p>').join('');
@@ -2423,7 +2436,7 @@ function tFormat(txt){
 function tRender(extra){
   const log=$('tLog'); log.innerHTML='';
   if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Onyemachi Chuku**, the AI coach representing the director of the Hear and Play VIP Coaching program, built from his lessons. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
-  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else d.innerHTML=tFormat(m.content); log.appendChild(d); });
+  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else { d.innerHTML=tFormat(m.content); const b=document.createElement('button'); b.type='button'; b.className='t-copy'; b.textContent='Copy'; b.onclick=()=>tCopy(m.content); d.appendChild(b); } log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
   log.scrollTop=log.scrollHeight;
   $('tChips').hidden=T.log.length>0;
@@ -2450,6 +2463,7 @@ function setupTeacher(){
   $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
   $('tForm').onsubmit=e=>{ e.preventDefault(); tAsk($('tInput').value); };
   $('tInput').onkeydown=e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); tAsk($('tInput').value); } };
+  $('tCopyAll').onclick=()=>{ if(!T.log.length){ toast('Nothing to copy yet'); return; } tCopy(tChatText()); };
   $('tClear').onclick=()=>{ T.log=[]; store.set('bt-teacher',[]); tRender(); $('tInput').focus(); };
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>tAsk(b.textContent));
   tRender();
