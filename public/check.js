@@ -4,8 +4,8 @@
 'use strict';
 const NN=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
 let on=false, access=null, held=new Set(), played=new Set(), timer=null, bar=null;
-function status(t,ok){ if(!bar){ bar=document.createElement('div'); bar.style.cssText='margin:8px 0;padding:10px 12px;border-radius:12px;font:600 14px system-ui;border:1px solid #6b5826;background:#1b160c;color:#f3ead8'; const b=document.getElementById('clCheck'); const row=b&&b.parentNode; if(row) row.parentNode.insertBefore(bar,row.nextSibling); }
-  bar.hidden=false; bar.textContent=t; bar.style.borderColor=ok===true?'#2f9e44':ok===false?'#d9480f':'#6b5826'; }
+function status(t,ok){ if(!bar){ bar=document.createElement('div'); bar.style.cssText='margin:8px 0;padding:10px 12px;border-radius:12px;font:600 14px system-ui;border:1px solid var(--k6b5826,#34446c);background:var(--k1b160c,#16233f);color:var(--kf3ead8,#eaf0ff)'; const b=document.getElementById('clCheck'); const row=b&&b.parentNode; if(row) row.parentNode.insertBefore(bar,row.nextSibling); }
+  bar.hidden=false; bar.textContent=t; bar.style.borderColor=ok===true?'#2f9e44':ok===false?'#d9480f':'var(--k6b5826,#34446c)'; }
 function target(){ const K=window.CLASS&&CLASS.K; const s=K&&K.steps[K.i]; if(!s) return null; const pcs=new Set(); [].concat(s.lh||[],s.rh||[]).forEach(m=>pcs.add(((m%12)+12)%12)); return {name:s.name,pcs}; }
 function names(set){ return [...set].sort((a,b)=>a-b).map(p=>NN[p]).join(' '); }
 function evaluate(){

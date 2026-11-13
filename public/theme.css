@@ -1,17 +1,54 @@
-/* Black and gold theme. Loaded last so it overrides the blue tokens. */
-html:root:root:root{
-  --bg:#070707; --surface:#121110; --ink:#f3ead8; --muted:#b5a98a; --line:#3a3220;
-  --accent:#d4af37; --accent-ink:#111111; --hi:#e8c25a; --hi-ink:#111111; --danger:#ff7a6b; --ok:#6fcf8a;
-  --stage:#0a0a09; --stage-2:#16130c; --stage-ink:#f6eedc; --stage-muted:#b5a98a;
-  color-scheme:dark;
-}
-html:root:root:root body{color:var(--ink)}
-body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:var(--bg)}
-:root:root a{color:#e8c25a}
-::selection{background:#d4af37;color:#111}
+/* Themes. The default (blue and white) is the app's own palette; the others set the tokens below.
+   Pick one from the Theme button in the menu bar (themes.js sets html[data-theme]). */
+html[data-theme="gold"]{--k0b0b0b:#070707;--k0d0b07:#0f0e09;--k14110a:#17140b;--k17130a:#17140b;--k1b160c:#1e190c;--k1a140a:#1c180c;--k2a2210:#28220f;--k231c0f:#26200e;--k3a2e14:#342c12;--k4a3f1d:#403614;--k6b5826:#705e28;--k8a7230:#8f772d;--kb8892a:#b8892a;--kc8b98f:#b5a98a;--kc9a64a:#d4af37;--kd4af37:#d4af37;--ke8c25a:#e8c25a;--kf3ead8:#f3ead8;--k111:#111111;}
+html[data-theme="gold"]:root:root:root{--bg:#070707;--surface:#121110;--ink:#f3ead8;--muted:#b5a98a;--line:#3a3220;--accent:#d4af37;--accent-ink:#111111;--hi:#e8c25a;--hi-ink:#111111;--danger:#ff7a6b;--ok:#6fcf8a;--stage:#0a0a09;--stage-2:#16130c;--stage-ink:#f6eedc;--stage-muted:#b5a98a;color-scheme:dark}
+html[data-theme="gold"] a{color:#e8c25a}
+html[data-theme="gold"] ::selection{background:#d4af37;color:#111111}
+html[data-theme="gold"] body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:#070707}
+html[data-theme="gold"] .sty{--c:#b8892a!important}
+html[data-theme="gold"] .sty:nth-child(3n+2){--c:#8c6821!important}
+html[data-theme="gold"] .sty:nth-child(3n){--c:#d4af37!important;color:#111111}
+html[data-theme="gold"] .sty:nth-child(3n) *{color:#111111}
+html[data-theme="gold"] #suiteHub{background:linear-gradient(180deg,rgba(7,7,7,.80),rgba(7,7,7,.58) 45%,rgba(7,7,7,.28)),url(hub-bg.webp) center/cover no-repeat}
+html[data-theme="green"]{--k0b0b0b:#0b0e0d;--k0d0b07:#101512;--k14110a:#151b18;--k17130a:#151b18;--k1b160c:#19201c;--k1a140a:#171f1a;--k2a2210:#1f2923;--k231c0f:#1d2721;--k3a2e14:#26332b;--k4a3f1d:#2d3c33;--k6b5826:#4d6556;--k8a7230:#5f7e69;--kb8892a:#5f8f70;--kc8b98f:#a2ada6;--kc9a64a:#86b494;--kd4af37:#86b494;--ke8c25a:#c3cdc6;--kf3ead8:#e9eeea;--k111:#0b0e0d;}
+html[data-theme="green"]:root:root:root{--bg:#0b0e0d;--surface:#141917;--ink:#e9eeea;--muted:#a2ada6;--line:#2f3b35;--accent:#86b494;--accent-ink:#0b0e0d;--hi:#c3cdc6;--hi-ink:#0b0e0d;--danger:#ff7a6b;--ok:#6fcf8a;--stage:#090c0b;--stage-2:#131916;--stage-ink:#edf2ee;--stage-muted:#a2ada6;color-scheme:dark}
+html[data-theme="green"] a{color:#a9d0b6}
+html[data-theme="green"] ::selection{background:#86b494;color:#0b0e0d}
+html[data-theme="green"] body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:#0b0e0d}
+html[data-theme="green"] .sty{--c:#5f8f70!important}
+html[data-theme="green"] .sty:nth-child(3n+2){--c:#4a6f57!important}
+html[data-theme="green"] .sty:nth-child(3n){--c:#86b494!important;color:#0b0e0d}
+html[data-theme="green"] .sty:nth-child(3n) *{color:#0b0e0d}
+html[data-theme="green"] #suiteHub{background:linear-gradient(180deg,rgba(11,14,13,.80),rgba(11,14,13,.58) 45%,rgba(11,14,13,.28)),url(hub-bg.webp) center/cover no-repeat}
+html[data-theme="burgundy"]{--k0b0b0b:#12080b;--k0d0b07:#1a0d10;--k14110a:#221215;--k17130a:#221215;--k1b160c:#271519;--k1a140a:#251418;--k2a2210:#311b1f;--k231c0f:#2f1a1e;--k3a2e14:#3d2327;--k4a3f1d:#482a2f;--k6b5826:#7b4550;--k8a7230:#965862;--kb8892a:#a8495a;--kc8b98f:#c5aaa5;--kc9a64a:#d4818b;--kd4af37:#d4818b;--ke8c25a:#ecd0a8;--kf3ead8:#f7eddd;--k111:#1a0a0d;}
+html[data-theme="burgundy"]:root:root:root{--bg:#12080b;--surface:#1e0f14;--ink:#f7eddd;--muted:#c5aaa5;--line:#4b2530;--accent:#d4818b;--accent-ink:#1a0a0d;--hi:#ecd0a8;--hi-ink:#1a0a0d;--danger:#ff7a6b;--ok:#6fcf8a;--stage:#0e0608;--stage-2:#1c0e12;--stage-ink:#f9f0e2;--stage-muted:#c5aaa5;color-scheme:dark}
+html[data-theme="burgundy"] a{color:#ecd0a8}
+html[data-theme="burgundy"] ::selection{background:#d4818b;color:#1a0a0d}
+html[data-theme="burgundy"] body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:#12080b}
+html[data-theme="burgundy"] .sty{--c:#a8495a!important}
+html[data-theme="burgundy"] .sty:nth-child(3n+2){--c:#823946!important}
+html[data-theme="burgundy"] .sty:nth-child(3n){--c:#d4818b!important;color:#1a0a0d}
+html[data-theme="burgundy"] .sty:nth-child(3n) *{color:#1a0a0d}
+html[data-theme="burgundy"] #suiteHub{background:linear-gradient(180deg,rgba(18,8,11,.80),rgba(18,8,11,.58) 45%,rgba(18,8,11,.28)),url(hub-bg.webp) center/cover no-repeat}
+html[data-theme="navy"]{--k0b0b0b:#070b14;--k0d0b07:#0f1017;--k14110a:#17151a;--k17130a:#17151a;--k1b160c:#1d191c;--k1a140a:#1b181b;--k2a2210:#272020;--k231c0f:#251e1f;--k3a2e14:#332724;--k4a3f1d:#3f2f28;--k6b5826:#605150;--k8a7230:#836353;--kb8892a:#a8683a;--kc8b98f:#9ba7bf;--kc9a64a:#d08c5c;--kd4af37:#d08c5c;--ke8c25a:#e8bd96;--kf3ead8:#eaeef6;--k111:#0a0e17;}
+html[data-theme="navy"]:root:root:root{--bg:#070b14;--surface:#0f1626;--ink:#eaeef6;--muted:#9ba7bf;--line:#243149;--accent:#d08c5c;--accent-ink:#0a0e17;--hi:#e8bd96;--hi-ink:#0a0e17;--danger:#ff7a6b;--ok:#6fcf8a;--stage:#050914;--stage-2:#0e1527;--stage-ink:#f0f3fa;--stage-muted:#9ba7bf;color-scheme:dark}
+html[data-theme="navy"] a{color:#e8bd96}
+html[data-theme="navy"] ::selection{background:#d08c5c;color:#0a0e17}
+html[data-theme="navy"] body:not([data-dest="class"]):not([data-dest="studio"]):not([data-dest="plus"]){background-color:#070b14}
+html[data-theme="navy"] .sty{--c:#a8683a!important}
+html[data-theme="navy"] .sty:nth-child(3n+2){--c:#805130!important}
+html[data-theme="navy"] .sty:nth-child(3n){--c:#d08c5c!important;color:#0a0e17}
+html[data-theme="navy"] .sty:nth-child(3n) *{color:#0a0e17}
+html[data-theme="navy"] #suiteHub{background:linear-gradient(180deg,rgba(7,11,20,.80),rgba(7,11,20,.58) 45%,rgba(7,11,20,.28)),url(hub-bg.webp) center/cover no-repeat}
 
-/* style tiles: brass and black instead of a rainbow */
-.sty{--c:#b8892a!important}
-.sty:nth-child(3n+2){--c:#8f6b1c!important}
-.sty:nth-child(3n){--c:#d4af37!important;color:#111}
-.sty:nth-child(3n) *{color:#111}
+/* theme picker */
+#thBtn{position:relative}
+#thPop{position:fixed;z-index:300000;display:none;min-width:230px;padding:8px;border-radius:14px;background:#14171f;color:#f2f4fa;border:1px solid rgba(255,255,255,.18);box-shadow:0 18px 40px rgba(0,0,0,.5)}
+#thPop.on{display:block}
+#thPop button{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:transparent;color:inherit;font:600 14px system-ui,sans-serif;cursor:pointer;text-align:left}
+#thPop button:hover,#thPop button.cur{background:rgba(255,255,255,.1)}
+.thsw{display:inline-block;width:34px;height:20px;border-radius:7px;border:1px solid rgba(255,255,255,.35);flex:none}
+#thRow{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;margin:14px auto 0;color:#e8ecf5;font:600 13px system-ui,sans-serif}
+#thRow button{display:flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(10,10,14,.55);color:inherit;font:inherit;cursor:pointer}
+#thRow button.cur{border-color:#fff;background:rgba(255,255,255,.16)}
+#thRow .thsw{width:22px;height:14px;border-radius:5px}
