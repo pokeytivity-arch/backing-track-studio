@@ -342,7 +342,7 @@ function build(){
         <div class="cl-notes"><b id="clStepName" style="color:#fff;font:800 15px var(--display);margin-right:8px"></b><span id="clStepNotes"></span></div>
         <div class="cl-ktools" id="clKbdTools" hidden>
           <button class="btn" id="clPrev" type="button" aria-label="Previous chord">◀</button><button class="btn" id="clNext" type="button" aria-label="Next chord">▶</button>
-          <button class="btn pri" id="clPlayProg" type="button">▶ Play progression</button>
+          <button class="btn pri" id="clPlayProg" type="button">▶ Play progression</button><button class="btn" id="clCheck" type="button" title="Play the chord on a MIDI keyboard and Pokey checks it">🎹 Check my playing</button>
           <label class="t-chk"><input type="checkbox" id="clLoop"> Loop</label>
           <select id="clTempo" aria-label="Speed"><option value="60">Slow</option><option value="80" selected>Medium</option><option value="104">Fast</option></select>
           <button class="btn" id="clPng" type="button">Save keyboard diagram</button><button class="btn" id="clSheet" type="button">Sheet music</button>
@@ -380,6 +380,7 @@ function build(){
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>ask(b.textContent));
   hotInit();
   $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
+  $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
   $('clEar').onclick=()=>window.EAR&&EAR.open();
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
@@ -391,7 +392,7 @@ function build(){
 }
 
 window.CLASS={
-  sound,
+  sound,K,stepGo,
   init:build,
   ask,
   // from the Studio or Studio+: open Class and ask about what the student is practicing
