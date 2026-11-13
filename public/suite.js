@@ -17,7 +17,7 @@ const put=v=>{ try{ localStorage.setItem(KEY,v); }catch(_){} };
 let cur=null;
 
 const css=document.createElement('style'); css.textContent=`
-#suiteHub{position:fixed;inset:0;z-index:300;display:none;overflow:auto;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--accent) 30%,#0a0e17),#0a0e17 70%);color:#e6eaf2;font-family:var(--body)}
+#suiteHub{position:fixed;inset:0;z-index:200000;display:none;overflow:auto;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--accent) 30%,#0a0e17),#0a0e17 70%);color:#e6eaf2;font-family:var(--body)}
 #suiteHub.on{display:block}
 #suiteHub .in{max-width:1040px;margin:0 auto;padding:7vh 20px 40px;text-align:center}
 #suiteHub h1{font:800 clamp(34px,6vw,56px)/1.05 var(--display,var(--body));margin:0 0 10px;letter-spacing:-.02em}

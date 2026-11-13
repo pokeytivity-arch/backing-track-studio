@@ -325,13 +325,13 @@ header.top,footer.credits{display:none}
   .panel-bar{cursor:default}
 }
 .menu-status{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;padding-left:12px}
-.menubar{position:sticky;top:0;z-index:70;display:flex;gap:2px;align-items:center;padding:0 10px;height:36px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.menubar{position:sticky;top:0;z-index:100000;display:flex;gap:2px;align-items:center;padding:0 10px;height:36px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .menubar::-webkit-scrollbar{display:none}
 .menu-btn{border:0;background:transparent;color:var(--ink);font:500 14px var(--body);padding:5px 10px;border-radius:6px;white-space:nowrap;cursor:default}
 .menu-btn.brand{font-weight:800}
 .menu-btn:hover,.menu-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .menu-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.menu-pop{position:fixed;z-index:95;min-width:260px;max-width:92vw;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 12px 32px rgba(0,0,0,.22);display:grid}
+.menu-pop{position:fixed;z-index:100001;min-width:260px;max-width:92vw;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 12px 32px rgba(0,0,0,.22);display:grid}
 .menu-item{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;border:0;background:transparent;color:var(--ink);text-align:left;padding:7px 10px;border-radius:6px;font:14px var(--body);cursor:default}
 .menu-item:hover:not(:disabled),.menu-item:focus-visible{background:var(--accent);color:var(--accent-ink);outline:none}
 .menu-item:disabled{opacity:.4}
@@ -2423,7 +2423,7 @@ function setupPanels(){
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && panelOpen && !document.querySelector('.menu-pop') && !document.querySelector('dialog[open]')){ e.preventDefault(); closePanel(panelOpen.dataset.panel); } });
   window.addEventListener('resize',()=>document.querySelectorAll('.card.panel-active').forEach(clampWin));
 }
-function raise(card){ card.style.zIndex=++winZ; panelOpen=card; }
+function raise(card){ if(winZ>800){ const all=[...document.querySelectorAll('.card.panel-active')].sort((a,b)=>(+a.style.zIndex||0)-(+b.style.zIndex||0)); winZ=90; all.forEach(c=>{ c.style.zIndex=++winZ; }); } card.style.zIndex=++winZ; panelOpen=card; }
 function placeWin(card,name){
   if(isSmall()){ card.style.left=''; card.style.top=''; card.style.width=''; card.style.height=''; return; }
   const st=winState(name), [dw,dh]=WIN_DEF[name]||[560,480], W=window.innerWidth, H=window.innerHeight;

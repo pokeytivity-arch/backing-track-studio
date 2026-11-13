@@ -136,7 +136,7 @@ async function savePNG(){
 function sheetMusic(){
   if(!K.steps.length) return; stopProg(); const o={title:S.title,chords:S.chords,style:S.style,transpose:S.transpose,meter:S.meter,bpm:S.bpm};
   S.title=K.title||'Chord progression'; S.chords=K.steps.map(s=>s.src).join(' | '); S.style='pop'; S.transpose=0; S.meter='4/4'; S.bpm=80;
-  const modal=$('sheetModal'); modal.style.zIndex=400; const obs=new MutationObserver(()=>{ if(modal.hidden){ Object.assign(S,o); obs.disconnect(); } }); obs.observe(modal,{attributes:true,attributeFilter:['hidden']});
+  const modal=$('sheetModal'); modal.style.zIndex=200000; const obs=new MutationObserver(()=>{ if(modal.hidden){ Object.assign(S,o); obs.disconnect(); } }); obs.observe(modal,{attributes:true,attributeFilter:['hidden']});
   openSheet();
 }
 function toStudio(){
