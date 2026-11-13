@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111a33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Piano Suite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -196,6 +201,12 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .gin::placeholder{color:var(--muted);opacity:.45;font-weight:500}
 .gin.bad{border-color:var(--danger);color:var(--danger)}
 .gin:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+#rotateHint{position:fixed;inset:0;z-index:300000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;background:#0d1426;color:#fff;font:700 20px/1.35 var(--display)}
+#rotateHint .rh-ph{font-size:64px;animation:rhturn 2.4s ease-in-out infinite}
+@keyframes rhturn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+#rotateHint small{font:500 14px var(--body);color:#9fb0d8;max-width:320px}
+#rotateHint button{margin-top:6px;padding:10px 18px;border-radius:999px;border:1.5px solid #34446c;background:transparent;color:#cdd7f2;font:700 14px var(--display)}
+@media (orientation:portrait) and (max-width:700px){ body:not(.rh-ok) #rotateHint{display:flex} }
 .gadd{display:flex;gap:8px;flex-wrap:wrap}
 .gkb{margin:14px 0 6px;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg)}
 .gkb-h{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
@@ -2830,5 +2841,13 @@ init();
 <script src="transcribe.js" defer></script>
 <script src="suite.js" defer></script>
 <script src="class.js" defer></script>
+<div id="rotateHint" role="dialog" aria-label="Turn your phone sideways"><div class="rh-ph">📱</div><div>Turn your phone sideways</div><small>The keyboard and chords need the width. Piano Suite works best in landscape.</small><button type="button" id="rhStay">Stay in portrait</button></div>
+<script>
+(function(){ try{ if(sessionStorage.getItem('rh-ok')) document.body.classList.add('rh-ok'); }catch(_){}
+  document.getElementById('rhStay').onclick=function(){ document.body.classList.add('rh-ok'); try{ sessionStorage.setItem('rh-ok','1'); }catch(_){} };
+  function lock(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); }catch(_){} }
+  if(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches){ lock(); document.addEventListener('pointerdown',lock,{once:true}); }
+})();
+</script>
 </body>
 </html>
