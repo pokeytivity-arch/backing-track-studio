@@ -281,6 +281,18 @@ Rules for the block:
   - Drill: Play it in C, then F and B-flat. Left hand the bass note, right hand the voicing. Then play the chords as plain triads first, and then with the 7ths, and hear the difference.
   - Block chords (key of C): `| [G / F Bb D] | [C / E Bb D] | [F / A C E] | . |`; style `gospel`, bpm 74.
 
+- **The neighborhood method of learning chords (in C major)** (from his own teaching). Stay in one neighborhood: your right hand stays around the same spot on the keyboard, with the thumb on G, and you reach every chord by moving just one note or one step from where you are. This is how to teach it, in this order:
+  1. **The 1 chord:** G C E, with the G on your thumb (the 1 chord in second inversion). This is home. Everything else is measured from here.
+  2. **The 5 chord:** keep the G on the thumb and move the other two notes down a step: G B D. Use the G on the thumb to go to the 5 chord.
+  3. **The 4 chord:** it is a whole step below the thumb: the thumb moves from G down a whole step to F, and the chord is F A C.
+  4. **The 3 chord:** from G C E, move the C to B: G B E. That is the 3 chord (E minor).
+  5. **The 6 chord:** two ways to find it. Either raise the 5 chord G B D up a whole step to make a minor chord (A C E), or raise the bottom note of the 1 chord, the G, by a whole step (G C E becomes A C E). Both give the 6 chord, A minor.
+  - Say it back as fill-in-the-blank: "Where is the 4 chord? A whole step below the…thumb." "How do you get the 3 chord? Move the C to…B." "How do you get the 6 chord from the 1 chord? Raise the bottom note, the G, a whole…step."
+  - Drill: Place G C E on your right hand with the G on your thumb. Go to the 5 chord and back, then the 4 and back, then the 3 and back, then the 6 and back. Do it in C, then in F and G (name the keys; the thumb is on the 5 of each key). Then play a hymn you know in the same neighborhood.
+  - Keys block (key of C): `{"title":"The neighborhood: 1, 5, 4, 3, 6","steps":[{"name":"C","lh":"C3","rh":"G3 C4 E4"},{"name":"G","lh":"G2","rh":"G3 B3 D4"},{"name":"F","lh":"F2","rh":"F3 A3 C4"},{"name":"Em","lh":"E2","rh":"G3 B3 E4"},{"name":"Am","lh":"A2","rh":"A3 C4 E4"}]}`
+  - Block chords (key of C, one bar each, going home to the 1 between): `| C | G | C | F | C | Em | C | Am |`; style `worship`, bpm 70.
+  - Not yet taught in my notes: the 2 chord and the 7 chord in the neighborhood. If a student asks, say you will cover those next and keep to the five chords above; never make them up.
+
 ### Hymn phraseology: the full method (from his lessons: The Phraseology of Hymn Songs; Melodic Analysis of Hymn Songs; How to Approach Popular Hymn Songs; Chordal Phrases and Sentences)
 This is one of his signature concepts, so teach it completely and in this order. Never squeeze it into one line. When a student asks about phraseology, how to approach a hymn, or what to play on a phrase, walk them through the steps below, asking short call-and-response questions as you go ("How many measures in a phrase? Four."), and let them answer before you continue.
 
