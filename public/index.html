@@ -624,6 +624,7 @@ audio{width:100%}
           <div class="row">
             <button class="btn" id="saveMine">Save to My tracks</button>
             <button class="btn" id="copyCode">Copy track code</button>
+            <button class="btn" id="shareLink">Copy share link</button>
             <button class="btn" id="loadCodeBtn">Paste a code</button>
           </div>
           <div id="codeArea" hidden class="field">
@@ -2497,6 +2498,7 @@ const MENUS=[
     {sep:true},
     {label:'Save to My tracks',run:()=>{ goTo('saveMine'); press('saveMine'); }},
     {label:'Copy track code',run:()=>press('copyCode')},
+    {label:'Copy share link',run:()=>press('shareLink')},
     {label:'Paste a track code…',run:()=>{ goTo('loadCodeBtn'); press('loadCodeBtn'); }},
     {label:'Open the library',run:()=>goTo('list')},
     {sep:true},
@@ -2829,6 +2831,9 @@ function init(){
   $('codeLoad').onclick=()=>{ const t=decode($('codeIn').value); if(!t){ toast('That doesn’t look like a track code'); return; } $('codeArea').hidden=true; loadTrack(t); };
   $('saveClass').onclick=saveClass;
   $('renderBtn').onclick=renderWav; $('saveWav').onclick=saveWav;
+  $('shareLink').onclick=async()=>{ const u=location.origin+location.pathname+'#t='+encodeURIComponent(encode(current())); try{ await navigator.clipboard.writeText(u); toast('Share link copied. Anyone you send it to opens this track.'); }
+    catch(_){ $('codeArea').hidden=false; $('codeIn').value=u; $('codeIn').select(); toast('Copy the link from the box'); } };
+  { const m=location.hash.match(/^#t=(.+)$/); if(m){ let t=null; try{ t=decode(decodeURIComponent(m[1])); }catch(_){} if(t){ setTimeout(()=>{ try{ if(window.SUITE) SUITE.go('studio'); loadTrack(t); history.replaceState(null,'',location.pathname); }catch(_){} },900); } } }
   document.addEventListener('keydown',e=>{ if(e.code==='Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)){ e.preventDefault(); toggle(); }
     if(e.key==='Escape' && $('stage').classList.contains('projector')) $('projBtn').click(); });
   initShared();
