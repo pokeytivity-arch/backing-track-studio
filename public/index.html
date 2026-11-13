@@ -420,7 +420,6 @@ audio{width:100%}
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
-      <button class="tog" id="txJump" onclick="openPanel('transcribe')">🎧 Transcribe a recording</button>
       <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
@@ -2730,6 +2729,7 @@ function init(){
   $('humJump').onclick=()=>{ openPanel('hum'); return; const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
   $('stopBtn').onclick=stop; buildMenubar(); setupPanels(); setupTeacher();
+  { const tb=document.createElement('button'); tb.className='menu-btn'; tb.id='txTop'; tb.type='button'; tb.textContent='🎧 Transcribe'; tb.title='Turn a recording into notes (R)'; tb.style.cssText='font-weight:700;color:var(--accent)'; tb.onclick=()=>openPanel('transcribe'); const mb=document.querySelector('.menubar'), br=mb.querySelector('.brand'); if(br&&br.nextSibling) mb.insertBefore(tb,br.nextSibling); else mb.appendChild(tb); }
   { const st=$('status'); if(st){ st.classList.add('menu-status'); document.querySelector('.menubar').appendChild(st); } }
   $('humPlay').onclick=()=>{ closePanel(); toggle(); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
