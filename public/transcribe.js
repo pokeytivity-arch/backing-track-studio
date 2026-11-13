@@ -138,9 +138,9 @@ function detectKey(){
 const KB={61:[36,96],76:[28,103],88:[21,108]};
 function fitRange(){
   if(S.kbd&&KB[S.kbd]){ S.lo=KB[S.kbd][0]; S.hi=KB[S.kbd][1]; return; }
-  if(!S.notes.length){ S.lo=48; S.hi=84; return; }
+  if(!S.notes.length){ S.lo=36; S.hi=95; return; }
   const ps=S.notes.map(n=>n.p).sort((a,b)=>a-b), lo=ps[Math.floor(ps.length*0.01)], hi=ps[Math.ceil(ps.length*0.99)-1];
-  let a=Math.floor(lo/12)*12, b=Math.ceil((hi+1)/12)*12-1; while(b-a<35){ if(a>21) a-=12; if(b-a<35&&b<108) b+=12; if(a<=21&&b>=108) break; } S.lo=Math.max(21,a); S.hi=Math.min(108,b);
+  let a=Math.floor(lo/12)*12, b=Math.ceil((hi+1)/12)*12-1; while(b-a<59){ if(a>21) a-=12; if(b-a<59&&b<108) b+=12; if(a<=21&&b>=108) break; } S.lo=Math.max(21,a); S.hi=Math.min(108,b);
 }
 
 /* ---------- playback ---------- */
@@ -234,17 +234,17 @@ function assignHands(){
 const noteHue=(n)=>HUES[((n.p+S.tr)%12+12)%12];
 function noteFill(n,on,black){
   if(S.hands==='note'){ const hue=noteHue(n); return `hsl(${hue} 85% ${on?(black?45:62):50}%)`; }
-  const base=n.h===0?LH_COL:RH_COL; return on?(n.h===0?'#4aa3f0':'#ff9442'):base;
+  return n.h===0?LH_COL:RH_COL;
 }
 /* ---------- falling notes ---------- */
 const HUES=[210,255,300,345,25,50,95,150,175,190,230,280];
 function draw(t){
-  const cv=$('txCanvas'); if(!cv) return; const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; if(!W||!H) return;
+  const cv=$('txCanvas'); if(!cv) return; const dpr=window.devicePixelRatio||1, H=cv.clientHeight; let W=cv.clientWidth; if(!W||!H) return;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
   const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); const cs=getComputedStyle(document.documentElement);
   const bg=cs.getPropertyValue('--surface').trim()||'#fff', ink=cs.getPropertyValue('--ink').trim()||'#111', line=cs.getPropertyValue('--line').trim()||'#ccc';
-  g.fillStyle='#0d1320'; g.fillRect(0,0,W,H);
-  const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p); const kw=W/whites.length, KH=Math.max(56,Math.min(kw*4.6,H*0.42)), fallH=H-KH, lo=S.lo, hi=S.hi;
+  g.fillStyle='#0c1222'; g.fillRect(0,0,W,H); const PAD=8, W0=W; g.save(); g.translate(PAD,0); W=W-2*PAD;
+  const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p); const kw=W/whites.length, KH=Math.max(56,Math.min(kw*4.6,H*0.42)), fallH=H-KH-PAD, lo=S.lo, hi=S.hi;
   const pos={}; whites.forEach((p,i)=>pos[p]={x:i*kw,w:kw}); for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.64; pos[p]={x:(left?left.x+kw:0)-bw/2,w:bw}; }
   // octave guide lines
   g.strokeStyle='rgba(255,255,255,.06)'; g.lineWidth=1; for(const p of whites){ if(p%12===0){ g.beginPath(); g.moveTo(pos[p].x,0); g.lineTo(pos[p].x,fallH); g.stroke(); } }
@@ -256,7 +256,7 @@ function draw(t){
   const flats=!!S.flats;
   for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+look) break; const end=n.t+n.d; if(end<t) continue; const p=n.p+S.tr; if(p<lo||p>hi||!pos[p]) continue;
     const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(4,y2-y1); const on=n.t<=t&&end>=t;
-    g.fillStyle=noteFill(n,on,false); const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill();
+    g.fillStyle=noteFill(n,on,false); const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill(); if(on){ g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1.5; g.stroke(); }
     if(on) active.set(p,n);
     if(S.names&&h>13&&w>12){ g.fillStyle='#fff'; g.font=`600 ${Math.min(12,w*0.62)}px system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-3,fallH-3)); } }
   // keyboard, drawn like the Studio keyboard: white keys with a dark outline, short black keys, C labels, note names on pressed keys
@@ -268,7 +268,8 @@ function draw(t){
   for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62; rr(b.x,fallH,b.w,bh,1.5); g.fillStyle=on?noteFill(active.get(p),false,true):'#222'; g.fill(); g.strokeStyle='#111'; g.lineWidth=0.8; g.stroke();
     if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-4); } }
   g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2; g.beginPath(); g.moveTo(0,fallH); g.lineTo(W,fallH); g.stroke();
-  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.7)'; g.font='600 14px system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W/2,fallH/2); }
+  g.restore();
+  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.7)'; g.font='600 14px system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W0/2,fallH/2); }
 }
 
 /* ---------- MIDI export (format 0) ---------- */
