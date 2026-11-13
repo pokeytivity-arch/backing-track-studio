@@ -155,6 +155,16 @@ async function transcribeBlob(blob,title){
   finally{ S.busy=false; setBusy(false); }
 }
 
+
+function clearCurrent(){
+  stopPlay(); if(S.audio){ try{ S.audio.pause(); }catch(_){} S.audio=null; } if(S.url){ URL.revokeObjectURL(S.url); S.url=null; }
+  S.notes=[]; S.baseNotes=null; S.raw=null; S.pro=false; S.itemId=null; S.dur=0; S.loopA=S.loopB=null; S.title='';
+  const set=(id,f)=>{ const e=$(id); if(e) f(e); };
+  set('txTitle',e=>e.textContent=''); set('txKey',e=>e.textContent='Key: –'); set('txTime',e=>e.textContent='0:00 / 0:00'); set('txSeek',e=>{ e.max='0'; e.value='0'; });
+  ['txPlay','txBack','txMidi','txWav','txAsk'].forEach(id=>set(id,e=>e.disabled=true));
+  say('Removed. Choose an audio file or record to start again.'); try{ draw(0); }catch(_){}
+}
+
 function showResult({blob,notes,dur,title,long,fresh,pro}){
   S.pro=!!pro;
   if(!fresh) S.raw=null; S.baseNotes=notes; S.itemId=null; loadPiano();
@@ -184,7 +194,7 @@ async function renderLib(){
     const t=document.createElement('span'); t.className='txt'; t.textContent=it.title+' · '+it.notes.length+' notes · '+fmt(it.dur)+' · '+new Date(it.when).toLocaleDateString();
     const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ try{ localStorage.setItem('tx-last',it.id); }catch(_){} showResult({pro:it.pro,blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
     const r=document.createElement('button'); r.className='btn sm'; r.textContent='Rename'; r.onclick=async()=>{ const n=window.prompt('Name for this transcription',it.title); if(n&&n.trim()){ it.title=n.trim().slice(0,80); await tx('readwrite',st=>st.put(it)); renderLib(); } };
-    const x=document.createElement('button'); x.className='btn sm'; x.textContent='Delete'; x.onclick=async()=>{ if(window.confirm('Delete "'+it.title+'" from your library?')){ await tx('readwrite',st=>st.delete(it.id)); renderLib(); } };
+    const x=document.createElement('button'); x.className='btn sm'; x.textContent='Delete'; x.onclick=async()=>{ if(window.confirm('Delete "'+it.title+'" from your library?')){ await tx('readwrite',st=>st.delete(it.id)); try{ if(localStorage.getItem('tx-last')===it.id) localStorage.removeItem('tx-last'); }catch(_){} if(S.itemId===it.id) clearCurrent(); renderLib(); } };
     row.append(t,o,r,x); box.appendChild(row); });
 }
 function setBusy(b){ ['txFile','txRec'].forEach(i=>{ const e=$(i); if(e) e.disabled=b&&i!=='txRec'; }); $('txFileBtn').disabled=b; }
