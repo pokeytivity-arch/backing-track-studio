@@ -17,21 +17,21 @@ const put=v=>{ try{ localStorage.setItem(KEY,v); }catch(_){} };
 let cur=null;
 
 const css=document.createElement('style'); css.textContent=`
-#suiteHub{position:fixed;inset:0;z-index:200000;display:none;overflow:auto;background:radial-gradient(1200px 600px at 50% -10%,color-mix(in srgb,var(--accent) 30%,#0a0e17),#0a0e17 70%);color:#e6eaf2;font-family:var(--body)}
+#suiteHub{position:fixed;inset:0;z-index:200000;display:none;overflow:auto;background:linear-gradient(180deg,rgba(8,12,24,.62),rgba(8,12,24,.38) 45%,rgba(8,12,24,.72)),url(hub-bg.webp) center/cover no-repeat #0a0e17;color:#e6eaf2;font-family:var(--body)}
 #suiteHub.on{display:block}
 #suiteHub .in{max-width:1040px;margin:0 auto;padding:7vh 20px 40px;text-align:center}
 #suiteHub h1{font:800 clamp(34px,6vw,56px)/1.05 var(--display,var(--body));margin:0 0 10px;letter-spacing:-.02em}
 #suiteHub .sub{font-size:clamp(15px,2vw,18px);color:#b4bdd0;margin:0 auto 34px;max-width:620px}
 #suiteHub .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;text-align:left}
-#suiteHub .dcard{position:relative;display:flex;flex-direction:column;gap:10px;padding:26px 24px 22px;border-radius:20px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:inherit;font:inherit;cursor:pointer;text-align:left;transition:transform .15s,background .15s,border-color .15s}
-#suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:translateY(-3px);background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);outline:none}
+#suiteHub .dcard{position:relative;display:flex;flex-direction:column;gap:10px;padding:26px 24px 22px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:rgba(10,14,28,.58);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:inherit;font:inherit;cursor:pointer;text-align:left;transition:transform .15s,background .15s,border-color .15s}
+#suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:translateY(-3px);background:rgba(20,26,48,.7);border-color:rgba(255,255,255,.35);outline:none}
 #suiteHub .dcard .ic{font-size:38px;line-height:1}
 #suiteHub .dcard .nm{font:700 24px var(--display,var(--body))}
-#suiteHub .dcard .bl{font-size:14.5px;line-height:1.5;color:#b4bdd0;flex:1}
+#suiteHub .dcard .bl{font-size:14.5px;line-height:1.5;color:#d0d7e6;flex:1}
 #suiteHub .dcard .go{font-weight:700;color:var(--hi,#ffd43b)}
-#suiteHub .dcard.last{border-color:var(--hi,#ffd43b);background:rgba(255,212,59,.09)}
+#suiteHub .dcard.last{border-color:var(--hi,#ffd43b);background:rgba(40,34,12,.62)}
 #suiteHub .badge{position:absolute;top:14px;right:14px;font:700 11px var(--body);letter-spacing:.04em;text-transform:uppercase;background:var(--hi,#ffd43b);color:#151b28;padding:4px 9px;border-radius:999px}
-#suiteHub .foot{margin-top:30px;font-size:13px;color:#8d98ae}
+#suiteHub .foot{margin-top:30px;font-size:13px;color:#b4bdd0}
 #suiteHub .back{margin-top:18px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#e6eaf2;font:600 14px var(--body);padding:9px 16px;border-radius:999px;cursor:pointer}
 .ps-chip{border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important;font-weight:700!important;border-radius:999px!important;padding:3px 12px!important;margin-left:6px}
 /* Class with Coach and Studio+ use the Studio's dark stage look: same fonts, colours, pill buttons */
