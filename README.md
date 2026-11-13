@@ -28,3 +28,16 @@ Piano Study Suite persona in `src/persona.txt`. To switch it on, add a secret na
 `ANTHROPIC_API_KEY` to the Worker in Cloudflare (Workers & Pages → backing-track-studio →
 Settings → Variables and Secrets). Optional: `TEACHER_MODEL` to change the model (default
 `claude-sonnet-5-5`).
+
+## Lesson library for "Ask Piano Study Suite" (optional, private)
+
+The coach can draw on excerpts from your own past lessons. They are **not** stored in this public repo.
+They live in a private Cloudflare KV namespace:
+
+1. Cloudflare dashboard → Storage & Databases → KV → **Create namespace** (e.g. `piano-study-suite-lessons`). Copy its ID.
+2. Add a binding in `wrangler.jsonc`:
+   `"kv_namespaces": [{ "binding": "LESSONS", "id": "<namespace id>" }]`
+3. Worker → Settings → Variables and Secrets → add a **Secret** `ADMIN_TOKEN` (any long random phrase).
+4. Open `/lessons-admin.html` on your site, enter the token, choose `lessons-kv.json`, and click **Upload**.
+
+Without the library the coach still works, using its teaching profile alone.

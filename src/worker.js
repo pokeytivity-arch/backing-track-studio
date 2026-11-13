@@ -1,7 +1,7 @@
 // Backing Track Studio worker: serves the static app and the
 // "Ask Piano Study Suite" endpoint, which calls the Claude API.
 import PERSONA from './persona.txt';
-import { loadIndex, search, tagHints } from './retrieve.js';
+import { searchLessons, tagHints } from './retrieve.js';
 
 const MODEL_DEFAULT = 'claude-sonnet-5-5';
 const MAX_MSGS = 24, MAX_CHARS = 4000, MAX_TOTAL = 40000;
@@ -40,11 +40,10 @@ async function teacher(request, env) {
     `Title: ${clip(c.title, 120) || '(untitled)'}\nStyle: ${clip(c.style, 40)} · Tempo: ${clip(c.bpm, 8)} BPM · Time: ${clip(c.meter, 8)} · Transpose: ${clip(c.transpose, 6)}\nChart:\n${clip(c.chart, 3000)}`;
   let lessons = '';
   try {
-    const ix = await loadIndex(env);
-    if (ix) {
+    {
       const q = msgs.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
-      const found = search(ix, q, { k: 4, level: c.level || '', tags: tagHints(q) });
-      if (found.length) lessons = '\n\n## From your own past lessons\nThese are rough auto-transcripts of things you said in class (speech-to-text, so words can be garbled). Use them to stay true to how you explain, the order you teach things, your examples and your voice. Don\'t quote them word for word, don\'t mention that they are transcripts, and never mention or invent student names ([name] marks a removed name).\n' +
+      const found = await searchLessons(env, q, { k: 4, level: c.level || '', tags: tagHints(q) });
+      if (found.length) lessons = '\n\n## From your own past lessons\nThese are rough auto-transcripts of things you said in class (speech-to-text, so words can be garbled). Use them to stay true to how you explain, the order you teach things, your examples and your voice. Don\'t quote them word for word, don\'t mention that they are transcripts, and never mention or invent student names ([name] marks a removed name). If an excerpt contains song lyrics, do not repeat them.\n' +
         found.map((d, i) => `\n[${i + 1}] ${d.k} (${d.d}, ${d.l})\n${d.t}`).join('\n');
     }
   } catch (e) { console.log('lessons', e); }
@@ -61,9 +60,26 @@ async function teacher(request, env) {
   return json({ reply: reply || '…' });
 }
 
+// Owner-only upload of the lesson library into KV. Needs the ADMIN_TOKEN secret.
+async function adminLessons(request, env) {
+  if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
+  if (!env.ADMIN_TOKEN || request.headers.get('authorization') !== 'Bearer ' + env.ADMIN_TOKEN) return json({ error: 'forbidden' }, 403);
+  let items; try { items = await request.json(); } catch { return json({ error: 'bad_json' }, 400); }
+  if (!Array.isArray(items) || items.length > 100) return json({ error: 'send at most 100 keys per request' }, 400);
+  for (const it of items) {
+    if (!it || typeof it.key !== 'string' || !/^(meta|p:\d+|d:\d+)$/.test(it.key) || typeof it.value !== 'string') return json({ error: 'bad_item' }, 400);
+  }
+  await Promise.all(items.map(it => env.LESSONS.put(it.key, it.value)));
+  return json({ ok: true, wrote: items.length });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/admin/lessons') {
+      if (request.method !== 'POST') return json({ error: 'method' }, 405);
+      try { return await adminLessons(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
     if (url.pathname === '/api/teacher') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405);
       try { return await teacher(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }

@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Upload lesson library · Backing Track Studio</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:560px;margin:40px auto;padding:0 16px;color:#222}input,button{font:inherit;padding:8px;margin:6px 0;width:100%;box-sizing:border-box}button{background:#2b5cff;color:#fff;border:0;border-radius:6px;cursor:pointer}#log{white-space:pre-wrap;background:#f4f4f6;padding:10px;border-radius:6px;min-height:3em}</style></head>
+<body><h1>Upload lesson library</h1>
+<p>For the studio owner. Pick the <b>lessons-kv.json</b> file and enter your admin token. This copies your lesson excerpts into your private Cloudflare store so “Ask Piano Study Suite” can draw on them.</p>
+<label>Admin token<input id="tok" type="password" autocomplete="off"></label>
+<label>Library file<input id="file" type="file" accept=".json"></label>
+<button id="go">Upload</button><div id="log"></div>
+<script>
+const log=m=>{document.getElementById('log').textContent+=m+'\n'};
+document.getElementById('go').onclick=async()=>{
+  const f=document.getElementById('file').files[0],t=document.getElementById('tok').value.trim();
+  if(!f||!t){log('Choose the file and enter the token.');return}
+  let items;try{items=JSON.parse(await f.text())}catch{log('That file is not valid JSON.');return}
+  for(let i=0;i<items.length;i+=50){
+    const r=await fetch('/api/admin/lessons',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify(items.slice(i,i+50))});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){log('Stopped: '+(j.error||r.status));return}
+    log('Uploaded '+Math.min(i+50,items.length)+' of '+items.length);
+  }
+  log('Done. The coach will use your lessons from now on.');
+};
+</script></body></html>
