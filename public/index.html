@@ -49,7 +49,13 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 
 /* ---------- Stage ---------- */
 .stage{background:var(--stage);color:var(--stage-ink);border-radius:18px;padding:clamp(16px,3vw,28px);display:grid;gap:18px;position:relative}
-.stage-top{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end}
+.stage-top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px 28px;align-items:end}
+.top-mid{align-self:center;justify-self:center;width:100%;max-width:640px;display:grid;gap:10px;padding-top:44px}
+.top-mid .stage-tempo{justify-content:flex-start;flex-wrap:nowrap}
+.top-mid .stage-tempo label{min-width:92px}
+.top-mid .stage-tempo input[type=range]{min-width:120px;max-width:none}
+.top-mid .stage-sync{margin-top:0}
+@media (max-width:900px){ .stage-top{grid-template-columns:1fr auto} .top-mid{grid-column:1/-1;grid-row:2;padding-top:0;max-width:none} .top-mid .stage-tempo{flex-wrap:wrap} }
 .lbl{font:600 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--stage-muted)}
 .now{font:800 clamp(64px,17vw,168px)/.9 var(--display);letter-spacing:-.03em;margin-top:6px;min-height:.9em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .now .q{font-size:.5em;font-weight:700;letter-spacing:-.01em;margin-left:.04em}
@@ -285,18 +291,28 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 header.top,footer.credits{display:none}
 .bench .card{display:none}
 .bench{display:contents}
-.bench .card.panel-active{display:grid;position:fixed;z-index:85;top:48px;right:max(12px,calc((100vw - 1180px)/2));width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 60px);overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.35);animation:panelIn .16s ease-out}
-.bench .card.panel-active[data-panel="chart"],.bench .card.panel-active[data-panel="library"]{width:min(1000px,calc(100vw - 24px));right:max(12px,calc((100vw - 1000px)/2))}
+.bench .card.panel-active{display:flex;flex-direction:column;gap:12px;position:fixed;z-index:90;overflow:auto;resize:both;min-width:320px;min-height:160px;max-width:calc(100vw - 8px);max-height:calc(100vh - 44px);box-shadow:0 18px 50px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.04);animation:panelIn .16s ease-out}
+.bench .card.panel-active > *{flex:none}
+.bench .card.panel-min{display:none!important}
+.bench .card.dragging{user-select:none;opacity:.96;box-shadow:0 26px 60px rgba(0,0,0,.42)}
 @keyframes panelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .bench .card[data-panel] > h2,.bench .card[data-panel] > .card-h > h2{display:none}
 .bench .card[data-panel] .card-h{flex-wrap:wrap}
 .bench .card[data-panel] #title{min-width:180px}
-.panel-backdrop{position:fixed;inset:0;z-index:84;background:rgba(10,14,28,.45)}
-.panel-backdrop[hidden]{display:none}
-.panel-bar{position:sticky;top:-16px;margin:-16px -16px 4px;padding:12px 14px 10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--line);z-index:3}
-.panel-bar span{font:800 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.panel-close{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);font:700 15px var(--body);color:var(--ink);cursor:pointer}
-.panel-close:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel-bar{position:sticky;top:-16px;margin:-16px -16px 0;padding:10px 10px 9px 16px;display:flex;align-items:center;gap:6px;background:var(--surface);border-bottom:1px solid var(--line);z-index:3;cursor:grab;touch-action:none}
+.bench .card.dragging .panel-bar{cursor:grabbing}
+.win-title{font:800 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-right:auto;user-select:none}
+.panel-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);font:700 14px/1 var(--body);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.panel-btn:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel-close:hover{background:var(--danger);border-color:var(--danger);color:#fff}
+.win-dock{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:89;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px)}
+.dock-chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 13px var(--body);padding:8px 14px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.dock-chip::before{content:"▢ ";opacity:.5}
+.dock-chip:hover{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:699px){
+  .bench .card.panel-active{left:8px!important;right:8px!important;top:44px!important;width:auto!important;height:auto!important;max-height:calc(100vh - 100px);resize:none}
+  .panel-bar{cursor:default}
+}
 .menu-status{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;padding-left:12px}
 .menubar{position:sticky;top:0;z-index:70;display:flex;gap:2px;align-items:center;padding:0 10px;height:36px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .menubar::-webkit-scrollbar{display:none}
@@ -341,6 +357,22 @@ audio{width:100%}
         <div class="next" id="next">Next <b>–</b></div>
         <div class="voice" id="voice"></div>
       </div>
+      <div class="top-mid">
+      <div class="stage-tempo">
+        <label for="bpm">Tempo</label>
+        <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
+        <input type="number" id="bpm" min="30" max="320" aria-label="Tempo in BPM">
+        <span class="unit">BPM</span>
+        <button class="tog tapbig" id="tapBtn" title="Tap 4 times in time to set the tempo">Tap</button>
+      </div>
+      <div class="stage-tempo stage-sync">
+        <label for="sync">Sync lights</label>
+        <input type="range" id="sync" min="-150" max="800" step="10" value="500" aria-describedby="syncHelp">
+        <span class="syncval" id="syncVal">+500 ms</span>
+        <button class="tog" id="syncReset">Reset</button>
+        <span class="sr" id="syncHelp">If the lights flash before you hear the beat, slide right; if after, slide left. Reset returns to 500 ms. Saved on this device.</span>
+      </div>
+      </div>
       <div class="meter">
         <div class="corner-tools">
           <button class="icontog" id="countBtn" aria-pressed="true" aria-label="Count-in" title="Count-in (one bar before the band starts)"><span class="cnt">1 2 3 4</span></button>
@@ -349,20 +381,6 @@ audio{width:100%}
         <div class="pos">Bar <b id="barNo">–</b> · Loop <b id="loopNo">–</b></div>
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
       </div>
-    </div>
-    <div class="stage-tempo">
-      <label for="bpm">Tempo</label>
-      <input type="range" id="bpmRange" min="30" max="320" aria-label="Tempo slider">
-      <input type="number" id="bpm" min="30" max="320" aria-label="Tempo in BPM">
-      <span class="unit">BPM</span>
-      <button class="tog tapbig" id="tapBtn" title="Tap 4 times in time to set the tempo">Tap</button>
-    </div>
-    <div class="stage-tempo stage-sync">
-      <label for="sync">Sync lights</label>
-      <input type="range" id="sync" min="-150" max="800" step="10" value="500" aria-describedby="syncHelp">
-      <span class="syncval" id="syncVal">+500 ms</span>
-      <button class="tog" id="syncReset">Reset</button>
-      <span class="sr" id="syncHelp">If the lights flash before you hear the beat, slide right; if after, slide left. Reset returns to 500 ms. Saved on this device.</span>
     </div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
@@ -524,7 +542,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-j (metronome pauses with the band)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-l (sliders beside the chord)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2204,27 +2222,77 @@ function setupDrums(){
 }
 
 /* =========================================================
-   Panels: everything but the stage lives in the menus
+   Windows: everything but the stage lives in the menus.
+   Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
 const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',mixer:'Mixer',library:'Library',export:'Export audio'};
-let panelOpen=null;
+const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],mixer:[560,470],export:[520,300]};
+let panelOpen=null, winZ=90, openCount=0;
+const isSmall=()=>window.innerWidth<700;
+const winState=name=>store.get('bt-win-'+name,null);
+const saveWin=(name,card)=>{ if(isSmall() || card.classList.contains('panel-min') || !card.classList.contains('panel-active')) return; const r=card.getBoundingClientRect(); if(r.width<100||r.height<60) return; store.set('bt-win-'+name,{x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}); };
+function clampWin(card){ const r=card.getBoundingClientRect(), W=window.innerWidth, H=window.innerHeight;
+  let x=Math.min(Math.max(r.left,8-r.width+120),W-120), y=Math.min(Math.max(r.top,40),H-48); card.style.left=x+'px'; card.style.top=y+'px'; }
 function setupPanels(){
-  const bd=document.createElement('div'); bd.className='panel-backdrop'; bd.hidden=true; bd.onclick=closePanel; document.body.appendChild(bd);
+  const dock=document.createElement('div'); dock.className='win-dock'; dock.id='winDock'; dock.setAttribute('aria-label','Minimized windows'); document.body.appendChild(dock);
   document.querySelectorAll('.bench .card[data-panel]').forEach(card=>{
-    const x=document.createElement('button'); x.className='panel-close'; x.setAttribute('aria-label','Close '+PANELS[card.dataset.panel]); x.innerHTML='✕'; x.onclick=closePanel;
-    const bar=document.createElement('div'); bar.className='panel-bar'; const t=document.createElement('span'); t.textContent=PANELS[card.dataset.panel]; bar.append(t,x);
-    card.prepend(bar); card.setAttribute('role','dialog'); card.setAttribute('aria-label',PANELS[card.dataset.panel]); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && panelOpen && !document.querySelector('.menu-pop') && !document.querySelector('dialog[open]')){ e.preventDefault(); closePanel(); } });
+    const name=card.dataset.panel, title=PANELS[name];
+    const bar=document.createElement('div'); bar.className='panel-bar';
+    const t=document.createElement('span'); t.className='win-title'; t.textContent=title;
+    const mn=document.createElement('button'); mn.className='panel-btn'; mn.setAttribute('aria-label','Minimize '+title); mn.title='Minimize'; mn.textContent='–'; mn.onclick=()=>minimizePanel(name);
+    const x=document.createElement('button'); x.className='panel-btn panel-close'; x.setAttribute('aria-label','Close '+title); x.title='Close'; x.textContent='✕'; x.onclick=()=>closePanel(name);
+    bar.append(t,mn,x); card.prepend(bar); card.setAttribute('role','dialog'); card.setAttribute('aria-label',title);
+    card.addEventListener('pointerdown',()=>raise(card),true);
+    // drag by the title bar
+    bar.addEventListener('pointerdown',e=>{
+      if(e.target.closest('button')||isSmall()||e.button!==0) return;
+      e.preventDefault(); const r=card.getBoundingClientRect(), dx=e.clientX-r.left, dy=e.clientY-r.top; bar.setPointerCapture(e.pointerId); card.classList.add('dragging');
+      const mv=ev=>{ card.style.left=(ev.clientX-dx)+'px'; card.style.top=Math.max(40,ev.clientY-dy)+'px'; card.style.right='auto'; };
+      const up=()=>{ bar.removeEventListener('pointermove',mv); bar.removeEventListener('pointerup',up); card.classList.remove('dragging'); clampWin(card); saveWin(name,card); };
+      bar.addEventListener('pointermove',mv); bar.addEventListener('pointerup',up); });
+    bar.addEventListener('dblclick',e=>{ if(!e.target.closest('button')) minimizePanel(name); });
+    // remember size after a resize
+    new ResizeObserver(()=>{ if(card.classList.contains('panel-active') && !card.classList.contains('dragging')){ clearTimeout(card._rz); card._rz=setTimeout(()=>saveWin(name,card),250); } }).observe(card);
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && panelOpen && !document.querySelector('.menu-pop') && !document.querySelector('dialog[open]')){ e.preventDefault(); closePanel(panelOpen.dataset.panel); } });
+  window.addEventListener('resize',()=>document.querySelectorAll('.card.panel-active').forEach(clampWin));
+}
+function raise(card){ card.style.zIndex=++winZ; panelOpen=card; }
+function placeWin(card,name){
+  if(isSmall()){ card.style.left=''; card.style.top=''; card.style.width=''; card.style.height=''; return; }
+  const st=winState(name), [dw,dh]=WIN_DEF[name]||[560,480], W=window.innerWidth, H=window.innerHeight;
+  const w=Math.min(st?st.w:dw,W-16), h=Math.min(st?st.h:dh,H-56);
+  const x=st?st.x:Math.max(8,W-w-24-openCount*28), y=st?st.y:Math.min(52+openCount*28,H-160);
+  Object.assign(card.style,{width:w+'px',height:h+'px',left:x+'px',top:y+'px',right:'auto'}); clampWin(card);
 }
 function openPanel(name,focusEl){
   const card=document.querySelector(`.bench .card[data-panel="${name}"]`); if(!card) return;
-  if(panelOpen && panelOpen!==card) panelOpen.classList.remove('panel-active');
-  card.classList.add('panel-active'); panelOpen=card; document.querySelector('.panel-backdrop').hidden=false; document.body.classList.add('has-panel');
-  card.scrollTop=0;
+  const wasOpen=card.classList.contains('panel-active');
+  restoreFromDock(name,false);
+  if(!wasOpen){ card.classList.add('panel-active'); placeWin(card,name); openCount++; card.scrollTop=0; }
+  raise(card); document.body.classList.add('has-panel');
   if(name==='chart' && S.mode==='pro') renderGrid();
-  setTimeout(()=>{ const f=focusEl||card.querySelector('input,textarea,select,button:not(.panel-close)'); if(focusEl){ focusEl.scrollIntoView({block:'center'}); focusEl.classList.remove('flash'); void focusEl.offsetWidth; focusEl.classList.add('flash'); } else card.querySelector('.panel-close').focus(); },30);
+  setTimeout(()=>{ if(focusEl){ focusEl.scrollIntoView({block:'center'}); focusEl.classList.remove('flash'); void focusEl.offsetWidth; focusEl.classList.add('flash'); } else if(!wasOpen) card.querySelector('.panel-close').focus({preventScroll:true}); },30);
 }
-function closePanel(){ if(!panelOpen) return; panelOpen.classList.remove('panel-active'); panelOpen=null; document.querySelector('.panel-backdrop').hidden=true; document.body.classList.remove('has-panel'); }
+function closePanel(name){
+  const card=name?document.querySelector(`.bench .card[data-panel="${name}"]`):panelOpen; if(!card) return;
+  if(card.classList.contains('panel-active')){ saveWin(card.dataset.panel,card); openCount=Math.max(0,openCount-1); }
+  card.classList.remove('panel-active','panel-min'); restoreFromDock(card.dataset.panel,true);
+  const rest=[...document.querySelectorAll('.card.panel-active:not(.panel-min)')].sort((a,b)=>(+b.style.zIndex||0)-(+a.style.zIndex||0));
+  panelOpen=rest[0]||null; if(!document.querySelector('.card.panel-active')) document.body.classList.remove('has-panel');
+}
+function minimizePanel(name){
+  const card=document.querySelector(`.bench .card[data-panel="${name}"]`); if(!card) return;
+  saveWin(name,card); card.classList.add('panel-min');
+  const dock=$('winDock'); if(!dock.querySelector(`[data-win="${name}"]`)){
+    const chip=document.createElement('button'); chip.className='dock-chip'; chip.dataset.win=name; chip.textContent=PANELS[name]; chip.title='Restore '+PANELS[name];
+    chip.onclick=()=>openPanel(name); dock.appendChild(chip); }
+  const rest=[...document.querySelectorAll('.card.panel-active:not(.panel-min)')].sort((a,b)=>(+b.style.zIndex||0)-(+a.style.zIndex||0)); panelOpen=rest[0]||null;
+}
+function restoreFromDock(name,remove){
+  const card=document.querySelector(`.bench .card[data-panel="${name}"]`); if(card) card.classList.remove('panel-min');
+  const chip=$('winDock')&&$('winDock').querySelector(`[data-win="${name}"]`); if(chip) chip.remove();
+}
 
 /* =========================================================
    Menu bar (File, Edit, View, Playback, Tools, Help)
