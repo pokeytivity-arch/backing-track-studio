@@ -35,6 +35,10 @@ const css=document.createElement('style'); css.textContent=`
 #suiteHub .back{margin-top:18px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#e6eaf2;font:600 14px var(--body);padding:9px 16px;border-radius:999px;cursor:pointer}
 .ps-chip{border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important;font-weight:700!important;border-radius:999px!important;padding:3px 12px!important;margin-left:6px}
 /* Class with Coach and Studio+ use the Studio's dark stage look: same fonts, colours, pill buttons */
+body[data-dest="class"],body[data-dest="studio"],body[data-dest="plus"]{background-color:#0a0e17;background-repeat:no-repeat;background-position:center;background-size:cover;background-attachment:fixed}
+body[data-dest="class"]{background-image:linear-gradient(180deg,rgba(8,12,24,.72),rgba(8,12,24,.55)),url(card-class.webp)}
+body[data-dest="studio"]{background-image:linear-gradient(180deg,rgba(8,12,24,.72),rgba(8,12,24,.55)),url(card-studio.webp)}
+body[data-dest="plus"]{background-image:linear-gradient(180deg,rgba(8,12,24,.72),rgba(8,12,24,.55)),url(card-plus.webp)}
 body[data-dest="class"] header.top,body[data-dest="class"] #stage,body[data-dest="plus"] header.top,body[data-dest="plus"] #stage{display:none}
 body[data-dest="class"] .card[data-panel="teacher"].panel-active,
 body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{position:fixed!important;left:max(12px,calc(50% - 590px))!important;top:48px!important;width:min(1180px,calc(100vw - 24px))!important;height:calc(100vh - 60px)!important;resize:none!important;border-radius:18px;background:var(--stage)!important;color:var(--stage-ink);border:0;padding:clamp(16px,3vw,28px)!important;overflow:auto;box-shadow:none;display:flex;flex-direction:column;gap:12px}
