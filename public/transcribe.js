@@ -508,8 +508,9 @@ function init(){
   $('txSeek').oninput=e=>seek(+e.target.value/100);
   const setRate=p=>{ p=Math.max(25,Math.min(150,Math.round(p/5)*5)); S.rate=p/100; $('txSpeed').textContent=p+'%'; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
   $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
-  try{ const k=+localStorage.getItem('tx-kbd2'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
-  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd2',e.target.value); }catch(_){} fitRange(); draw(cur()); };
+  try{ const k=+localStorage.getItem('tx-kbd3'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
+  fitRange();
+  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd3',e.target.value); }catch(_){} fitRange(); draw(cur()); };
   $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
   try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
   updLegend();
