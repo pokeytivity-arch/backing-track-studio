@@ -87,7 +87,7 @@ function showResult({blob,notes,dur,title,long,fresh}){
   S.audio=new Audio(S.url); S.audio.preservesPitch=true; S.audio.mozPreservesPitch=true; S.audio.webkitPreservesPitch=true; S.audio.preload='auto';
   S.audio.onended=()=>{ if(S.playing) pausePlay(); };
   S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
-  assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
+  setNorm(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
   $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; $('txClearLoop').disabled=false;
   say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
@@ -172,7 +172,7 @@ async function saveWav(){
   try{
     const ac=ensureCtx(); if(typeof loadBank==='function') await loadBank(ac); if(!(BANK.ready&&BANK.keys.piano)) throw new Error('The piano sounds did not load. Reload and try again.');
     const sr=44100, len=Math.ceil((S.dur+3)*sr), off=new OfflineAudioContext(2,len,sr), mast=off.createGain(); mast.gain.value=0.7; mast.connect(off.destination);
-    S.notes.forEach(n=>pianoNote(off,mast,n.p+S.tr,n.t,n.d,n.a,S.a4));
+    S.notes.forEach(n=>pianoNote(off,mast,n.p+S.tr,n.t,n.d,velOf(n.a),S.a4));
     const r=await off.startRendering(); let L=r.getChannelData(0), R=r.getChannelData(1), end=L.length; while(end>sr&&Math.abs(L[end-1])<0.0005&&Math.abs(R[end-1])<0.0005) end--;
     end=Math.min(L.length,end+Math.round(sr*0.3)); let pk=0; for(let i=0;i<end;i++){ pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i])); } const gn=pk>0?0.89/pk:1; const data=new DataView(new ArrayBuffer(44+end*4)); const w=(o,t)=>{ for(let i=0;i<t.length;i++) data.setUint8(o+i,t.charCodeAt(i)); };
     w(0,'RIFF'); data.setUint32(4,36+end*4,true); w(8,'WAVEfmt '); data.setUint32(16,16,true); data.setUint16(20,1,true); data.setUint16(22,2,true); data.setUint32(24,sr,true); data.setUint32(28,sr*4,true); data.setUint16(32,4,true); data.setUint16(34,16,true); w(36,'data'); data.setUint32(40,end*4,true);
@@ -186,7 +186,7 @@ async function saveWav(){
 function applySens(){
   if(!S.audio) return; const s=sensVal(); let notes;
   if(S.raw){ notes=extract(S.raw,s); } else { notes=cleanup(S.baseNotes||S.notes,s); }
-  S.notes=notes; stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
+  S.notes=notes; setNorm(); stopPlay(); resetSched(); assignHands(); fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
   $('txTitle').textContent=S.title+' · '+notes.length+' notes'; $('txMidi').disabled=!notes.length; $('txWav').disabled=!notes.length; $('txAsk').disabled=!notes.length; draw(cur());
   say(notes.length+' notes at this sensitivity.'+(S.raw?'':' (On a reopened recording the slider can only remove notes.)'));
   if(S.itemId){ const id=S.itemId; tx('readwrite',st=>{ const q=st.get(id); q.onsuccess=()=>{ if(q.result){ q.result.notes=notes; st.put(q.result); } }; }).catch(()=>{}); }
@@ -209,10 +209,14 @@ function askClass(){
   window.CLASS.askAbout(q,{heard,fresh:false});
 }
 function click(at,accent){ const ac=S.ac, o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=accent?1500:1000; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(accent?0.6:0.4,at+0.002); g.gain.exponentialRampToValueAtTime(0.0001,at+0.05); o.connect(g); g.connect(S.ac.destination); o.start(at); o.stop(at+0.06); }
-function resetSched(){ S.sched.clear(); S.metNext=null; }
+function resetSched(){ S.sched.clear(); S.metNext=null; S.offs=[]; }
+function setNorm(){ const a=S.notes.map(n=>n.a).sort((x,y)=>x-y); S.aNorm=a.length?Math.max(0.2,a[Math.floor(a.length*0.95)]||a[a.length-1]):1; }
+const velOf=a=>Math.max(0.12,Math.min(1,Math.pow(a/(S.aNorm||1),0.85)));
 function scheduleAhead(t){
-  const ac=S.ac, ahead=0.18*S.rate, now=ac.currentTime;
-  if(S.mixNote>0.02){ for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+ahead) break; if(n.t<t-0.02||S.sched.has(i)) continue; S.sched.add(i); playNote(n.p,now+Math.max(0,(n.t-t)/S.rate),n.d,n.a); } }
+  const ac=S.ac, ahead=0.3*S.rate, now=ac.currentTime;
+  // Notes keep the exact times found in the recording (no quantizing). To land them on the recording's own beat, lock the audio element's clock to the audio-context clock.
+  S.offs=S.offs||[]; S.offs.push(now-t/S.rate); if(S.offs.length>30) S.offs.shift(); const off=Math.min(...S.offs), nudge=(S.nudge||0)/1000;
+  if(S.mixNote>0.02){ for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+ahead) break; if(n.t<t-0.25||S.sched.has(i)) continue; S.sched.add(i); const when=Math.max(now,off+n.t/S.rate+nudge); playNote(n.p,when,n.d,velOf(n.a)); } }
   if(S.met){ const sp=60/S.bpm; if(S.metNext==null){ S.metNext=Math.max(0,Math.ceil((t-S.metOrigin)/sp-1e-6)); }
     while(S.metOrigin+S.metNext*sp<=t+ahead){ const bt=S.metOrigin+S.metNext*sp; if(bt>=t-0.02) click(now+Math.max(0,(bt-t)/S.rate),S.metNext%S.bpb===0); S.metNext++; } }
 }
@@ -337,6 +341,8 @@ function init(){
   $('txTr').onchange=e=>{ S.tr=+e.target.value; resetSched(); draw(cur()); };
   $('txMix').oninput=e=>{ S.mixNote=+e.target.value/100; applyMix(); };
   $('txNames').onchange=e=>{ S.names=e.target.checked; draw(cur()); };
+  try{ S.nudge=+localStorage.getItem('tx-nudge')||0; $('txNudge').value=S.nudge; }catch(_){}
+  $('txNudge').onchange=e=>{ S.nudge=Math.max(-250,Math.min(250,+e.target.value||0)); e.target.value=S.nudge; try{ localStorage.setItem('tx-nudge',S.nudge); }catch(_){} resetSched(); };
   $('txA4').onchange=e=>{ S.a4=+e.target.value; };
   $('txSetA').onclick=()=>{ S.loopA=cur(); if(S.loopB!=null&&S.loopB<=S.loopA) S.loopB=null; say('Loop start set at '+fmt(S.loopA)+'. Now set the end.'); draw(cur()); };
   $('txSetB').onclick=()=>{ if(S.loopA==null){ say('Set the loop start first.',true); return; } if(cur()<=S.loopA){ say('Move forward, then set the loop end.',true); return; } S.loopB=cur(); say('Looping '+fmt(S.loopA)+' to '+fmt(S.loopB)+'.'); draw(cur()); };
