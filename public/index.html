@@ -2422,7 +2422,7 @@ function tFormat(txt){
 }
 function tRender(extra){
   const log=$('tLog'); log.innerHTML='';
-  if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Piano Study Suite**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
+  if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Onyemachi Chuku**, the AI coach representing the director of the Hear and Play VIP Coaching program, built from his lessons. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
   T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else d.innerHTML=tFormat(m.content); log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
   log.scrollTop=log.scrollHeight;
