@@ -47,19 +47,41 @@ async function transcribeBlob(blob,title){
     let notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.d>=0.06&&n.p>=21&&n.p<=108).sort((a,b)=>a.t-b.t||a.p-b.p);
     // drop short ghost notes that are just overtones (an octave, 12th or two octaves above a stronger note that starts at the same time)
     notes=notes.filter(n=>!(n.d<0.3&&notes.some(m=>m!==n&&Math.abs(m.t-n.t)<0.06&&m.d>n.d*1.5&&m.a>=n.a*0.8&&[12,19,24,28,31].includes(n.p-m.p))));
-    if(S.url) URL.revokeObjectURL(S.url);
-    S.url=URL.createObjectURL(blob); S.notes=notes; S.dur=buf.duration; S.title=title||'Recording';
-    if(S.audio){ S.audio.pause(); }
-    S.audio=new Audio(S.url); S.audio.preservesPitch=true; S.audio.mozPreservesPitch=true; S.audio.webkitPreservesPitch=true; S.audio.preload='auto';
-    S.audio.onended=()=>{ if(S.playing) pausePlay(); };
-    S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
-    fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
-    $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
-    $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txClearLoop').disabled=false;
-    say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
-    draw(0);
+    await showResult({blob,notes,dur:buf.duration,title,long});
+    saveItem({blob,notes,dur:buf.duration,title:title||'Recording'});
   }catch(e){ say(e&&e.message?e.message:'Something went wrong while reading the audio.',true); }
   finally{ S.busy=false; setBusy(false); }
+}
+
+function showResult({blob,notes,dur,title,long}){
+  if(S.url) URL.revokeObjectURL(S.url);
+  S.url=URL.createObjectURL(blob); S.notes=notes; S.dur=dur; S.title=title||'Recording';
+  stopPlay(); if(S.audio){ S.audio.pause(); }
+  S.audio=new Audio(S.url); S.audio.preservesPitch=true; S.audio.mozPreservesPitch=true; S.audio.webkitPreservesPitch=true; S.audio.preload='auto';
+  S.audio.onended=()=>{ if(S.playing) pausePlay(); };
+  S.loopA=S.loopB=null; S.metOrigin=0; applyMix(); S.audio.playbackRate=S.rate;
+  fitRange(); const key=detectKey(); $('txKey').textContent=key?('Key: '+key.label):'Key: –';
+  $('txTitle').textContent=S.title+' · '+notes.length+' notes'+(long?' (first 5 minutes only)':'');
+  $('txSeek').max=String(Math.floor(S.dur*100)); $('txSeek').value='0'; $('txTime').textContent='0:00 / '+fmt(S.dur); $('txPlay').disabled=false; $('txBack').disabled=false; $('txMidi').disabled=!notes.length; $('txClearLoop').disabled=false;
+  say(notes.length?'Done. Press Play: the notes fall onto the keys in time with the recording.':'I could not find clear notes in this audio. Try a recording with less noise, or a single instrument.');
+  draw(0);
+}
+
+/* ---------- saved library (in this browser only, IndexedDB) ---------- */
+let dbP=null;
+function db(){ if(!dbP) dbP=new Promise((res,rej)=>{ const r=indexedDB.open('bts-transcribe',1); r.onupgradeneeded=()=>r.result.createObjectStore('items',{keyPath:'id'}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); return dbP; }
+const tx=(mode,fn)=>db().then(d=>new Promise((res,rej)=>{ const t=d.transaction('items',mode), st=t.objectStore('items'), q=fn(st); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); }));
+async function saveItem(it){ try{ await tx('readwrite',st=>st.put({id:Date.now()+'-'+Math.random().toString(36).slice(2,6),when:Date.now(),title:it.title,dur:it.dur,notes:it.notes,blob:it.blob})); renderLib(); }catch(e){ say('Done, but this browser would not save it to your library (private browsing?).',true); } }
+async function renderLib(){
+  const box=$('txLib'); if(!box) return; let items=[]; try{ items=(await tx('readonly',st=>st.getAll()))||[]; }catch(e){ box.textContent='Your library is not available in this browser mode.'; return; }
+  items.sort((a,b)=>b.when-a.when); box.textContent='';
+  if(!items.length){ box.innerHTML='<span class="help">Nothing saved yet. Every transcription you make is saved here, in this browser only.</span>'; return; }
+  items.forEach(it=>{ const row=document.createElement('div'); row.className='txitem';
+    const t=document.createElement('span'); t.className='txt'; t.textContent=it.title+' · '+it.notes.length+' notes · '+fmt(it.dur)+' · '+new Date(it.when).toLocaleDateString();
+    const o=document.createElement('button'); o.className='btn sm'; o.textContent='Open'; o.onclick=()=>{ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Opened "'+it.title+'" from your library.'); };
+    const r=document.createElement('button'); r.className='btn sm'; r.textContent='Rename'; r.onclick=async()=>{ const n=window.prompt('Name for this transcription',it.title); if(n&&n.trim()){ it.title=n.trim().slice(0,80); await tx('readwrite',st=>st.put(it)); renderLib(); } };
+    const x=document.createElement('button'); x.className='btn sm'; x.textContent='Delete'; x.onclick=async()=>{ if(window.confirm('Delete "'+it.title+'" from your library?')){ await tx('readwrite',st=>st.delete(it.id)); renderLib(); } };
+    row.append(t,o,r,x); box.appendChild(row); });
 }
 function setBusy(b){ ['txFile','txRec'].forEach(i=>{ const e=$(i); if(e) e.disabled=b&&i!=='txRec'; }); $('txFileBtn').disabled=b; }
 
@@ -194,7 +216,7 @@ function init(){
   $('txMidi').onclick=downloadMidi;
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
-  new ResizeObserver(()=>draw(cur())).observe($('txCanvas'));
+  new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
   draw(0);
 }
 window.TX={init,S,_test:{transcribeBlob,midiBytes,detectKey,draw}};
