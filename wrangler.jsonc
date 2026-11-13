@@ -3,6 +3,9 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
+  "kv_namespaces": [
+    { "binding": "LESSONS", "id": "00c6361654234e1796f62d789486342c" }
+  ],
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
