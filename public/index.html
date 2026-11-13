@@ -524,11 +524,16 @@ audio{width:100%}
         .tx .txitem{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.tx .txitem .txt{flex:1;min-width:160px;font:500 13px var(--body)}
         .tx #txTitle{font:600 13px var(--body)}
         .tx input[type=number]{width:64px}
+        .tx .stp{display:inline-flex;align-items:center;border:1.5px solid #34446c;border-radius:10px;overflow:hidden;background:#0b1224}
+        .tx .stp button{width:34px;height:34px;border:0;background:#1b2745;color:#fff;font:800 18px var(--display);cursor:pointer}
+        .tx .stp button:hover{background:#2a3b66}
+        .tx .stp output,.tx .stpv{min-width:58px;text-align:center;font:800 17px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+        .tx .stpv{min-width:34px;display:inline-block}
         </style>
         <div class="card-h"><h2>Studio+ · Transcription</h2><span class="help">Turns audio into notes</span></div>
         <p class="help">Choose an audio file or record with the microphone. The Studio finds the notes and drops them onto a keyboard in time with the recording. Works best with one instrument or a clear piano part. It reads the first five minutes. With the piano model on, the recording is sent to a piano transcription service and is not kept; with it off, everything stays in your browser.</p>
         <div class="txrow">
-          <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac" hidden>
+          <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.mp4,.mov,.m4v,.webm" hidden>
           <button class="btn rec" id="txRec">● Record with the microphone</button>
         </div>
         <p class="help" id="txMsg" aria-live="polite"></p>
@@ -536,8 +541,8 @@ audio{width:100%}
         <canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
         <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
         <div class="txrow">
-          <label>Speed <select id="txSpeed"><option value="0.5">50%</option><option value="0.6">60%</option><option value="0.7">70%</option><option value="0.8">80%</option><option value="0.9">90%</option><option value="1" selected>100%</option><option value="1.1">110%</option><option value="1.25">125%</option></select></label>
-          <label>Transpose <select id="txTr"><option value="-12">-12</option><option value="-11">-11</option><option value="-10">-10</option><option value="-9">-9</option><option value="-8">-8</option><option value="-7">-7</option><option value="-6">-6</option><option value="-5">-5</option><option value="-4">-4</option><option value="-3">-3</option><option value="-2">-2</option><option value="-1">-1</option><option value="0" selected>0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option><option value="11">+11</option><option value="12">+12</option></select></label>
+          <label>Speed <span class="stp"><button type="button" id="txSpDn" aria-label="Slower">−</button><output id="txSpeed">100%</output><button type="button" id="txSpUp" aria-label="Faster">+</button></span></label>
+          <label>Transpose <span class="stp"><button type="button" id="txTrDn" aria-label="Down a semitone">−</button><output id="txTr">0</output><button type="button" id="txTrUp" aria-label="Up a semitone">+</button></span></label>
           <label>Keyboard <select id="txKbd"><option value="88" selected>88 keys</option><option value="76">76 keys</option><option value="61">61 keys</option><option value="0">Fit the notes</option></select></label>
           <label>Colours <select id="txHands"><option value="auto">Left and right hand</option><option value="c4">Split at middle C</option><option value="note">By note name</option></select></label>
           <span class="help" id="txLegend"></span>
@@ -548,11 +553,8 @@ audio{width:100%}
         <div class="txrow">
           <label>Recording <input type="range" id="txMix" min="0" max="100" value="50" aria-label="Mix between the recording and the notes"> Notes</label>
           <label>Tuning A4 <input type="number" id="txA4" min="415" max="466" value="440"> Hz</label>
-          <label class="check"><input type="checkbox" id="txMerge" checked> Merge repeated notes</label>
-          <label class="check" title="Uses a model built only for piano. Cleaner notes and exact timing. Takes about a minute."><input type="checkbox" id="txPro" checked> Piano model (best accuracy)</label>
-          <label class="check" title="Listens three times and keeps what the passes agree on. Slower, cleaner."><input type="checkbox" id="txCareful"> Careful analysis (slower)</label>
           <label>Note timing <input type="number" id="txNudge" min="-250" max="250" step="10" value="0" title="Nudge the notes earlier (-) or later (+) against the recording"> ms</label>
-          <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="38" aria-label="How many notes to find"> <span id="txSensV" class="help">Fewer notes</span></label>
+          <label>Sensitivity <input type="range" id="txSens" min="0" max="100" value="38" aria-label="How many notes to find"> <output id="txSensV" class="stpv">38</output></label>
         </div>
         <div class="txrow">
           <button class="btn sm" id="txSetA">Loop start</button><button class="btn sm" id="txSetB">Loop end</button><button class="btn sm" id="txClearLoop" disabled>Clear loop</button>

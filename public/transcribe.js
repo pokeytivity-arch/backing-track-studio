@@ -164,7 +164,7 @@ async function proTranscribe(buf,onProg){
 }
 
 async function transcribeBlob(blob,title){
-  if(S.busy) return; S.busy=true; stopPlay(); setBusy(true);
+  if(S.busy) return; S.busy=true; clearCurrent(true); setBusy(true);
   try{
     say('Reading the audio…');
     const ab=await blob.arrayBuffer(), ctx=ensureCtx();
@@ -194,13 +194,13 @@ async function transcribeBlob(blob,title){
 }
 
 
-function clearCurrent(){
+function clearCurrent(quiet){
   stopPlay(); if(S.audio){ try{ S.audio.pause(); }catch(_){} S.audio=null; } if(S.url){ URL.revokeObjectURL(S.url); S.url=null; }
   S.notes=[]; S.baseNotes=null; S.raw=null; S.pro=false; S.itemId=null; S.dur=0; S.loopA=S.loopB=null; S.title='';
   const set=(id,f)=>{ const e=$(id); if(e) f(e); };
   set('txTitle',e=>e.textContent=''); set('txKey',e=>e.textContent='Key: –'); set('txTime',e=>e.textContent='0:00 / 0:00'); set('txSeek',e=>{ e.max='0'; e.value='0'; });
   ['txPlay','txBack','txMidi','txWav','txAsk'].forEach(id=>set(id,e=>e.disabled=true));
-  say('Removed. Choose an audio file or record to start again.'); try{ draw(0); }catch(_){}
+  if(!quiet) say('Removed. Choose an audio file or record to start again.'); try{ draw(0); }catch(_){}
 }
 
 function showResult({blob,notes,dur,title,long,fresh,pro}){
@@ -463,14 +463,16 @@ function init(){
   $('txPlay').onclick=()=>S.playing?pausePlay():startPlay();
   $('txBack').onclick=()=>seek(S.loopA!=null?S.loopA:cur()-5);
   $('txSeek').oninput=e=>seek(+e.target.value/100);
-  $('txSpeed').onchange=e=>{ S.rate=+e.target.value; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
+  const setRate=p=>{ p=Math.max(25,Math.min(150,Math.round(p/5)*5)); S.rate=p/100; $('txSpeed').textContent=p+'%'; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
+  $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
   try{ const k=+localStorage.getItem('tx-kbd2'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
   $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd2',e.target.value); }catch(_){} fitRange(); draw(cur()); };
   $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
   try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
   updLegend();
   $('txLook').onchange=e=>{ S.look=+e.target.value; draw(cur()); };
-  $('txTr').onchange=e=>{ S.tr=+e.target.value; resetSched(); draw(cur()); };
+  const setTr=n=>{ n=Math.max(-12,Math.min(12,n)); S.tr=n; $('txTr').textContent=(n>0?'+':'')+n; resetSched(); draw(cur()); };
+  $('txTrDn').onclick=()=>setTr((S.tr||0)-1); $('txTrUp').onclick=()=>setTr((S.tr||0)+1); setTr(0);
   $('txMix').oninput=e=>{ S.mixNote=+e.target.value/100; applyMix(); };
   $('txNames').onchange=e=>{ S.names=e.target.checked; draw(cur()); };
   try{ S.nudge=+localStorage.getItem('tx-nudge')||0; $('txNudge').value=S.nudge; }catch(_){}
@@ -484,9 +486,8 @@ function init(){
   $('txBpb').onchange=e=>{ S.bpb=+e.target.value; resetSched(); };
   $('txBeat1').onclick=()=>{ S.metOrigin=cur(); resetSched(); say('Beat 1 is now at '+fmt(cur())+'.'); draw(cur()); };
   $('txMidi').onclick=downloadMidi; $('txWav').onclick=saveWav; $('txAsk').onclick=askClass;
-  try{ S.merge=localStorage.getItem('tx-merge')!=='0'; $('txMerge').checked=S.merge; }catch(_){}
-  $('txMerge').onchange=e=>{ S.merge=e.target.checked; try{ localStorage.setItem('tx-merge',S.merge?'1':'0'); }catch(_){} applySens(); };
-  $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=['Fewer notes','Fewer notes','Balanced','More notes','More notes'][Math.min(4,Math.floor(sensVal()*5))]; };
+  S.merge=true;
+  $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=String(Math.round(sensVal()*100)); };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
   new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
