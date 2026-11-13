@@ -9,9 +9,10 @@ const KEY='ps-dest';
 const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
-  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Bring in a recording or play into the microphone and see the notes fall onto the keys.',panel:'transcribe'}
+  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Bring in a recording or play into the microphone and see the notes fall onto the keys.',panel:'transcribe'},
+  challenge:{name:'90 Day Challenge',icon:'🏆',blurb:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.',panel:null}
 };
-const ORDER=['class','studio','plus'];
+const ORDER=['class','studio','plus','challenge'];
 const get=()=>{ try{ const v=localStorage.getItem(KEY); return DEST[v]?v:null; }catch(_){ return null; } };
 const put=v=>{ try{ localStorage.setItem(KEY,v); }catch(_){} };
 let cur=null;
@@ -19,10 +20,10 @@ let cur=null;
 const css=document.createElement('style'); css.textContent=`
 #suiteHub{position:fixed;inset:0;z-index:200000;display:none;overflow:auto;background:linear-gradient(180deg,rgba(5,5,5,.80),rgba(5,5,5,.58) 45%,rgba(5,5,5,.28)),url(hub-bg.webp) center/cover no-repeat #0a0e17;color:#e6eaf2;font-family:var(--body)}
 #suiteHub.on{display:block}
-#suiteHub .in{max-width:1040px;margin:0 auto;padding:7vh 20px 40px;text-align:center}
+#suiteHub .in{max-width:1280px;margin:0 auto;padding:7vh 20px 40px;text-align:center}
 #suiteHub h1{font:800 clamp(34px,6vw,56px)/1.05 var(--display,var(--body));margin:0 0 10px;letter-spacing:-.02em}
 #suiteHub .sub{font-size:clamp(15px,2vw,18px);color:#b4bdd0;margin:0 auto 34px;max-width:620px}
-#suiteHub .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;text-align:left}
+#suiteHub .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:18px;text-align:left}
 #suiteHub .dcard{position:relative;display:flex;flex-direction:column;gap:10px;padding:26px 24px 22px;border-radius:20px;border:1px solid rgba(255,255,255,.18);background:rgba(10,14,28,.58);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:inherit;font:inherit;cursor:pointer;text-align:left;transition:transform .15s,background .15s,border-color .15s}
 #suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:translateY(-3px);background:rgba(20,26,48,.7);border-color:rgba(255,255,255,.35);outline:none}
 #suiteHub .dcard .ic{font-size:38px;line-height:1}
@@ -102,6 +103,7 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard[data-k=class]{--c1:#5b8cff;--c2:#2a45c9}
 #suiteHub .dcard[data-k=studio]{--c1:#ffd24d;--c2:#e0911a}
 #suiteHub .dcard[data-k=plus]{--c1:#b78bff;--c2:#6a35d8}
+#suiteHub .dcard[data-k=challenge]{--c1:#ff8a8a;--c2:#d6336c}
 #suiteHub .dcard .nm{font-size:27px;letter-spacing:-.01em;transform:translateZ(28px);text-shadow:0 2px 10px rgba(0,0,0,.45)}
 #suiteHub .dcard .bl{transform:translateZ(14px)}
 #suiteHub .dcard .go{align-self:flex-start;margin-top:4px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;transform:translateZ(30px);transition:background .2s,color .2s,border-color .2s}
@@ -140,6 +142,9 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard[data-k=class]{--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255}
 #suiteHub .dcard[data-k=studio]{--g1:#e0911a;--g2:#3b2205;--gl:255,190,70}
 #suiteHub .dcard[data-k=plus]{--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255}
+#suiteHub .dcard[data-k=challenge]{--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170}
+#suiteHub .dcard[data-k=challenge] .phi{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.18),transparent 55%),linear-gradient(160deg,#7a1238,#2a0613)!important}
+#suiteHub .dcard[data-k=challenge] .phi:after{content:'90';position:absolute;inset:0;display:grid;place-items:center;font:900 112px/1 var(--display,var(--body));color:rgba(255,255,255,.9);text-shadow:0 8px 30px rgba(0,0,0,.4)}
 #suiteHub .dcard,#suiteHub .dcard.last{background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.45);
  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 -2px 0 rgba(0,0,0,.45) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -10px rgba(0,0,0,.75),0 60px 80px -28px rgba(0,0,0,.8)}
 #suiteHub .dcard.last{border-color:rgba(255,212,59,.9)}
@@ -163,6 +168,7 @@ document.body.appendChild(hub);
 const ICONS={
  class:'<svg viewBox="0 0 48 48" fill="none"><path d="M24 8 3 19l21 11 21-11L24 8Z" fill="#fff"/><path d="M12 25v8c0 3 5.4 6 12 6s12-3 12-6v-8l-12 6-12-6Z" fill="#dfe7ff"/><path d="M42 20v12" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="42" cy="35" r="2.6" fill="#ffe08a"/></svg>',
  studio:'<svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg>',
+ challenge:'<svg viewBox="0 0 48 48" fill="none"><path d="M15 8h18v10a9 9 0 0 1-18 0V8Z" fill="#fff"/><path d="M15 11H8c0 7 3 10 8 10M33 11h7c0 7-3 10-8 10" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M24 27v7" stroke="#fff" stroke-width="3.4"/><rect x="15" y="34" width="18" height="6" rx="2" fill="#fff"/></svg>',
  plus:'<svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg>'};
 function renderHub(){
   const last=get(), box=document.getElementById('psCards'); box.textContent='';
@@ -190,8 +196,10 @@ function go(k){
   if(!DEST[k]) return; const prev=cur; hideHub(); if(prev&&prev!==k) stopEverything();
   cur=k; put(k); document.body.dataset.dest=k;
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
+  if(window.CHALLENGE&&k!=='challenge') CHALLENGE.close();
   if(k==='class'){ openPanel('teacher'); setTimeout(()=>{ const i=document.getElementById('tInput'); if(i) i.focus({preventScroll:true}); },80); }
   else if(k==='plus'){ openPanel('transcribe'); if(window.TX&&TX.restoreLast) TX.restoreLast(); }
+  else if(k==='challenge'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.CHALLENGE) CHALLENGE.open(); }
   else { try{ closePanel(); }catch(_){} window.scrollTo(0,0); }
   chip(); window.dispatchEvent(new Event('resize'));
 }
@@ -224,6 +232,7 @@ function clearRoom(k,auto){
   try{
     if(k==='class'){ if(window.CLASS) CLASS.clearAll(auto); }
     else if(k==='plus'){ if(window.TX){ if(auto||!(TX.S.notes||[]).length||confirm('Clear the keyboard? Your saved transcriptions stay in the list below.')) TX.clear(); } }
+    else if(k==='challenge'){}
     else if(typeof newTrack==='function') newTrack(auto?true:undefined);
   }catch(e){ console.log('clear',e); }
 }

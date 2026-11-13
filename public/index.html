@@ -666,7 +666,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-b (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-c (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2615,7 +2615,8 @@ const MENUS=[
     {sep:true},
     {label:'Class',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
     {label:'Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
-    {label:'Studio+ (Transcription)',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')}]},
+    {label:'Studio+ (Transcription)',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')},
+    {label:'90 Day Challenge',check:()=>SUITE.current()==='challenge',run:()=>SUITE.go('challenge')}]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
     {label:'Class…',run:()=>SUITE.go('class')},
@@ -2921,6 +2922,7 @@ init();
 <script src="check.js" defer></script>
 <script src="gate.js"></script>
 <script src="themes.js" defer></script>
+<script src="challenge.js" defer></script>
 <script src="install.js" defer></script>
 </body>
 </html>

@@ -181,12 +181,78 @@ async function hotTopics(request, env) {
   return json({ counts }, 200);
 }
 
+
+/* ---------- player accounts (90 Day Challenge progress). Email + password, kept in KV. No email is sent. ---------- */
+const enc = new TextEncoder();
+const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+async function sha(str) { return hex(await crypto.subtle.digest('SHA-256', enc.encode(str))); }
+async function pbk(pw, saltHex) {
+  const salt = new Uint8Array(saltHex.match(/../g).map(h => parseInt(h, 16)));
+  const key = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 }, key, 256));
+}
+const rnd = (n) => hex(crypto.getRandomValues(new Uint8Array(n)));
+const SESS_TTL = 60 * 60 * 24 * 120;
+async function sessionUser(request, env) {
+  const tok = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!/^[a-f0-9]{48}$/.test(tok)) return null;
+  const id = await env.LESSONS.get('sess:' + tok);
+  if (!id) return null;
+  const acct = await env.LESSONS.get('acct:' + id, 'json');
+  return acct ? { id, acct, tok } : null;
+}
+async function account(request, env) {
+  if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
+  if (request.method === 'GET') {
+    const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
+    return json({ name: u.acct.name || '', email: u.acct.email, data: u.acct.data || null }, 200);
+  }
+  if (request.method === 'PUT') {
+    const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
+    const raw = await request.text(); if (raw.length > 120000) return json({ error: 'too_big' }, 413);
+    let b; try { b = JSON.parse(raw); } catch (e) { return json({ error: 'bad_json' }, 400); }
+    if (b.data !== undefined) u.acct.data = b.data;
+    if (typeof b.name === 'string') u.acct.name = b.name.slice(0, 60);
+    await env.LESSONS.put('acct:' + u.id, JSON.stringify(u.acct));
+    return json({ ok: true }, 200);
+  }
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  let b = {}; try { b = await request.json(); } catch (e) {}
+  const action = String(b.action || '');
+  if (action === 'logout') { const u = await sessionUser(request, env); if (u) await env.LESSONS.delete('sess:' + u.tok); return json({ ok: true }, 200); }
+  const email = String(b.email || '').trim().toLowerCase(), pw = String(b.password || '');
+  if (action === 'adminreset') {
+    if (!env.ADMIN_TOKEN || !same(b.adminToken, env.ADMIN_TOKEN)) return json({ error: 'auth' }, 401);
+    const id = await sha(email), acct = await env.LESSONS.get('acct:' + id, 'json'); if (!acct) return json({ error: 'no_account' }, 404);
+    if (pw.length < 6) return json({ error: 'weak_password' }, 400);
+    acct.salt = rnd(16); acct.hash = await pbk(pw, acct.salt); await env.LESSONS.put('acct:' + id, JSON.stringify(acct)); return json({ ok: true }, 200);
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 120) return json({ error: 'bad_email' }, 400);
+  if (pw.length < 6 || pw.length > 100) return json({ error: 'weak_password' }, 400);
+  const ip = request.headers.get('cf-connecting-ip') || 'x', day = new Date().toISOString().slice(0, 10), lk = 'lim:acct:' + day + ':' + ip;
+  const tries = +(await env.LESSONS.get(lk)) || 0; if (tries >= 40) return json({ error: 'slow_down' }, 429);
+  await env.LESSONS.put(lk, String(tries + 1), { expirationTtl: 172800 });
+  const id = await sha(email); let acct = await env.LESSONS.get('acct:' + id, 'json');
+  if (action === 'signup') {
+    if (acct) return json({ error: 'exists' }, 409);
+    const salt = rnd(16); acct = { email, name: String(b.name || '').trim().slice(0, 60), salt, hash: await pbk(pw, salt), made: Date.now(), data: null };
+    await env.LESSONS.put('acct:' + id, JSON.stringify(acct));
+  } else if (action === 'login') {
+    if (!acct || (await pbk(pw, acct.salt)) !== acct.hash) return json({ error: 'wrong' }, 401);
+  } else return json({ error: 'bad_action' }, 400);
+  const tok = rnd(24); await env.LESSONS.put('sess:' + tok, id, { expirationTtl: SESS_TTL });
+  return json({ token: tok, name: acct.name || '', email: acct.email, data: acct.data || null }, 200);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/admin/lessons') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405);
       try { return await adminLessons(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
+    if (url.pathname === '/api/acct') {
+      try { return await account(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     if (url.pathname === '/api/hot') {
       try { return await hotTopics(request, env); } catch (e) { console.log(e); return json({ counts: {} }, 200); }

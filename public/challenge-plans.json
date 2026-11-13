@@ -1,0 +1,8 @@
+[
+ {"id":"foundations","name":"Foundations 90","blurb":"Scales and chords first, then your first progressions. A steady start for new players. (Starter plan: Pokey will replace this with the official version.)",
+  "week":[["sc.major","ch.maj","ch.min"],["sc.nminor","ch.dim","ch.aug"],["sc.pmaj","sc.pmin","ch.sus2","ch.sus4"],["sc.hmin","ch.maj7","ch.dom7"],["pr.pri1","pr.251maj"],["sc.major","pr.514","pr.625"],[]]},
+ {"id":"church","name":"Church Pianist 90","blurb":"Warm-ups, progressions and the endings and licks church musicians use every Sunday. (Starter plan: Pokey will replace this with the official version.)",
+  "week":[["sc.major","sc.pmaj","pr.pri2"],["ch.maj7","ch.dom7","pr.514"],["pr.251maj","pr.625"],["st.d2sev","st.nbr"],["pr.362","pr.36251"],["st.co1","st.br1","pr.secdom"],[]]},
+ {"id":"ear","name":"Play by Ear 90","blurb":"Modes, progressions and the stylization techniques for playing what you hear. (Starter plan: Pokey will replace this with the official version.)",
+  "week":[["sc.ion","sc.dor","sc.mix"],["pr.251maj","pr.251min"],["pr.s47","pr.736"],["pr.7362514"],["st.bt1","st.bt2","st.bt3"],["pr.combo","pr.secdom"],["sc.lyd","sc.aeo"]]}
+]
