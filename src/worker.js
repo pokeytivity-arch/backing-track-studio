@@ -1,6 +1,7 @@
 // Backing Track Studio worker: serves the static app and the
 // "Ask Piano Study Suite" endpoint, which calls the Claude API.
 import PERSONA from './persona.txt';
+import { loadIndex, search, tagHints } from './retrieve.js';
 
 const MODEL_DEFAULT = 'claude-sonnet-5-5';
 const MAX_MSGS = 24, MAX_CHARS = 4000, MAX_TOTAL = 40000;
@@ -37,7 +38,17 @@ async function teacher(request, env) {
   if (c.level) ctx += `\nStudent level: ${clip(c.level, 40)}.`;
   if (c.chart) ctx += `\nThe student's current Backing Track Studio session (chords are typed one per bar, '.' = hold, [L / R] = a voicing with left and right hand):\n` +
     `Title: ${clip(c.title, 120) || '(untitled)'}\nStyle: ${clip(c.style, 40)} · Tempo: ${clip(c.bpm, 8)} BPM · Time: ${clip(c.meter, 8)} · Transpose: ${clip(c.transpose, 6)}\nChart:\n${clip(c.chart, 3000)}`;
-  const system = PERSONA + '\n\n## Setting\nYou are inside Backing Track Studio, a web app where students type chord charts and a band plays them. Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '');
+  let lessons = '';
+  try {
+    const ix = await loadIndex(env);
+    if (ix) {
+      const q = msgs.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
+      const found = search(ix, q, { k: 4, level: c.level || '', tags: tagHints(q) });
+      if (found.length) lessons = '\n\n## From your own past lessons\nThese are rough auto-transcripts of things you said in class (speech-to-text, so words can be garbled). Use them to stay true to how you explain, the order you teach things, your examples and your voice. Don\'t quote them word for word, don\'t mention that they are transcripts, and never mention or invent student names ([name] marks a removed name).\n' +
+        found.map((d, i) => `\n[${i + 1}] ${d.k} (${d.d}, ${d.l})\n${d.t}`).join('\n');
+    }
+  } catch (e) { console.log('lessons', e); }
+  const system = PERSONA + '\n\n## Setting\nYou are inside Backing Track Studio, a web app where students type chord charts and a band plays them. Keep replies short enough to read in a small window (about 120–220 words unless asked for more). Plain text with simple **bold** and line breaks; no tables.' + (ctx ? '\n' + ctx : '') + lessons;
 
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
