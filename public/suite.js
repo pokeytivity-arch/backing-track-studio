@@ -81,18 +81,51 @@ body[data-dest="class"] #psMini{display:flex}
 #psMini button{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
 #psMini button.pri{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
 @media(max-width:700px){body[data-dest="class"] .card[data-panel="teacher"].panel-active,body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{left:0!important;top:40px!important;width:100vw!important;height:calc(100vh - 40px)!important;border-radius:0}#psMini{right:10px;bottom:10px}}
+
+#suiteHub .cards{perspective:1200px;gap:24px}
+#suiteHub .dcard{--rx:0deg;--ry:0deg;--mx:50%;--my:0%;overflow:visible;padding:30px 28px 26px;border-radius:26px;border:1px solid rgba(255,255,255,.16);
+ background:linear-gradient(160deg,rgba(40,50,84,.78),rgba(11,16,32,.86) 62%);
+ box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 -1px 0 rgba(0,0,0,.4) inset,0 2px 4px rgba(0,0,0,.35),0 18px 36px -8px rgba(0,0,0,.55),0 44px 70px -24px rgba(0,0,0,.6);
+ transform-style:preserve-3d;transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .18s ease-out,box-shadow .25s,border-color .25s}
+#suiteHub .dcard:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px circle at var(--mx) var(--my),rgba(255,255,255,.16),transparent 55%);opacity:0;transition:opacity .25s}
+#suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px);background:linear-gradient(160deg,rgba(52,64,104,.86),rgba(14,20,40,.9) 62%);border-color:rgba(255,255,255,.4);box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 -1px 0 rgba(0,0,0,.4) inset,0 4px 8px rgba(0,0,0,.35),0 30px 50px -10px rgba(0,0,0,.6),0 60px 90px -26px rgba(0,0,0,.65)}
+#suiteHub .dcard:hover:before,#suiteHub .dcard:focus-visible:before{opacity:1}
+#suiteHub .dcard.last{border-color:rgba(255,212,59,.75);background:linear-gradient(160deg,rgba(74,60,20,.78),rgba(16,16,28,.88) 62%)}
+#suiteHub .dcard .ic{width:68px;height:68px;border-radius:20px;display:grid;place-items:center;margin-bottom:6px;font-size:0;transform:translateZ(46px);
+ background:linear-gradient(150deg,var(--c1),var(--c2));
+ box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.28) inset,0 10px 18px -4px var(--c2),0 18px 26px -10px rgba(0,0,0,.6)}
+#suiteHub .dcard .ic svg{width:40px;height:40px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+#suiteHub .dcard[data-k=class]{--c1:#5b8cff;--c2:#2a45c9}
+#suiteHub .dcard[data-k=studio]{--c1:#ffd24d;--c2:#e0911a}
+#suiteHub .dcard[data-k=plus]{--c1:#b78bff;--c2:#6a35d8}
+#suiteHub .dcard .nm{font-size:27px;letter-spacing:-.01em;transform:translateZ(28px);text-shadow:0 2px 10px rgba(0,0,0,.45)}
+#suiteHub .dcard .bl{transform:translateZ(14px)}
+#suiteHub .dcard .go{align-self:flex-start;margin-top:4px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;transform:translateZ(30px);transition:background .2s,color .2s,border-color .2s}
+#suiteHub .dcard:hover .go,#suiteHub .dcard:focus-visible .go{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
+#suiteHub .badge{transform:translateZ(40px);box-shadow:0 6px 14px -4px rgba(0,0,0,.5)}
+@media (prefers-reduced-motion:reduce),(hover:none){#suiteHub .dcard,#suiteHub .dcard:hover{transform:none}}
 `; document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
 hub.innerHTML='<div class="in"><h1>Piano Suite</h1><p class="sub">Learn with the coach, practice with a full band, and transcribe what you hear. Choose where you want to go.</p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
+
+const ICONS={
+ class:'<svg viewBox="0 0 48 48" fill="none"><path d="M24 8 3 19l21 11 21-11L24 8Z" fill="#fff"/><path d="M12 25v8c0 3 5.4 6 12 6s12-3 12-6v-8l-12 6-12-6Z" fill="#dfe7ff"/><path d="M42 20v12" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="42" cy="35" r="2.6" fill="#ffe08a"/></svg>',
+ studio:'<svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg>',
+ plus:'<svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg>'};
 function renderHub(){
   const last=get(), box=document.getElementById('psCards'); box.textContent='';
   ORDER.forEach(k=>{ const d=DEST[k], b=document.createElement('button'); b.type='button'; b.className='dcard'+(k===last?' last':'');
     b.innerHTML=(k===last?'<span class="badge">Continue where you left off</span>':'')+'<div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go"></div>';
-    b.querySelector('.ic').textContent=d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
+    b.dataset.k=k; b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
     b.onclick=()=>go(k); box.appendChild(b); });
+
+  if(!matchMedia('(hover:none)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches) box.querySelectorAll('.dcard').forEach(c=>{
+    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height; c.style.setProperty('--ry',((x-.5)*12).toFixed(2)+'deg'); c.style.setProperty('--rx',((.5-y)*10).toFixed(2)+'deg'); c.style.setProperty('--mx',(x*100)+'%'); c.style.setProperty('--my',(y*100)+'%'); });
+    c.addEventListener('pointerleave',()=>{ c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg'); });
+  });
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
 }
