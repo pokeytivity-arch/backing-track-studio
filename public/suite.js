@@ -110,8 +110,19 @@ body[data-dest="class"] #psMini{display:flex}
 @media (prefers-reduced-motion:reduce),(hover:none){#suiteHub .dcard,#suiteHub .dcard:hover{transform:none}}
 
 #suiteHub .dcard{padding-top:176px}
-#suiteHub .dcard .ph{position:absolute;left:0;right:0;top:0;height:200px;border-radius:25px 25px 0 0;background-size:cover;background-position:var(--pp,center 30%);pointer-events:none;
+#suiteHub .dcard .ph{position:absolute;left:0;right:0;top:0;height:200px;border-radius:25px 25px 0 0;overflow:hidden;pointer-events:none;
  -webkit-mask-image:linear-gradient(#000 52%,transparent);mask-image:linear-gradient(#000 52%,transparent);transition:transform .5s ease,filter .3s;filter:saturate(1.05) brightness(.92)}
+#suiteHub .dcard .phi{position:absolute;inset:0;background-size:cover;background-position:var(--pp,center 30%);transform:scale(1.02);transform-origin:50% 40%;will-change:transform}
+#suiteHub .dcard:hover .phi{animation:kbClass 9s ease-in-out infinite alternate}
+#suiteHub .dcard[data-k="studio"]:hover .phi{animation-name:kbStudio;animation-duration:11s}
+#suiteHub .dcard[data-k="plus"]:hover .phi{animation-name:kbPlus;animation-duration:8s}
+#suiteHub .dcard[data-k="plus"] .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(150,200,255,.28) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
+#suiteHub .dcard[data-k="plus"]:hover .ph::after{opacity:1;animation:scanPlus 2.8s ease-in-out infinite}
+@keyframes kbClass{from{transform:scale(1.04) translate(-1.5%,0)}to{transform:scale(1.2) translate(2%,-2.5%)}}
+@keyframes kbStudio{from{transform:scale(1.18) translate(3%,1%)}to{transform:scale(1.18) translate(-3%,-1%)}}
+@keyframes kbPlus{from{transform:scale(1.05) translate(0,1%)}to{transform:scale(1.22) translate(-2%,-1.5%)}}
+@keyframes scanPlus{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+@media (prefers-reduced-motion:reduce){#suiteHub .dcard:hover .phi,#suiteHub .dcard:hover .ph::after{animation:none!important}}
 #suiteHub .dcard:hover .ph,#suiteHub .dcard:focus-visible .ph{filter:saturate(1.12) brightness(1.02)}
 #suiteHub .dcard[data-k=class]{--pp:center 28%}
 #suiteHub .dcard[data-k=studio]{--pp:center 55%}
@@ -154,7 +165,7 @@ function renderHub(){
   const last=get(), box=document.getElementById('psCards'); box.textContent='';
   ORDER.forEach(k=>{ const d=DEST[k], b=document.createElement('button'); b.type='button'; b.className='dcard'+(k===last?' last':'');
     b.innerHTML=(k===last?'<span class="badge">Continue where you left off</span>':'')+'<div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go"></div>';
-    b.dataset.k=k; { const p=document.createElement('div'); p.className='ph'; p.style.backgroundImage='url(card-'+k+'.webp)'; b.insertBefore(p,b.firstChild); } b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
+    b.dataset.k=k; { const p=document.createElement('div'); p.className='ph'; { const im=document.createElement('i'); im.className='phi'; im.style.backgroundImage='url(card-'+k+'.webp)'; p.appendChild(im); } b.insertBefore(p,b.firstChild); } b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
     b.onclick=()=>go(k); box.appendChild(b); });
 
   if(!matchMedia('(hover:none)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches) box.querySelectorAll('.dcard').forEach(c=>{
