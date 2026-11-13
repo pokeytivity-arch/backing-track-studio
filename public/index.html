@@ -1644,7 +1644,8 @@ function renderChart(){
       const cont=ev.start<b0, d=document.createElement('div'); d.dataset.ei=ei;
       d.className='cell'+(cont?' hold':'')+(ev.bad?' bad':''); d.textContent=cont?'·':ev.name.root+ev.name.q; d.style.flexGrow=en-st; b.appendChild(d); });
     ch.appendChild(b); });
-  if(!song.bars.length){ const d=document.createElement('div'); d.className='cell hold'; d.textContent='Type chords below'; ch.appendChild(d); }
+  if(!song.bars.length){ const d=document.createElement('button'); d.type='button'; d.className='cell hold'; d.style.cssText='cursor:pointer;border:1.5px dashed #6b7bb0;background:transparent;color:inherit;font:inherit;padding:10px 18px'; d.textContent='No chords yet. Tap here to open the chord chart and type some.'; d.onclick=()=>openPanel('chart'); ch.appendChild(d);
+    if(!window.__chartAuto&&window.SUITE&&SUITE.current()==='studio'){ window.__chartAuto=true; setTimeout(()=>{ try{ if(!document.querySelector('.card.panel-active')) openPanel('chart'); }catch(_){} },400); } }
 }
 function rebuild(){
   song=parseChart(S.chords,S.transpose); stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
