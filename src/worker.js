@@ -52,12 +52,18 @@ async function teacher(request, env) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: env.TEACHER_MODEL || MODEL_DEFAULT, max_tokens: 1200, system, messages: msgs }),
+    body: JSON.stringify({ model: env.TEACHER_MODEL || MODEL_DEFAULT, max_tokens: 3000, system, messages: msgs }),
   });
   if (!r.ok) { const t = await r.text(); console.log('anthropic error', r.status, t.slice(0, 300)); return json({ error: 'upstream', status: r.status }, 502); }
   const data = await r.json();
   const reply = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-  return json({ reply: reply || '…' });
+  if (data.stop_reason && data.stop_reason !== 'end_turn') console.log('stop_reason', data.stop_reason, JSON.stringify(data.usage || {}));
+  let out = reply;
+  if (data.stop_reason === 'max_tokens') { // never show a half sentence
+    const cut = Math.max(out.lastIndexOf('. '), out.lastIndexOf('? '), out.lastIndexOf('! '), out.lastIndexOf('\n'));
+    if (cut > out.length * 0.5) out = out.slice(0, cut + 1).trim();
+  }
+  return json({ reply: out || '…', stop: data.stop_reason || null });
 }
 
 // Owner-only upload of the lesson library into KV. Needs the ADMIN_TOKEN secret.
