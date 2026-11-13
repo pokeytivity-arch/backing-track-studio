@@ -34,8 +34,8 @@ async function toMono22k(buf){
 /* ---------- note finding: sensitivity + cleanup ---------- */
 function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
 function extract(raw,s){
-  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), minLen=Math.max(2,Math.round(8.5-7*s));
-  const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thr,thr,minLen,true,null,null,false)));
+  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.25,Math.min(0.8,0.78-0.46*s)), minLen=Math.max(2,Math.round(8.5-7*s));
+  const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thrO,thr,minLen,true,null,null,false)));
   const notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.p>=21&&n.p<=108);
   return cleanup(notes,s);
 }
@@ -53,7 +53,7 @@ function cleanup(notes,s){
   // merge repeats: the same pitch re-found after a tiny gap, without a stronger new onset, is one note
   // (a piano note that rings on is often "heard" again as it fades: a re-trigger that is weaker than the note before it, or that starts almost at once, is the same note)
   const last={}, out=[], merge=S.merge!==false, gapMax=0.06+0.1*(1-s);
-  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*0.92)||onset<0.09||(gap<0.03&&x.a<=l.a*1.1)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
+  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*(0.92+0.9*(1-s)))||onset<0.09||(gap<0.05&&x.a<=l.a*1.7)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
   // drop weak notes
   let r=out.filter(x=>x.a>=minA||x.d>=0.4);
   // key-aware: short, quiet notes outside the key are most likely mistakes
