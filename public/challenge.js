@@ -58,6 +58,8 @@ CAT.forEach(c=>{ (function w(o,p){ (o.groups||o.subs||[]).forEach(g=>w(g,p.conca
 /* ---------- account ---------- */
 const TK='ps-tok';
 let tok=''; try{ tok=localStorage.getItem(TK)||''; }catch(_){}
+const BYPASS=true;   // for now: no sign-in needed. Progress is kept on this device until accounts are switched on (set to false).
+const GK='ps-ch-guest';
 let acct=null, D=null, PLANS=[], saveT=0, saving=false;
 async function api(method,body){
   const r=await fetch('/api/acct',{method,headers:Object.assign({'content-type':'application/json'},tok?{authorization:'Bearer '+tok}:{}),body:body?JSON.stringify(body):undefined});
@@ -69,7 +71,7 @@ async function loadAcct(){
   acct={name:j.name,email:j.email}; D=Object.assign(emptyData(),j.data||{}); return true;
 }
 function queueSave(){ clearTimeout(saveT); saveT=setTimeout(flush,600); }
-async function flush(){ if(!tok||!D) return; if(saving){ queueSave(); return; } saving=true; const j=await api('PUT',{data:D,name:acct&&acct.name}); saving=false; if(j._s!==200) note('Could not save just now. Check your connection.'); }
+async function flush(){ if(!D) return; if(!tok){ try{ localStorage.setItem(GK,JSON.stringify({data:D,name:acct&&acct.name||''})); }catch(_){} return; } if(saving){ queueSave(); return; } saving=true; const j=await api('PUT',{data:D,name:acct&&acct.name}); saving=false; if(j._s!==200) note('Could not save just now. Check your connection.'); }
 /* ---------- dates and progress ---------- */
 const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const mid=s=>{ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
@@ -152,7 +154,9 @@ function mount(){ if(room) return; room=el('div'); room.id='chRoom'; document.bo
 async function open(){
   mount(); room.classList.add('on'); room.innerHTML='<div class="w"><p class="mut">Loading…</p></div>';
   try{ const r=await fetch('challenge-plans.json'); PLANS=await r.json(); }catch(_){ PLANS=[]; }
-  const ok=await loadAcct(); view=ok?'home':'auth'; render();
+  let ok=await loadAcct();
+  if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); ok=true; }
+  view=ok?'home':'auth'; render();
 }
 function close(){ if(room) room.classList.remove('on'); shade.classList.remove('on'); }
 function render(){
@@ -169,7 +173,7 @@ function render(){
 function head(w,sub){
   const h=el('div','row'); h.style.justifyContent='space-between';
   const l=el('div'); l.innerHTML='<h1>90 Day Challenge</h1><div class="mut">'+esc(sub||'Practice a little every day. Stay consistent.')+'</div>'; h.appendChild(l);
-  const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||acct.email)+'</span>'; const o=el('button','sm','Sign out'); o.onclick=async()=>{ await api('POST',{action:'logout'}); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; r.appendChild(o); h.appendChild(r); w.appendChild(h);
+  const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await api('POST',{action:'logout'}); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
 }
 /* --- sign in --- */
 function authView(w){
@@ -315,5 +319,6 @@ function sheet(it){
     m.appendChild(btns); m.querySelector('#x').onclick=()=>shade.classList.remove('on'); };
   draw();
 }
+window.addEventListener('pagehide',()=>{ if(D&&!tok){ try{ localStorage.setItem(GK,JSON.stringify({data:D,name:acct&&acct.name||''})); }catch(_){} } });
 window.CHALLENGE={open,close};
 })();
