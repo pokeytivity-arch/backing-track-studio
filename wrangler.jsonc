@@ -4,7 +4,7 @@
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
   "routes": [
-    { "pattern": "piano.pokeytivity.com", "custom_domain": true }
+    { "pattern": "app.pokeytivity.com", "custom_domain": true }
   ],
   "kv_namespaces": [
     { "binding": "LESSONS", "id": "00c6361654234e1796f62d789486342c" }
