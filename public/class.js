@@ -91,13 +91,13 @@ async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=l
 const KB_R={88:[21,108],76:[28,103],61:[36,96]};
 function drawKeys(){
   const wrap=$('clKbdWrap'); if(!wrap) return; const [lo,hi]=KB_R[K.size]||KB_R[61], s=K.steps[K.i];
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64});
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:true});
   svg.querySelectorAll('rect').forEach((r,idx)=>{ r.style.cursor='pointer'; });
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); sound(m,1.4,0.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===K.size)));
   const nm=$('clStepName'); if(nm) nm.textContent=s?s.name:'';
-  const notes=$('clStepNotes'); if(notes){ const N=useFlatsText(s); notes.textContent=s?('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')):'Tap any key to hear it, or type chords below.'; }
+  const notes=$('clStepNotes'); if(notes){ const N=useFlatsText(s); notes.textContent=s?('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Fingers: RH '+fingerText(s.lh,s.rh).rh+', LH '+fingerText(s.lh,s.rh).lh):'Tap any key to hear it, or type chords below.'; }
   document.querySelectorAll('#clSteps button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===K.i)));
 }
 function useFlatsText(s){ return s&&/b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }

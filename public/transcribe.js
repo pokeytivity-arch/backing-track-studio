@@ -155,7 +155,7 @@ function pianoNote(ac,dest,midi,at,dur,vel,a4){
   const keys=BANK.keys.piano, buf=BANK.buf.piano; let k=keys[0]; for(const x of keys) if(Math.abs(x-midi)<Math.abs(k-midi)) k=x;
   const src=ac.createBufferSource(); src.buffer=buf[k]; src.playbackRate.value=Math.pow(2,(midi-k)/12)*(a4/440);
   const v=Math.max(0.05,Math.min(1,vel)), g=ac.createGain(), lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1800+6000*Math.min(1,v*1.6);
-  const hold=Math.max(0.15,dur), end=Math.min(at+hold+0.25,at+2.4);
+  const hold=Math.max(0.28,dur), end=Math.min(at+hold+0.7,at+2.6);   // let the note ring and fade like a real piano instead of cutting off
   g.gain.setValueAtTime(0.9*(0.25+0.75*v),at); g.gain.setValueAtTime(0.9*(0.25+0.75*v),Math.min(at+hold,end-0.05)); g.gain.exponentialRampToValueAtTime(0.0001,end);
   src.connect(lp); lp.connect(g); g.connect(dest); src.start(at); src.stop(end+0.05);
 }
@@ -362,6 +362,6 @@ function init(){
   draw(0);
 }
 async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
-window.TX={init,restoreLast,S,_test:{cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
+window.TX={init,restoreLast,S,_test:{extract,cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
