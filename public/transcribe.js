@@ -36,7 +36,8 @@ function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
 function extract(raw,s){
   const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.3,Math.min(0.85,0.85-0.46*s)), minLen=Math.max(3,Math.round(11-8*s));
   const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thrO,thr,minLen,true,null,null,false)));
-  const notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.p>=21&&n.p<=108);
+  const LAT=0.02; // the model reports onsets ~20 ms late (measured against the audio); undo it so notes land where they were played
+  const notes=ev.map(n=>{const t=Math.max(0,n.startTimeSeconds-LAT);return {p:n.pitchMidi,t,d:n.durationSeconds+(n.startTimeSeconds-t),a:n.amplitude};}).filter(n=>n.p>=21&&n.p<=108);
   return cleanup(notes,s);
 }
 function keyPcs(notes){
@@ -60,6 +61,26 @@ function cleanup(notes,s){
   const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.25||x.a>=0.5);
   return r.sort((a,b)=>a.t-b.t||a.p-b.p);
 }
+
+/* ---------- careful analysis: listen several times and keep what the passes agree on ---------- */
+function resample(mono,ratio){ // ratio>1: faster and higher; the model sees the same music shifted by 12*log2(ratio) semitones
+  const n=Math.floor(mono.length/ratio), out=new Float32Array(n); for(let i=0;i<n;i++){ const x=i*ratio, i0=x|0, f=x-i0, a=mono[i0], b=mono[Math.min(i0+1,mono.length-1)]; out[i]=a+(b-a)*f; } return out;
+}
+async function runPass(bp,audio,label){
+  const frames=[],onsets=[],contours=[]; say('Listening… '+label+' 0%');
+  await bp.evaluateModel(audio,(f,o,c)=>{ for(const x of f) frames.push(Float32Array.from(x)); for(const x of o) onsets.push(Float32Array.from(x)); for(const x of c) contours.push(x); },p=>say('Listening… '+label+' '+Math.round(p*100)+'%'));
+  return {frames,onsets,contours};
+}
+function fuse(base,others){
+  const n=base.frames.length, cnt=1+others.length;
+  const F=base.frames.map(a=>Float32Array.from(a)), O=base.onsets.map(a=>Float32Array.from(a));
+  others.forEach(({r,ratio})=>{ const L=r.frames.length; if(!L) return;
+    for(let j=0;j<n;j++){ const x=j/ratio, i0=Math.min(L-1,Math.floor(x)), i1=Math.min(L-1,i0+1), fr=Math.max(0,Math.min(1,x-Math.floor(x)));
+      const fa=r.frames[i0], fb=r.frames[i1], oa=r.onsets[i0], ob=r.onsets[i1], Fj=F[j], Oj=O[j];
+      for(let p=0;p<Fj.length;p++){ Fj[p]+=fa[p]*(1-fr)+fb[p]*fr; Oj[p]+=oa[p]*(1-fr)+ob[p]*fr; } } });
+  for(let j=0;j<n;j++){ const Fj=F[j], Oj=O[j]; for(let p=0;p<Fj.length;p++){ Fj[p]/=cnt; Oj[p]/=cnt; } }
+  return {frames:F,onsets:O,contours:base.contours};
+}
 async function transcribeBlob(blob,title){
   if(S.busy) return; S.busy=true; stopPlay(); setBusy(true);
   try{
@@ -70,10 +91,11 @@ async function transcribeBlob(blob,title){
     say('Loading the note-finder (first time only)…');
     const bp=await getModel();
     const mono=await toMono22k(buf);
-    const frames=[],onsets=[],contours=[];
-    say('Listening… 0%');
-    await bp.evaluateModel(mono,(f,o,c)=>{ frames.push(...f); onsets.push(...o); contours.push(...c); },p=>say('Listening… '+Math.round(p*100)+'%'));
-    S.raw={frames,onsets,contours}; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
+    const careful=!!$('txCareful')&&$('txCareful').checked, passes=careful?[0,0.3,-0.3]:[0];
+    const base=await runPass(bp,mono,careful?'pass 1 of '+passes.length:'');
+    let raw=base;
+    if(careful){ const others=[]; for(let k=1;k<passes.length;k++){ const ratio=Math.pow(2,passes[k]/12), r=await runPass(bp,resample(mono,ratio),'pass '+(k+1)+' of '+passes.length); others.push({r,ratio}); } say('Comparing the passes…'); raw=fuse(base,others); }
+    S.raw=raw; S.sens=sensVal(); const notes=extract(S.raw,S.sens);
     await showResult({blob,notes,dur:buf.duration,title,long,fresh:true});
     saveItem({blob,notes,dur:buf.duration,title:title||'Recording'});
   }catch(e){ say(e&&e.message?e.message:'Something went wrong while reading the audio.',true); }
