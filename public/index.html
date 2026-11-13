@@ -608,6 +608,11 @@ audio{width:100%}
       <section data-panel="mixer" class="card">
         <div class="card-h"><h2>Mixer</h2><span class="help"><b>M</b> mutes a part so students can play it. <b>S</b> solos it so they can hear it alone.</span></div>
         <div class="mix" id="mix"></div>
+        <div class="bandopts" id="bandOpts" style="margin-top:12px;display:grid;gap:10px">
+          <label style="display:grid;gap:4px;font-size:13px"><span><b>Band feel</b> <small id="feelVal" style="opacity:.75"></small></span>
+            <input type="range" id="feel" min="0" max="1" step="0.01" aria-label="Band feel, tight to loose"><span style="display:flex;justify-content:space-between;font-size:12px;opacity:.7"><span>Tight</span><span>Loose</span></span></label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="formOn"> <span><b>Arrange the song</b>: lighter first time through, fuller later, with a build before the last time</span></label>
+        </div>
       </section>
 
       <section data-panel="library" class="card">
@@ -1091,25 +1096,43 @@ const hit=(p,s)=>VEL[p[s]]||0;
    Human feel: small timing and level differences, rolled chords, drum-sample variation.
    Makes the band sound played instead of programmed. Set Engine.prototype.noHuman=true to turn it off.
    ========================================================= */
+const BAND=Object.assign({feel:0.45,form:true,total:Infinity,dyn:{d:1,b:1,k:1,x:1}},(()=>{ try{ const v=JSON.parse(localStorage.getItem('bt-band')||'{}'); return {feel:typeof v.feel==='number'?v.feel:0.45,form:v.form!==false}; }catch(_){ return {}; } })());
+const bandSave=()=>{ try{ localStorage.setItem('bt-band',JSON.stringify({feel:BAND.feel,form:BAND.form})); }catch(_){} };
 (function(){
-  const P=Engine.prototype, rnd=a=>(Math.random()*2-1)*a;
+  const F=()=>0.2+BAND.feel*1.8;
+  const P=Engine.prototype, rnd=a=>(Math.random()*2-1)*a*F();
   const when=(eng,t,j)=>Math.max(t+rnd(j),eng.ctx.currentTime);
-  const drum=(name,j,vj)=>{ const o=P[name]; if(!o) return; P[name]=function(t,v,...r){ if(this.noHuman||typeof v!=='number') return o.call(this,t,v,...r); return o.call(this,when(this,t,j),Math.max(0.02,v*(1+rnd(vj))),...r); }; };
+  const drum=(name,j,vj)=>{ const o=P[name]; if(!o) return; P[name]=function(t,v,...r){ if(this.noHuman||typeof v!=='number') return o.call(this,t,v,...r); return o.call(this,when(this,t,j),Math.max(0.02,v*BAND.dyn.d*(1+rnd(vj))),...r); }; };
   ['kick','snare','rim','clap','tom','conga'].forEach(n=>drum(n,0.004,0.09));
   ['hat','shaker','ride'].forEach(n=>drum(n,0.006,0.14));
   drum('crash',0.003,0.05);
-  const oBass=P.bass; P.bass=function(t,m,d,v,type,force){ if(this.noHuman||force) return oBass.call(this,t,m,d,v,type,force); return oBass.call(this,when(this,t,0.006),m,d,(typeof v==='number'?v:1)*(1+rnd(0.07)),type,force); };
-  const oNote=P.note; P.note=function(t,m,d,v,type,chn){ if(this.noHuman) return oNote.call(this,t,m,d,v,type,chn); return oNote.call(this,when(this,t,0.004),m,d,v*(1+rnd(0.09)),type,chn); };
+  const oBass=P.bass; P.bass=function(t,m,d,v,type,force){ if(this.noHuman||force) return oBass.call(this,t,m,d,v,type,force); return oBass.call(this,when(this,t,0.006),m,d,(typeof v==='number'?v:1)*BAND.dyn.b*(1+rnd(0.07)),type,force); };
+  const dynOf=c=>c==='extra'?BAND.dyn.x:c==='keys'||c===undefined?BAND.dyn.k:1;
+  const oNote=P.note; P.note=function(t,m,d,v,type,chn='keys'){ if(this.noHuman) return oNote.call(this,t,m,d,v,type,chn); return oNote.call(this,when(this,t,0.004),m,d,v*dynOf(chn)*(1+rnd(0.09)),type,chn); };
   const oChord=P.chord; P.chord=function(t,notes,d,v,type,chn='keys'){
     if(this.noHuman) return oChord.call(this,t,notes,d,v,type,chn);
-    const base=when(this,t,0.009), each=v/Math.sqrt(notes.length)*0.55, sorted=[...notes].sort((a,b)=>a-b);
-    const roll=(type==='organ'||type==='pad')?0.004:0.005+Math.random()*0.014;
+    const base=when(this,t,0.009), each=v*dynOf(chn)/Math.sqrt(notes.length)*0.55, sorted=[...notes].sort((a,b)=>a-b);
+    const roll=((type==='organ'||type==='pad')?0.004:0.005+Math.random()*0.014)*F();
     sorted.forEach((m,i)=>oNote.call(this,base+i*roll,m,d,each*(1+rnd(0.1)),type,chn)); };
   const oSmp=P.smp; P.smp=function(inst,key,t,v,chn,opt){ if(!this.noHuman&&inst==='drums'){ opt=Object.assign({},opt||{}); opt.rate=(opt.rate||1)*(1+rnd(0.012)); } return oSmp.call(this,inst,key,t,v,chn,opt); };
 })();
 const FILL_STYLES={pop:1,eighties:1,gospel:1,ballad:1,worship:1,shout:1,funk:1,neosoul:1,blues:1};
 const CRASH_STYLES={pop:1,eighties:1,gospel:1,worship:1,shout:1};
 /* a short snare/tom fill at the end of every fourth bar, and a crash when a new eight-bar phrase starts */
+
+const FORMS_DYN={light:{d:0.72,b:0.86,k:0.82,x:0.3},mid:{d:0.96,b:1,k:0.98,x:0.95},full:{d:1.12,b:1.05,k:1.08,x:1.2}};
+/* a light verse, a fuller chorus, and a build into the last loop */
+function formStep(eng,e,style,M){
+  BAND.dyn={d:1,b:1,k:1,x:1};
+  if(!BAND.form||!song||!song.steps) return;
+  const T=BAND.total, loop=e.loop; let ph, build;
+  if(isFinite(T)){ if(T<2) return; ph=loop===0?'light':loop===T-1?'full':'mid'; build=loop===T-2; }
+  else { const c=loop%4; ph=['light','mid','mid','full'][c]; build=c===2; }
+  const d=Object.assign({},FORMS_DYN[ph]);
+  if(build){ const first=song.steps-M.bar; if(e.ss>=first){ const p=(e.ss-first)/M.bar; for(const k of ['d','b','k','x']) d[k]*=1+0.22*p;
+      if(M.bar===16&&FILL_STYLES[S.style]&&e.s>=8&&(e.s%2===0||e.s>=12)) eng.snare(e.t,0.2+0.7*p); } }
+  BAND.dyn=d;
+}
 function phraseExtras(eng,e,style,M,sd){
   if(eng.noHuman||M.bar!==16||!song||!song.steps) return;
   const bars=Math.floor(song.steps/M.bar), name=S.style, b=e.bar%bars;
@@ -1161,7 +1184,10 @@ const STYLES={
       if(e.evLeft===2 && e.ev.len>=8 && e.nextChord){ E.bass(t,bassLow(e.nextChord.bass)-1+(bassLow(e.nextChord.bass)-1<28?12:0),e.sd*1.8,0.85); }
       else if(v=hit('X.....x.X.....x.',s)||(e.evStep===0?1:0)) E.bass(t,r,e.sd*Math.min(e.evLeft,4)*0.9,v);
       if(e.evStep===0) E.chord(t,e.vo,e.evLeft*e.sd,0.34,'organ','extra');
-      v=Math.max(hit('X.....x...x.....',s)*0.75,e.evStep===0?1:0); if(v) E.chord(t,[...e.vo,e.vo[0]+12],e.sd*3,v*0.9,'piano'); }},
+      else if(s===8&&e.evLeft>=6) E.chord(t,e.vo,e.evLeft*e.sd,0.2,'organ','extra');
+      v=Math.max(hit(e.bar%2?'X.....x..x..x...':'X.....x...x.....',s)*0.75,e.evStep===0?1:0); if(v) E.chord(t,[...e.vo,e.vo[0]+12],e.sd*3,v*0.9,'piano');
+      if(s===14&&e.evLeft===2&&e.nextChord){ const nv=voiceChord(e.nextChord,e.vo.filter(m=>m>=50),false); if(nv&&nv.length) E.chord(t,nv,e.sd*2,0.55,'piano'); }
+      if(e.bar%4===3&&s>=12&&e.evLeft<=4){ const tn=[...e.vo].sort((a,b)=>a-b); E.note(t,tn[(s-12)%tn.length]+12,e.sd*1.5,0.32,'piano'); } }},
   jazz:{color:'#1971c2',label:'Jazz swing',bpm:140,swing:0.667,rootless:true,gen:{feel:'jazz',bass:'upright',keys:'piano'},keysName:'Piano',extraName:'(none)',sends:{drums:0.1,keys:0.22,bass:0.04},
     play(E,e){ const {s,t}=e; let v;
       if(v=hit('X...X.x.X...X.x.',s)) E.ride(t,v);
@@ -1295,6 +1321,9 @@ const STYLES={
       else if(s===7 && e.evLeft>1) E.bass(t,r+12,e.sd*0.9,0.5);
       if(e.evStep===0) E.chord(t,[r+24,...e.vo],Math.min(e.evLeft,8)*e.sd*0.98,0.62,'piano');
       else if(s===8) E.chord(t,e.vo,Math.min(e.evLeft,8)*e.sd*0.98,0.42,'piano');
+      if(s%2===0&&e.chord&&e.vo.length&&e.evLeft>1){ const tn=[...e.vo].sort((a,b)=>a-b), pat=[0,1,2,1,3,2,1,2][(s>>1)%8]%tn.length; E.note(t,tn[pat]+12,e.sd*3,0.17,'piano'); }
+      if(s===14&&e.evLeft===2&&e.nextChord){ const nv=voiceChord(e.nextChord,e.vo.filter(m=>m>=50),false); if(nv&&nv.length) E.chord(t,nv,e.sd*2,0.4,'piano'); }
+      if(s===8&&e.evLeft>=6) E.chord(t,e.vo.map(m=>m+12),e.evLeft*e.sd,0.2,'pad','extra');
       if(e.evStep===0) E.chord(t,e.vo.map(m=>m+12),e.evLeft*e.sd,0.3,'pad','extra');
       if(v=hit('x..x..x.x..x..x.',s)){ const top=[...e.vo].sort((a,b)=>a-b).slice(-2).map(m=>m+12); E.note(t,top[(s>>1)%2],e.sd*2,0.1*v,'pluck','extra'); } }},
   shout:{color:'#d9480f',label:'Gospel shout',bpm:152,swing:0,meter:'2/4',bar8:true,keysName:'Organ',extraName:'Piano and tambourine',sends:{drums:0.08,keys:0.12,extra:0.1},
@@ -1468,6 +1497,7 @@ function scheduleStep(eng, step, t, bd, live){
   const e={t,bd,sd:bd/4,step,s,ss,loop,bar:Math.floor(ss/M.bar),ev,evStep,evLeft:ev.len-evStep,chord:ev.chord,
            nextChord:ev.nextChordEv&&ev.nextChordEv.chord,vo:eng.vo||[60,64,67]};
   eng.lockBass=!!(S.useHum && S.bassLine && S.bassLine.length);
+  try{ formStep(eng,e,style,M); }catch(_){}
   if(M.bar===16 || (M.bar===8 && style.bar8)) style.play(eng,e); else genericPlay(eng,e,style);
   try{ phraseExtras(eng,e,style,M,e.sd); }catch(_){}
   if(eng.lockBass){ const tm=S.transpose>6?S.transpose-12:S.transpose, bt=(style.gen&&style.gen.bass)||'finger';
@@ -2752,8 +2782,9 @@ async function renderWav(){
     const total=(song.steps*loops/4+4)*bd+3;
     const off=new OfflineAudioContext(2,Math.ceil(total*sr),sr);
     const eng=new Engine(off); eng.applyMix(S.mix,style);
-    let bt=0.05;
+    let bt=0.05; BAND.total=loops;
     for(let st=0; st<song.steps*loops; st++){ const sub=st%4; scheduleStep(eng,st,bt+swingOff(sub,effSwing(style))*bd,bd,false); if(sub===3) bt+=bd; }
+    BAND.total=Infinity;
     const fe=song.events.find(e=>e.chord);
     if(fe){ const vo=voiceChord(fe.chord,eng.vo,style.rootless); eng.crash(bt,0.8); eng.kick(bt,1); eng.bass(bt,bassLow(fe.chord.bass),bd*3,1,(style.gen&&style.gen.bass)||'finger');
       eng.chord(bt,vo,bd*3.5,0.9,style.keysName==='Piano'?'piano':'ep'); }
@@ -2862,6 +2893,8 @@ function init(){
   $('codeLoad').onclick=()=>{ const t=decode($('codeIn').value); if(!t){ toast('That doesn’t look like a track code'); return; } $('codeArea').hidden=true; loadTrack(t); };
   $('saveClass').onclick=saveClass;
   $('renderBtn').onclick=renderWav; $('saveWav').onclick=saveWav;
+  { const fl=$('feel'), fv=$('feelVal'), fo=$('formOn'); const lab=()=>{ fv.textContent=BAND.feel<0.2?'(very tight)':BAND.feel<0.4?'(tight)':BAND.feel<0.62?'(natural)':BAND.feel<0.82?'(loose)':'(very loose)'; };
+    fl.value=BAND.feel; fo.checked=BAND.form; lab(); fl.oninput=()=>{ BAND.feel=+fl.value; lab(); bandSave(); }; fo.onchange=()=>{ BAND.form=fo.checked; bandSave(); }; }
   $('shareLink').onclick=async()=>{ const u=location.origin+location.pathname+'#t='+encodeURIComponent(encode(current())); try{ await navigator.clipboard.writeText(u); toast('Share link copied. Anyone you send it to opens this track.'); }
     catch(_){ $('codeArea').hidden=false; $('codeIn').value=u; $('codeIn').select(); toast('Copy the link from the box'); } };
   { const m=location.hash.match(/^#t=(.+)$/); if(m){ let t=null; try{ t=decode(decodeURIComponent(m[1])); }catch(_){} if(t){ setTimeout(()=>{ try{ if(window.SUITE) SUITE.go('studio'); loadTrack(t); history.replaceState(null,'',location.pathname); }catch(_){} },900); } } }
