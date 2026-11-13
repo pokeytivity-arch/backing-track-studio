@@ -140,7 +140,7 @@ async function pianoStatus(request, env) {
     }
   }
   console.log('no midi in output', JSON.stringify(pred.output).slice(0, 300));
-  return json({ error: 'no_midi' }, 502);
+  return json({ error: 'no_midi', detail: JSON.stringify(pred.output).slice(0, 180) }, 502);
 }
 
 export default {
