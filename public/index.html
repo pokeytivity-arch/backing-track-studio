@@ -65,6 +65,10 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .stage-tempo .tapbig{min-width:72px;font-weight:800}
 .stage-tempo .tapbig:active{background:var(--hi);color:var(--hi-ink)}
 .stage.projector .stage-tempo{display:none}
+.stage-sync{margin-top:-4px}
+.stage-sync input[type=range]{accent-color:#91a7ff}
+.stage-sync .syncval{min-width:76px;text-align:center;font:800 15px var(--display);color:var(--stage-ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .beats{display:flex;gap:clamp(10px,2.4vw,22px);justify-content:center;align-items:center;padding:4px 0}
 .beats i{width:clamp(38px,6vw,58px);height:clamp(38px,6vw,58px);border-radius:50%;background:var(--stage-2);border:3px solid #3a4a74;display:grid;place-items:center;
   font:800 clamp(16px,2.4vw,24px)/1 var(--display);font-style:normal;color:var(--stage-muted);transition:background .05s,transform .05s}
@@ -296,6 +300,13 @@ audio{width:100%}
       <span class="unit">BPM</span>
       <button class="tog tapbig" id="tapBtn" title="Tap 4 times in time to set the tempo">Tap</button>
     </div>
+    <div class="stage-tempo stage-sync">
+      <label for="sync">Sync lights</label>
+      <input type="range" id="sync" min="-150" max="800" step="10" value="500" aria-describedby="syncHelp">
+      <span class="syncval" id="syncVal">+500 ms</span>
+      <button class="tog" id="syncReset">Reset</button>
+      <span class="sr" id="syncHelp">If the lights flash before you hear the beat, slide right; if after, slide left. Reset returns to 500 ms. Saved on this device.</span>
+    </div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
     <div class="stage-kbd" id="stageKbd" hidden>
@@ -375,15 +386,7 @@ audio{width:100%}
             <button class="btn sm" id="trReset">Reset</button>
           </div>
         </div>
-        <div class="field">
-          <label for="sync">Sync lights to sound</label>
-          <div class="row">
-            <input type="range" id="sync" min="-150" max="800" step="10" value="500" aria-describedby="syncHelp">
-            <span class="key" id="syncVal" style="min-width:90px">+500 ms</span>
-            <button class="btn sm" id="syncReset">Reset</button>
-          </div>
-          <p class="help" id="syncHelp">Starts at 500 ms. If the lights flash before you hear the beat, slide right; if they flash after, slide left. Reset returns to 500 ms. Saved on this device.</p>
-        </div>
+
         <div class="field trainer">
           <label class="check"><input type="checkbox" id="trOn"> Speed trainer</label>
           <div class="row" style="font-size:14px">
@@ -464,7 +467,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-a (tempo on the stage)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-b (tempo and sync on the stage)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
