@@ -283,6 +283,22 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
   .sheet-bar{display:none!important}
   .sheet-page{box-shadow:none;width:100%;margin:0;padding:0;border-radius:0}
 }
+header.top,footer.credits{display:none}
+.bench .card{display:none}
+.bench{display:contents}
+.bench .card.panel-active{display:grid;position:fixed;z-index:85;top:48px;right:max(12px,calc((100vw - 1180px)/2));width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 60px);overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.35);animation:panelIn .16s ease-out}
+.bench .card.panel-active[data-panel="chart"],.bench .card.panel-active[data-panel="library"]{width:min(1000px,calc(100vw - 24px));right:max(12px,calc((100vw - 1000px)/2))}
+@keyframes panelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.bench .card[data-panel] > h2,.bench .card[data-panel] > .card-h > h2{display:none}
+.bench .card[data-panel] .card-h{flex-wrap:wrap}
+.bench .card[data-panel] #title{min-width:180px}
+.panel-backdrop{position:fixed;inset:0;z-index:84;background:rgba(10,14,28,.45)}
+.panel-backdrop[hidden]{display:none}
+.panel-bar{position:sticky;top:-16px;margin:-16px -16px 4px;padding:12px 14px 10px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--line);z-index:3}
+.panel-bar span{font:800 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.panel-close{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:var(--bg);font:700 15px var(--body);color:var(--ink);cursor:pointer}
+.panel-close:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.menu-status{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;padding-left:12px}
 .menubar{position:sticky;top:0;z-index:70;display:flex;gap:2px;align-items:center;padding:0 10px;height:36px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .menubar::-webkit-scrollbar{display:none}
 .menu-btn{border:0;background:transparent;color:var(--ink);font:500 14px var(--body);padding:5px 10px;border-radius:6px;white-space:nowrap;cursor:default}
@@ -374,7 +390,7 @@ audio{width:100%}
 
   <div class="bench">
     <div class="col">
-      <section class="card">
+      <section data-panel="chart" class="card">
         <div class="card-h"><h2>Chord chart</h2>
           <div class="seg" role="group" aria-label="Chart mode"><button id="modeEasy" aria-pressed="true">Easy</button><button id="modePro" aria-pressed="false">Professional</button></div>
           <input type="text" id="title" aria-label="Track title" placeholder="Track title" style="flex:1;max-width:280px"></div>
@@ -400,19 +416,19 @@ audio{width:100%}
       </section>
 
 
-      <section class="card">
+      <section data-panel="style" class="card">
         <h2>Style</h2>
         <div class="styles" id="styles"></div>
       </section>
 
-      <section class="card">
+      <section data-panel="soloist" class="card">
         <h2>Soloist</h2>
         <div class="styles" id="soloists"></div>
         <p class="help" id="soloBlurb"></p>
         <p class="help">Lines are generated live from each player's typical vocabulary, not taken from their recordings. They change every time through.</p>
       </section>
 
-      <section class="card">
+      <section data-panel="tempo" class="card">
         <h2>Tempo and key</h2>
         <div class="field">
           <span class="flabel">Tempo</span>
@@ -441,7 +457,7 @@ audio{width:100%}
     </div>
 
     <div class="col">
-      <section class="card hum" id="humCard">
+      <section data-panel="hum" class="card hum" id="humCard">
         <div class="card-h"><h2>Hum a bass line</h2><span class="help">Uses your microphone</span></div>
         <p class="help">Press Record, wait for the one-bar count-in, then hum your bass line on the click. The studio writes the chords and can play your exact notes on the bass. It uses the current tempo and time signature.</p>
         <div class="chartopts">
@@ -458,12 +474,12 @@ audio{width:100%}
         <div class="row"><button class="btn pri" id="humPlay" hidden>▶ Play it</button><button class="btn sm" id="humUndo" hidden>Undo</button><button class="btn sm" id="humClear" hidden>Use the style’s bass instead</button></div>
       </section>
 
-      <section class="card">
+      <section data-panel="mixer" class="card">
         <div class="card-h"><h2>Mixer</h2><span class="help"><b>M</b> mutes a part so students can play it. <b>S</b> solos it so they can hear it alone.</span></div>
         <div class="mix" id="mix"></div>
       </section>
 
-      <section class="card">
+      <section data-panel="library" class="card">
         <h2>Library</h2>
         <div class="tabs" role="tablist">
           <button class="tab" role="tab" id="tab-ex" aria-selected="true">Examples</button>
@@ -490,7 +506,7 @@ audio{width:100%}
         </div>
       </section>
 
-      <section class="card">
+      <section data-panel="export" class="card">
         <h2>Export audio</h2>
         <div class="row">
           <label for="loops" class="flabel">Length</label>
@@ -509,7 +525,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-h (menu bar)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-i (stage-only layout with menu panels)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2189,9 +2205,32 @@ function setupDrums(){
 }
 
 /* =========================================================
+   Panels: everything but the stage lives in the menus
+   ========================================================= */
+const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',mixer:'Mixer',library:'Library',export:'Export audio'};
+let panelOpen=null;
+function setupPanels(){
+  const bd=document.createElement('div'); bd.className='panel-backdrop'; bd.hidden=true; bd.onclick=closePanel; document.body.appendChild(bd);
+  document.querySelectorAll('.bench .card[data-panel]').forEach(card=>{
+    const x=document.createElement('button'); x.className='panel-close'; x.setAttribute('aria-label','Close '+PANELS[card.dataset.panel]); x.innerHTML='✕'; x.onclick=closePanel;
+    const bar=document.createElement('div'); bar.className='panel-bar'; const t=document.createElement('span'); t.textContent=PANELS[card.dataset.panel]; bar.append(t,x);
+    card.prepend(bar); card.setAttribute('role','dialog'); card.setAttribute('aria-label',PANELS[card.dataset.panel]); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && panelOpen && !document.querySelector('.menu-pop') && !document.querySelector('dialog[open]')){ e.preventDefault(); closePanel(); } });
+}
+function openPanel(name,focusEl){
+  const card=document.querySelector(`.bench .card[data-panel="${name}"]`); if(!card) return;
+  if(panelOpen && panelOpen!==card) panelOpen.classList.remove('panel-active');
+  card.classList.add('panel-active'); panelOpen=card; document.querySelector('.panel-backdrop').hidden=false; document.body.classList.add('has-panel');
+  card.scrollTop=0;
+  if(name==='chart' && S.mode==='pro') renderGrid();
+  setTimeout(()=>{ const f=focusEl||card.querySelector('input,textarea,select,button:not(.panel-close)'); if(focusEl){ focusEl.scrollIntoView({block:'center'}); focusEl.classList.remove('flash'); void focusEl.offsetWidth; focusEl.classList.add('flash'); } else card.querySelector('.panel-close').focus(); },30);
+}
+function closePanel(){ if(!panelOpen) return; panelOpen.classList.remove('panel-active'); panelOpen=null; document.querySelector('.panel-backdrop').hidden=true; document.body.classList.remove('has-panel'); }
+
+/* =========================================================
    Menu bar (File, Edit, View, Playback, Tools, Help)
    ========================================================= */
-const goTo=id=>{ const el=$(id); if(!el) return; const card=el.closest('.card')||el; card.scrollIntoView({behavior:'smooth',block:'center'}); card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); };
+const goTo=id=>{ const el=$(id); if(!el) return; const card=el.closest('.card[data-panel]'); if(card) openPanel(card.dataset.panel, el.closest('.field,.row,.chartopts,.card-h')||null); };
 const press=id=>{ const el=$(id); if(el && !el.disabled) el.click(); };
 function setTempo(v){ S.bpm=clampBpm(v); if(P&&playing) P.bpm=S.bpm; syncTempo(); }
 function newTrack(){
@@ -2204,7 +2243,7 @@ function infoDialog(title,html){
   d.innerHTML=''; const h=document.createElement('h2'); h.textContent=title; const body=document.createElement('div'); body.innerHTML=html;
   const c=document.createElement('button'); c.className='btn pri'; c.textContent='Close'; c.onclick=()=>d.close(); d.append(h,body,c); d.showModal();
 }
-const SHORTCUTS=[['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['Esc','Close a menu or leave projector view']];
+const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['Esc','Close a menu or panel, or leave projector view']];
 const MENUS=[
   {label:'Backing Track Studio',brand:true,items:[
     {label:'About Backing Track Studio',run:()=>infoDialog('Backing Track Studio',`<p>Type a chord chart, pick a style, and a band plays it. Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
@@ -2212,24 +2251,28 @@ const MENUS=[
     {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
   {label:'File',items:[
     {label:'New track',run:newTrack},
+    {label:'Library…',run:()=>openPanel('library')},
     {sep:true},
     {label:'Save to My tracks',run:()=>{ goTo('saveMine'); press('saveMine'); }},
     {label:'Copy track code',run:()=>press('copyCode')},
     {label:'Paste a track code…',run:()=>{ goTo('loadCodeBtn'); press('loadCodeBtn'); }},
     {label:'Open the library',run:()=>goTo('list')},
     {sep:true},
-    {label:'Make WAV file…',run:()=>goTo('renderBtn')},
+    {label:'Export audio (WAV)…',run:()=>openPanel('export')},
     {label:'Print sheet music / diagrams…',run:()=>press('sheetBtn')}]},
   {label:'Edit',items:[
+    {label:'Chord chart…',key:'E',run:()=>openPanel('chart')},
+    {sep:true},
     {label:'Transpose up ½ step',key:']',run:()=>press('trUp')},
     {label:'Transpose down ½ step',key:'[',run:()=>press('trDown')},
     {label:'Back to the original key',run:()=>press('trReset')},
+    {label:'Key and transpose…',run:()=>goTo('trUp')},
     {sep:true},
     {label:'Undo hummed bass line',enabled:()=>!$('humUndo').hidden,run:()=>press('humUndo')},
     {label:'Clear the chart',run:newTrack}]},
   {label:'View',items:[
-    {label:'Easy mode',check:()=>S.mode==='easy',run:()=>setMode('easy')},
-    {label:'Professional mode',check:()=>S.mode==='pro',run:()=>setMode('pro')},
+    {label:'Easy chart',check:()=>S.mode==='easy',run:()=>{ setMode('easy'); openPanel('chart'); }},
+    {label:'Professional chart',check:()=>S.mode==='pro',run:()=>{ setMode('pro'); openPanel('chart'); }},
     {sep:true},
     {label:'Projector view',key:'P',check:()=>$('projBtn').getAttribute('aria-pressed')==='true',run:()=>press('projBtn')},
     {label:'Keyboard',key:'K',check:()=>$('kbdBtn').getAttribute('aria-pressed')==='true',run:()=>press('kbdBtn')},
@@ -2246,17 +2289,19 @@ const MENUS=[
     {label:'Tap tempo',key:'T',run:()=>press('tapBtn')},
     {label:'Tempo up 1 BPM',key:'=',run:()=>setTempo(S.bpm+1)},
     {label:'Tempo down 1 BPM',key:'−',run:()=>setTempo(S.bpm-1)},
+    {label:'Tempo, key and practice…',run:()=>openPanel('tempo')},
     {label:'Speed trainer…',run:()=>goTo('trOn')}]},
   {label:'Tools',items:[
-    {label:'Hum a bass line…',key:'H',run:()=>press('humJump')},
+    {label:'Style…',run:()=>openPanel('style')},
+    {label:'Soloist…',run:()=>openPanel('soloist')},
+    {label:'Mixer…',run:()=>openPanel('mixer')},
+    {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {sep:true},
     ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
-    {sep:true},
-    {label:'Mixer…',run:()=>goTo('mix')},
-    {label:'Styles…',run:()=>goTo('styles')}]},
+    ]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
-    {label:'How to write a chord chart',run:()=>{ goTo('chords'); }},
+    {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
 ];
 function MENUS_HELP_SHORTCUTS(){ infoDialog('Keyboard shortcuts','<table class="keys">'+SHORTCUTS.map(([k,v])=>`<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')+'</table><p class="help">Shortcuts work when you are not typing in a box.</p>'); }
@@ -2298,7 +2343,7 @@ function buildMenubar(){
   // single-key shortcuts (not while typing, not with Ctrl/Cmd/Alt)
   document.addEventListener('keydown',e=>{
     if(e.ctrlKey||e.metaKey||e.altKey) return; if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; if(document.querySelector('dialog[open]')) return;
-    const k=e.key, map={s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>press('humJump'),
+    const k=e.key, map={e:()=>openPanel('chart'),s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>openPanel('hum'),
       ']':()=>press('trUp'),'[':()=>press('trDown'),'=':()=>setTempo(S.bpm+1),'+':()=>setTempo(S.bpm+1),'-':()=>setTempo(S.bpm-1),'?':MENUS_HELP_SHORTCUTS};
     const f=map[k.toLowerCase()]||map[k]; if(f){ e.preventDefault(); f(); } });
 }
@@ -2450,10 +2495,11 @@ function init(){
   $('sheetBtn').onclick=openSheet; $('sheetClose').onclick=()=>{ $('sheetModal').hidden=true; };
   $('sheetPrint').onclick=()=>window.print();
   $('sheetModal').addEventListener('click',e=>{ if(e.target.id==='sheetModal') $('sheetModal').hidden=true; });
-  $('humJump').onclick=()=>{ const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
+  $('humJump').onclick=()=>{ openPanel('hum'); return; const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
-  $('stopBtn').onclick=stop; buildMenubar();
-  $('humPlay').onclick=()=>{ toggle(); $('stage').scrollIntoView({behavior:'smooth',block:'start'}); }; $('humUndo').onclick=humUndo;
+  $('stopBtn').onclick=stop; buildMenubar(); setupPanels();
+  { const st=$('status'); if(st){ st.classList.add('menu-status'); document.querySelector('.menubar').appendChild(st); } }
+  $('humPlay').onclick=()=>{ closePanel(); toggle(); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };
   $('humExact').onchange=e=>{ S.useHum=e.target.checked&&!!S.bassLine; humSync(); saveDraft(); };
   humSync();
