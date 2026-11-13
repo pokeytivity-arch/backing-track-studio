@@ -34,7 +34,7 @@ async function toMono22k(buf){
 /* ---------- note finding: sensitivity + cleanup ---------- */
 function sensVal(){ const e=$('txSens'); return e?+e.value/100:0.5; }
 function extract(raw,s){
-  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.3,Math.min(0.85,0.85-0.46*s)), minLen=Math.max(3,Math.round(11-8*s));
+  const thr=Math.max(0.1,Math.min(0.6,0.475-0.35*s)), thrO=Math.max(0.15,Math.min(0.6,0.55-0.5*s)), minLen=Math.max(2,Math.round(8-6*s));
   const ev=window.BP.noteFramesToTime(window.BP.addPitchBendsToNoteEvents(raw.contours,window.BP.outputToNotesPoly(raw.frames,raw.onsets,thrO,thr,minLen,true,null,null,false)));
   const notes=ev.map(n=>({p:n.pitchMidi,t:n.startTimeSeconds,d:n.durationSeconds,a:n.amplitude})).filter(n=>n.p>=21&&n.p<=108);
   return cleanup(notes,s);
@@ -46,18 +46,18 @@ function keyPcs(notes){
   const sc=best.minor?[0,2,3,5,7,8,10,11]:[0,2,4,5,7,9,11]; return new Set(sc.map(i=>(i+best.r)%12));
 }
 function cleanup(notes,s){
-  const minD=0.17-0.1*s, minA=0.34-0.3*s; // lower sensitivity: stricter
+  const minD=0.07-0.04*s, minA=0.2-0.15*s; // very short notes are kept: this player plays fast, so most of them are real
   let n=notes.filter(x=>x.d>=minD).sort((a,b)=>a.t-b.t||a.p-b.p);
   // overtone ghosts: short notes an octave, twelfth or two octaves above a stronger note that starts together
   n=n.filter(x=>!(x.d<0.3&&n.some(m=>m!==x&&Math.abs(m.t-x.t)<0.06&&m.d>x.d*1.5&&m.a>=x.a*0.8&&[12,19,24,28,31].includes(x.p-m.p))));
   // merge repeats: the same pitch re-found after a tiny gap, without a stronger new onset, is one note
   // (a piano note that rings on is often "heard" again as it fades: a re-trigger that is weaker than the note before it, or that starts almost at once, is the same note)
-  const last={}, out=[], merge=S.merge!==false, gapMax=0.1+0.12*(1-s);
-  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*(0.92+1.2*(1-s)))||onset<0.12||(gap<0.07&&x.a<=l.a*2.2)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
+  const last={}, out=[], merge=S.merge!==false, gapMax=0.06+0.1*(1-s);
+  for(const x of n){ const l=last[x.p]; if(merge&&l){ const gap=x.t-(l.t+l.d), onset=x.t-l.t; if((gap<gapMax&&x.a<=l.a*(0.92+0.9*(1-s)))||onset<0.09||(gap<0.05&&x.a<=l.a*1.7)){ l.d=Math.max(l.d,x.t+x.d-l.t); continue; } } const c={...x}; last[x.p]=c; out.push(c); }
   // drop weak notes
-  let r=out.filter(x=>x.a>=minA||x.d>=0.4);
+  let r=out.filter(x=>x.a>=minA||x.d>=0.12);
   // key-aware: short, quiet notes outside the key are most likely mistakes
-  const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.25||x.a>=0.5);
+  const pcs=keyPcs(r); if(pcs) r=r.filter(x=>pcs.has(x.p%12)||x.d>=0.12||x.a>=0.3);
   return r.sort((a,b)=>a.t-b.t||a.p-b.p);
 }
 async function transcribeBlob(blob,title){
@@ -151,17 +151,24 @@ function freq(p){ return S.a4*Math.pow(2,(p-69)/12); }
 let pianoReady=false;
 function loadPiano(){ try{ if(typeof BANK==='undefined'||typeof loadBank!=='function') return; if(BANK.ready){ pianoReady=true; return; } loadBank(S.ac).then(()=>{ pianoReady=!!BANK.ready; }); }catch(_){} }
 // one piano note, from the Studio's own recorded piano samples (nearest sample, pitch-shifted), into any context
+// a little room around the piano, so notes sit in a space instead of sounding dry and clipped
+function makeFx(ac,dest){
+  const inp=ac.createGain(), conv=ac.createConvolver(), wet=ac.createGain(), sr=ac.sampleRate, len=Math.floor(sr*1.7), buf=ac.createBuffer(2,len,sr);
+  for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6); }
+  conv.buffer=buf; wet.gain.value=0.2; inp.connect(dest); inp.connect(conv); conv.connect(wet); wet.connect(dest); return inp;
+}
 function pianoNote(ac,dest,midi,at,dur,vel,a4){
   const keys=BANK.keys.piano, buf=BANK.buf.piano; let k=keys[0]; for(const x of keys) if(Math.abs(x-midi)<Math.abs(k-midi)) k=x;
   const src=ac.createBufferSource(); src.buffer=buf[k]; src.playbackRate.value=Math.pow(2,(midi-k)/12)*(a4/440);
   const v=Math.max(0.05,Math.min(1,vel)), g=ac.createGain(), lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1800+6000*Math.min(1,v*1.6);
-  const hold=Math.max(0.28,dur), end=Math.min(at+hold+0.7,at+2.6);   // let the note ring and fade like a real piano instead of cutting off
+  const hold=Math.max(0.3,dur), end=Math.min(at+hold+0.9,at+2.8);   // let the note ring and fade like a real piano instead of cutting off
   g.gain.setValueAtTime(0.9*(0.25+0.75*v),at); g.gain.setValueAtTime(0.9*(0.25+0.75*v),Math.min(at+hold,end-0.05)); g.gain.exponentialRampToValueAtTime(0.0001,end);
-  src.connect(lp); lp.connect(g); g.connect(dest); src.start(at); src.stop(end+0.05);
+  let out=g; if(ac.createStereoPanner){ const pn=ac.createStereoPanner(); pn.pan.value=Math.max(-0.55,Math.min(0.55,(midi-62)/70)); g.connect(pn); out=pn; }
+  src.connect(lp); lp.connect(g); out.connect(dest); src.start(at); src.stop(end+0.05);
 }
 function playNote(p,at,dur,vel){
   const m=p+S.tr;
-  if(pianoReady&&BANK.ready&&BANK.keys.piano){ pianoNote(S.ac,S.gain,m,at,dur/S.rate,vel,S.a4); return; }
+  if(pianoReady&&BANK.ready&&BANK.keys.piano){ if(!S.fx) S.fx=makeFx(S.ac,S.gain); pianoNote(S.ac,S.fx,m,at,dur/S.rate,vel,S.a4); return; }
   const ac=S.ac, o=ac.createOscillator(), o2=ac.createOscillator(), g=ac.createGain();
   o.type='triangle'; o2.type='sine'; const f=freq(m); o.frequency.value=f; o2.frequency.value=f*2;
   const v=0.08+0.22*Math.min(1,vel), end=at+Math.max(0.12,dur/S.rate); g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(v,at+0.01); g.gain.exponentialRampToValueAtTime(v*0.35,at+Math.min(0.4,(end-at)*0.6)); g.gain.exponentialRampToValueAtTime(0.0001,end+0.12);
@@ -172,8 +179,8 @@ async function saveWav(){
   if(!S.notes.length) return; const btn=$('txWav'); btn.disabled=true; const old=btn.textContent; btn.textContent='Making the audio file…';
   try{
     const ac=ensureCtx(); if(typeof loadBank==='function') await loadBank(ac); if(!(BANK.ready&&BANK.keys.piano)) throw new Error('The piano sounds did not load. Reload and try again.');
-    const sr=44100, len=Math.ceil((S.dur+3)*sr), off=new OfflineAudioContext(2,len,sr), mast=off.createGain(); mast.gain.value=0.7; mast.connect(off.destination);
-    S.notes.forEach(n=>pianoNote(off,mast,n.p+S.tr,n.t,n.d,velOf(n.a),S.a4));
+    const sr=44100, len=Math.ceil((S.dur+3)*sr), off=new OfflineAudioContext(2,len,sr), mast=off.createGain(); mast.gain.value=0.7; mast.connect(off.destination); const fxIn=makeFx(off,mast);
+    S.notes.forEach(n=>pianoNote(off,fxIn,n.p+S.tr,n.t,n.d,velOf(n.a),S.a4));
     const r=await off.startRendering(); let L=r.getChannelData(0), R=r.getChannelData(1), end=L.length; while(end>sr&&Math.abs(L[end-1])<0.0005&&Math.abs(R[end-1])<0.0005) end--;
     end=Math.min(L.length,end+Math.round(sr*0.3)); let pk=0; for(let i=0;i<end;i++){ pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i])); } const gn=pk>0?0.89/pk:1; const data=new DataView(new ArrayBuffer(44+end*4)); const w=(o,t)=>{ for(let i=0;i<t.length;i++) data.setUint8(o+i,t.charCodeAt(i)); };
     w(0,'RIFF'); data.setUint32(4,36+end*4,true); w(8,'WAVEfmt '); data.setUint32(16,16,true); data.setUint16(20,1,true); data.setUint16(22,2,true); data.setUint32(24,sr,true); data.setUint32(28,sr*4,true); data.setUint16(32,4,true); data.setUint16(34,16,true); w(36,'data'); data.setUint32(40,end*4,true);
@@ -310,8 +317,8 @@ function draw(t){
 /* ---------- MIDI export (format 0) ---------- */
 function vlq(n){ const b=[n&0x7f]; while((n>>=7)>0) b.unshift((n&0x7f)|0x80); return b; }
 function midiBytes(){
-  const PPQ=480, TPS=PPQ*2, ev=[]; S.notes.forEach(n=>{ const p=Math.max(0,Math.min(127,n.p+S.tr)), v=Math.max(20,Math.min(127,Math.round(40+n.a*110))); ev.push({t:Math.round(n.t*TPS),o:1,p,v}); ev.push({t:Math.round((n.t+n.d)*TPS),o:0,p,v:0}); });
-  ev.sort((a,b)=>a.t-b.t||a.o-b.o); const tr=[0,0xFF,0x51,3,0x07,0xA1,0x20, 0,0xFF,0x58,4,4,2,24,8]; let last=0;
+  const PPQ=480, TPS=PPQ*2, ev=[]; S.notes.forEach(n=>{ const p=Math.max(0,Math.min(127,n.p+S.tr)), v=Math.max(24,Math.min(127,Math.round(30+velOf(n.a)*97))); ev.push({t:Math.round(n.t*TPS),o:1,p,v}); ev.push({t:Math.round((n.t+n.d)*TPS),o:0,p,v:0}); });
+  ev.sort((a,b)=>a.t-b.t||a.o-b.o); const tr=[0,0xFF,0x51,3,0x07,0xA1,0x20, 0,0xFF,0x58,4,4,2,24,8, 0,0xC0,0, 0,0xB0,7,110, 0,0xB0,91,76, 0,0xB0,93,24];   // acoustic piano, with reverb (CC91) and a touch of chorus (CC93) for players that honour them let last=0;
   for(const e of ev){ tr.push(...vlq(e.t-last),e.o?0x90:0x80,e.p,e.v); last=e.t; } tr.push(0,0xFF,0x2F,0);
   const hdr=[0x4d,0x54,0x68,0x64,0,0,0,6,0,0,0,1,PPQ>>8,PPQ&255], len=tr.length, th=[0x4d,0x54,0x72,0x6b,(len>>>24)&255,(len>>>16)&255,(len>>>8)&255,len&255];
   return new Uint8Array([...hdr,...th,...tr]);
