@@ -340,6 +340,21 @@ header.top,footer.credits{display:none}
 audio{width:100%}
 .codebox{width:100%;font:12px var(--mono);min-height:60px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+.teacher{grid-template-rows:auto auto 1fr auto auto auto;min-height:0}
+.t-opts{flex-wrap:wrap;gap:8px 12px;align-items:center}
+.t-chk{display:flex;gap:6px;align-items:center;font-size:.92rem}
+.t-log{overflow:auto;min-height:120px;display:flex;flex-direction:column;gap:10px;padding:4px 2px}
+.t-msg{padding:10px 12px;border-radius:12px;line-height:1.45;max-width:92%;white-space:normal;overflow-wrap:anywhere}
+.t-msg.user{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.t-msg.bot{align-self:flex-start;background:var(--bg);border:1px solid var(--line)}
+.t-msg.bot p{margin:0 0 .5em}.t-msg.bot p:last-child{margin:0}
+.t-msg.err{background:transparent;border:1px dashed var(--danger);color:var(--danger)}
+.t-msg.wait{opacity:.7;font-style:italic}
+.t-chips{display:flex;flex-wrap:wrap;gap:6px}
+.t-chips .chip{font-size:.85rem;padding:6px 10px}
+.t-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.t-form textarea{width:100%;resize:vertical;min-height:44px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
 </head>
 <body>
@@ -523,6 +538,29 @@ audio{width:100%}
         </div>
       </section>
 
+      <section data-panel="teacher" class="card teacher" id="teacherCard">
+        <div class="card-h"><h2>Ask Piano Study Suite</h2><span class="help">Your AI piano coach</span></div>
+        <div class="row t-opts">
+          <label for="tLevel" class="flabel">My level</label>
+          <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
+          <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
+          <button class="btn" id="tClear" type="button">New conversation</button>
+        </div>
+        <div id="tLog" class="t-log" aria-live="polite"></div>
+        <div class="t-chips" id="tChips">
+          <button class="btn chip" type="button">Explain the chords in my chart</button>
+          <button class="btn chip" type="button">Give me a practice plan for this song</button>
+          <button class="btn chip" type="button">Quiz me on what I'm learning</button>
+          <button class="btn chip" type="button">How do I find the bass note for a melody?</button>
+        </div>
+        <form id="tForm" class="t-form">
+          <label for="tInput" class="sr">Your question</label>
+          <textarea id="tInput" rows="2" maxlength="2000" placeholder="Ask anything about piano, chords or your chart…"></textarea>
+          <button class="btn pri" id="tSend" type="submit">Ask</button>
+        </form>
+        <p class="help">An AI coach built from real lessons. It can make mistakes, so check anything important with your teacher.</p>
+      </section>
+
       <section data-panel="export" class="card">
         <h2>Export audio</h2>
         <div class="row">
@@ -542,7 +580,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-l (sliders beside the chord)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.13-m (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2225,8 +2263,8 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',mixer:'Mixer',library:'Library',export:'Export audio'};
-const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],mixer:[560,470],export:[520,300]};
+const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',teacher:'Ask Piano Study Suite',mixer:'Mixer',library:'Library',export:'Export audio'};
+const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
 const winState=name=>store.get('bt-win-'+name,null);
@@ -2310,7 +2348,7 @@ function infoDialog(title,html){
   d.innerHTML=''; const h=document.createElement('h2'); h.textContent=title; const body=document.createElement('div'); body.innerHTML=html;
   const c=document.createElement('button'); c.className='btn pri'; c.textContent='Close'; c.onclick=()=>d.close(); d.append(h,body,c); d.showModal();
 }
-const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['Esc','Close a menu or panel, or leave projector view']];
+const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Stop'],['C','Count-in on/off'],['M','Metronome on/off'],['T','Tap tempo'],['= / −','Tempo up / down 1 BPM'],['] / [','Transpose up / down ½ step'],['P','Projector view'],['K','Keyboard'],['H','Hum a bass line'],['A','Ask Piano Study Suite'],['Esc','Close a menu or panel, or leave projector view']];
 const MENUS=[
   {label:'Backing Track Studio',brand:true,items:[
     {label:'About Backing Track Studio',run:()=>infoDialog('Backing Track Studio',`<p>Type a chord chart, pick a style, and a band plays it. Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
@@ -2363,14 +2401,59 @@ const MENUS=[
     {label:'Soloist…',run:()=>openPanel('soloist')},
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
+    {label:'Ask Piano Study Suite…',key:'A',run:()=>openPanel('teacher')},
     {sep:true},
     ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
     ]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
+    {label:'Ask Piano Study Suite…',run:()=>openPanel('teacher')},
     {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
 ];
+
+/* =========================================================
+   Ask Piano Study Suite (AI coach via /api/teacher)
+   ========================================================= */
+const T={log:store.get('bt-teacher',[]), busy:false};
+function tFormat(txt){
+  const esc=txt.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  return esc.split(/\n{2,}/).map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</p>').join('');
+}
+function tRender(extra){
+  const log=$('tLog'); log.innerHTML='';
+  if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Piano Study Suite**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
+  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else d.innerHTML=tFormat(m.content); log.appendChild(d); });
+  if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
+  log.scrollTop=log.scrollHeight;
+  $('tChips').hidden=T.log.length>0;
+}
+async function tAsk(q){
+  q=(q||'').trim(); if(!q||T.busy) return;
+  T.busy=true; $('tSend').disabled=true; T.log.push({role:'user',content:q}); tRender({cls:'bot wait',text:'Thinking…'});
+  const context={level:$('tLevel').value};
+  if($('tShare').checked && S.chords.trim()) Object.assign(context,{chart:S.chords,title:S.title,style:(STYLES[S.style]&&STYLES[S.style].label)||S.style,bpm:S.bpm,meter:S.meter,transpose:S.transpose});
+  let err='';
+  try{
+    const r=await fetch('/api/teacher',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:T.log.slice(-20),context})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok && d.reply){ T.log.push({role:'assistant',content:d.reply}); }
+    else err= d.error==='not_configured' ? 'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.' : d.error==='slow_down' ? 'Lots of questions! Give it a minute, then ask again.' : 'Something went wrong reaching the coach. Please try again.';
+  }catch(_){ err='Couldn\'t reach the coach. Check your internet connection and try again.'; }
+  if(err) T.log.pop();
+  T.log=T.log.slice(-40); store.set('bt-teacher',T.log); T.busy=false; $('tSend').disabled=false;
+  tRender(err?{cls:'err',text:err}:null);
+  if(err) $('tInput').value=q; else $('tInput').value='';
+}
+function setupTeacher(){
+  $('tLevel').value=store.get('bt-teacher-level','');
+  $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
+  $('tForm').onsubmit=e=>{ e.preventDefault(); tAsk($('tInput').value); };
+  $('tInput').onkeydown=e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); tAsk($('tInput').value); } };
+  $('tClear').onclick=()=>{ T.log=[]; store.set('bt-teacher',[]); tRender(); $('tInput').focus(); };
+  $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>tAsk(b.textContent));
+  tRender();
+}
 function MENUS_HELP_SHORTCUTS(){ infoDialog('Keyboard shortcuts','<table class="keys">'+SHORTCUTS.map(([k,v])=>`<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('')+'</table><p class="help">Shortcuts work when you are not typing in a box.</p>'); }
 function buildMenubar(){
   const bar=document.createElement('nav'); bar.className='menubar'; bar.setAttribute('role','menubar'); bar.setAttribute('aria-label','Studio menu');
@@ -2410,7 +2493,7 @@ function buildMenubar(){
   // single-key shortcuts (not while typing, not with Ctrl/Cmd/Alt)
   document.addEventListener('keydown',e=>{
     if(e.ctrlKey||e.metaKey||e.altKey) return; if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return; if(document.querySelector('dialog[open]')) return;
-    const k=e.key, map={e:()=>openPanel('chart'),s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>openPanel('hum'),
+    const k=e.key, map={e:()=>openPanel('chart'),s:()=>{ if(playing||paused) stop(); },c:()=>press('countBtn'),m:()=>press('clickBtn'),t:()=>press('tapBtn'),p:()=>press('projBtn'),k:()=>press('kbdBtn'),h:()=>openPanel('hum'),a:()=>openPanel('teacher'),
       ']':()=>press('trUp'),'[':()=>press('trDown'),'=':()=>setTempo(S.bpm+1),'+':()=>setTempo(S.bpm+1),'-':()=>setTempo(S.bpm-1),'?':MENUS_HELP_SHORTCUTS};
     const f=map[k.toLowerCase()]||map[k]; if(f){ e.preventDefault(); f(); } });
 }
@@ -2564,7 +2647,7 @@ function init(){
   $('sheetModal').addEventListener('click',e=>{ if(e.target.id==='sheetModal') $('sheetModal').hidden=true; });
   $('humJump').onclick=()=>{ openPanel('hum'); return; const c=$('humCard'); if($('stage').classList.contains('projector')) $('projBtn').click(); c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); };
   $('humBtn').onclick=humStart;
-  $('stopBtn').onclick=stop; buildMenubar(); setupPanels();
+  $('stopBtn').onclick=stop; buildMenubar(); setupPanels(); setupTeacher();
   { const st=$('status'); if(st){ st.classList.add('menu-status'); document.querySelector('.menubar').appendChild(st); } }
   $('humPlay').onclick=()=>{ closePanel(); toggle(); }; $('humUndo').onclick=humUndo;
   $('humClear').onclick=()=>{ S.useHum=!S.useHum; humSync(); saveDraft(); };

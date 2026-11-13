@@ -20,3 +20,11 @@ Type a chord chart, pick a style, and a band plays it on a loop. Built for music
 ## Deploying
 
 The site is hosted on Cloudflare and connected to this repository. Every push to `main` publishes automatically.
+
+## Ask Piano Study Suite (AI coach)
+
+`src/worker.js` serves the app and a `/api/teacher` endpoint that calls the Claude API with the
+Piano Study Suite persona in `src/persona.txt`. To switch it on, add a secret named
+`ANTHROPIC_API_KEY` to the Worker in Cloudflare (Workers & Pages → backing-track-studio →
+Settings → Variables and Secrets). Optional: `TEACHER_MODEL` to change the model (default
+`claude-sonnet-5-5`).
