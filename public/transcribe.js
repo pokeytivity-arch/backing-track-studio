@@ -8,7 +8,7 @@ const FLAT_KEYS=new Set(['F','Bb','Eb','Ab','Db','Gb','Dm','Gm','Cm','Fm','Bbm',
 const MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88], MIN=[6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
 const MAX_SEC=300;
 let X=null; // state
-const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:0.5,rate:1,tr:0,names:false,look:4,loopA:null,loopB:null,
+const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:1,rate:1,tr:0,names:false,look:4,loopA:null,loopB:null,
   met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto',kbd:88};
 const nm=(p,flats)=>(flats?NAMES_F:NAMES_S)[((p%12)+12)%12];
 const oct=p=>Math.floor(p/12)-1;
@@ -64,6 +64,21 @@ function extract(raw,s){
   return cleanup(notes,s);
 }
 
+
+/* ---------- cross-check high notes against the actual recording ---------- */
+// For each note from C5 up: is there really a peak of energy at that pitch in the audio right after the note starts?
+// Notes the model imagined have no peak there. Stored as n.pk (ratio of energy at the pitch vs. the pitches a semitone or two either side).
+function addPeaks(notes,buf){
+  const ch=buf.getChannelData(0), sr=buf.sampleRate, L=Math.round(0.12*sr), win=new Float32Array(L); for(let i=0;i<L;i++) win[i]=0.5-0.5*Math.cos(2*Math.PI*i/(L-1));
+  const pw=(t0,f)=>{ const i0=Math.round(t0*sr); if(i0<0||i0+L>ch.length) return null; const c=2*Math.cos(2*Math.PI*f/sr); let s1=0,s2=0; for(let i=0;i<L;i++){ const s0=ch[i0+i]*win[i]+c*s1-s2; s2=s1; s1=s0; } return (s1*s1+s2*s2-c*s1*s2)/L; };
+  return notes.map(n=>{
+    if(n.p<72) return n;
+    const f=440*Math.pow(2,(n.p-69)/12), e=pw(n.t+0.01,f); if(e==null) return n;
+    let nb=0,k=0; for(const st of [-2,-1,1,2]){ const x=pw(n.t+0.01,f*Math.pow(2,st/12)); if(x!=null){ nb+=x; k++; } }
+    return Object.assign({},n,{pk:e/((k?nb/k:0)+1e-12)});
+  });
+}
+
 /* ---------- piano-model cleanup: only weed out stray high notes and overtone ghosts ---------- */
 function cleanupPro(notes,s){
   if(notes.length<12) return notes;
@@ -73,6 +88,7 @@ function cleanupPro(notes,s){
   const near=(n,span,pr)=>by.some(o=>o!==n&&Math.abs(o.t-n.t)<span&&Math.abs(o.p-n.p)<=pr);
   const HARM=[12,19,24,28,31,34];
   return notes.filter(n=>{
+    if(n.pk!=null&&n.p>=72){ const need=1.5+3.5*(1-s); if(n.pk<need&&!(n.a>=med*1.5&&n.d>=0.4)) return false; }
     // overtone ghost: a clearly louder note 12/19/24/28/31 semitones below starting at the same moment
     if(n.p>=60 && by.some(o=>o!==n&&Math.abs(o.t-n.t)<0.06&&HARM.includes(n.p-o.p)&&o.a>n.a*1.15)) return false;
     if(n.p>=96) return n.a>=med*1.1*k&&n.d>=0.15;
@@ -194,7 +210,7 @@ async function transcribeBlob(blob,title){
         work(0,2);
         const pn=await proTranscribe(buf,(p,m)=>{ work(p<12?0:p<50?1:2,p); });
         work(3,98); await new Promise(r=>setTimeout(r,900));
-        if(pn.length>3){ S.raw=null; const cl=cleanupPro(pn,sensVal()); await showResult({blob,notes:cl,dur:buf.duration,title,long,fresh:true,pro:true}); S.baseNotes=pn; saveItem({blob,notes:cl,dur:buf.duration,title:title||'Recording',pro:true}); return; }
+        if(pn.length>3){ S.raw=null; const pv=addPeaks(pn,buf), cl=cleanupPro(pv,sensVal()); await showResult({blob,notes:cl,dur:buf.duration,title,long,fresh:true,pro:true}); S.baseNotes=pv; saveItem({blob,notes:cl,dur:buf.duration,title:title||'Recording',pro:true}); return; }
       }catch(e){ console.log('piano model unavailable',e); const why=!e||!e.code?'could not be reached':e.code==='not_configured'?'is not switched on yet (no token on the server)':e.up===401||e.up===403?'refused the token (check REPLICATE_API_TOKEN)':e.up===402?'needs billing: add a card and credit in Replicate':e.up===429?'is busy or rate-limited, try again in a minute':'failed ('+e.code+(e.up?' '+e.up:'')+(e.detail?': '+String(e.detail).slice(0,120):'')+')'; proWhy='The piano model '+why+'.'; say(proWhy+' Using the built-in note finder instead…',true); await new Promise(r=>setTimeout(r,1500)); }
       S.pro=false;
     }
