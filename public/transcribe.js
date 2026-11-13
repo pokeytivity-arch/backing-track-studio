@@ -9,7 +9,7 @@ const MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88], MIN=[6.
 const MAX_SEC=300;
 let X=null; // state
 const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:0.5,rate:1,tr:0,names:false,look:4,loopA:null,loopB:null,
-  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto'};
+  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto',kbd:88};
 const nm=(p,flats)=>(flats?NAMES_F:NAMES_S)[((p%12)+12)%12];
 const oct=p=>Math.floor(p/12)-1;
 const isBlack=p=>[1,3,6,8,10].includes(((p%12)+12)%12);
@@ -249,44 +249,57 @@ function assignHands(){
   });
 }
 const noteHue=(n)=>HUES[((n.p+S.tr)%12+12)%12];
-function noteFill(n,on,black){
-  if(S.hands==='note'){ const hue=noteHue(n); return `hsl(${hue} 85% ${on?(black?45:62):50}%)`; }
-  return n.h===0?LH_COL:RH_COL;
-}
+function hsl2hex(h,sat,l){ sat/=100; l/=100; const k=n=>(n+h/30)%12, a=sat*Math.min(l,1-l), f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))); return '#'+[f(0),f(8),f(4)].map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join(''); }
+function noteFill(n){ if(S.hands==='note') return hsl2hex(noteHue(n),85,55); return n.h===0?LH_COL:RH_COL; }
 /* ---------- falling notes ---------- */
 const HUES=[210,255,300,345,25,50,95,150,175,190,230,280];
 function draw(t){
-  const cv=$('txCanvas'); if(!cv) return; const dpr=window.devicePixelRatio||1, H=cv.clientHeight; let W=cv.clientWidth; if(!W||!H) return;
+  const cv=$('txCanvas'); if(!cv) return; const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1)), H=cv.clientHeight; let W=cv.clientWidth; if(!W||!H) return;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
-  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); const cs=getComputedStyle(document.documentElement);
-  const bg=cs.getPropertyValue('--surface').trim()||'#fff', ink=cs.getPropertyValue('--ink').trim()||'#111', line=cs.getPropertyValue('--line').trim()||'#ccc';
-  g.fillStyle='#0c1222'; g.fillRect(0,0,W,H); const PAD=8, W0=W; g.save(); g.translate(PAD,0); W=W-2*PAD;
-  const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p); const kw=W/whites.length, KH=Math.max(56,Math.min(kw*4.6,H*0.42)), fallH=H-KH-PAD, lo=S.lo, hi=S.hi;
-  const pos={}; whites.forEach((p,i)=>pos[p]={x:i*kw,w:kw}); for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.64; pos[p]={x:(left?left.x+kw:0)-bw/2,w:bw}; }
-  // octave guide lines
-  g.strokeStyle='rgba(255,255,255,.06)'; g.lineWidth=1; for(const p of whites){ if(p%12===0){ g.beginPath(); g.moveTo(pos[p].x,0); g.lineTo(pos[p].x,fallH); g.stroke(); } }
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
+  const snap=v=>Math.round(v*dpr)/dpr;
+  const bgG=g.createLinearGradient(0,0,0,H); bgG.addColorStop(0,'#05080f'); bgG.addColorStop(1,'#0e1528'); g.fillStyle=bgG; g.fillRect(0,0,W,H);
+  const PAD=0, W0=W;
+  const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p);
+  const kw=W/whites.length, KH=Math.max(70,Math.min(kw*5.2,H*0.3)), fallH=snap(H-KH), lo=S.lo, hi=S.hi;
+  const pos={}; whites.forEach((p,i)=>{ const x0=snap(i*kw), x1=snap((i+1)*kw); pos[p]={x:x0,w:x1-x0}; });
+  for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.62; const cx=left?left.x+left.w:0; pos[p]={x:snap(cx-bw/2),w:snap(bw)}; }
+  const rr=(x,y,w,h,r)=>{ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
+  // octave guide lines (a faint line at every C)
+  g.lineWidth=1; for(const p of whites){ g.strokeStyle=p%12===0?'rgba(255,255,255,.10)':'rgba(255,255,255,.035)'; const x=pos[p].x+0.5; g.beginPath(); g.moveTo(x,0); g.lineTo(x,fallH); g.stroke(); }
   const look=S.look, pps=fallH/look, active=new Map();
   // loop band
-  if(S.loopA!=null){ const ya=fallH-(S.loopA-t)*pps, yb=S.loopB!=null?fallH-(S.loopB-t)*pps:null; g.fillStyle='rgba(255,212,59,.18)'; if(yb!=null){ g.fillRect(0,Math.min(ya,yb),W,Math.abs(ya-yb)); } g.fillStyle='rgba(255,212,59,.9)'; g.fillRect(0,ya-1,W,2); if(yb!=null) g.fillRect(0,yb-1,W,2); }
+  if(S.loopA!=null){ const ya=fallH-(S.loopA-t)*pps, yb=S.loopB!=null?fallH-(S.loopB-t)*pps:null; g.fillStyle='rgba(255,212,59,.14)'; if(yb!=null){ g.fillRect(0,Math.min(ya,yb),W,Math.abs(ya-yb)); } g.fillStyle='rgba(255,212,59,.9)'; g.fillRect(0,ya-1,W,2); if(yb!=null) g.fillRect(0,yb-1,W,2); }
   // beat lines when metronome is on
-  if(S.met){ const sp=60/S.bpm; let k=Math.ceil((t-S.metOrigin)/sp); for(;;k++){ const bt=S.metOrigin+k*sp; if(bt>t+look) break; const y=fallH-(bt-t)*pps; g.strokeStyle=k%S.bpb===0?'rgba(255,255,255,.25)':'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
+  if(S.met){ const sp=60/S.bpm; let k=Math.ceil((t-S.metOrigin)/sp); for(;;k++){ const bt=S.metOrigin+k*sp; if(bt>t+look) break; const y=snap(fallH-(bt-t)*pps)+0.5; g.strokeStyle=k%S.bpb===0?'rgba(255,255,255,.28)':'rgba(255,255,255,.09)'; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
   const flats=!!S.flats;
+  // find the notes sounding now first, so their glow sits behind the bars
+  for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t) break; if(n.t+n.d<t) continue; const p=n.p+S.tr; if(pos[p]) active.set(p,n); }
+  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); const gl=g.createRadialGradient(b.x+b.w/2,fallH,0,b.x+b.w/2,fallH,Math.max(60,kw*5)); gl.addColorStop(0,c+'99'); gl.addColorStop(1,c+'00'); g.fillStyle=gl; g.fillRect(b.x-kw*5,fallH-Math.max(60,kw*5),kw*10+b.w,Math.max(60,kw*5)); }
+  // the falling notes: rounded bars with a soft glow
   for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+look) break; const end=n.t+n.d; if(end<t) continue; const p=n.p+S.tr; if(p<lo||p>hi||!pos[p]) continue;
-    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(4,y2-y1); const on=n.t<=t&&end>=t;
-    g.fillStyle=noteFill(n,on,false); const x=bx.x+1, w=bx.w-2, r=Math.min(4,w/3); g.beginPath(); g.roundRect?g.roundRect(x,y1,w,h,r):g.rect(x,y1,w,h); g.fill(); if(on){ g.strokeStyle='rgba(255,255,255,.85)'; g.lineWidth=1.5; g.stroke(); }
-    if(on) active.set(p,n);
-    if(S.names&&h>13&&w>12){ g.fillStyle='#fff'; g.font=`600 ${Math.min(12,w*0.62)}px system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-3,fallH-3)); } }
-  // keyboard, drawn like the Studio keyboard: white keys with a dark outline, short black keys, C labels, note names on pressed keys
-  const rr=(x,y,w,h,r)=>{ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
+    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(6,y2-y1), on=n.t<=t&&end>=t, c=noteFill(n), black=isBlack(p);
+    const w=Math.max(4,bx.w-(black?2:3)), x=bx.x+(bx.w-w)/2, r=Math.min(w/2,10), yy=Math.min(y1,fallH-6);
+    g.save(); g.shadowColor=c; g.shadowBlur=on?18:7; const gr=g.createLinearGradient(x,0,x+w,0); gr.addColorStop(0,c); gr.addColorStop(0.5,on?'#ffffff55':'#ffffff33'); gr.addColorStop(1,c);
+    rr(x,yy,w,Math.min(h,fallH-yy),r); g.fillStyle=c; g.fill(); g.shadowBlur=0; g.fillStyle=gr; g.globalAlpha=.55; g.fill(); g.restore();
+    if(S.names&&h>15&&w>13){ g.fillStyle='#fff'; g.font=`700 ${Math.min(12,w*0.6)}px Inter,system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-4,fallH-4)); } }
+  // sparks where a note meets its key
+  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); for(let k=0;k<7;k++){ const ph=((t*1.7+k*0.37+p*0.13)%1), a=1-ph, sx=b.x+b.w/2+Math.sin(k*2.3+p+t*3)*b.w*0.9, sy=fallH-ph*Math.max(26,kw*3.2); g.fillStyle=c; g.globalAlpha=a*0.9; g.beginPath(); g.arc(sx,sy,1.1+1.2*a,0,6.3); g.fill(); } g.globalAlpha=1; }
+  // keyboard: clean white keys with soft shading, short black keys, pressed keys take the note colour
   const fs=Math.max(8,Math.min(12,kw*0.5));
-  for(const p of whites){ const b=pos[p], on=active.has(p); rr(b.x+0.5,fallH+0.5,b.w-1,KH-1,2); g.fillStyle=on?noteFill(active.get(p),false,false):'#fff'; g.fill(); g.strokeStyle='#333'; g.lineWidth=1; g.stroke();
-    g.textAlign='center'; if(on){ g.fillStyle='#fff'; g.font=`700 ${fs}px Arial,sans-serif`; g.fillText(nm(p,flats),b.x+b.w/2,fallH+KH-5); }
-    if(p%12===0){ g.fillStyle=on?'#fff':'#999'; g.font=`${Math.max(7,fs-3)}px Arial,sans-serif`; g.textAlign='left'; g.fillText('C'+oct(p),b.x+3,fallH+KH-(on?fs+7:5)); } }
-  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62; rr(b.x,fallH,b.w,bh,1.5); g.fillStyle=on?noteFill(active.get(p),false,true):'#222'; g.fill(); g.strokeStyle='#111'; g.lineWidth=0.8; g.stroke();
-    if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-4); } }
-  g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2; g.beginPath(); g.moveTo(0,fallH); g.lineTo(W,fallH); g.stroke();
-  g.restore();
-  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.7)'; g.font='600 14px system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W0/2,fallH/2); }
+  for(const p of whites){ const b=pos[p], on=active.has(p); const x=b.x+0.5, w=b.w-1;
+    const kg=g.createLinearGradient(0,fallH,0,fallH+KH); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,c); kg.addColorStop(1,c+'cc'); } else { kg.addColorStop(0,'#ffffff'); kg.addColorStop(0.85,'#eef1f6'); kg.addColorStop(1,'#d9dde6'); }
+    g.beginPath(); if(g.roundRect) g.roundRect(x,fallH+1,w,KH-1,[0,0,4,4]); else g.rect(x,fallH+1,w,KH-1); g.fillStyle=kg; g.fill(); g.strokeStyle=on?'rgba(0,0,0,.25)':'#b9bfcc'; g.lineWidth=1; g.stroke();
+    g.textAlign='center'; if(on){ g.fillStyle='#fff'; g.font=`700 ${fs}px Inter,Arial,sans-serif`; g.fillText(nm(p,flats),b.x+b.w/2,fallH+KH-7); }
+    if(p%12===0){ g.fillStyle=on?'#fff':'#8a93a6'; g.font=`600 ${Math.max(8,fs-2)}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText('C'+oct(p),b.x+b.w/2,fallH+KH-(on?fs+10:7)); } }
+  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62;
+    const kg=g.createLinearGradient(0,fallH,0,fallH+bh); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,c); kg.addColorStop(1,c+'dd'); } else { kg.addColorStop(0,'#2b3040'); kg.addColorStop(1,'#0c0f16'); }
+    g.beginPath(); if(g.roundRect) g.roundRect(b.x,fallH,b.w,bh,[0,0,3,3]); else g.rect(b.x,fallH,b.w,bh); g.fillStyle=kg; g.fill(); g.strokeStyle='#06080d'; g.lineWidth=1; g.stroke();
+    if(!on){ g.fillStyle='rgba(255,255,255,.10)'; g.fillRect(b.x+2,fallH+1,b.w-4,bh*0.55); }
+    if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-5); } }
+  // the line where notes land
+  const lg=g.createLinearGradient(0,fallH-3,0,fallH+2); lg.addColorStop(0,'rgba(255,255,255,0)'); lg.addColorStop(1,'rgba(255,255,255,.55)'); g.fillStyle=lg; g.fillRect(0,fallH-3,W,5);
+  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.72)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W0/2,fallH/2); }
 }
 
 /* ---------- MIDI export (format 0) ---------- */
@@ -315,8 +328,8 @@ function init(){
   $('txBack').onclick=()=>seek(S.loopA!=null?S.loopA:cur()-5);
   $('txSeek').oninput=e=>seek(+e.target.value/100);
   $('txSpeed').onchange=e=>{ S.rate=+e.target.value; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
-  try{ const k=+localStorage.getItem('tx-kbd'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
-  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd',e.target.value); }catch(_){} fitRange(); draw(cur()); };
+  try{ const k=+localStorage.getItem('tx-kbd2'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
+  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd2',e.target.value); }catch(_){} fitRange(); draw(cur()); };
   $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
   try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
   updLegend();
