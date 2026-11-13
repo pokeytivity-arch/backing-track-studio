@@ -350,6 +350,8 @@ audio{width:100%}
 .t-msg.bot p{margin:0 0 .5em}.t-msg.bot p:last-child{margin:0}
 .t-msg.err{background:transparent;border:1px dashed var(--danger);color:var(--danger)}
 .t-msg.wait{opacity:.7;font-style:italic}
+.t-load{display:inline-block;margin:10px 8px 0 0;padding:6px 12px;font:inherit;font-weight:600;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.t-load small{font-weight:400;opacity:.85}
 .t-copy{display:block;margin:8px 0 0;padding:2px 8px;font:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit;opacity:.75;cursor:pointer}
 .t-copy:hover,.t-copy:focus-visible{opacity:1}
 .t-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -746,7 +748,7 @@ function parseChart(text, tr, barLen){
     bars.push(cells); step += barLen;
   });
   const firstChord = (events.find(e=>e.chord)||{}).chord;
-  const flats = useFlats(firstChord);
+  const flats = (S.flatsHint===true||S.flatsHint===false) ? S.flatsHint : useFlats(firstChord);
   events.forEach(e=>{
     if(e.chord && e.chord.voicing) e.name=chordName(e.chord, flats);
     else if(e.chord && !tr){ const m=e.label.match(/^([A-G][#b♯♭]?)([^/]*)(?:\/(.+))?$/); e.name={root:prettyNote(m[1]), q:prettySuffix(m[2].replace('6/9','69'))+(m[3]?'/'+prettyNote(m[3]):'')}; }
@@ -2428,7 +2430,27 @@ function tCopyFallback(text,done){
   try{ document.execCommand('copy'); done(); }catch(e){ toast('Could not copy. Select the text and copy it by hand.'); }
   ta.remove();
 }
-function tChatText(){ return T.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+m.content).join('\n\n'); }
+const T_KEYS={'-6':'G♭','-5':'G','-4':'A♭','-3':'A','-2':'B♭','-1':'B','0':'C','1':'D♭','2':'D','3':'E♭','4':'E','5':'F','6':'G♭'};
+function tSplit(txt){
+  const blocks=[]; let t=String(txt||'');
+  t=t.replace(/```studio\s*([\s\S]*?)```/g,(m,j)=>{ blocks.push(j); return ''; });
+  t=t.replace(/```studio[\s\S]*$/,'').trim();   // an unfinished block is dropped
+  const tracks=[];
+  blocks.forEach(j=>{ try{ const o=JSON.parse(j.trim()); const tr=tCleanTrack(o); if(tr) tracks.push(tr); }catch(e){} });
+  return {text:t, tracks};
+}
+function tCleanTrack(o){
+  if(!o||typeof o.chords!=='string') return null;
+  const chords=o.chords.slice(0,1500).trim(); if(!chords) return null;
+  const meter=METERS[o.meter]?o.meter:'4/4';
+  const tr=Math.max(-11,Math.min(11,Math.round(+o.transpose||0)));
+  const style=STYLES[o.style]?o.style:'pop';
+  const t={title:String(o.title||'Practice track').slice(0,80), chords, style, bpm:clampBpm(o.bpm||STYLES[style].bpm||90), transpose:tr, meter};
+  const tonic=((tr%12)+12)%12; t.flats=[5,10,3,8,1,6].includes(tonic);
+  const old=S.flatsHint; S.flatsHint=t.flats; let bad; try{ bad=parseChart(chords,tr,METERS[meter].bar).errors.length; }catch(e){ bad=1; } S.flatsHint=old;
+  return bad?null:t;
+}
+function tChatText(){ return T.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:tSplit(m.content).text)).join('\n\n'); }
 function tFormat(txt){
   const esc=txt.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   return esc.split(/\n{2,}/).map(p=>'<p>'+p.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')+'</p>').join('');
@@ -2436,7 +2458,7 @@ function tFormat(txt){
 function tRender(extra){
   const log=$('tLog'); log.innerHTML='';
   if(!T.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Onyemachi Chuku**, the AI coach representing the director of the Hear and Play VIP Coaching program, built from his lessons. Ask me about chords, scales, ear training, or the chart you're playing right now. How many of us are ready? Let's go!"); log.appendChild(d); }
-  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else { d.innerHTML=tFormat(m.content); const b=document.createElement('button'); b.type='button'; b.className='t-copy'; b.textContent='Copy'; b.onclick=()=>tCopy(m.content); d.appendChild(b); } log.appendChild(d); });
+  T.log.forEach(m=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot'); if(m.role==='user') d.textContent=m.content; else { const sp=tSplit(m.content); d.innerHTML=tFormat(sp.text); sp.tracks.forEach(tk=>{ const lb=document.createElement('button'); lb.type='button'; lb.className='t-load'; const kn=T_KEYS[String(tk.transpose)]||''; lb.innerHTML='▶ Load into the Studio <small></small>'; lb.querySelector('small').textContent='· '+tk.title+(kn?' ('+kn+')':''); lb.onclick=()=>{ loadTrack(tk); S.flatsHint=tk.flats; rebuild(); toast('Loaded. Press Play to practice.'); }; d.appendChild(lb); }); const b=document.createElement('button'); b.type='button'; b.className='t-copy'; b.textContent='Copy'; b.onclick=()=>tCopy(sp.text); d.appendChild(b); } log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
   log.scrollTop=log.scrollHeight;
   $('tChips').hidden=T.log.length>0;
@@ -2519,7 +2541,7 @@ let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
 const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,meter:S.meter,form:S.form,lead:S.lead,...(S.bassLine?{bassLine:S.bassLine,useHum:S.useHum}:{})});
 function loadTrack(t){
   if(playing) stop();
-  S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0;
+  S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0; S.flatsHint=(typeof t.flats==='boolean')?t.flats:null;
   S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; if(t.lead&&SOLOISTS.hasOwnProperty(t.lead)) S.lead=t.lead;
   S.bassLine=Array.isArray(t.bassLine)?t.bassLine:null; S.useHum=!!t.useHum&&!!S.bassLine; humSync();
   $('title').value=S.title; $('chords').value=S.chords; syncTempo(); renderStyles(); renderSoloists(); renderMix(); setMeter(t.meter||'4/4',{snap:false,convert:false});
