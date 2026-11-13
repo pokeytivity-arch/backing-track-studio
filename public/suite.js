@@ -113,11 +113,15 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard[data-k=studio]{--pp:center 55%}
 #suiteHub .dcard[data-k=plus]{--pp:35% 30%}
 #suiteHub .dcard .ic{margin-top:-6px}
+
+#suiteHub .sub{width:min(1240px,94vw);max-width:none;position:relative;left:50%;transform:translateX(-50%);font-size:clamp(14px,1.45vw,17px);display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;color:#d0d7e6;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+#suiteHub .sub i{font-style:normal;color:var(--hi,#ffd43b);opacity:.9}
+@media (max-width:1060px){#suiteHub .sub{width:auto;left:0;transform:none;flex-direction:column;align-items:center;gap:4px}#suiteHub .sub i{display:none}}
 `; document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
-hub.innerHTML='<div class="in"><h1>Piano Suite</h1><p class="sub">Learn with the coach, practice with a full band, and transcribe what you hear. Choose where you want to go.</p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
+hub.innerHTML='<div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
 
 const ICONS={

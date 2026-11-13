@@ -39,12 +39,12 @@
   const STEPS={
     ios:[ 'Open this page in <b>Safari</b>. Other browsers on iPhone can\'t add apps.', 'Tap the <b>Share</b> button '+I.share+' (bottom of the screen on iPhone, top on iPad).', 'Scroll down and tap <b>Add to Home Screen</b> '+I.plus+'.', 'Tap <b>Add</b>. The Piano Suite icon now sits on your home screen and opens full screen, like an app.' ],
     android:[ 'Open this page in <b>Chrome</b>.', 'Tap the menu '+I.dots+' at the top right.', 'Tap <b>Install app</b> (or <b>Add to Home screen</b>).', 'Tap <b>Install</b>. Find Piano Suite with your other apps.' ],
-    desktop:[ 'Use <b>Chrome</b> or <b>Edge</b>.', 'Click the install icon '+I.mon+' at the right end of the address bar. (Or open the browser menu and choose <b>Install Piano Suite</b>.)', 'Click <b>Install</b>. It opens in its own window and shows up in your apps.', '<b>Safari on Mac:</b> File → <b>Add to Dock</b>.' ]};
+    desktop:[ 'Use <b>Chrome</b> or <b>Edge</b>.', 'Click the install icon '+I.mon+' at the right end of the address bar. (Or open the browser menu and choose <b>Install</b>.)', 'Click <b>Install</b>. It opens in its own window and shows up in your apps.', '<b>Safari on Mac:</b> File → <b>Add to Dock</b>.' ]};
   const TAB={ios:'iPhone / iPad',android:'Android',desktop:'Computer'};
   let cur=which, box=null;
   function build(){
-    box=document.createElement('div'); box.id='psInst'; box.setAttribute('role','dialog'); box.setAttribute('aria-label','Install Piano Suite');
-    box.innerHTML='<div class="pi"><h2><img src="icon-192.png" alt="">Install Piano Suite</h2><p class="pi-sub">Open it from your home screen like any app: full screen, no browser bars, and it loads faster.</p><div id="piGo"></div><div class="pi-tabs" id="piTabs"></div><ol id="piSteps"></ol><div class="pi-foot"><span>Your saved work stays on this device.</span><button class="pi-x" type="button">Close</button></div></div>';
+    box=document.createElement('div'); box.id='psInst'; box.setAttribute('role','dialog'); box.setAttribute('aria-label','Install Pokeytivity Piano Suite');
+    box.innerHTML='<div class="pi"><h2><img src="icon-192.png" alt="">Install Pokeytivity Piano Suite</h2><p class="pi-sub">Open it from your home screen like any app: full screen, no browser bars, and it loads faster.</p><div id="piGo"></div><div class="pi-tabs" id="piTabs"></div><ol id="piSteps"></ol><div class="pi-foot"><span>Your saved work stays on this device.</span><button class="pi-x" type="button">Close</button></div></div>';
     document.body.appendChild(box);
     box.querySelector('.pi-x').onclick=close; box.addEventListener('click',e=>{ if(e.target===box) close(); });
     document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&box.classList.contains('on')) close(); });
@@ -64,7 +64,7 @@
     try{ if(localStorage.getItem('ps-installed')||+localStorage.getItem('ps-inst-no')>Date.now()) return; }catch(_){}
     if(matchMedia('(min-width:900px)').matches) return;
     const b=document.createElement('div'); b.id='psInstBar';
-    b.innerHTML='<img src="icon-192.png" alt=""><span>Install Piano Suite on your '+(ios?'iPhone':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
+    b.innerHTML='<img src="icon-192.png" alt=""><span>Install Pokeytivity Piano Suite on your '+(ios?'iPhone':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
     b.querySelector('.go').onclick=()=>{ open(); };
     b.querySelector('.no').onclick=()=>{ b.remove(); try{ localStorage.setItem('ps-inst-no',String(Date.now()+14*864e5)); }catch(_){} };
     document.body.appendChild(b);

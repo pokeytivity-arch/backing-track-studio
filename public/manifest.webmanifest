@@ -1,6 +1,6 @@
 {
- "name": "Piano Suite",
- "short_name": "Piano Suite",
+ "name": "Pokeytivity Piano Suite",
+ "short_name": "Pokeytivity",
  "start_url": "/",
  "scope": "/",
  "display": "standalone",
