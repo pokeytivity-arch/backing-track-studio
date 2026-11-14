@@ -88,7 +88,7 @@ function voicingsFor(root,K){
 }
 
 /* ----- the room ----- */
-let ov=null, kbSize=61; try{ const v=+localStorage.getItem('vc-kbd'); if(v===61||v===76||v===88) kbSize=v; }catch(_){}
+let ov=null, last=null, kbSize=61; try{ const v=+localStorage.getItem('vc-kbd'); if(v===61||v===76||v===88) kbSize=v; }catch(_){}
 const KB={61:[36,96,900],76:[28,103,1020],88:[21,108,1120]};
 const css=el('style'); css.textContent=`
 #vcRoom{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:9999;background:var(--stage,#070b14);color:var(--stage-ink,#fff);display:flex;flex-direction:column;gap:16px;overflow:auto;padding:18px clamp(16px,3vw,34px) 40px;font-family:var(--body,system-ui)}
@@ -106,6 +106,8 @@ const css=el('style'); css.textContent=`
 #vcRoom .vc-card{display:grid;gap:8px;padding:14px 16px;border:1.5px solid #34446c;border-radius:16px;background:rgba(16,23,40,.6)}
 #vcRoom .vc-f{font:800 22px ui-monospace,Menlo,monospace;color:var(--hi,#ffd43b);letter-spacing:.03em}
 #vcRoom .vc-d{color:var(--hi,#ffd43b);font:800 20px var(--body,system-ui)}#vcRoom .vc-n{font:600 14px ui-monospace,Menlo,monospace;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-b[aria-pressed=true]{border-color:var(--hi,#ffd43b);color:var(--hi,#ffd43b)}
+#vcRoom #vcPad{position:sticky;bottom:0;margin-top:auto;display:grid;gap:8px;padding:10px;background:#0a0e17;box-sizing:border-box;width:100%;border:1.5px solid #34446c;border-radius:16px;z-index:3}#vcPad[hidden]{display:none}
+#vcRoom .vc-kr{display:flex;gap:8px;justify-content:center}#vcRoom .vc-k{flex:1 1 0;min-width:0;max-width:90px;min-height:52px;border-radius:12px;border:1.5px solid #3a4a74;background:#16203a;color:inherit;font:800 22px var(--body,system-ui);cursor:pointer}#vcRoom .vc-k.acc{color:var(--hi,#ffd43b)}#vcRoom .vc-k.wide{max-width:none;font-size:15px}#vcRoom .vc-kr{min-width:0}#vcRoom .vc-k.pri{background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28);border:0}
 #vcRoom .vc-n .l{color:#6db3ff}#vcRoom .vc-n .r{color:#ff9a4a}
 #vcRoom .vc-leg{display:flex;gap:14px;font-size:13px;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 `; document.head.appendChild(css);
@@ -113,11 +115,25 @@ function build(){
   ov=el('div'); ov.id='vcRoom'; ov.hidden=true; ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','Voicings');
   ov.innerHTML='<div class="vc-top"><button class="vc-x" type="button" aria-label="Back" title="Back">←</button><h1>Voicings</h1></div>'
    +'<div class="vc-sub">Type the notes of a chord, in any order or inversion, and see its voicings on the keyboard.</div>'
-   +'<div class="vc-row"><input id="vcIn" type="text" placeholder="C E G   or   Bb D F   or   C E G B D" aria-label="Chord notes" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="vc-b pri" id="vcGo" type="button">Show voicings</button></div>'
+   +'<div class="vc-row"><input id="vcIn" type="text" placeholder="C E G   or   Bb D F   or   C E G B D" aria-label="Chord notes" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="vc-b pri" id="vcGo" type="button">Show voicings</button><button class="vc-b" id="vcAsk" type="button">Ask Pokey</button></div>'
    +'<div class="vc-row" id="vcKb" role="group" aria-label="Keyboard size"><span class="vc-sub">Keyboard:</span></div>'
-   +'<div class="vc-msg" id="vcMsg" aria-live="polite"></div><div id="vcOut"></div>';
+   +'<div class="vc-row"><button class="vc-b" id="vcKeys" type="button" aria-pressed="false">Note keys</button><span class="vc-sub">Letters and ♯ ♭ keys for typing a chord</span></div>'
+   +'<div class="vc-msg" id="vcMsg" aria-live="polite"></div><div id="vcOut"></div><div id="vcPad" hidden></div>';
   document.body.appendChild(ov);
   const kb=ov.querySelector('#vcKb'); [61,76,88].forEach(n=>{ const b=el('button','vc-b',n+' keys'); b.type='button'; b.dataset.n=n; b.onclick=()=>{ kbSize=n; try{ localStorage.setItem('vc-kbd',String(n)); }catch(_){} syncKb(); const t=ov.querySelector('#vcIn').value; if(ov.querySelector('#vcOut').children.length) run(t); }; kb.appendChild(b); }); syncKb();
+  const inp=ov.querySelector('#vcIn'), pad=ov.querySelector('#vcPad'), coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+  if(coarse) inp.setAttribute('inputmode','none');
+  const showPad=on=>{ pad.hidden=!on; ov.querySelector('#vcKeys').setAttribute('aria-pressed',String(on)); if(on){ try{ pad.scrollIntoView({block:'nearest'}); }catch(_){} } };
+  const put=t=>{ const a=inp.selectionStart==null?inp.value.length:inp.selectionStart, b=inp.selectionEnd==null?a:inp.selectionEnd; inp.value=inp.value.slice(0,a)+t+inp.value.slice(b); const c=a+t.length; try{ inp.setSelectionRange(c,c); }catch(_){} };
+  const back=()=>{ const a=inp.selectionStart==null?inp.value.length:inp.selectionStart, b=inp.selectionEnd==null?a:inp.selectionEnd; if(a!==b){ put(''); return; } if(a>0){ inp.value=inp.value.slice(0,a-1)+inp.value.slice(a); try{ inp.setSelectionRange(a-1,a-1); }catch(_){} } };
+  const key=(t,fn,cls,lab)=>{ const b=el('button','vc-k'+(cls?' '+cls:''),t); b.type='button'; if(lab) b.setAttribute('aria-label',lab); b.addEventListener('pointerdown',e=>e.preventDefault()); b.onclick=()=>{ fn(); inp.focus({preventScroll:true}); }; pad.appendChild(b); return b; };
+  const r1=el('div','vc-kr'), r2=el('div','vc-kr'), r3=el('div','vc-kr'); pad.append(r1,r2,r3); let tgt=r1;
+  'CDEFGAB'.split('').forEach(L=>{ const b=key(L,()=>put(L),'',null); r1.appendChild(b); });
+  [['♯','♯','Sharp'],['♭','♭','Flat'],['♯♯','♯♯','Double sharp'],['♭♭','♭♭','Double flat']].forEach(([t,v,l])=>{ r2.appendChild(key(t,()=>put(v),'acc',l)); });
+  r3.appendChild(key('space',()=>put(' '),'wide','Space')); r3.appendChild(key('⌫',back,'wide','Delete')); r3.appendChild(key('Show',()=>ov.querySelector('#vcGo').click(),'wide pri')); r3.appendChild(key('Hide',()=>showPad(false),'wide','Hide note keys'));
+  inp.addEventListener('focus',()=>{ if(coarse) showPad(true); }); inp.addEventListener('click',()=>{ if(coarse) showPad(true); });
+  ov.querySelector('#vcKeys').onclick=()=>{ showPad(pad.hidden); if(!pad.hidden) inp.focus({preventScroll:true}); };
+  ov.querySelector('#vcAsk').onclick=()=>{ const q=last?('I am looking at the voicings for '+last.name+' ('+last.notes+'). Explain the voicing techniques to me and give me more voicings of this chord.'):'Explain chord voicings to me: what the techniques are and when to use each one.'; close(); if(window.CLASS&&CLASS.askAbout) CLASS.askAbout(q,{fresh:true}); };
   ov.querySelector('.vc-x').onclick=close; document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape'&&e.target.tagName!=='INPUT') close(); });
   const go=()=>run(ov.querySelector('#vcIn').value); ov.querySelector('#vcGo').onclick=go; ov.querySelector('#vcIn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); go(); } };
 }
@@ -125,7 +141,7 @@ function syncKb(){ ov.querySelectorAll('#vcKb button').forEach(b=>b.setAttribute
 function run(text){
   const out=ov.querySelector('#vcOut'), msg=ov.querySelector('#vcMsg'); out.textContent=''; msg.textContent='';
   let res; try{ const notes=readNotes(text); if(!notes.length){ msg.textContent='Type the notes first.'; return; } res=identify(notes); res.list=voicingsFor(res.root,res.K); res.T=tones(res.root,res.K); }catch(e){ msg.textContent=e.message; return; }
-  const nm=res.root.L+SYM[res.root.d]+' '+res.K.name, deg=Object.keys(res.T).map(k=>res.T[k].label).join('  ');
+  const nm=res.root.L+SYM[res.root.d]+' '+res.K.name; last={name:nm,notes:String(text).trim()}; const deg=Object.keys(res.T).map(k=>res.T[k].label).join('  ');
   out.appendChild(el('div','vc-name',nm)); out.appendChild(el('div','vc-sub','Chord tones: '+deg));
   let grp=''; res.list.forEach(v=>{
     if(v.group!==grp){ grp=v.group; out.appendChild(el('h2',null,grp)); }
