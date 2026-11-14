@@ -27,9 +27,9 @@ const midiName=m=>NAMES[((m%12)+12)%12];
 
 /* ---------- look: the same dark stage as the Studio ---------- */
 const css=document.createElement('style'); css.textContent=`
-#earRoom{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:9998;background:var(--stage,#070b14);color:var(--stage-ink,#fff);display:flex;flex-direction:column;gap:18px;overflow:auto;padding:18px clamp(16px,3vw,34px) 28px;font-family:var(--body,system-ui)}
-#earRoom[hidden]{display:none}
-#earRoom button{font-family:inherit}
+#earRoom,#prRoom{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:9998;background:var(--stage,#070b14);color:var(--stage-ink,#fff);display:flex;flex-direction:column;gap:18px;overflow:auto;padding:18px clamp(16px,3vw,34px) 28px;font-family:var(--body,system-ui)}
+#earRoom[hidden],#prRoom[hidden]{display:none}
+#earRoom button,#prRoom button,#prRoom input,#prRoom select{font-family:inherit}
 .e-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .e-top h1{margin:0;font:800 clamp(24px,3.6vw,38px)/1 var(--display,var(--body));letter-spacing:-.02em;text-transform:none}
 .e-round{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--k6b5826,#3a4a74);background:transparent;color:inherit;font-size:18px;cursor:pointer}
@@ -79,7 +79,7 @@ function build(){
   document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape') close(); });
 }
 function open(){ if(!ov) build(); ov.hidden=false; render(); }
-function close(){ clr(); if(ov) ov.hidden=true; }
+function close(){ clr(); if(ov) ov.hidden=true; try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
 
 function render(){
   clr(); lit=[]; n=0; score=0; missed={}; q=null; answered=false;

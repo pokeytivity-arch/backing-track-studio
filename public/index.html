@@ -686,7 +686,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-x (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-y (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2385,14 +2385,14 @@ function fingering(lh,rh){
   L(lh); R(rh); return f;
 }
 function fingerText(lh,rh){ const f=fingering(lh,rh), s=a=>[...a].sort((x,y)=>x-y).map(m=>f[m]).join('-'); return {lh:s(lh),rh:s(rh)}; }
-function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false}={}){
+function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false,fmap=null}={}){
   const all=[...lh,...rh]; if(lo==null){ lo=Math.min(...all); lo-=((lo%12)+12)%12; } if(hi==null){ hi=Math.max(...all); hi+=11-(((hi%12)+12)%12); }
   const NS='http://www.w3.org/2000/svg', whites=[]; for(let m=lo;m<=hi;m++) if(KB_WHITE.includes(((m%12)+12)%12)) whites.push(m);
   const ww=14, W=whites.length*ww, H=height, bw=9, bh=H*0.62;
   const svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox',`0 0 ${W+2} ${H+2}`); svg.setAttribute('class','kbd'); svg.setAttribute('role','img');
   const N=['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
   svg.setAttribute('aria-label','Left hand '+lh.map(m=>N[m%12]).join(' ')+', right hand '+rh.map(m=>N[m%12]).join(' '));
-  const FG=fingers?fingering(lh,rh):{};
+  const FG=fmap||(fingers?fingering(lh,rh):{});
   const col=m=>lh.includes(m)?'#1c7ed6':rh.includes(m)?'#f76707':null;
   const el=(tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e; };
   whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1,'data-m':m});
@@ -2936,7 +2936,8 @@ init();
 <script src="suite.js" defer></script>
 <script src="class.js?v=w" defer></script>
 <script src="progress.js" defer></script>
-<script src="ear.js?v=v" defer></script>
+<script src="ear.js?v=x" defer></script>
+<script src="practice.js?v=x" defer></script>
 <script src="scales.js" defer></script>
 <script src="check.js" defer></script>
 <script src="gate.js"></script>

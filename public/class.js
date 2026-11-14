@@ -58,7 +58,7 @@ function stepsFrom(list){
 function cleanKeys(o){ if(!o) return null;
   const pack=(st,extra)=>({title:String(o.title||'').slice(0,80),mode:'melodic',dir:/^(down|updown)$/.test(o.dir||'')?o.dir:'up',steps:st.map(x=>({src:x.src,lh:x.lh,rh:x.rh,name:x.name,fing:x.fing,lfing:x.lfing}))});
   const hnd=/^(lh|left)/i.test(o.hand||'')?'lh':/both/i.test(o.hand||'')?'both':'rh';
-  if(o.scale){ const m=String(o.scale).trim().match(/^([A-Ga-g][b#]?)(?:\s*major)?$/); if(!m||!window.SCALES||!SCALES.has) return null; const k=m[1][0].toUpperCase()+m[1].slice(1), h=SCALES.has(k); if(!h) return null; const hh=(hnd!=='rh'&&!h.lh)?'rh':hnd; const r=pack(SCALES.build(k,hh)); if(!r.title) r.title=k+' major'; return r; }
+  if(o.scale){ const m=String(o.scale).trim().match(/^([A-Ga-g][b#]?)(?:\s*major)?$/); if(!m||!window.SCALES||!SCALES.has) return null; const k=m[1][0].toUpperCase()+m[1].slice(1), h=SCALES.has(k); if(!h) return null; const r=pack(SCALES.build(k,hnd)); if(!r.title) r.title=k+' major'; return r; }
   if(Array.isArray(o.notes)){ const st=[]; o.notes.slice(0,16).forEach(n=>{ const nm=typeof n==='string'?n:String((n&&(n.n||n.note))||''), f=(n&&typeof n==='object'&&n.f!=null)?String(n.f).slice(0,6):''; const mid=notesList([nm])[0]; if(mid==null) return; const lab=nm.replace(/[0-9\-]+$/,'');
       st.push({src:nm,name:lab,lh:hnd==='lh'?[mid]:[],rh:hnd==='lh'?[]:[mid],fing:hnd==='lh'?'':f,lfing:hnd==='lh'?f:''}); }); return st.length?pack(st):null; } const st=stepsFrom(o.steps||o.chords&&String(o.chords).split(/[|\s]+/).filter(Boolean)); return st.length?{title:String(o.title||'').slice(0,80),steps:st.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing,lfing:s.lfing}))}:null; }
 
@@ -98,7 +98,8 @@ async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=l
 const KB_R={88:[21,108],76:[28,103],61:[36,96]};
 function drawKeys(){
   const wrap=$('clKbdWrap'); if(!wrap) return; const [lo,hi]=KB_R[K.size]||KB_R[61], s=K.steps[K.i];
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:K.mode!=='melodic'});
+  let fm=null; if(K.mode==='melodic'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:K.mode!=='melodic',fmap:fm});
   svg.querySelectorAll('rect').forEach((r,idx)=>{ r.style.cursor='pointer'; });
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','var(--ke8c25a,#ffd43b)'); sound(m,1.4,0.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
@@ -118,7 +119,6 @@ function setMode(m,keep){
 }
 function showScale(key,hand,dir){
   if(!window.SCALES||!SCALES.build) return; const h=SCALES.has(key); if(!h) return;
-  if(hand!=='rh'&&!h.lh){ hand='rh'; toast('Left-hand fingering for '+key+' major is not in the lessons yet. Showing the right hand.'); }
   if(dir){ K.dir=dir; if($('clScDir')) $('clScDir').value=dir; }
   const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   setSteps(key+' major: 3+4 ('+hs+')',SCALES.build(key,hand),{mode:'melodic'}); setPane('keys');
@@ -271,7 +271,7 @@ async function ask(q,opts){
 
 /* ---------- the list of previous chats ---------- */
 let view='home', slideAfterLoad=false, practice=false;
-function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||!!practice); document.body.dataset.clMini=(view==='chat'||practice==='scales'||practice==='chords')?'1':''; }
+function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||!!practice); document.body.dataset.clMini=(view==='chat')?'1':''; }
 function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; practice=false; syncBar(); h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
 function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; syncBar(); { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
 let pane='board';
@@ -592,8 +592,8 @@ function build(){
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
     if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
     else if(g==='ear'){ practice='ear'; syncBar(); if(window.EAR) EAR.open(); }
-    else if(g==='scales'){ practice='scales'; syncBar(); slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
-    else if(g==='chords'){ practice='chords'; syncBar(); setPane('keys'); setMode('harmonic'); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
+    else if(g==='scales'){ practice='scales'; syncBar(); if(window.PRACTICE) PRACTICE.open('scales'); }
+    else if(g==='chords'){ practice='chords'; syncBar(); if(window.PRACTICE) PRACTICE.open('chords'); } });
   $('clDots').onclick=()=>slide(!$('clSlide').classList.contains('on')); $('clX').onclick=()=>slide(false);
   $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);
@@ -619,6 +619,7 @@ window.CLASS={
   // from the Studio or Studio+: open Class and ask about what the student is practicing
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
+  stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }
 };
 build();
