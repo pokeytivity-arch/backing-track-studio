@@ -30,5 +30,3 @@
 #suiteHub .pro{display:block;margin:16px auto 0;padding:12px 24px;border-radius:999px;border:0;background:var(--hi,#ffd43b);color:#151b28;font:800 16px var(--body,system-ui);cursor:pointer;box-shadow:0 10px 30px -8px rgba(0,0,0,.6)}
 #suiteHub .pro:hover{filter:brightness(1.08)}
 body[data-dest="class"] .ps-clear{display:none!important}
-#suiteHub .subpro{cursor:pointer}
-#suiteHub .subpro:hover{color:var(--hi,#ffd43b)}

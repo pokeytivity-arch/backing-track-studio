@@ -171,7 +171,7 @@ document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
-hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span><i>|</i><span class="subpro" id="psPro" role="link" tabindex="0">Get a professional practice plan</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
+hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span><i>|</i><span class="subpro" id="psPro">Get a professional practice plan</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
 
 const ICONS={
@@ -191,7 +191,6 @@ function renderHub(){
   if(!matchMedia('(hover:none)').matches) box.querySelectorAll('.dcard').forEach(c=>{
     c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); });
   });
-  { const pr=document.getElementById('psPro'); pr.onclick=()=>go('challenge'); pr.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go('challenge'); } }; }
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
