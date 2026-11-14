@@ -9,7 +9,7 @@ const KEY='ps-dest';
 const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
-  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice. Choose an audio file or record with the microphone, and Pokey finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.',panel:'transcribe'},
+  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
   challenge:{name:'90 Day Challenge',icon:'🏆',blurb:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.',panel:null}
 };
@@ -171,7 +171,7 @@ document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
-hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span></p><div class="cards" id="psCards"></div><button type="button" class="pro" id="psPro">⭐ Get a professional practice plan</button><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
+hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span><i>|</i><span class="subpro" id="psPro" role="link" tabindex="0">Get a professional practice plan</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
 
 const ICONS={
@@ -191,7 +191,7 @@ function renderHub(){
   if(!matchMedia('(hover:none)').matches) box.querySelectorAll('.dcard').forEach(c=>{
     c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); });
   });
-  document.getElementById('psPro').onclick=()=>{ go('challenge'); };
+  { const pr=document.getElementById('psPro'); pr.onclick=()=>go('challenge'); pr.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go('challenge'); } }; }
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
@@ -209,7 +209,7 @@ function go(k){
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
   if(window.CHALLENGE&&k!=='challenge') CHALLENGE.close();
-  if(k==='class'){ openPanel('teacher'); setTimeout(()=>{ const i=document.getElementById('tInput'); if(i) i.focus({preventScroll:true}); },80); }
+  if(k==='class'){ openPanel('teacher'); setTimeout(()=>{ try{ if(window.CLASS&&CLASS.welcome) CLASS.welcome(); }catch(_){} },120); }
   else if(k==='plus'){ openPanel('transcribe'); if(window.TX&&TX.restoreLast) TX.restoreLast(); }
   else if(k==='account'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.ACCOUNT) ACCOUNT.open(); }
   else if(k==='challenge'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.CHALLENGE) CHALLENGE.open(); }

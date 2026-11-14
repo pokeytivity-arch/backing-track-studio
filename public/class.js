@@ -234,7 +234,8 @@ async function ask(q,opts){
 
 /* ---------- the list of previous chats ---------- */
 let view='home', slideAfterLoad=false;
-function setView(v){ view=v; const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
+function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
+function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
 function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
 function drawer(open){
@@ -321,12 +322,32 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-dots{margin-left:auto;font-size:22px;line-height:1;padding:2px 14px 6px;position:relative}
 .cl-dots.new:after{content:"";position:absolute;top:4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--hi);box-shadow:0 0 0 0 var(--hi);animation:clPulse 1.4s infinite}
 @keyframes clPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}100%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}
-.cl-home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:860px;width:100%;margin:8px auto;align-content:start;flex:1}
-.cl-box{display:grid;gap:6px;text-align:left;padding:22px 22px 20px;border-radius:20px;border:1.5px solid var(--k6b5826,#34446c);background:var(--k0d0b07,#0c1222);color:var(--stage-ink);cursor:pointer;font:inherit;min-height:150px;align-content:start;transition:border-color .2s,box-shadow .2s,background .2s}
-.cl-box:hover,.cl-box:focus-visible{border-color:var(--hi);box-shadow:0 0 0 1px var(--hi),0 14px 34px -12px rgba(0,0,0,.6)}
-.cl-box i{font-style:normal;font-size:34px;line-height:1}
-.cl-box b{font:800 24px var(--display);letter-spacing:-.01em}
-.cl-box span{color:var(--stage-muted);font:500 15px/1.4 var(--body)}
+.cl-home{display:flex;flex-direction:column;gap:18px;max-width:940px;width:100%;margin:6px auto;flex:1;overflow:hidden;padding:6px}
+.cl-welcome{margin:0 auto;max-width:780px;text-align:center;font:500 clamp(16px,2.1vw,20px)/1.55 var(--body);color:var(--stage-ink)}
+.cl-welcome b{color:var(--hi);letter-spacing:.04em}
+.cl-four{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.cl-box{position:relative;display:flex;flex-direction:column;gap:10px;text-align:left;padding:26px 26px 22px;min-height:215px;border-radius:26px;border:1px solid rgba(var(--gl),.45);background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);color:#fff;cursor:pointer;font:inherit;box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 -2px 0 rgba(0,0,0,.45) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -14px rgba(0,0,0,.75);transition:box-shadow .3s,border-color .3s,background .3s}
+.cl-box:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.3),transparent 58%);opacity:0;transition:opacity .25s}
+.cl-box:hover,.cl-box:focus-visible{border-color:rgba(var(--gl),.95);background:linear-gradient(165deg,var(--g1) -20%,var(--g2) 68%);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 0 0 2px rgba(var(--gl),.7),0 0 60px 4px rgba(var(--gl),.6),0 0 140px 16px rgba(var(--gl),.3),0 30px 50px -14px rgba(0,0,0,.8);outline:0}
+.cl-box:hover:before,.cl-box:focus-visible:before{opacity:1}
+.cl-box .ic{width:64px;height:64px;border-radius:19px;display:grid;place-items:center;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.28) inset,0 10px 18px -4px var(--c2)}
+.cl-box .ic svg{width:38px;height:38px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
+.cl-box b{font:800 27px var(--display);letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+.cl-box span{color:rgba(255,255,255,.82);font:500 16px/1.45 var(--body)}
+.cl-box .go{align-self:flex-start;margin-top:auto;font-style:normal;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);font:700 14px var(--body)}
+.cl-box:hover .go{background:var(--hi);color:var(--hi-ink);border-color:transparent}
+.cl-in .cl-welcome{animation:clFade 1s ease both}
+.cl-in .cl-box{animation-duration:.95s;animation-timing-function:cubic-bezier(.18,.9,.25,1);animation-fill-mode:both}
+.cl-in .cl-box[data-k=chat]{animation-name:clFromTop;animation-delay:.15s}
+.cl-in .cl-box[data-k=ear]{animation-name:clFromRight;animation-delay:.35s}
+.cl-in .cl-box[data-k=scales]{animation-name:clFromLeft;animation-delay:.55s}
+.cl-in .cl-box[data-k=chords]{animation-name:clFromBottom;animation-delay:.75s}
+@keyframes clFade{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes clFromTop{from{transform:translateY(-130%);opacity:0}to{transform:none;opacity:1}}
+@keyframes clFromBottom{from{transform:translateY(130%);opacity:0}to{transform:none;opacity:1}}
+@keyframes clFromLeft{from{transform:translateX(-130%);opacity:0}to{transform:none;opacity:1}}
+@keyframes clFromRight{from{transform:translateX(130%);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.cl-in .cl-box,.cl-in .cl-welcome{animation:none}}
 .cl-chat{max-width:900px;width:100%;margin:0 auto;flex:1}
 .cl-chat[hidden],.cl-home[hidden]{display:none!important}
 .cl-chathead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -341,7 +362,7 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-areahead span{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
 .cl-areahead .btn,.cl-khead .btn{padding:4px 11px!important;font-size:12px!important}
 .cl-slide .cl-left{overflow:visible;padding:0}
-@media(max-width:700px){.cl-home{grid-template-columns:1fr}.cl-box{min-height:0}.cl-slide{position:fixed;top:36px;left:0;right:0;bottom:0;width:100%;border-radius:0;z-index:150001}.cl-turn{display:block}}
+@media(max-width:700px){.cl-four{grid-template-columns:1fr}.cl-box{min-height:0}.cl-slide{position:fixed;top:36px;left:0;right:0;bottom:0;width:100%;border-radius:0;z-index:150001}.cl-turn{display:block}}
 @media(max-width:900px) and (orientation:landscape) and (max-height:520px){.cl-slide{position:fixed;top:36px;left:0;right:0;bottom:0;width:100%;border-radius:0;z-index:150001}.cl-slide .cl-left{flex-direction:row;align-items:flex-start;gap:10px}.cl-slide .cl-boardwrap{flex:0 0 38%;min-width:0}.cl-slide .cl-keys{flex:1;min-width:0}.cl-face{max-height:50vh}.cl-turn{display:none}}
 
 `;
@@ -359,10 +380,13 @@ function build(){
     <button class="btn cl-dots" id="clDots" type="button" aria-label="Whiteboard and keyboard" aria-expanded="false" title="Whiteboard and keyboard">⋯</button>
   </div>
   <div class="cl-home" id="clHome">
-    <button type="button" class="cl-box" data-go="chat"><i>💬</i><b>Consultation</b><span>Talk it through with Pokey, one step at a time.</span></button>
-    <button type="button" class="cl-box" data-go="ear"><i>🎧</i><b>Ear training</b><span>Train your ear with short quizzes.</span></button>
-    <button type="button" class="cl-box" data-go="scales"><i>🎼</i><b>Scales</b><span>Load a scale on the keyboard with fingering.</span></button>
-    <button type="button" class="cl-box" data-go="chords"><i>🎹</i><b>Chords</b><span>Type chords and see and hear them on the keyboard.</span></button>
+    <p class="cl-welcome">Welcome to class today, from consultation sessions, to scale and chord practice sessions and ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.</p>
+    <div class="cl-four">
+    <button type="button" class="cl-box" data-go="chat" data-k="chat" style="--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H25l-9 8v-8H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3Z" fill="#fff"/><circle cx="16" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="24" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="32" cy="21.5" r="2.4" fill="#2a45c9"/></svg></i><b>Consultation</b><span>Talk it through with Pokey, one step at a time.</span><em class="go">Open →</em></button>
+    <button type="button" class="cl-box" data-go="ear" data-k="ear" style="--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255;--c1:#b78bff;--c2:#6a35d8"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg></i><b>Ear training</b><span>Train your ear with short quizzes.</span><em class="go">Open →</em></button>
+    <button type="button" class="cl-box" data-go="scales" data-k="scales" style="--g1:#e0911a;--g2:#3b2205;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/><path d="M6 36h36" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></i><b>Scales</b><span>Load a scale on the keyboard with fingering.</span><em class="go">Open →</em></button>
+    <button type="button" class="cl-box" data-go="chords" data-k="chords" style="--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg></i><b>Chords</b><span>Type chords and see and hear them on the keyboard.</span><em class="go">Open →</em></button>
+    </div>
   </div>
   <div class="cl-chat" id="clChatView" hidden>
     <div class="cl-chathead"><span class="cl-chatname" id="clName"></span><span class="cl-chatbtns"><button class="btn" id="tCopyAll" type="button">Copy chat</button><button class="btn" id="clClrChat" type="button" title="Wipe this chat">Clear chat</button></span></div>
@@ -420,6 +444,7 @@ function build(){
   hotInit();
   $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
+  document.querySelectorAll('.cl-box').forEach(b=>b.addEventListener('pointermove',e=>{ const r=b.getBoundingClientRect(); b.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); b.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); }));
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
     if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
     else if(g==='ear'){ if(window.EAR) EAR.open(); }
@@ -439,7 +464,7 @@ function build(){
 
 window.CLASS={
   sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{}); if(slideAfterLoad){ slideAfterLoad=false; slide(true); } },
-  back,slide,setView,
+  back,slide,setView,welcome,
   init:build,
   ask,
   // from the Studio or Studio+: open Class and ask about what the student is practicing
