@@ -485,13 +485,6 @@ audio{width:100%}
         <div class="styles" id="styles"></div>
       </section>
 
-      <section data-panel="soloist" class="card">
-        <h2>Soloist</h2>
-        <div class="styles" id="soloists"></div>
-        <p class="help" id="soloBlurb"></p>
-        <p class="help">Lines are generated live from each player's typical vocabulary, not taken from their recordings. They change every time through.</p>
-      </section>
-
       <section data-panel="tempo" class="card">
         <h2>Tempo and key</h2>
         <div class="field">
@@ -540,6 +533,22 @@ audio{width:100%}
 
       <section data-panel="transcribe" class="card tx" id="txCard">
         <style>
+        .tx{position:relative;overflow:hidden}
+        .tx .txtop{display:flex;align-items:center;gap:12px;margin:0 0 8px}
+        .tx .txtop #txTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #txMenuBtn{font-size:22px;line-height:1;padding:6px 14px}
+        .tx .txstage{position:relative}
+        .tx .txempty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center;padding:20px;background:#070b14;border-radius:10px 10px 0 0;bottom:27%}
+        .tx .txempty[hidden]{display:none}
+        .tx .txempty b{font:800 26px var(--display);color:var(--stage-ink,#fff)}
+        .tx .txempty span,.tx .txempty small{color:var(--stage-muted,#9fb0d8)}
+        .tx .txmenu{position:absolute;top:0;left:0;bottom:0;width:min(460px,100%);z-index:30;background:var(--stage,#070b14);border-right:1px solid var(--k6b5826,#34446c);box-shadow:20px 0 50px rgba(0,0,0,.55);padding:14px;overflow:auto;transform:translateX(-108%);visibility:hidden;transition:transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s .34s}
+        .tx .txmenu.on{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.2,.8,.2,1)}
+        .tx .txmh{display:flex;align-items:center;justify-content:space-between;font:800 17px var(--display);margin-bottom:6px}
+        .tx .txmt{margin:16px 0 4px;font:700 12px var(--body);text-transform:uppercase;letter-spacing:.1em;color:var(--stage-muted,#9fb0d8)}
+        .tx .txfine{margin:4px 0}
+        @media(max-width:700px){body[data-dest="plus"] .tx canvas{height:calc(100dvh - 235px)!important;min-height:380px}.tx .txempty{bottom:30%}}
+        @media(max-width:700px){.tx .txmenu{position:fixed;top:36px;width:100%;border-right:0;z-index:150001}}
         .tx .txrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
         .tx .txrow label{font:600 12px var(--body);color:var(--muted);display:flex;gap:6px;align-items:center}
         .tx canvas{width:100%;height:250px;display:block;border-radius:10px;background:var(--k0d0b07,#0c1222);cursor:pointer}
@@ -570,16 +579,21 @@ audio{width:100%}
         .tx .stp output,.tx .stpv{min-width:58px;text-align:center;font:800 17px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums;letter-spacing:.02em}
         .tx .stpv{min-width:34px;display:inline-block}
         </style>
-        <div class="card-h"><h2>Studio+ · Transcription</h2><span class="help">Turns audio into notes</span></div>
-        <p class="help">Choose an audio file or record with the microphone. Pokey finds the notes and drops them onto a keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.</p>
+        <div class="txtop"><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Studio+ menu" aria-expanded="false" title="Menu">☰</button>
+<div id="txTitle"></div></div>
+        <p class="help" id="txMsg" aria-live="polite"></p>
+        <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
+          <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any recording into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Choose an audio file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or open the menu ☰ for more.</small></div></div>
+        <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
+        <aside class="txmenu" id="txMenu" aria-label="Studio+ menu" aria-hidden="true">
+          <div class="txmh"><b>Studio+ menu</b><button class="btn" id="txMenuX" type="button" aria-label="Close menu">✕</button></div>
+          <h3 class="txmt">Recording</h3>
         <div class="txrow">
           <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.mp4,.mov,.m4v,.webm" hidden>
           <button class="btn rec" id="txRec">● Record with the microphone</button>
         </div>
-        <p class="help" id="txMsg" aria-live="polite"></p>
-        <div id="txTitle"></div>
-        <canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
-        <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
+          <p class="help txfine">Choose an audio file or record with the microphone. Pokey finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part.</p>
+          <h3 class="txmt">Playback and display</h3>
         <div class="txrow">
           <label>Speed <span class="stp"><button type="button" id="txSpDn" aria-label="Slower">−</button><output id="txSpeed">100%</output><button type="button" id="txSpUp" aria-label="Faster">+</button></span></label>
           <label>Transpose <span class="stp"><button type="button" id="txTrDn" aria-label="Down a semitone">−</button><output id="txTr">0</output><button type="button" id="txTrUp" aria-label="Up a semitone">+</button></span></label>
@@ -606,6 +620,8 @@ audio{width:100%}
         <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask Class about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
         <h3 style="margin:14px 0 4px;font:700 13px var(--body)">Your saved transcriptions</h3>
         <div id="txLib"></div>
+
+        </aside>
       </section>
 
       <section data-panel="mixer" class="card">
@@ -667,7 +683,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-g (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-h (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1683,9 +1699,9 @@ function renderStyles(){
 function renderMix(){
   const st=STYLES[S.style], L=SOLOISTS[S.lead];
   const names={drums:['Drums',''],bass:['Bass',''],keys:['Keys',st.keysName],extra:['Extra',st.extraName],lead:['Soloist',L?L.inst:'choose one below'],click:['Click','metronome & count-in']};
-  const anySolo=CHANNELS.some(n=>n!=='click'&&S.mix[n].solo);
+  const anySolo=CHANNELS.some(n=>n!=='click'&&n!=='lead'&&S.mix[n].solo);
   const w=$('mix'); w.replaceChildren();
-  CHANNELS.forEach(n=>{ const m=S.mix[n], row=document.createElement('div'); row.className='ch'+(m.mute?' off':'')+(anySolo&&n!=='click'&&!m.solo?' solo-off':'');
+  CHANNELS.forEach(n=>{ if(n==='lead') return; const m=S.mix[n], row=document.createElement('div'); row.className='ch'+(m.mute?' off':'')+(anySolo&&n!=='click'&&!m.solo?' solo-off':'');
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=names[n][0]; if(names[n][1]){ const sm=document.createElement('small'); sm.textContent=names[n][1]; nm.appendChild(sm); }
     const mb=document.createElement('button'); mb.className='mute'; mb.textContent='M'; mb.setAttribute('aria-pressed',m.mute); mb.setAttribute('aria-label',`Mute ${names[n][0]}`);
     const r=document.createElement('input'); r.type='range'; r.min=0; r.max=1.2; r.step=0.01; r.value=m.vol; r.id='vol-'+n; r.setAttribute('aria-label',`${names[n][0]} volume`);
@@ -2094,7 +2110,7 @@ function setMeter(v,{snap=true,convert=true}={}){
   if(S.mode==='pro'){ GRID=chartToGrid(); if(snap){ S.chords=gridToText(GRID); $('chords').value=S.chords; } }
   rebuild(); if(S.mode==='pro') renderGrid();
 }
-function renderSoloists(){
+function renderSoloists(){ return; /* the Soloist has been removed from the Studio */
   const w=$('soloists'); w.replaceChildren();
   Object.entries(SOLOISTS).forEach(([k,L])=>{ const b=document.createElement('button'); b.className='sty pickr'; b.setAttribute('aria-pressed',S.lead===k);
     b.style.setProperty('--c',L?L.color:'#868e96');
@@ -2464,8 +2480,8 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',soloist:'Soloist',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class',mixer:'Mixer',library:'Library',export:'Export audio'};
-const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],soloist:[520,480],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
+const PANELS={chart:'Chord chart',style:'Style',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class',mixer:'Mixer',library:'Library',export:'Export audio'};
+const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
 const winState=name=>store.get('bt-win-'+name,null);
@@ -2602,14 +2618,11 @@ const MENUS=[
     {label:'Speed trainer…',run:()=>goTo('trOn')}]},
   {label:'Tools',items:[
     {label:'Style…',run:()=>openPanel('style')},
-    {label:'Soloist…',run:()=>openPanel('soloist')},
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
     {label:'Class…',key:'A',run:()=>SUITE.go('class')},
     {label:'Ask Class about this chord…',run:()=>askClassFromStudio()},
-    {sep:true},
-    ...Object.entries(SOLOISTS).map(([k,L])=>({label:'Soloist: '+(L?L.name:'none'),check:()=>S.lead===k,run:()=>{ S.lead=k; if(E) E.sq=null; renderSoloists(); renderMix(); saveDraft(); toast(L?`${L.name} is soloing`:'No soloist'); }})),
     ]},
   {label:'Window',items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
@@ -2712,7 +2725,7 @@ const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.styl
 function loadTrack(t){
   if(playing) stop();
   S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0; S.flatsHint=(typeof t.flats==='boolean')?t.flats:null;
-  S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; if(t.lead&&SOLOISTS.hasOwnProperty(t.lead)) S.lead=t.lead;
+  S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; S.lead='none';
   S.bassLine=Array.isArray(t.bassLine)?t.bassLine:null; S.useHum=!!t.useHum&&!!S.bassLine; humSync();
   $('title').value=S.title; $('chords').value=S.chords; syncTempo(); renderStyles(); renderSoloists(); renderMix(); setMeter(t.meter||'4/4',{snap:false,convert:false});
   toast(`Loaded “${S.title||'track'}”`);
@@ -2832,7 +2845,7 @@ function init(){
   const base=d&&d.chords?d:EXAMPLES[0];
   S.title=base.title||''; S.chords=base.chords; S.style=STYLES[base.style]?base.style:'pop'; S.bpm=base.bpm||96; S.transpose=base.transpose||0;
   S.bassLine=Array.isArray(base.bassLine)?base.bassLine:null; S.useHum=!!base.useHum&&!!S.bassLine;
-  S.meter=METERS[base.meter]?base.meter:'4/4'; S.form=FORMS.hasOwnProperty(base.form)?base.form:'free'; S.lead=SOLOISTS.hasOwnProperty(base.lead)?base.lead:'none';
+  S.meter=METERS[base.meter]?base.meter:'4/4'; S.form=FORMS.hasOwnProperty(base.form)?base.form:'free'; S.lead='none';
   if(d){ if(d.mix) CHANNELS.forEach(n=>{ if(d.mix[n]) S.mix[n]={vol:+d.mix[n].vol||0.8,mute:!!d.mix[n].mute,solo:!!d.mix[n].solo}; });
     if(d.mode==='pro') S.mode='pro'; if(['beat','8','16'].includes(d.res)) S.res=d.res;
     if(typeof d.countIn==='boolean') S.countIn=d.countIn; if(typeof d.metronome==='boolean') S.metronome=d.metronome; if(d.trainer) Object.assign(S.trainer,d.trainer); }

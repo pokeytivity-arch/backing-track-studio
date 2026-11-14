@@ -9,7 +9,7 @@ const KEY='ps-dest';
 const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
-  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Bring in a recording or play into the microphone and see the notes fall onto the keys.',panel:'transcribe'},
+  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice. Choose an audio file or record with the microphone, and Pokey finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
   challenge:{name:'90 Day Challenge',icon:'🏆',blurb:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.',panel:null}
 };
@@ -159,7 +159,15 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard:hover:before,#suiteHub .dcard:focus-visible:before{background:radial-gradient(520px circle at var(--mx) var(--my),rgba(255,255,255,.26),transparent 58%)}
 #suiteHub .dcard[data-k]:focus-visible:not(:hover){background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.8);outline:2px solid rgba(var(--gl),.55);outline-offset:3px}
 @media (hover:none){#suiteHub .dcard:after{display:none}}
-`; document.head.appendChild(css);
+`; css.textContent+=`
+#psNav{position:fixed;z-index:300000;min-width:250px;padding:8px;border-radius:16px;background:var(--surface,#14171f);color:var(--ink,#fff);border:1px solid var(--line,rgba(255,255,255,.18));box-shadow:0 18px 44px rgba(0,0,0,.5)}
+#psNav button{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:11px;background:transparent;color:inherit;font:600 15px var(--body,system-ui);cursor:pointer;text-align:left}
+#psNav button:hover,#psNav button.cur{background:color-mix(in srgb,var(--ink,#fff) 10%,transparent)}
+#psNav i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;box-shadow:0 1px 0 rgba(255,255,255,.4) inset}
+#psNav i svg{width:22px;height:22px}
+#psNav span{flex:1}#psNav em{font-style:normal;color:var(--hi,#e8c25a)}
+`;
+document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
@@ -209,9 +217,23 @@ function go(k){
   chip(); window.dispatchEvent(new Event('resize'));
 }
 function chip(){ const c=document.getElementById('psChip'); if(c) c.textContent=DEST[cur]?DEST[cur].name+' ▾':'Piano Suite ▾'; }
+const NAVC={class:['#5b8cff','#2a45c9'],studio:['#ffd24d','#e0911a'],plus:['#b78bff','#6a35d8'],challenge:['#ff8a8a','#d6336c']};
+const HOMEI='<svg viewBox="0 0 48 48" fill="none"><path d="M6 23 24 8l18 15" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 21v18h10V28h6v11h10V21L24 11 11 21Z" fill="#fff"/></svg>';
+function navMenu(anchor){
+  let m=document.getElementById('psNav');
+  if(m){ m.remove(); return; }
+  m=document.createElement('div'); m.id='psNav'; m.setAttribute('role','menu');
+  const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','studio','plus','challenge'].map(k=>[k,DEST[k].name,ICONS[k],NAVC[k]]));
+  rows.forEach(([k,label,svg,c])=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitem'); const on=k==='home'?hub.classList.contains('on'):(!hub.classList.contains('on')&&cur===k); if(on) b.className='cur';
+    b.innerHTML='<i style="background:linear-gradient(150deg,'+c[0]+','+c[1]+')">'+svg+'</i><span></span>'+(on?'<em>✓</em>':''); b.querySelector('span').textContent=label==='Studio+'?'Studio+ (Transcription)':label;
+    b.onclick=()=>{ m.remove(); if(k==='home') showHub(); else go(k); }; m.appendChild(b); });
+  document.body.appendChild(m); const r=anchor.getBoundingClientRect(); m.style.top=(r.bottom+6)+'px'; m.style.left=Math.max(8,Math.min(r.left,innerWidth-280))+'px';
+  const off=e=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('click',off,true); } }; setTimeout(()=>document.addEventListener('click',off,true),0);
+  document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ m.remove(); document.removeEventListener('keydown',k); } });
+}
 function addChip(){
   const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psChip')) return;
-  const c=document.createElement('button'); c.id='psChip'; c.type='button'; c.className='menu-btn ps-chip'; c.title='Piano Suite home'; c.onclick=showHub;
+  const c=document.createElement('button'); c.id='psChip'; c.type='button'; c.className='menu-btn ps-chip'; c.title='Go to…'; c.setAttribute('aria-haspopup','menu'); c.onclick=e=>{ e.stopPropagation(); navMenu(c); };
   const br=mb.querySelector('.brand'); if(br&&br.nextSibling) mb.insertBefore(c,br.nextSibling); else mb.appendChild(c); chip();
 }
 function mini(){
@@ -222,13 +244,13 @@ function mini(){
 }
 
 function heads(){
-  [['teacher','Class','Class','Ask anything. Learn by ear and by understanding.'],['transcribe','Studio+','Transcription','Turn any recording into notes you can see and practice.']].forEach(([p,lbl,t,sub])=>{
+  [['teacher','Class','Class','Ask anything. Learn by ear and by understanding.']].forEach(([p,lbl,t,sub])=>{
     const c=document.querySelector('[data-panel="'+p+'"]'); if(!c||c.querySelector('.ps-head')) return;
     const d=document.createElement('div'); d.className='ps-head'; d.innerHTML='<span class="lbl"></span><h1></h1><p></p>'; d.querySelector('.lbl').textContent=lbl; d.querySelector('h1').textContent=t; d.querySelector('p').textContent=sub;
     const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });
 }
 function back(){
-  if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back()}[cur]; try{ if(h&&h()) return; }catch(_){} }
+  if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back(),plus:()=>window.TXMENU&&TXMENU.close()}[cur]; try{ if(h&&h()) return; }catch(_){} }
   let t=HIST.pop(); if(t===place()) t=HIST.pop();
   navBack=true; try{ if(t==='hub'||!t) { if(!hub.classList.contains('on')) showHub(); } else go(t); } finally{ navBack=false; }
 }

@@ -433,6 +433,7 @@ function noteFill(n){ if(S.hands==='note') return hsl2hex(noteHue(n),85,55); ret
 /* ---------- falling notes ---------- */
 const HUES=[210,255,300,345,25,50,95,150,175,190,230,280];
 function draw(t){
+  { const em=$('txEmpty'); if(em) em.hidden=!!(S.audio||(S.notes&&S.notes.length)); }
   const cv=$('txCanvas'); if(!cv) return; const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1)), H=cv.clientHeight; let W=cv.clientWidth; if(!W||!H) return;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
   const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
@@ -509,7 +510,13 @@ function init(){
   const setRate=p=>{ p=Math.max(25,Math.min(150,Math.round(p/5)*5)); S.rate=p/100; $('txSpeed').textContent=p+'%'; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
   $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
   try{ const k=+localStorage.getItem('tx-kbd3'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
+  try{ if(!localStorage.getItem('tx-kbd3')&&matchMedia('(max-width:700px)').matches){ S.kbd=0; $('txKbd').value='0'; } }catch(_){}
   fitRange();
+  { const menu=$('txMenu'), mb=$('txMenuBtn'); const tog=o=>{ menu.classList.toggle('on',o); menu.setAttribute('aria-hidden',o?'false':'true'); mb.setAttribute('aria-expanded',o?'true':'false'); };
+    mb.onclick=()=>tog(!menu.classList.contains('on')); $('txMenuX').onclick=()=>tog(false);
+    $('txQFile').onclick=()=>$('txFileBtn').click(); $('txQRec').onclick=()=>$('txRec').click();
+    ['txFileBtn','txRec'].forEach(id=>$(id).addEventListener('click',()=>{ if(matchMedia('(max-width:900px)').matches) setTimeout(()=>tog(false),150); }));
+    window.TXMENU={close:()=>{ if(menu.classList.contains('on')){ tog(false); return true; } return false; },open:()=>tog(true)}; }
   $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd3',e.target.value); }catch(_){} fitRange(); draw(cur()); };
   $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
   try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
