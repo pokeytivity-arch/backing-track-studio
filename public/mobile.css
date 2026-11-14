@@ -45,19 +45,24 @@
   html body #earRoom button,html body #prRoom button{min-height:38px}
   html body .menubar{position:static}
   html body #psInstBar{display:none}
-  html body #earKbWrap,html body #prKb{position:sticky;bottom:0;z-index:4;background:var(--stage,#070b14)}
+  html body #earRoom .e-kb,html body #prRoom .e-kb{position:sticky;bottom:0;z-index:4;margin-top:auto;background:var(--stage,#070b14)}
   html body.dest-plus .tx canvas,body[data-dest="plus"] .tx canvas{height:calc(100dvh - 120px)!important;min-height:200px!important}
 }
 
-/* "Turn your phone sideways" screen */
-#psRotate{position:fixed;inset:0;z-index:100100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center;background:rgba(7,11,20,.96);color:#fff;font-family:var(--body)}
-#psRotate.on{display:flex}
-#psRotate h2{text-transform:none;letter-spacing:0;color:#fff;margin:0;font:800 26px/1.15 var(--display,var(--body))}
-#psRotate p{margin:0;max-width:320px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.75)}
-#psRotate .ph{width:74px;height:120px;border:4px solid #fff;border-radius:16px;position:relative;animation:psTurn 2.4s ease-in-out infinite}
-#psRotate .ph:after{content:"";position:absolute;left:50%;bottom:8px;width:20px;height:4px;margin-left:-10px;border-radius:3px;background:#fff}
-@keyframes psTurn{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
-#psRotate button{min-height:48px;padding:0 22px;border-radius:999px;font:800 16px var(--body);cursor:pointer}
-#psRotate .go{border:0;background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28)}
-#psRotate .no{border:1.5px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:600;font-size:14px}
-@media (prefers-reduced-motion:reduce){#psRotate .ph{animation:none;transform:rotate(-90deg)}}
+/* Upright phone on a keyboard screen: the whole app is turned sideways (see rotate.js) */
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){
+  html.ps-rot{overflow:hidden;height:100%}
+  html.ps-rot body{position:fixed;top:0;left:0;margin:0;width:100vh;width:100dvh;height:100vw;height:100dvw;overflow:auto;transform-origin:0 0;transform:translateX(100vw) rotate(90deg)}
+  html.ps-rot body #earRoom,html.ps-rot body #prRoom{padding:8px 16px 10px;gap:8px;top:36px}
+  html.ps-rot body #earRoom .e-top h1,html.ps-rot body #prRoom .e-top h1{font-size:20px}
+  html.ps-rot body #earRoom .e-big,html.ps-rot body #prRoom .e-big{font-size:clamp(28px,12vw,44px);min-height:0}
+  html.ps-rot body #earRoom .e-seg:not(.sm){display:inline-flex;width:auto;border-radius:999px}
+  html.ps-rot body #earRoom .e-seg:not(.sm) button{padding:10px 18px}
+  html.ps-rot body #prRoom .e-seg:not(.sm){display:inline-flex;width:auto}
+  html.ps-rot body #earRoom button,html.ps-rot body #prRoom button{min-height:38px}
+  html.ps-rot body #earRoom .e-kb,html.ps-rot body #prRoom .e-kb{position:sticky;bottom:0;z-index:4;margin-top:auto;background:var(--stage,#070b14)}
+  html.ps-rot body .menubar{position:sticky}
+  html.ps-rot body #psInstBar{display:none}
+  html.ps-rot body #txCard{left:8px!important;right:8px!important;top:44px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important}
+  html.ps-rot body .tx canvas{height:calc(100vw - 130px)!important;min-height:180px!important}
+}
