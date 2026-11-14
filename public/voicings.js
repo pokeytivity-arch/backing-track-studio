@@ -2,7 +2,7 @@
    You type the notes of a chord (any order, any inversion); it names the chord and shows each voicing on the keyboard.
    The voicings, their formulas and their descriptions are written exactly as the director gave them (see TRI and NINTH below).
    In a formula: numbers are chord tones (1 3 5 7 9), "/" separates left hand from right hand, a "." lifts the next tone an octave (1.3 is a tenth); a dot just before "/" is an octave gap between the hands.
-   The first tone starts in the octave that begins at the given C, and every tone after it goes up from the one before. */
+   Every tone goes up from the one before. A voicing can sit in any octave; it is shown in each position inside C2 to G5, starting with the one nearest the middle. */
 (function(){
 'use strict';
 const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e; };
@@ -20,7 +20,7 @@ const NINTH=[ // oct = the C where the first tone's octave begins; only = chord 
   {f:'1./ 7 9 3 5', oct:2, d:'Combination of the part-over-root voicing and A and B voicing'},
   {f:'1. / 5 7 9 3', oct:2, d:'Upper-structure voicing technique', only:['maj9','dom9']},
   {f:'1.3 / 7 9 5', oct:2, d:'Combination of the part-over-root voicing and drop-2 voicing'},
-  {f:'1.7 / 3 5 9', oct:3, d:'Combination of the part-over-root voicing, A and B voicing and drop-2 voicing'},
+  {f:'1 7 / 3 5 9', oct:3, d:'Combination of the part-over-root voicing, A and B voicing and drop-2 voicing'},
   {f:'1 5 / 7 9 3 5', oct:3, d:'Combination of A and B voicing and part over root voicing'},
   {f:'1 / 7 9 3 5', oct:3, d:'The B voicing'},
   {f:'1 5 / 3 5 7 9', oct:3, d:'Combination of A and B voicing and part over root voicing'},
@@ -71,10 +71,19 @@ function place(formula,oct,T){
     prev=midi; out.push({midi,label:n.label,hand:s.hand}); });
   return out;
 }
+/* A voicing can start anywhere. It is shown in every octave position that fits the singable register (C2 to G5), starting on the position nearest the middle of that register. */
+const LOW=36, HIGH=79;
+function positions(notes){
+  const lo=Math.min.apply(null,notes.map(n=>n.midi)), hi=Math.max.apply(null,notes.map(n=>n.midi)), out=[];
+  for(let k=-8;k<=8;k++){ const sh=12*k; if(lo+sh>=LOW&&hi+sh<=HIGH) out.push(sh); }
+  if(!out.length){ let best=0,bo=1e9; for(let k=-8;k<=8;k++){ const sh=12*k, over=Math.max(0,LOW-(lo+sh))+Math.max(0,(hi+sh)-HIGH); if(over<bo||(over===bo&&Math.abs(sh)<Math.abs(best))){ bo=over; best=sh; } } out.push(best); }
+  const mid=(LOW+HIGH)/2; let cur=0; out.forEach((sh,i)=>{ if(Math.abs((lo+hi)/2+sh-mid)<Math.abs((lo+hi)/2+out[cur]-mid)) cur=i; });
+  return {list:out.map(sh=>notes.map(n=>Object.assign({},n,{midi:n.midi+sh}))),cur};
+}
 function voicingsFor(root,K){
   const T=tones(root,K), list=[], tri=K.nine?(K.k==='min9'?KINDS[1]:KINDS[0]):K, TT=tones(root,tri);
-  TRI.forEach(v=>{ let n=place(v.f,4,TT); while(Math.max.apply(null,n.map(x=>x.midi))>79) n=n.map(x=>Object.assign({},x,{midi:x.midi-12})); list.push({f:v.f,d:v.d,notes:n,group:'Triad voicings'}); });
-  if(K.nine) NINTH.forEach(v=>{ if(v.only&&!v.only.includes(K.k)) return; list.push({f:v.f,d:v.d,notes:place(v.f,v.oct,T),group:'Ninth chord voicings'}); });
+  TRI.forEach(v=>{ const p=positions(place(v.f,4,TT)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Triad voicings'}); });
+  if(K.nine) NINTH.forEach(v=>{ if(v.only&&!v.only.includes(K.k)) return; const p=positions(place(v.f,v.oct,T)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Ninth chord voicings'}); });
   return list;
 }
 
@@ -95,7 +104,8 @@ const css=el('style'); css.textContent=`
 #vcRoom h2{margin:10px 0 0;font:700 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
 #vcRoom .vc-card{display:grid;gap:8px;padding:14px 16px;border:1.5px solid #34446c;border-radius:16px;background:rgba(16,23,40,.6)}
 #vcRoom .vc-f{font:800 22px ui-monospace,Menlo,monospace;color:var(--hi,#ffd43b);letter-spacing:.03em}
-#vcRoom .vc-d{color:var(--stage-ink,#fff);font-size:15px}#vcRoom .vc-n{font:600 14px ui-monospace,Menlo,monospace;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-n .l{color:#6db3ff}#vcRoom .vc-n .r{color:#ff9a4a}
+#vcRoom .vc-d{color:var(--stage-ink,#fff);font-size:15px}#vcRoom .vc-n{font:600 14px ui-monospace,Menlo,monospace;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-b[aria-pressed=true]{border-color:var(--hi,#ffd43b);color:var(--hi,#ffd43b)}
+#vcRoom .vc-n .l{color:#6db3ff}#vcRoom .vc-n .r{color:#ff9a4a}
 #vcRoom .vc-leg{display:flex;gap:14px;font-size:13px;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 `; document.head.appendChild(css);
 function build(){
@@ -116,11 +126,15 @@ function run(text){
   let grp=''; res.list.forEach(v=>{
     if(v.group!==grp){ grp=v.group; out.appendChild(el('h2',null,grp)); }
     const c=el('div','vc-card'); c.appendChild(el('div','vc-f',v.f)); c.appendChild(el('div','vc-d',v.d));
-    const l=v.notes.filter(n=>n.hand==='lh').map(n=>n.label).join(' '), r=v.notes.filter(n=>n.hand==='rh').map(n=>n.label).join(' ');
-    const nn=el('div','vc-n'); if(l){ const a=el('span','l','LH '+l); nn.appendChild(a); nn.appendChild(document.createTextNode('   ')); } if(r) nn.appendChild(el('span','r','RH '+r)); c.appendChild(nn);
-    if(window.ASSIGN) c.appendChild(ASSIGN.keyboard([{notes:v.notes}],0));
-    const row=el('div','vc-row'); if(window.CLASS&&CLASS.sound){ const p=el('button','vc-b','▶ Play together'); p.type='button'; p.onclick=()=>v.notes.forEach(n=>CLASS.sound(n.midi,1.8,.8,0)); const q=el('button','vc-b','▶ One by one'); q.type='button'; q.onclick=()=>v.notes.forEach((n,i)=>CLASS.sound(n.midi,1.4,.8,i*.4)); row.append(p,q); }
-    const lg=el('div','vc-leg'); lg.innerHTML='<span><i style="background:#1c7ed6"></i>Left hand</span><span><i style="background:#f76707"></i>Right hand</span>'; row.appendChild(lg); c.appendChild(row); out.appendChild(c); });
+    const nn=el('div','vc-n'), kbBox=el('div'), pos=el('div','vc-row'); c.appendChild(nn);
+    const nameOf=n=>n.label+(Math.floor(n.midi/12)-1);
+    const draw=()=>{ const notes=v.pos[v.cur]; nn.textContent=''; const l=notes.filter(n=>n.hand==='lh').map(nameOf).join(' '), r=notes.filter(n=>n.hand==='rh').map(nameOf).join(' ');
+      if(l){ nn.appendChild(el('span','l','LH '+l)); nn.appendChild(document.createTextNode('   ')); } if(r) nn.appendChild(el('span','r','RH '+r));
+      kbBox.textContent=''; if(window.ASSIGN) kbBox.appendChild(ASSIGN.keyboard([{notes}],0)); [...pos.querySelectorAll('button')].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===v.cur))); };
+    if(v.pos.length>1){ pos.appendChild(el('span','vc-sub','Position:')); v.pos.forEach((nt,i)=>{ const lowest=nt.reduce((a,b)=>b.midi<a.midi?b:a); const b=el('button','vc-b','from '+lowest.label+(Math.floor(lowest.midi/12)-1)); b.type='button'; b.onclick=()=>{ v.cur=i; draw(); }; pos.appendChild(b); }); c.appendChild(pos); }
+    c.appendChild(kbBox);
+    const row=el('div','vc-row'); if(window.CLASS&&CLASS.sound){ const p=el('button','vc-b','▶ Play together'); p.type='button'; p.onclick=()=>v.pos[v.cur].forEach(n=>CLASS.sound(n.midi,1.8,.8,0)); const q=el('button','vc-b','▶ One by one'); q.type='button'; q.onclick=()=>v.pos[v.cur].forEach((n,i)=>CLASS.sound(n.midi,1.4,.8,i*.4)); row.append(p,q); }
+    const lg=el('div','vc-leg'); lg.innerHTML='<span><i style="background:#1c7ed6"></i>Left hand</span><span><i style="background:#f76707"></i>Right hand</span>'; row.appendChild(lg); draw(); c.appendChild(row); out.appendChild(c); });
 }
 function open(text){ if(!ov) build(); ov.hidden=false; if(typeof text==='string'){ ov.querySelector('#vcIn').value=text; run(text); } setTimeout(()=>{ try{ ov.querySelector('#vcIn').focus({preventScroll:true}); }catch(_){} },50); }
 function close(){ if(ov) ov.hidden=true; }
