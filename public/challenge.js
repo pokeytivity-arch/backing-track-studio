@@ -106,6 +106,19 @@ const css=document.createElement('style'); css.textContent=`
 #chRoom .mut{color:var(--muted)}
 #chRoom .box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:12px 0}
 #chRoom .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#chRoom .pgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:14px 0}
+#chRoom .pcard{position:relative;display:flex;flex-direction:column;gap:10px;min-height:470px;padding:26px 22px 22px;border-radius:26px;border:1px solid rgba(var(--gl),.45);background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -14px rgba(0,0,0,.75);transition:box-shadow .3s,border-color .3s}
+#chRoom .pcard:hover{border-color:rgba(var(--gl),.95);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 0 0 2px rgba(var(--gl),.7),0 0 60px 4px rgba(var(--gl),.5),0 30px 50px -14px rgba(0,0,0,.8)}
+#chRoom .pcard .pic{width:64px;height:64px;border-radius:19px;display:grid;place-items:center;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.28) inset,0 10px 18px -4px var(--c2)}
+#chRoom .pcard .pic svg{width:38px;height:38px}
+#chRoom .pcard .pnm{font:800 28px/1.1 var(--display);margin-top:8px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+#chRoom .pcard .pbl{margin:0;color:rgba(255,255,255,.85);font:500 16px/1.5 var(--body)}
+#chRoom .pcard .pmt{margin:0;color:rgba(255,255,255,.65);font:500 14px var(--body)}
+#chRoom .pcard .prow{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px}
+#chRoom .pcard .prow button{border-radius:999px;padding:10px 18px;font:700 14px var(--body);cursor:pointer;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff}
+#chRoom .pcard .prow button.pri{background:var(--hi);color:var(--hi-ink);border-color:transparent}
+@media(max-width:1100px){#chRoom .pgrid{grid-template-columns:repeat(2,minmax(0,1fr))}#chRoom .pcard{min-height:380px}}
+@media(max-width:560px){#chRoom .pgrid{grid-template-columns:1fr}#chRoom .pcard{min-height:0}}
 #chRoom .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
 #chRoom button{font:600 14px var(--body);border-radius:999px;padding:9px 16px;border:1.5px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
 #chRoom button.pri{background:var(--accent);color:var(--accent-ink);border-color:transparent}
@@ -194,14 +207,19 @@ function planLen(p){ return p.week.reduce((a,d)=>a+d.length,0); }
 function chooseView(w){
   head(w,'Pick a plan, then check in every day for 90 days.');
   w.appendChild(el('h2','','Ready-made plans'));
-  const g=el('div','grid'); w.appendChild(g);
-  PLANS.forEach(p=>{
-    const c=el('div','box'); c.innerHTML='<div style="font-weight:800;font-size:18px">'+esc(p.name)+'</div><p class="mut">'+esc(p.blurb||'')+'</p><p class="mut" style="font-size:13px">'+planLen(p)+' practice items a week. Earns a certificate.</p>';
-    const r=el('div','row'); const s=el('button','pri','Start this plan'); s.onclick=()=>startPlan({id:p.id,name:p.name,official:true,week:p.week});
+  const g=el('div','pgrid'); w.appendChild(g);
+  const TONES=[['--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9','<path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/>'],
+    ['--g1:#e0911a;--g2:#3b2205;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a','<rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/>'],
+    ['--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255;--c1:#b78bff;--c2:#6a35d8','<path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/>'],
+    ['--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c','<path d="M24 8v32M8 24h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>']];
+  const card=(t,name,blurb,meta)=>{ const c=el('div','pcard'); c.style.cssText=t[0]; c.innerHTML='<i class="pic"><svg viewBox="0 0 48 48" fill="none">'+t[1]+'</svg></i><b class="pnm"></b><p class="pbl"></p><p class="pmt"></p>'; c.querySelector('.pnm').textContent=name; c.querySelector('.pbl').textContent=blurb; c.querySelector('.pmt').textContent=meta; return c; };
+  PLANS.forEach((p,k)=>{
+    const c=card(TONES[k%3],p.name,p.blurb||'',planLen(p)+' practice items a week. Earns a certificate.');
+    const r=el('div','row prow'); const st=el('button','pri','Start this plan'); st.onclick=()=>startPlan({id:p.id,name:p.name,official:true,week:p.week});
     const v=el('button','','Customize'); v.onclick=()=>{ draft={id:'mine',name:p.name+' (my version)',official:false,week:p.week.map(d=>d.slice())}; pick=0; view='build'; render(); };
-    r.append(s,v); c.appendChild(r); g.appendChild(c); });
-  const mine=el('div','box'); mine.innerHTML='<div style="font-weight:800;font-size:18px">Build my own plan</div><p class="mut">Choose your own warm-ups, techniques and progressions for each day of the week. Your progress is tracked, but certificates are for the ready-made plans.</p>';
-  const mb=el('button','','Open the plan builder'); mb.onclick=()=>{ draft={id:'mine',name:'My plan',official:false,week:[[],[],[],[],[],[],[]]}; pick=0; view='build'; render(); }; mine.appendChild(mb); g.appendChild(mine);
+    r.append(st,v); c.appendChild(r); g.appendChild(c); });
+  const mine=card(TONES[3],'Build my own plan','Choose your own warm-ups, techniques and progressions for each day of the week. Your progress is tracked, but certificates are for the ready-made plans.','');
+  const mr=el('div','row prow'); const mb=el('button','pri','Open the plan builder'); mb.onclick=()=>{ draft={id:'mine',name:'My plan',official:false,week:[[],[],[],[],[],[],[]]}; pick=0; view='build'; render(); }; mr.appendChild(mb); mine.appendChild(mr); g.appendChild(mine);
   const note2=el('p','mut','Rules: check in every day. Miss one day and you carry on. Miss two days in a row and the challenge starts again from Day 1.'); w.appendChild(note2);
   if(D.history.length){ w.appendChild(el('h2','','Past attempts')); const b=el('div','box'); b.innerHTML=D.history.slice(0,8).map(h=>'<div class="item"><span class="nm">'+esc(h.plan)+'</span><span class="mut">'+esc(h.start)+' · '+(h.reason==='missed'?'restarted after missed days':h.reason==='stopped'?'stopped':'completed')+' · '+h.pct+'%</span></div>').join(''); w.appendChild(b); }
 }

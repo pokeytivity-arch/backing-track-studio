@@ -379,11 +379,13 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-welcome b{color:var(--hi);letter-spacing:.04em}
 .cl-four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
 .cl-box{position:relative;display:flex;flex-direction:column;text-align:left;padding:0;min-height:430px;overflow:hidden;border-radius:26px;border:1px solid rgba(var(--gl),.45);background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);color:#fff;cursor:pointer;font:inherit;box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -14px rgba(0,0,0,.75);transition:box-shadow .3s,border-color .3s}
-.cl-box .ph{display:block;width:100%;flex:1 1 0;min-height:170px;height:0;object-fit:cover;object-position:center;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.cl-box .ph{filter:brightness(.5) saturate(.8);transition:filter .4s ease;display:block;width:100%;flex:1 1 0;min-height:170px;height:0;object-fit:cover;object-position:center;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
 .cl-box .tx{display:flex;flex-direction:column;gap:8px;padding:0 20px 20px;margin-top:-34px;position:relative}
 .cl-box:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.28),transparent 58%);opacity:0;transition:opacity .25s;z-index:2}
 .cl-box:hover,.cl-box:focus-visible{border-color:rgba(var(--gl),.95);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 0 0 2px rgba(var(--gl),.7),0 0 60px 4px rgba(var(--gl),.55),0 30px 50px -14px rgba(0,0,0,.8);outline:0}
 .cl-box:hover:before,.cl-box:focus-visible:before{opacity:1}
+.cl-box:hover .ph,.cl-box:focus-visible .ph{filter:brightness(1.05) saturate(1)}
+@media(hover:none){.cl-box .ph{filter:brightness(.72) saturate(.9)}}
 .cl-box .ic{width:56px;height:56px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.28) inset,0 10px 18px -4px var(--c2)}
 .cl-box .ic svg{width:33px;height:33px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))}
 .cl-box b{font:800 24px var(--display);letter-spacing:-.01em;text-shadow:0 2px 10px rgba(0,0,0,.45)}
