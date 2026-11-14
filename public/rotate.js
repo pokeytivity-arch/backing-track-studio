@@ -11,7 +11,7 @@ function which(){
   if(document.body.dataset.dest==='plus'&&vis(document.getElementById('txCard'))) return 'plus';
   return null;
 }
-function check(){ root.classList.toggle('ps-rot',mq.matches&&!!which()); }
+function check(){ const hub=document.getElementById('suiteHub'); root.classList.toggle('ps-rot',mq.matches&&!(hub&&hub.classList.contains('on'))&&!!which()); }
 mq.addEventListener?mq.addEventListener('change',check):mq.addListener(check);
 window.addEventListener('orientationchange',()=>setTimeout(check,250));
 setInterval(check,500);

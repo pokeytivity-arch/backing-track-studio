@@ -195,11 +195,11 @@ function renderHub(){
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
 }
-function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
+function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }
 
 /* ---------- moving between destinations ---------- */
-function stopEverything(){ try{ if(typeof playing!=='undefined'&&(playing||paused)&&typeof stop==='function') stop(); }catch(_){} try{ if(window.TX&&TX.S&&TX.S.playing) document.getElementById('txPlay').click(); }catch(_){} }
+function stopEverything(){ try{ if(typeof playing!=='undefined'&&(playing||paused)&&typeof stop==='function') stop(); }catch(_){} try{ if(window.TX&&TX.stop) TX.stop(); }catch(_){} }
 const HIST=[]; let navBack=false;
 let popping=false;
 function hpush(){ if(popping) return; const p=place(); try{ if(!history.state){ history.replaceState({ps:p},''); return; } if(history.state.ps===p) return; history.pushState({ps:p},''); }catch(_){} }

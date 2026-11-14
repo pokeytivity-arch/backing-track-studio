@@ -545,6 +545,6 @@ function init(){
   draw(0);
 }
 async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({pro:it.pro,blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }
-window.TX={init,restoreLast,S,clear:()=>clearCurrent(),_test:{extract,cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
+window.TX={init,restoreLast,S,stop:()=>{ try{ stopPlay(); }catch(_){} },clear:()=>clearCurrent(),_test:{extract,cleanup,transcribeBlob,midiBytes,detectKey,draw,assignHands}};
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
