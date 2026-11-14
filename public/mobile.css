@@ -1,0 +1,63 @@
+/* Phone layout. Loaded last so it wins. Desktop is untouched: everything is inside phone media queries. */
+@media (max-width:700px){
+  /* Class: four compact rows instead of tall cards */
+  html body .cl-four{grid-template-columns:1fr;gap:10px}
+  html body .cl-box{min-height:0;height:108px;flex-direction:row;border-radius:18px}
+  html body .cl-box .ph{flex:0 0 36%;width:36%;height:100%;min-height:0;-webkit-mask-image:none;mask-image:none}
+  html body .cl-box .tx{flex:1;min-width:0;margin:0;padding:10px 34px 10px 12px;display:grid;grid-template-columns:44px 1fr;column-gap:12px;row-gap:2px;align-content:center;align-items:center}
+  html body .cl-box .ic{grid-row:1/3;width:44px;height:44px;border-radius:13px}
+  html body .cl-box .ic svg{width:26px;height:26px}
+  html body .cl-box b{font-size:19px;line-height:1.15}
+  html body .cl-box span{font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  html body .cl-box .go{display:none}
+  html body .cl-box:after{content:"›";position:absolute;right:12px;top:50%;transform:translateY(-52%);font:700 26px var(--body);color:rgba(255,255,255,.7)}
+
+  /* Install banner: one slim line */
+  #psInstBar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));padding:7px 10px;gap:8px;border-radius:14px}
+  #psInstBar img{width:30px;height:30px}
+  #psInstBar span{font-size:12px;line-height:1.25}
+  #psInstBar .go{padding:8px 11px;font-size:12.5px;white-space:nowrap}
+
+  /* Ear training and Practice: segmented mode switch fits the screen */
+  html body #earRoom .e-seg:not(.sm){display:grid;grid-template-columns:1fr 1fr;border-radius:22px;width:100%}
+  html body #earRoom .e-seg:not(.sm) button{padding:12px 8px;font-size:14px}
+  html body #prRoom .e-seg:not(.sm){display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%}
+  html body #prRoom .e-seg:not(.sm) button{padding:12px 6px;font-size:14px}
+
+  /* Bigger touch targets */
+  html body #earRoom button,html body #prRoom button,html body #prRoom select,html body #earRoom select{min-height:44px}
+  html body #earRoom,html body #prRoom{padding:14px 14px calc(24px + env(safe-area-inset-bottom));gap:14px;top:36px}
+  html body #earRoom .e-big{font-size:clamp(38px,13vw,64px)}
+
+  /* Studio: Play stays in reach */
+  html body .transport{position:sticky;bottom:0;z-index:5;padding:10px 0 calc(10px + env(safe-area-inset-bottom));background:var(--stage,#0f1729);box-shadow:0 -10px 14px -8px rgba(0,0,0,.45)}
+
+  /* Challenge cards a touch tighter */
+  html body .pcard{padding:18px}
+}
+
+/* Phone held sideways: keyboard rooms use the short, wide screen */
+@media (max-height:520px) and (orientation:landscape) and (pointer:coarse){
+  html body #earRoom,html body #prRoom{padding:8px 16px 10px;gap:8px;top:36px}
+  html body #earRoom .e-top h1,html body #prRoom .e-top h1{font-size:20px}
+  html body #earRoom .e-big,html body #prRoom .e-big{font-size:clamp(28px,7vh,44px);min-height:0}
+  html body #earRoom .e-lbl,html body #earRoom .e-sub,html body #prRoom .e-lbl{margin:0}
+  html body #earRoom button,html body #prRoom button{min-height:38px}
+  html body .menubar{position:static}
+  html body #psInstBar{display:none}
+  html body #earKbWrap,html body #prKb{position:sticky;bottom:0;z-index:4;background:var(--stage,#070b14)}
+  html body.dest-plus .tx canvas,body[data-dest="plus"] .tx canvas{height:calc(100dvh - 120px)!important;min-height:200px!important}
+}
+
+/* "Turn your phone sideways" screen */
+#psRotate{position:fixed;inset:0;z-index:100100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center;background:rgba(7,11,20,.96);color:#fff;font-family:var(--body)}
+#psRotate.on{display:flex}
+#psRotate h2{text-transform:none;letter-spacing:0;color:#fff;margin:0;font:800 26px/1.15 var(--display,var(--body))}
+#psRotate p{margin:0;max-width:320px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.75)}
+#psRotate .ph{width:74px;height:120px;border:4px solid #fff;border-radius:16px;position:relative;animation:psTurn 2.4s ease-in-out infinite}
+#psRotate .ph:after{content:"";position:absolute;left:50%;bottom:8px;width:20px;height:4px;margin-left:-10px;border-radius:3px;background:#fff}
+@keyframes psTurn{0%,25%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+#psRotate button{min-height:48px;padding:0 22px;border-radius:999px;font:800 16px var(--body);cursor:pointer}
+#psRotate .go{border:0;background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28)}
+#psRotate .no{border:1.5px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:600;font-size:14px}
+@media (prefers-reduced-motion:reduce){#psRotate .ph{animation:none;transform:rotate(-90deg)}}
