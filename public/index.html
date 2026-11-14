@@ -683,7 +683,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-r (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-s (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2584,7 +2584,9 @@ const MENUS=[
     {label:'Open the library',run:()=>goTo('list')},
     {sep:true},
     {label:'Export audio (WAV)…',run:()=>openPanel('export')},
-    {label:'Print sheet music / diagrams…',run:()=>press('sheetBtn')}]},
+    {label:'Print sheet music / diagrams…',run:()=>press('sheetBtn')},
+    {sep:true},
+    {label:'Clear this room',run:()=>SUITE.clear()}]},
   {label:'Edit',items:[
     {label:'Chord chart…',key:'E',run:()=>openPanel('chart')},
     {sep:true},
