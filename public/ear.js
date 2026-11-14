@@ -156,7 +156,7 @@ function singing(){
     const r=60+(+ctl.querySelector('#aRoot').value), t=types[+ctl.querySelector('#aType').value], dir=+ctl.querySelector('#aDir').value, up=t[1].map(x=>r+x);
     const notes=dir===0?up:dir===1?up.slice().reverse():up.concat(up.slice(0,-1).reverse());
     sgStop(); clr(); sg={notes,i:0,state:notes.map(()=>''),first:notes.map(()=>true),err:notes.map(()=>0),worst:notes.map(()=>''),wrong:notes.map(()=>[]),r,tname:t[0]};
-    opts.textContent=''; notes.forEach(m=>{ const b=el('button','e-opt sg',midiName(m)); b.type='button'; b.disabled=true; opts.appendChild(b); }); sgSet();
+    $('#earKb').hidden=false; opts.textContent=''; notes.forEach(m=>{ const b=el('button','e-opt sg',midiName(m)); b.type='button'; b.disabled=true; opts.appendChild(b); }); sgSet();
     big.textContent=midiName(r)+' '+t[0].toLowerCase(); sub.textContent='The first note is '+midiName(notes[0])+'. Press Ready and sing all the notes, one at a time.'; msg.textContent='';
     S(notes[0],1.8,.85,0);
     ctl.textContent=''; btn('Hear the first note again',()=>S(notes[0],1.8,.85,0)); btn('READY',sgReady,true); btn('Change scale',()=>render());
@@ -170,6 +170,7 @@ async function sgReady(){
   catch(_){ msg.textContent='Microphone access was blocked. Allow the microphone for this site in your browser settings, then press Ready again.'; return; }
   if(!sg){ stream.getTracks().forEach(t=>t.stop()); return; }
   const src=ctx.createMediaStreamSource(stream), an=ctx.createAnalyser(); an.fftSize=2048; src.connect(an);
+  $('#earKb').hidden=true;
   Object.assign(sg,{stream,src,an,buf:new Float32Array(an.fftSize),win:[],ref:null,held:false,gone:0});
   ctl.textContent=''; const stop=el('button','e-btn','■ Stop'); stop.type='button'; stop.onclick=()=>{ sgStop(); render(); }; ctl.appendChild(stop);
   msg.textContent='Listening. Sing '+midiName(sg.notes[0])+' now.'; sgSet();
@@ -193,13 +194,13 @@ function sgTick(){
   else { sg.first[sg.i]=false; sg.err[sg.i]++; if(!sg.wrong[sg.i].includes(sung)) sg.wrong[sg.i].push(sung); if(d<=1.5){ sg.state[sg.i]='near'; if(!sg.worst[sg.i]) sg.worst[sg.i]='near'; msg.textContent='Close: you sang '+sung+', a semitone away from '+midiName(T)+'. Try again.'; } else { sg.state[sg.i]='miss'; sg.worst[sg.i]='miss'; msg.textContent='You sang '+sung+'. We need '+midiName(T)+'. Try again.'; } sgSet(); }
 }
 function sgDone(){
-  const s=sg, n=s.notes.length, good=s.first.filter(Boolean).length; sgStop(); sg=null; drawKb(s.notes,[]);
+  const s=sg, n=s.notes.length, good=s.first.filter(Boolean).length; sgStop(); sg=null; $('#earKb').hidden=true;
   const big=$('#earBig'), sub=$('#earSub'), msg=$('#earMsg'), ctl=$('#earCtl'); ctl.textContent='';
   big.textContent=good+' / '+n; sub.textContent='First-try notes in '+midiName(s.r)+' '+s.tname.toLowerCase();
   msg.textContent=(good===n?'Every note on the first try. ':good>=n*.7?'Good singing. ':'Keep at it. Hear the scale, then sing it again. ')+' ';
   [...$('#earOpts').children].forEach((b,i)=>{ b.className='e-opt sg '+(s.worst[i]==='miss'?'bad':s.worst[i]==='near'?'near':'ok'); if(s.err[i]) b.textContent=midiName(s.notes[i])+' ×'+s.err[i]; });
   { const errs=s.err.reduce((a,b)=>a+b,0), rows=s.notes.map((m,i)=>({name:midiName(m)+(s.notes.slice(0,i).includes(m)?' (again)':''),r:s.err[i]?0:1,w:s.err[i],text:s.err[i]?s.err[i]+(s.err[i]===1?' wrong try':' wrong tries')+' · you sang '+s.wrong[i].join(', '):'right first time'})); resPanel($('#earOpts'),rows,errs); }
-  const again=el('button','e-btn pri','Sing it again'); again.type='button'; again.onclick=()=>{ sg={notes:s.notes,i:0,state:s.notes.map(()=>''),first:s.notes.map(()=>true),err:s.notes.map(()=>0),worst:s.notes.map(()=>''),wrong:s.notes.map(()=>[]),r:s.r,tname:s.tname}; [...$('#earOpts').children].forEach(b=>b.className='e-opt sg'); sgSet(); $('#earBig').textContent=midiName(s.r)+' '+s.tname.toLowerCase(); S(s.notes[0],1.8,.85,0); ctl.textContent=''; const rd=el('button','e-btn pri','READY'); rd.type='button'; rd.onclick=sgReady; ctl.appendChild(rd); $('#earMsg').textContent=''; $('#earSub').textContent='The first note is '+midiName(s.notes[0])+'. Press Ready.'; };
+  const again=el('button','e-btn pri','Sing it again'); again.type='button'; again.onclick=()=>{ $('#earKb').hidden=false; sg={notes:s.notes,i:0,state:s.notes.map(()=>''),first:s.notes.map(()=>true),err:s.notes.map(()=>0),worst:s.notes.map(()=>''),wrong:s.notes.map(()=>[]),r:s.r,tname:s.tname}; [...$('#earOpts').children].forEach(b=>b.className='e-opt sg'); sgSet(); $('#earBig').textContent=midiName(s.r)+' '+s.tname.toLowerCase(); S(s.notes[0],1.8,.85,0); ctl.textContent=''; const rd=el('button','e-btn pri','READY'); rd.type='button'; rd.onclick=sgReady; ctl.appendChild(rd); $('#earMsg').textContent=''; $('#earSub').textContent='The first note is '+midiName(s.notes[0])+'. Press Ready.'; };
   const hear=el('button','e-btn','Hear the scale'); hear.type='button'; hear.onclick=()=>s.notes.forEach((m,i)=>S(m,.9,.8,i*.55));
   const back=el('button','e-btn','Choose another'); back.type='button'; back.onclick=()=>render();
   ctl.append(again,hear,back);
@@ -359,8 +360,8 @@ function next(){
   if(n>=10) return done();
   q=makeQ(); $('#earBig').textContent='?'; $('#earSub').textContent='Question '+(n+1)+' of 10 · Score '+score;
   const mk=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
-  if(mode==='rel') drawKb([],[]);
-  if(q.ctx){ mk('Hear the key again',()=>q.ctx()); const rd=mk('READY',()=>{ rd.disabled=true; clr(); drawKb([],[]); opts.querySelectorAll('.e-opt').forEach(x=>x.disabled=false); q.play(); mk('Hear the note again',()=>q.play()); },true); }
+  if(mode==='rel'){ $('#earKb').hidden=false; drawKb([],[]); }
+  if(q.ctx){ mk('Hear the key again',()=>q.ctx()); const rd=mk('READY',()=>{ rd.disabled=true; clr(); drawKb([],[]); $('#earKb').hidden=true; opts.querySelectorAll('.e-opt').forEach(x=>x.disabled=false); q.play(); mk('Hear the note again',()=>q.play()); },true); }
   else { mk('▶ Play it',()=>{ q.play(); },true); mk('Hear again',()=>q.play()); }
   if(mode==='recog'&&cat==='note') mk('Hear C first',()=>S(60,1.6,.8,0));
   q.opts.forEach(o=>{ const b=el('button','e-opt',o); b.type='button'; if(q.ctx) b.disabled=true; b.onclick=()=>answer(o,b); opts.appendChild(b); });
