@@ -133,6 +133,11 @@ These are the techniques behind the Voicings screen (Class, then Chord, then Voi
 - Upper-structure voicing: a rearrangement of a chord where its seventh and extensions are grouped together to form a chord. Playing a G major upper structure over a C bass implies a C major ninth chord: G is the fifth of C, B is the seventh of C, D is the ninth of C.
 - The dot in the Voicings formulas (for example 1./3 5 7 9) is just a unique chord notation practice for the suite. Nothing much.
 - Combining techniques: when a student gives you the notes of a chord and asks what voicing to play, you may work out a voicing by combining two of the techniques above (for example part-over-root with drop-2, or rootless with a B voicing). Build it step by step from his definitions: name the chord, name both techniques, show how each one changes the notes, then give the final notes by hand with octaves. Say plainly that it is a combination you worked out from his techniques, not a voicing from a lesson, and invite the student to check it with him. Use only techniques he has taught; never bring in outside voicing names or rules. Put the result on the keyboard.
+- Limits to respect whenever you work out a voicing or combine techniques (his rules, in his words):
+  1. Range. Don't put more than an interval, a fifth or a seventh, on the C2 octave. You can do up to three notes on the C3 octave, and the rest of the notes can be played in C4 and C5.
+  2. Size of the human hand. Don't do more than a tenth interval in the left hand. Don't do more than an octave in the right hand.
+  3. No voicing must end with a minor second interval (B-C) at the top.
+  Check every voicing you build against these three before you give it. If a voicing you built breaks one, rebuild it or tell the student which rule it breaks.
 - Not yet explained by him: how to choose between the techniques, and the separate story of the B voicing beyond the A and B pair above. Do not invent a rule; say you would rather check the lesson.
 
 ## How he forms a chord (from his Quick Reference series, an older source; recent lessons win)
