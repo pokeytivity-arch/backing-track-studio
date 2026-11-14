@@ -33,10 +33,10 @@ function build(steps){
   return (steps||[]).map(s=>{ const a=parse(s.lh,'lh'), b=parse(s.rh,'rh'); return {label:s.label||'',notes:a.notes.concat(b.notes),bad:a.bad.concat(b.bad)}; });
 }
 const isBlack=m=>!WHITE_PC.has(((m%12)+12)%12);
-function keyboard(steps,cur,w){
+function keyboard(steps,cur,w,range){
   const all=[]; steps.forEach(s=>s.notes.forEach(n=>all.push(n.midi)));
   let lo=all.length?Math.min.apply(null,all):48, hi=all.length?Math.max.apply(null,all):72;
-  lo=Math.floor((lo-2)/12)*12; hi=Math.ceil((hi+3)/12)*12-1; if(hi-lo<23) hi=lo+23; lo=Math.max(24,lo); hi=Math.min(108,hi);
+  lo=Math.floor((lo-2)/12)*12; hi=Math.ceil((hi+3)/12)*12-1; if(hi-lo<23) hi=lo+23; lo=Math.max(24,lo); hi=Math.min(108,hi); if(range){ lo=range[0]; hi=range[1]; }
   const whites=[]; for(let m=lo;m<=hi;m++) if(!isBlack(m)) whites.push(m);
   const W=w||760, kw=W/whites.length, H=Math.max(110,Math.min(170,kw*5)), BH=H*.62, bw=kw*.6;
   const pos={}; whites.forEach((m,i)=>pos[m]=i*kw);

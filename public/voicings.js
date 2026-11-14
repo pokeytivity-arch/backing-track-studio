@@ -82,13 +82,14 @@ function positions(notes){
 }
 function voicingsFor(root,K){
   const T=tones(root,K), list=[], tri=K.nine?(K.k==='min9'?KINDS[1]:KINDS[0]):K, TT=tones(root,tri);
-  TRI.forEach(v=>{ const p=positions(place(v.f,4,TT)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Triad voicings'}); });
-  if(K.nine) NINTH.forEach(v=>{ if(v.only&&!v.only.includes(K.k)) return; const p=positions(place(v.f,v.oct,T)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Ninth chord voicings'}); });
+  if(!K.nine) TRI.forEach(v=>{ const p=positions(place(v.f,4,TT)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Triad voicings'}); });
+  else NINTH.forEach(v=>{ if(v.only&&!v.only.includes(K.k)) return; const p=positions(place(v.f,v.oct,T)); list.push({f:v.f,d:v.d,pos:p.list,cur:p.cur,group:'Ninth chord voicings'}); });
   return list;
 }
 
 /* ----- the room ----- */
-let ov=null;
+let ov=null, kbSize=61; try{ const v=+localStorage.getItem('vc-kbd'); if(v===61||v===76||v===88) kbSize=v; }catch(_){}
+const KB={61:[36,96,900],76:[28,103,1020],88:[21,108,1120]};
 const css=el('style'); css.textContent=`
 #vcRoom{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:9999;background:var(--stage,#070b14);color:var(--stage-ink,#fff);display:flex;flex-direction:column;gap:16px;overflow:auto;padding:18px clamp(16px,3vw,34px) 40px;font-family:var(--body,system-ui)}
 #vcRoom[hidden]{display:none}#vcRoom>*{flex-shrink:0}
@@ -104,7 +105,7 @@ const css=el('style'); css.textContent=`
 #vcRoom h2{margin:10px 0 0;font:700 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
 #vcRoom .vc-card{display:grid;gap:8px;padding:14px 16px;border:1.5px solid #34446c;border-radius:16px;background:rgba(16,23,40,.6)}
 #vcRoom .vc-f{font:800 22px ui-monospace,Menlo,monospace;color:var(--hi,#ffd43b);letter-spacing:.03em}
-#vcRoom .vc-d{color:var(--stage-ink,#fff);font-size:15px}#vcRoom .vc-n{font:600 14px ui-monospace,Menlo,monospace;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-b[aria-pressed=true]{border-color:var(--hi,#ffd43b);color:var(--hi,#ffd43b)}
+#vcRoom .vc-d{color:var(--hi,#ffd43b);font:800 20px var(--body,system-ui)}#vcRoom .vc-n{font:600 14px ui-monospace,Menlo,monospace;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-b[aria-pressed=true]{border-color:var(--hi,#ffd43b);color:var(--hi,#ffd43b)}
 #vcRoom .vc-n .l{color:#6db3ff}#vcRoom .vc-n .r{color:#ff9a4a}
 #vcRoom .vc-leg{display:flex;gap:14px;font-size:13px;color:var(--stage-muted,#9aa6c0)}#vcRoom .vc-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 `; document.head.appendChild(css);
@@ -113,11 +114,14 @@ function build(){
   ov.innerHTML='<div class="vc-top"><button class="vc-x" type="button" aria-label="Back" title="Back">←</button><h1>Voicings</h1></div>'
    +'<div class="vc-sub">Type the notes of a chord, in any order or inversion, and see its voicings on the keyboard.</div>'
    +'<div class="vc-row"><input id="vcIn" type="text" placeholder="C E G   or   Bb D F   or   C E G B D" aria-label="Chord notes" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="vc-b pri" id="vcGo" type="button">Show voicings</button></div>'
+   +'<div class="vc-row" id="vcKb" role="group" aria-label="Keyboard size"><span class="vc-sub">Keyboard:</span></div>'
    +'<div class="vc-msg" id="vcMsg" aria-live="polite"></div><div id="vcOut"></div>';
   document.body.appendChild(ov);
+  const kb=ov.querySelector('#vcKb'); [61,76,88].forEach(n=>{ const b=el('button','vc-b',n+' keys'); b.type='button'; b.dataset.n=n; b.onclick=()=>{ kbSize=n; try{ localStorage.setItem('vc-kbd',String(n)); }catch(_){} syncKb(); const t=ov.querySelector('#vcIn').value; if(ov.querySelector('#vcOut').children.length) run(t); }; kb.appendChild(b); }); syncKb();
   ov.querySelector('.vc-x').onclick=close; document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape'&&e.target.tagName!=='INPUT') close(); });
   const go=()=>run(ov.querySelector('#vcIn').value); ov.querySelector('#vcGo').onclick=go; ov.querySelector('#vcIn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); go(); } };
 }
+function syncKb(){ ov.querySelectorAll('#vcKb button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.n===kbSize))); }
 function run(text){
   const out=ov.querySelector('#vcOut'), msg=ov.querySelector('#vcMsg'); out.textContent=''; msg.textContent='';
   let res; try{ const notes=readNotes(text); if(!notes.length){ msg.textContent='Type the notes first.'; return; } res=identify(notes); res.list=voicingsFor(res.root,res.K); res.T=tones(res.root,res.K); }catch(e){ msg.textContent=e.message; return; }
@@ -125,12 +129,12 @@ function run(text){
   out.appendChild(el('div','vc-name',nm)); out.appendChild(el('div','vc-sub','Chord tones: '+deg));
   let grp=''; res.list.forEach(v=>{
     if(v.group!==grp){ grp=v.group; out.appendChild(el('h2',null,grp)); }
-    const c=el('div','vc-card'); c.appendChild(el('div','vc-f',v.f)); c.appendChild(el('div','vc-d',v.d));
+    const c=el('div','vc-card'); c.appendChild(el('div','vc-d',v.d));
     const nn=el('div','vc-n'), kbBox=el('div'), pos=el('div','vc-row'); c.appendChild(nn);
     const nameOf=n=>n.label+(Math.floor(n.midi/12)-1);
     const draw=()=>{ const notes=v.pos[v.cur]; nn.textContent=''; const l=notes.filter(n=>n.hand==='lh').map(nameOf).join(' '), r=notes.filter(n=>n.hand==='rh').map(nameOf).join(' ');
       if(l){ nn.appendChild(el('span','l','LH '+l)); nn.appendChild(document.createTextNode('   ')); } if(r) nn.appendChild(el('span','r','RH '+r));
-      kbBox.textContent=''; if(window.ASSIGN) kbBox.appendChild(ASSIGN.keyboard([{notes}],0)); [...pos.querySelectorAll('button')].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===v.cur))); };
+      kbBox.textContent=''; if(window.ASSIGN) kbBox.appendChild(ASSIGN.keyboard([{notes}],0,KB[kbSize][2],[KB[kbSize][0],KB[kbSize][1]])); [...pos.querySelectorAll('button')].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===v.cur))); };
     if(v.pos.length>1){ pos.appendChild(el('span','vc-sub','Position:')); v.pos.forEach((nt,i)=>{ const lowest=nt.reduce((a,b)=>b.midi<a.midi?b:a); const b=el('button','vc-b','from '+lowest.label+(Math.floor(lowest.midi/12)-1)); b.type='button'; b.onclick=()=>{ v.cur=i; draw(); }; pos.appendChild(b); }); c.appendChild(pos); }
     c.appendChild(kbBox);
     const row=el('div','vc-row'); if(window.CLASS&&CLASS.sound){ const p=el('button','vc-b','▶ Play together'); p.type='button'; p.onclick=()=>v.pos[v.cur].forEach(n=>CLASS.sound(n.midi,1.8,.8,0)); const q=el('button','vc-b','▶ One by one'); q.type='button'; q.onclick=()=>v.pos[v.cur].forEach((n,i)=>CLASS.sound(n.midi,1.4,.8,i*.4)); row.append(p,q); }
