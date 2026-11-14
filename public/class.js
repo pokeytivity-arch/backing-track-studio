@@ -178,7 +178,7 @@ function mic(){
 function renderChat(extra){
   const c=chat(), log=$('tLog'); log.textContent='';
   $('clName').textContent=c.title;
-  if(!c.log.length){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. Are you ready? Let's go!"); log.appendChild(d); }
+  if(!c.log.length&&false){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. Are you ready? Let's go!"); log.appendChild(d); }
   c.log.forEach((m,i)=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot');
     if(m.role==='user') d.textContent=m.content;
     else { const sp=splitReply(m.content); d.innerHTML=tFormat(sp.text); const row=document.createElement('div'); row.className='cl-acts';
@@ -190,6 +190,8 @@ function renderChat(extra){
     log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
   log.scrollTop=log.scrollHeight; $('tChips').hidden=c.log.length>0;
+  { const v=$('clChatView'); if(v) v.classList.toggle('empty',!c.log.length); let nm=''; try{ nm=(window.ACCOUNT&&ACCOUNT.name&&ACCOUNT.name())||''; }catch(_){} const g=$('clGreetT'); if(g) g.textContent='Welcome to class'+(nm?', '+nm:''); }
+  drawList();
 }
 function applyBoard(sp,force){ if(sp.board||force){ const c=chat(); if(sp.board){ c.board=sp.board; renderBoard(sp.board); } }
   if(sp.keys) setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{}); }
@@ -235,19 +237,20 @@ async function ask(q,opts){
 /* ---------- the list of previous chats ---------- */
 let view='home', slideAfterLoad=false;
 function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
-function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
+function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
 function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
-function drawer(open){
-  const d=$('clDrawer'); d.hidden=!open; if(!open) return; const list=$('clList'); list.textContent='';
-  DB.chats.slice().sort((a,b)=>b.when-a.when).forEach(c=>{
+function drawer(open){ const d=$('clDrawer'); d.hidden=!open; if(open) drawList(); }
+function drawList(){
+  const list=$('clList'); if(!list) return; list.textContent=''; const qs=(($('clSearch')||{}).value||'').trim().toLowerCase();
+  DB.chats.slice().sort((a,b)=>b.when-a.when).filter(c=>!qs||c.title.toLowerCase().includes(qs)).forEach(c=>{
     const row=document.createElement('div'); row.className='cl-row'+(c.id===DB.cur?' cur':'');
     const open=document.createElement('button'); open.type='button'; open.className='cl-open'; const t=document.createElement('b'); t.textContent=c.title; const s=document.createElement('small'); s.textContent=new Date(c.when).toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · '+Math.ceil(c.log.length/2)+' questions'; open.append(t,s);
     open.onclick=()=>{ DB.cur=c.id; saveDB(); stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); };
     const ren=document.createElement('button'); ren.type='button'; ren.className='cl-mini'; ren.textContent='✎'; ren.title='Rename'; ren.onclick=()=>{ const n=prompt('Name this chat',c.title); if(n&&n.trim()){ c.title=n.trim().slice(0,60); saveDB(); if(c.id===DB.cur) $('clName').textContent=c.title; drawer(true); } };
-    const del=document.createElement('button'); del.type='button'; del.className='cl-mini'; del.textContent='🗑'; del.title='Delete'; del.onclick=()=>{ if(del.dataset.sure){ DB.chats=DB.chats.filter(x=>x!==c); if(DB.cur===c.id) DB.cur=DB.chats.length?DB.chats[0].id:null; chat(); saveDB(); restoreRoom(); renderChat(); drawer(true); } else { del.dataset.sure='1'; del.textContent='Delete?'; setTimeout(()=>{ del.dataset.sure=''; del.textContent='🗑'; },2500); } };
+    const del=document.createElement('button'); del.type='button'; del.className='cl-mini'; del.textContent='🗑'; del.title='Delete'; del.onclick=()=>{ if(del.dataset.sure){ DB.chats=DB.chats.filter(x=>x!==c); if(DB.cur===c.id) DB.cur=DB.chats.length?DB.chats[0].id:null; chat(); saveDB(); restoreRoom(); renderChat(); drawList(); } else { del.dataset.sure='1'; del.textContent='Delete?'; setTimeout(()=>{ del.dataset.sure=''; del.textContent='🗑'; },2500); } };
     row.append(open,ren,del); list.appendChild(row); });
-  if(!DB.chats.length) list.textContent='No chats yet.';
+  if(!list.children.length) list.textContent=qs?'No chats match.':'No chats yet.';
 }
 function startNew(){ const c=chat(); if(c.log.length){ newChat(); saveDB(); } stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); $('tInput').focus(); }
 
@@ -317,7 +320,7 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-open{flex:1;min-width:0;text-align:left;background:none;border:0;color:var(--stage-ink);padding:8px 10px;cursor:pointer;display:grid;gap:2px;font:inherit}
 .cl-open b{font:700 14px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cl-open small{color:var(--stage-muted);font-size:12px}
 .cl-mini{background:none;border:0;color:var(--stage-muted);cursor:pointer;padding:0 8px;font-size:13px}.cl-mini:hover{color:var(--hi)}
-@media(max-width:900px){.cl{overflow:auto}.cl-chat{min-height:60vh}}
+@media(max-width:900px){.cl{overflow:auto}.cl-chat{min-height:60vh}.cl-chat .t-log{min-height:42vh}}
 .cl-bar .cl-back{padding:6px 12px;font-size:18px;line-height:1}
 .cl-dots{margin-left:auto;font-size:22px;line-height:1;padding:2px 14px 6px;position:relative}
 .cl-dots.new:after{content:"";position:absolute;top:4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--hi);box-shadow:0 0 0 0 var(--hi);animation:clPulse 1.4s infinite}
@@ -354,6 +357,56 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 @media (prefers-reduced-motion:reduce){.cl-in .cl-box,.cl-in .cl-welcome{animation:none}}
 .cl-chat{max-width:900px;width:100%;margin:0 auto;flex:1}
 .cl-chat[hidden],.cl-home[hidden]{display:none!important}
+/* ---- chat view, in the style of a modern assistant ---- */
+.cl-chat{background:transparent;padding:0 4px;max-width:none;gap:10px}
+.cl-chat>*{width:100%;max-width:820px;margin-inline:auto}
+.cl-chat:not(.empty){padding-bottom:56px}
+.cl-chat .t-log{display:flex;flex-direction:column;gap:14px;padding:8px 2px}
+.cl-chat .t-msg.user{background:var(--k231c0f,#1d2540)!important;color:var(--stage-ink)!important;border-radius:20px 20px 6px 20px;padding:10px 16px;max-width:85%}
+.cl-chat .t-msg.bot{background:none!important;border:0!important;padding:2px 2px!important;max-width:100%;color:var(--stage-ink);font-size:16.5px;line-height:1.6}
+.cl-greet{display:none;align-items:center;justify-content:center;gap:14px;text-align:center;margin-bottom:6px}
+.cl-greet svg{width:42px;height:42px;color:var(--hi);flex:none}
+.cl-greet h2{text-transform:none;margin:0;font:700 clamp(26px,4vw,40px)/1.15 var(--display);color:var(--stage-ink);letter-spacing:-.01em}
+.cl-chat.empty{justify-content:flex-start;padding-bottom:4vh}.cl-chat.empty>.cl-greet{margin-top:auto}.cl-chat.empty>p.help{margin-bottom:auto}
+.cl-chat.empty .cl-greet{display:flex;order:1}
+.cl-chat.empty .cl-chathead,.cl-chat.empty .t-log{display:none}
+.cl-chat.empty .cl-form{order:2}.cl-chat.empty .cl-set{order:3;justify-content:center}.cl-chat.empty .t-chips{order:4}.cl-chat.empty p.help{order:5;text-align:center}
+.cl-form{display:grid;grid-template-columns:1fr auto;align-items:end;gap:4px 8px;padding:12px 14px 10px 18px;border-radius:26px;background:var(--k17130a,#141c33);border:1.5px solid var(--k4a3f1d,#2c3a5e);box-shadow:0 10px 30px -12px rgba(0,0,0,.6);transition:border-color .2s,box-shadow .2s}
+.cl-form:focus-within{border-color:var(--hi);box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 25%,transparent),0 10px 30px -12px rgba(0,0,0,.6)}
+.cl-form textarea{grid-column:1/-1;background:transparent!important;border:0!important;outline:0!important;box-shadow:none!important;resize:none;color:var(--stage-ink);font:500 17px/1.5 var(--body);padding:4px 0;min-height:56px}
+.cl-form span{display:none}
+.cl-form .row{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.cl-ib{width:40px;height:40px;border-radius:50%;border:1px solid var(--k4a3f1d,#2c3a5e);background:transparent;color:var(--stage-ink);font-size:17px;cursor:pointer;display:grid;place-items:center;padding:0}
+.cl-ib:hover{border-color:var(--hi)}
+.cl-ib.send{background:var(--hi);color:var(--hi-ink);border-color:transparent;font:800 20px var(--body)}
+.cl-ib.send:disabled{opacity:.45}
+.cl-set{gap:6px 10px}.cl-set .flabel{font-size:13px;opacity:.8}
+.cl-set select{border-radius:999px;padding:5px 12px}
+.cl-set .t-chk{font-size:13px;padding:5px 12px;border-radius:999px;border:1px solid var(--k4a3f1d,#2c3a5e);background:transparent}
+.t-chips .chip{display:none}
+.t-chips{display:block}
+.hot{margin-top:6px}
+.hot-h{font:600 14px var(--body)!important;color:var(--stage-muted)!important;margin-bottom:8px}
+.hot-l{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.hot-b{text-align:left;display:flex!important;flex-direction:column;gap:6px;min-height:84px;padding:14px 16px!important;border-radius:18px!important;background:var(--k17130a,#141c33)!important;border:1px solid var(--k4a3f1d,#2c3a5e)!important;color:var(--stage-ink)!important;font:700 15px/1.3 var(--body)!important;cursor:pointer;transition:border-color .2s,transform .2s}
+.hot-b:hover{border-color:var(--hi)!important}
+.hot-b{align-items:flex-start;justify-content:flex-start}.hot-b i{font:500 12px var(--body);font-style:normal;opacity:.65;margin-top:auto;background:transparent!important;color:inherit!important;padding:0!important}
+/* sidebar of recent chats (wide screens, chat view) */
+.cl-drawer h3{margin:6px 4px 0}
+.cl-sbnew{display:block;width:100%;padding:11px 14px;border-radius:14px;border:0;background:var(--k231c0f,#1d2540);color:var(--stage-ink);font:700 15px var(--body);text-align:left;cursor:pointer}
+.cl-sbnew:hover{background:color-mix(in srgb,var(--hi) 22%,transparent)}
+#clSearch{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid var(--k4a3f1d,#2c3a5e);background:transparent;color:var(--stage-ink);padding:9px 12px;font:500 14px var(--body)}
+@media(min-width:1000px){
+  .cl.cl-inchat{display:grid;grid-template-columns:268px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:12px 18px}
+  .cl.cl-inchat .cl-bar{grid-column:1/-1}
+  .cl.cl-inchat .cl-drawer{display:flex!important;position:static;grid-column:1;grid-row:2;width:auto;box-shadow:none;border-radius:18px;background:transparent;border:0;border-right:1px solid var(--k4a3f1d,#2c3a5e);border-radius:0;padding:0 14px 0 0;z-index:1}
+  .cl.cl-inchat .cl-chat{grid-column:2;grid-row:2;min-height:0}
+  .cl.cl-inchat #clChats,.cl.cl-inchat #clCloseDrawer,.cl.cl-inchat #clNew{display:none}
+  .cl-row{background:transparent}.cl-row:hover{background:var(--k17130a,#141c33)}
+  .cl-row.cur{outline:0;background:var(--k231c0f,#1d2540)}
+  .cl-mini{opacity:0}.cl-row:hover .cl-mini{opacity:1}
+}
+
 .cl-chathead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .cl-chatbtns{display:inline-flex;gap:6px}.cl-chatbtns .btn{padding:5px 12px!important;font-size:13px!important}
 .cl-set{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
@@ -393,6 +446,7 @@ function build(){
     </div>
   </div>
   <div class="cl-chat" id="clChatView" hidden>
+    <div class="cl-greet" id="clGreet"><svg viewBox="0 0 48 48" aria-hidden="true"><g stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M24 4v12M24 32v12M4 24h12M32 24h12M10 10l8 8M30 30l8 8M38 10l-8 8M18 30l-8 8"/></g></svg><h2 id="clGreetT">Welcome to class</h2></div>
     <div class="cl-chathead"><span class="cl-chatname" id="clName"></span><span class="cl-chatbtns"><button class="btn" id="tCopyAll" type="button">Copy chat</button><button class="btn" id="clClrChat" type="button" title="Wipe this chat">Clear chat</button></span></div>
     <div class="cl-set"><label for="tLevel" class="flabel">My level</label>
       <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
@@ -409,7 +463,7 @@ function build(){
     <form id="tForm" class="cl-form">
       <label for="tInput" class="sr">Your answer or question</label>
       <textarea id="tInput" rows="2" maxlength="2000" placeholder="Type your answer or ask Pokey anything…"></textarea>
-      <span></span><div class="row"><button class="btn" id="clMic" type="button">🎤 Speak</button><button class="btn pri" id="tSend" type="submit">Send</button></div>
+      <span></span><div class="row"><button class="cl-ib" id="clMic" type="button" aria-label="Speak" title="Speak">🎤</button><button class="cl-ib send" id="tSend" type="submit" aria-label="Send" title="Send">↑</button></div>
     </form>
     <p class="help" style="margin:0">AI coach trained from real music lessons with real people all around the world.</p>
   </div>
@@ -436,7 +490,7 @@ function build(){
       </div>
     </div>
   </aside>
-  <aside class="cl-drawer" id="clDrawer" hidden><h3>Your chats</h3><div id="clList"></div><button class="btn" id="clCloseDrawer" type="button">Close</button></aside>`;
+  <aside class="cl-drawer" id="clDrawer" hidden><button class="cl-sbnew" id="clNew2" type="button">＋ New chat</button><input id="clSearch" type="search" placeholder="Search chats" aria-label="Search chats" autocomplete="off"><h3>Recents</h3><div id="clList"></div><button class="btn" id="clCloseDrawer" type="button">Close</button></aside>`;
   card.appendChild(root);
   $('tLevel').value=store.get('bt-teacher-level',''); $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
   $('clAuto').checked=!!store.get('cl-auto',false); $('clAuto').onchange=e=>store.set('cl-auto',e.target.checked);
@@ -446,7 +500,7 @@ function build(){
   $('tCopyAll').onclick=()=>{ const c=chat(); if(!c.log.length){ toast('Nothing to copy yet'); return; } tCopy(c.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:splitReply(m.content).text)).join('\n\n')); };
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>ask(b.textContent));
   hotInit();
-  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
+  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clNew2').onclick=startNew; $('clSearch').oninput=drawList; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
   document.querySelectorAll('.cl-box').forEach(b=>b.addEventListener('pointermove',e=>{ const r=b.getBoundingClientRect(); b.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); b.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); }));
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
