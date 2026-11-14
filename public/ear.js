@@ -101,7 +101,7 @@ function render(){
   ov.querySelectorAll('#earMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===mode)));
   sgStop(); const cats=$('#earCats'); cats.textContent=''; cats.hidden=mode==='sing';
   (mode==='rel'?RCATS:CATS).forEach(([k,t])=>{ const rl=mode==='rel', b=el('button','e-cat',t+' '+(rl?'relative pitch':mode==='aware'?'awareness':'recognition')); b.type='button'; b.setAttribute('aria-pressed',String(k===(rl?rcat:cat))); b.onclick=()=>{ if(rl){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else { cat=k; try{ localStorage.setItem('ps-ear-cat',k); }catch(_){} } render(); }; cats.appendChild(b); });
-  $('#earKb').hidden=mode!=='aware'&&mode!=='sing';
+  $('#earKb').hidden=mode!=='aware'&&mode!=='sing'&&mode!=='rel';
   $('#earLbl').textContent=mode==='sing'?'Singing test':mode==='rel'?'Relative pitch · '+RCATS.find(c=>c[0]===rcat)[1]:(mode==='aware'?'Awareness':'Recognition')+' · '+CATS.find(c=>c[0]===cat)[1];
   $('#earMsg').textContent=''; $('#earOpts').textContent=''; $('#earCtl').textContent=''; $('#earBig').textContent=''; $('#earSub').textContent='';
   if(mode==='aware') awareness(); else if(mode==='sing') singing(); else if(mode==='rel') relUI(); else recognition();
@@ -257,11 +257,11 @@ function relNoteQ(){
   const root=pickRoot(items,RS.key), t0=60+root[2], nm=x=>spellAt(root,x.gen,x.semis), tc=tonicChord(iv);
   const lab=x=>rcat==='note'?x.deg+' · '+nm(x):nm(x);
   const target=tones[R(tones.length)];
-  const ctx=()=>{ clr(); iv.forEach((x,i)=>S(t0+x,.55,.8,i*.42)); const d=iv.length*.42+.35; tc.forEach(x=>S(t0+x,2,.75,d+.012*x)); S(t0-12,2,.7,d); };
+  const ctx=()=>{ clr(); drawKb([],[]); iv.forEach((x,i)=>{ S(t0+x,.55,.8,i*.42); timers.push(setTimeout(()=>drawKb([],[t0+x]),i*420)); }); const d=iv.length*.42+.35; tc.forEach(x=>S(t0+x,2,.75,d+.012*x)); S(t0-12,2,.7,d); timers.push(setTimeout(()=>drawKb([],tc.map(x=>t0+x)),d*1000)); timers.push(setTimeout(()=>drawKb([],[]),(d+2)*1000)); };
   const play=()=>S(t0+target.semis,1.8,.9,0);
   const opts=(rcat==='note'?tones.slice().sort((a,b)=>a.deg-b.deg):tones.slice().sort((a,b)=>a.semis-b.semis)).map(lab);
-  const why=rcat==='note'?'That was '+nm(target)+', the '+target.deg+' of the '+midiName(t0)+' major scale ('+(RS.grp==='stable'?'a stable tone':'an active tone')+').':'That was '+nm(target)+' in '+nm({gen:1,semis:0})+' '+tname+'.';
-  return {opts,ans:lab(target),ctx,play,why};
+  const why=rcat==='note'?'That was '+nm(target)+', the '+target.deg+' of the '+nm({gen:1,semis:0})+' major scale ('+(RS.grp==='stable'?'a stable tone':'an active tone')+').':'That was '+nm(target)+' in '+nm({gen:1,semis:0})+' '+tname+'.';
+  const tm=t0+target.semis; return {opts,ans:lab(target),ctx,play,why,kb:{lh:[t0],rh:[tm],spell:labelMap([[t0,nm({gen:1,semis:0})],[tm,nm(target)]])}};
 }
 function relIntQ(){
   const picks=Object.keys(RS.ichk).filter(k=>RS.ichk[k]).map(k=>IBY[k]), base=picks[R(picks.length)], inv=RS.imode==='inv';
@@ -359,8 +359,8 @@ function next(){
   if(n>=10) return done();
   q=makeQ(); $('#earBig').textContent='?'; $('#earSub').textContent='Question '+(n+1)+' of 10 · Score '+score;
   const mk=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
-  if(mode==='rel') $('#earKb').hidden=true;
-  if(q.ctx){ mk('Hear the key again',()=>q.ctx()); const rd=mk('READY',()=>{ rd.disabled=true; opts.querySelectorAll('.e-opt').forEach(x=>x.disabled=false); q.play(); mk('Hear the note again',()=>q.play()); },true); }
+  if(mode==='rel') drawKb([],[]);
+  if(q.ctx){ mk('Hear the key again',()=>q.ctx()); const rd=mk('READY',()=>{ rd.disabled=true; clr(); drawKb([],[]); opts.querySelectorAll('.e-opt').forEach(x=>x.disabled=false); q.play(); mk('Hear the note again',()=>q.play()); },true); }
   else { mk('▶ Play it',()=>{ q.play(); },true); mk('Hear again',()=>q.play()); }
   if(mode==='recog'&&cat==='note') mk('Hear C first',()=>S(60,1.6,.8,0));
   q.opts.forEach(o=>{ const b=el('button','e-opt',o); b.type='button'; if(q.ctx) b.disabled=true; b.onclick=()=>answer(o,b); opts.appendChild(b); });
@@ -378,7 +378,7 @@ function answer(o,b){
 function done(){
   const msg=$('#earMsg'), ctl=$('#earCtl'); ctl.querySelectorAll('.e-btn').forEach(b=>b.remove());
   $('#earBig').textContent=score+' / 10'; $('#earSub').textContent='Round complete';
-  $('#earKb').hidden=true;
+  $('#earKb').hidden=mode!=='rel';
   const miss=Object.keys(missed);
   { const rows=Object.keys(stats).map(k=>({name:k,r:stats[k].r,w:stats[k].w,text:stats[k].r+' right'+(stats[k].w?' · '+stats[k].w+' wrong'+mixText(stats[k].mix):'')})); $('#earOpts').textContent=''; resPanel($('#earOpts'),rows,10-score); }
   msg.textContent=(score>=9?'Excellent ear! Try another area. ':score>=6?'Good work. Keep going and it will get easier. ':'This takes practice, and that is normal. Switch to Awareness to hear and see them, then try again. ')+' ';
