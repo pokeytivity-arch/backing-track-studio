@@ -8,7 +8,7 @@ const LH='#1c7ed6', RH='#f76707';
 const DIRS=[['up','Up'],['down','Down'],['updown','Up and down']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:''};
+let st={key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
@@ -24,6 +24,7 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-chip small .r{color:#ff9142}#prRoom .p-chip small .l{color:#5aa8ff}
 #prRoom .p-chip[aria-pressed=true]{background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28);border-color:transparent}
 #prRoom .p-chip[aria-pressed=true] small .r,#prRoom .p-chip[aria-pressed=true] small .l{color:inherit}
+#prRoom .p-pick{display:grid;gap:12px;padding:14px 16px;border:1.5px solid var(--k6b5826,#3a4a74);border-radius:16px}#prRoom .p-pick h3{margin:0;font:700 13px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}#prRoom .p-pills{display:flex;gap:8px;flex-wrap:wrap}#prRoom .p-pill{padding:9px 16px;border-radius:999px;border:1.5px solid var(--k6b5826,#3a4a74);background:transparent;color:inherit;font:700 15px var(--body);cursor:pointer}#prRoom .p-pill[aria-pressed=true]{background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28);border-color:transparent}#prRoom .p-pick select{background:var(--k17130a,#101728);color:inherit;border:1.5px solid var(--k6b5826,#3a4a74);border-radius:12px;padding:9px 12px;font:600 15px var(--body)}
 #prRoom .p-in{flex:1 1 260px;min-width:0;background:var(--k17130a,#101728);color:inherit;border:1.5px solid var(--k6b5826,#3a4a74);border-radius:999px;padding:13px 20px;font:600 17px var(--body)}
 #prRoom .p-in:focus{outline:2px solid var(--hi,#ffd43b);outline-offset:1px}
 #prRoom .p-rng{display:inline-flex;align-items:center;gap:8px;font:700 13px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
@@ -37,7 +38,7 @@ function build(){
   ov.innerHTML='<div class="e-top"><button class="e-round" id="prX" type="button" aria-label="Back" title="Back">←</button><h1 id="prH"></h1><span class="e-sp"></span><div class="e-seg" id="prHand" role="group" aria-label="Which hand"></div><button class="e-round" id="prDots" type="button" aria-label="Whiteboard and keyboard" title="Whiteboard and keyboard">⋯</button></div>'+
     '<div class="e-cats" id="prCats"></div>'+
     '<div class="e-now"><div><div class="e-lbl" id="prLbl"></div><div class="e-big" id="prBig"></div><div class="e-sub" id="prSub"></div></div><div><div class="e-ctl" id="prCtl"></div></div></div>'+
-    '<div class="p-chips" id="prChips"></div><div class="e-msg" id="prMsg" aria-live="polite"></div>'+
+    '<div class="p-chips" id="prChips"></div><div id="prPick"></div><div class="e-msg" id="prMsg" aria-live="polite"></div>'+
     '<div class="e-kb"><div class="e-lbl"><span>Keyboard</span><span class="p-leg"><span><i style="background:'+LH+'"></i>Left hand</span><span><i style="background:'+RH+'"></i>Right hand</span></span></div><div id="prKb"></div></div>';
   document.body.appendChild(ov);
   $('#prX').onclick=close;
@@ -47,11 +48,30 @@ function build(){
 function open(k){ if(!ov) build(); kind=k==='chords'?'chords':'scales'; ov.hidden=false; clr(); steps=[]; cur=-1; render(); }
 function close(){ clr(); if(ov) ov.hidden=true; try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
 
+/* ---------- typed chord names: "D minor 9", "C major seventh", "Dm7 G7 Cmaj7" ---------- */
+const QW=new Set(['major','minor','min','dominant','diminished','augmented','suspended','half','half-diminished','add','seventh','ninth','eleventh','thirteenth','sixth','second','fourth','sus','maj','dim','aug']);
+function normDesc(w){
+  let s=w.join(' ').toLowerCase();
+  s=s.replace(/half[\s-]?diminished(\s*seventh|\s*7)?/,'m7b5').replace(/\bdominant\b/,'').replace(/\bmajor\b/,'maj').replace(/\bminor\b|\bmin\b/,'m').replace(/\bdiminished\b/,'dim').replace(/\baugmented\b/,'aug').replace(/\bsuspended\b/,'sus')
+   .replace(/seventh/,'7').replace(/ninth/,'9').replace(/eleventh/,'11').replace(/thirteenth/,'13').replace(/sixth/,'6').replace(/second/,'2').replace(/fourth/,'4').replace(/[\s\-()]/g,'');
+  if(s==='maj') s=''; s=s.replace(/^majadd/,'add'); return s;
+}
+function normChords(text){
+  const out=[];
+  String(text||'').split(/[|,;\n]+/).map(x=>x.trim()).filter(Boolean).forEach(seg=>{
+    let cur=null; seg.split(/\s+/).forEach(t=>{
+      const word=QW.has(t.toLowerCase())||/^\d+$/.test(t)||/^(add|sus)\d*$/i.test(t);
+      if(!word&&/^[A-G]/.test(t)){ if(cur) out.push(cur.r+normDesc(cur.d)); cur={r:t,d:[]}; }
+      else if(cur) cur.d.push(t); });
+    if(cur) out.push(cur.r+normDesc(cur.d)); });
+  return out;
+}
+
 /* ---------- keyboard ---------- */
 function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=steps[cur];
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords',fmap:fm});
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:s&&s.spell||null});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
@@ -65,9 +85,9 @@ function chips(){
     if(kind==='scales'){ const f=el('small'); if(s.lfing){ f.appendChild(el('b','l','L '+s.lfing)); } if(s.fing){ f.appendChild(el('b','r','R '+s.fing)); } if(!s.lfing&&!s.fing) f.textContent='–'; b.appendChild(f); }
     b.onclick=()=>{ clr(); cur=i; show(); play1(s); }; box.appendChild(b); });
 }
-function play1(s,len){ try{ CLASS.playStep(s,len||1.6); }catch(_){} }
+function play1(s,len){ try{ if(kind==='chords'&&st.vh==='h'){ [...s.lh,...s.rh].sort((a,b)=>a-b).forEach((m,i)=>CLASS.sound(m,1.1,.8,i*.5)); } else CLASS.playStep(s,len||1.6); }catch(_){} }
 function show(){
-  const s=steps[cur];
+  const s=steps[cur]; $('#prBig').style.fontSize='';
   if(kind==='chords'){ if(s){ $('#prBig').textContent=s.name; const N=names(s), t=(typeof fingerText==='function')?fingerText(s.lh,s.rh):null; $('#prSub').textContent='Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+(t?'  ·  Fingers: LH '+t.lh+', RH '+t.rh:''); } else { $('#prBig').textContent=steps.length?'Tap a chord':'Type chords'; $('#prSub').textContent=steps.length?'Tap a chord below, or press Play.':'Type chord names like Dm7 G7 Cmaj7, then press Show.'; } }
   drawKb();
 }
@@ -104,9 +124,23 @@ function render(){
     const row=el('div','e-ctl'); row.style.width='100%'; const inp=el('input','p-in'); inp.type='text'; inp.id='prIn'; inp.placeholder='Type chords: Dm7 G7 Cmaj7'; inp.value=st.chords||''; inp.setAttribute('aria-label','Chords'); inp.autocomplete='off'; inp.spellcheck=false;
     const go=el('button','e-btn pri','Show chords'); go.type='button'; row.append(inp,go); ctl.appendChild(row); const go2=()=>loadChords(inp.value); go.onclick=go2; inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); go2(); } };
     const r2=el('div','e-ctl'); r2.style.marginTop='10px'; ctl.appendChild(r2); const keep=ctl; transport(r2);
+    const vh=el('div','e-seg sm'); seg(vh,[['v','Together'],['h','One by one']],st.vh,k=>{ st.vh=k; save(); vh.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); r2.appendChild(vh);
+    pick();
     const ask=el('button','e-btn','Ask Pokey about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
     $('#prLbl').textContent='Chord practice'; if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); }
   }
+}
+function pick(){
+  const box=$('#prPick'); box.textContent=''; const K=window.EAR&&EAR.kit; if(!K) return;
+  const wrap=el('div','p-pick'), top=el('div','e-ctl'); top.appendChild(el('h3',null,'Chords in any key'));
+  const sel=document.createElement('select'); sel.setAttribute('aria-label','Key'); K.KEYS.forEach(k=>{ const o=el('option',null,k); o.value=k; sel.appendChild(o); }); sel.value=st.ckey; sel.onchange=()=>{ st.ckey=sel.value; save(); }; top.appendChild(sel); wrap.appendChild(top);
+  K.CHK.forEach(c=>{ const g=el('div','p-pills'); g.appendChild(el('h3',null,K.CH[c][0])); g.firstChild.style.marginRight='6px'; K.CH[c][1].forEach(ch=>{ const b=el('button','p-pill',ch[0]); b.type='button'; b.onclick=()=>{ clr(); showPicked(ch,K); wrap.querySelectorAll('.p-pill').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); }; g.appendChild(b); }); wrap.appendChild(g); });
+  box.appendChild(wrap);
+}
+function showPicked(ch,K){
+  const root=K.pickRoot(ch[1],st.ckey), pc=root[2], names=ch[1].map(([g,s])=>K.spellAt(root,g,s)), rootN=K.spellAt(root,1,0);
+  const rh=ch[1].map(([g,s])=>60+pc+s), lh=[36+pc]; const step={name:rootN+' '+ch[0].toLowerCase(),src:rootN+' '+ch[0],lh,rh,fing:'',lfing:'',nofing:true,spell:K.labelMap([[lh[0],rootN],...ch[1].map(([g,s],i)=>[rh[i],names[i]])])};
+  steps=[step]; cur=0; chips(); $('#prBig').textContent=step.name[0].toUpperCase()+step.name.slice(1); $('#prBig').style.fontSize=step.name.length>12?'clamp(30px,4.6vw,64px)':''; $('#prSub').textContent=names.join('  ')+'  ·  root also in the left hand'; $('#prMsg').textContent='Tap Play chords to hear it '+(st.vh==='h'?'one note at a time.':'together.'); drawKb(); play1(step);
 }
 function loadScale(){
   clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand); cur=-1; chips();
@@ -118,7 +152,7 @@ function loadScale(){
 }
 function loadChords(text,quiet){
   clr(); st.chords=String(text||'').trim(); save();
-  const list=st.chords.split(/[\s|,]+/).filter(Boolean).slice(0,16); const out=(window.CLASS&&CLASS.stepsFrom)?CLASS.stepsFrom(list):[];
+  const list=normChords(st.chords).slice(0,16); const out=(window.CLASS&&CLASS.stepsFrom)?CLASS.stepsFrom(list):[];
   if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; return; }
   steps=out; cur=0; chips(); show(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]);
 }

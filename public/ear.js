@@ -388,5 +388,5 @@ function done(){
   const aw=el('button','e-btn','Switch to Awareness'); aw.type='button'; aw.onclick=()=>{ mode='aware'; try{ localStorage.setItem('ps-ear-mode',mode); }catch(_){} render(); }; msg.appendChild(aw);
   if(miss.length){ const ask=el('button','e-btn','Ask Pokey about what I missed'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('In ear training ('+(mode==='rel'?RCATS.find(c=>c[0]===rcat)[1]+' relative pitch':CATS.find(c=>c[0]===cat)[1]+' recognition')+') I missed: '+miss.join(', ')+'. Help me hear the difference and give me something to practice on the keyboard.',{fresh:true}); }; msg.appendChild(ask); }
 }
-window.EAR={open,close};
+window.EAR={open,close,kit:{KEYS,CH,CHK,pickRoot,spellAt,labelMap}};
 })();
