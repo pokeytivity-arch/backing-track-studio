@@ -5,7 +5,9 @@
 const $=id=>document.getElementById(id);
 const KEY='ps-class-v2', MAXCHATS=60, MAXMSG=60;
 let DB={cur:null,chats:[]}, busy=false, R=null;
-const K={steps:[],i:0,playing:false,timer:null,title:'',size:61};
+const K={steps:[],i:0,playing:false,timer:null,title:'',size:61,mode:'harmonic',dir:'up',mem:{},p:0};
+const SC_KEYS=['C','G','D','A','E','B','F','Bb','Eb','Ab','Db','Gb'];
+const PLAYLBL=()=>K.mode==='melodic'?'▶ Play scale':'▶ Play progression';
 
 /* ---------- saved conversations ---------- */
 function loadDB(){
@@ -53,7 +55,12 @@ function stepsFrom(list){
     if(o.obj){ const l=notesList(o.obj.lh), r=notesList(o.obj.rh); if(l.length||r.length){ lh=l; rh=r; } }
     const n=o.ev.name; return {name:n?(n.root+n.q):o.src,src:o.src,lh,rh,fing:(o.obj&&o.obj.fing!=null)?String(o.obj.fing).slice(0,10):'',lfing:(o.obj&&o.obj.lfing!=null)?String(o.obj.lfing).slice(0,10):''}; });
 }
-function cleanKeys(o){ if(!o) return null; const st=stepsFrom(o.steps||o.chords&&String(o.chords).split(/[|\s]+/).filter(Boolean)); return st.length?{title:String(o.title||'').slice(0,80),steps:st.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing,lfing:s.lfing}))}:null; }
+function cleanKeys(o){ if(!o) return null;
+  const pack=(st,extra)=>({title:String(o.title||'').slice(0,80),mode:'melodic',dir:/^(down|updown)$/.test(o.dir||'')?o.dir:'up',steps:st.map(x=>({src:x.src,lh:x.lh,rh:x.rh,name:x.name,fing:x.fing,lfing:x.lfing}))});
+  const hnd=/^(lh|left)/i.test(o.hand||'')?'lh':/both/i.test(o.hand||'')?'both':'rh';
+  if(o.scale){ const m=String(o.scale).trim().match(/^([A-Ga-g][b#]?)(?:\s*major)?$/); if(!m||!window.SCALES||!SCALES.has) return null; const k=m[1][0].toUpperCase()+m[1].slice(1), h=SCALES.has(k); if(!h) return null; const hh=(hnd!=='rh'&&!h.lh)?'rh':hnd; const r=pack(SCALES.build(k,hh)); if(!r.title) r.title=k+' major'; return r; }
+  if(Array.isArray(o.notes)){ const st=[]; o.notes.slice(0,16).forEach(n=>{ const nm=typeof n==='string'?n:String((n&&(n.n||n.note))||''), f=(n&&typeof n==='object'&&n.f!=null)?String(n.f).slice(0,6):''; const mid=notesList([nm])[0]; if(mid==null) return; const lab=nm.replace(/[0-9\-]+$/,'');
+      st.push({src:nm,name:lab,lh:hnd==='lh'?[mid]:[],rh:hnd==='lh'?[]:[mid],fing:hnd==='lh'?'':f,lfing:hnd==='lh'?f:''}); }); return st.length?pack(st):null; } const st=stepsFrom(o.steps||o.chords&&String(o.chords).split(/[|\s]+/).filter(Boolean)); return st.length?{title:String(o.title||'').slice(0,80),steps:st.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing,lfing:s.lfing}))}:null; }
 
 /* ---------- the whiteboard ---------- */
 const CHORD_RE=/(?<![A-Za-z0-9#♯♭])[A-G][b#♭♯]?(?:maj13|maj11|maj9|maj7|maj|M7|m7b5|m7♭5|m13|m11|m9|m7|m6|m|dim7|dim|aug|sus4|sus2|sus|add9|13|11|9|7|6)[0-9#b♭♯+\-]*(?:\/[A-G][b#♭♯]?)?(?![A-Za-z])/g;
@@ -91,34 +98,55 @@ async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=l
 const KB_R={88:[21,108],76:[28,103],61:[36,96]};
 function drawKeys(){
   const wrap=$('clKbdWrap'); if(!wrap) return; const [lo,hi]=KB_R[K.size]||KB_R[61], s=K.steps[K.i];
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:true});
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:K.mode!=='melodic'});
   svg.querySelectorAll('rect').forEach((r,idx)=>{ r.style.cursor='pointer'; });
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','var(--ke8c25a,#ffd43b)'); sound(m,1.4,0.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===K.size)));
   const nm=$('clStepName'); if(nm) nm.textContent=s?s.name:'';
-  const notes=$('clStepNotes'); if(notes){ const N=useFlatsText(s); notes.textContent=s?((s.fing||s.lfing)?('Note '+s.lh.concat(s.rh).map(m=>N[m%12]).join(' ')+(s.fing?'  ·  Right-hand finger '+s.fing:'')+(s.lfing?'  ·  Left-hand finger '+s.lfing:'')):('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Fingers: RH '+fingerText(s.lh,s.rh).rh+', LH '+fingerText(s.lh,s.rh).lh)):'Tap any key to hear it, or type chords below.'; }
+  const notes=$('clStepNotes'); if(notes&&K.mode==='melodic'){ const N=useFlatsText(s); const any=K.steps.some(x=>x.fing||x.lfing); notes.textContent=s?('Note '+s.lh.concat(s.rh).map(m=>N[m%12]).join(' ')+(s.fing?'  ·  Right-hand finger '+s.fing:'')+(s.lfing?'  ·  Left-hand finger '+s.lfing:'')+(any?'':'  ·  Fingering for this scale is not in the lessons yet.')):''; }
+  else if(notes){ const N=useFlatsText(s); notes.textContent=s?((s.fing||s.lfing)?('Note '+s.lh.concat(s.rh).map(m=>N[m%12]).join(' ')+(s.fing?'  ·  Right-hand finger '+s.fing:'')+(s.lfing?'  ·  Left-hand finger '+s.lfing:'')):('Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+'  ·  Fingers: RH '+fingerText(s.lh,s.rh).rh+', LH '+fingerText(s.lh,s.rh).lh)):'Tap any key to hear it, or type chords below.'; }
   document.querySelectorAll('#clSteps button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===K.i)));
 }
 function useFlatsText(s){ return s&&/b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
-function setSteps(title,steps,{play}={}){
-  stopProg(); K.steps=steps||[]; K.i=0; K.title=title||'';
+function setMode(m,keep){
+  m=m==='melodic'?'melodic':'harmonic'; if(!keep){ K.mem[K.mode]={title:K.title,steps:K.steps}; }
+  stopProg(); K.mode=m; const box=document.querySelector('.cl-keys'); if(box) box.dataset.mode=m;
+  document.querySelectorAll('#clMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===m)));
+  const pg=$('clPlayProg'); if(pg) pg.textContent=PLAYLBL(); const ak=$('clAskKeys'); if(ak) ak.textContent=m==='melodic'?'Ask about this scale':'Ask about this chord';
+  if(!keep){ const mm=K.mem[m]||{title:'',steps:[]}; setSteps(mm.title,mm.steps,{}); }
+}
+function showScale(key,hand,dir){
+  if(!window.SCALES||!SCALES.build) return; const h=SCALES.has(key); if(!h) return;
+  if(hand!=='rh'&&!h.lh){ hand='rh'; toast('Left-hand fingering for '+key+' major is not in the lessons yet. Showing the right hand.'); }
+  if(dir){ K.dir=dir; if($('clScDir')) $('clScDir').value=dir; }
+  const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
+  setSteps(key+' major: 3+4 ('+hs+')',SCALES.build(key,hand),{mode:'melodic'}); setPane('keys');
+}
+function setSteps(title,steps,{play,mode}={}){
+  stopProg(); if(mode&&mode!==K.mode){ K.mem[K.mode]={title:K.title,steps:K.steps}; setMode(mode,true); } K.steps=steps||[]; K.i=0; K.title=title||''; K.mem[K.mode]={title:K.title,steps:K.steps};
   $('clKbdTitle').textContent=K.title||'Keyboard';
   const box=$('clSteps'); box.textContent='';
-  K.steps.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='cl-step'; b.textContent=s.name; b.onclick=()=>{ stopProg(); K.i=i; drawKeys(); playStep(s); }; box.appendChild(b); });
+  K.steps.forEach((s,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='cl-step'; if(K.mode==='melodic'){ const f=[s.fing&&('R '+s.fing),s.lfing&&('L '+s.lfing)].filter(Boolean).join(' · '); b.innerHTML='<span class="n"></span><small></small>'; b.firstChild.textContent=s.name; b.lastChild.textContent=f||'–'; } else b.textContent=s.name; b.onclick=()=>{ stopProg(); K.i=i; drawKeys(); playStep(s); }; box.appendChild(b); });
   $('clKbdTools').hidden=!K.steps.length; drawKeys(); if(play&&K.steps.length) playStep(K.steps[0]);
-  const c=chat(); c.keys=K.steps.length?{title:K.title,steps:K.steps.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing,lfing:s.lfing}))}:null; saveDB();
+  const c=chat(); c.keys=K.steps.length?{title:K.title,mode:K.mode,steps:K.steps.map(s=>({src:s.src,lh:s.lh,rh:s.rh,name:s.name,fing:s.fing,lfing:s.lfing}))}:null; saveDB();
 }
-function showChordNow(name){ const st=stepsFrom([name]); if(!st.length) return; const cur=K.steps.findIndex(s=>s.src===name||s.name===st[0].name);
+function showChordNow(name){ const st=stepsFrom([name]); if(!st.length) return; setPane('keys'); if(K.mode!=='harmonic') setMode('harmonic'); const cur=K.steps.findIndex(s=>s.src===name||s.name===st[0].name);
   if(cur>=0){ stopProg(); K.i=cur; drawKeys(); playStep(K.steps[cur]); } else setSteps(name,st,{play:true}); }
+function scaleSeq(){ const n=K.steps.length, up=[...Array(n).keys()]; return K.dir==='down'?up.slice().reverse():K.dir==='updown'?up.concat(up.slice(0,-1).reverse()):up; }
 function playProg(){
   if(!K.steps.length) return; if(K.playing){ stopProg(); return; }
-  K.playing=true; $('clPlayProg').textContent='■ Stop'; const bpm=+$('clTempo').value||80, gap=(60/bpm)*(K.steps.length>1?2:4)*1000;
+  K.playing=true; $('clPlayProg').textContent='■ Stop'; const bpm=+$('clTempo').value||80;
+  if(K.mode==='melodic'){ const seq=scaleSeq(), gap=(60/bpm)*1000; K.p=0; if(K.dir==='updown'&&false) K.p=0;
+    const tick=()=>{ if(!K.playing) return; K.i=seq[K.p]; drawKeys(); playStep(K.steps[K.i],gap/1000*1.6);
+      K.timer=setTimeout(()=>{ if(!K.playing) return; K.p++; if(K.p>=seq.length){ if($('clLoop').checked) K.p=0; else { stopProg(); return; } } tick(); },gap); };
+    tick(); return; }
+  const gap=(60/bpm)*(K.steps.length>1?2:4)*1000;
   const tick=()=>{ if(!K.playing) return; drawKeys(); playStep(K.steps[K.i],gap/1000*1.05);
     K.timer=setTimeout(()=>{ if(!K.playing) return; if(K.i<K.steps.length-1) K.i++; else if($('clLoop').checked) K.i=0; else { stopProg(); return; } tick(); },gap); };
   tick();
 }
-function stopProg(){ K.playing=false; clearTimeout(K.timer); const b=$('clPlayProg'); if(b) b.textContent='▶ Play progression'; }
+function stopProg(){ K.playing=false; clearTimeout(K.timer); const b=$('clPlayProg'); if(b) b.textContent=PLAYLBL(); }
 function stepGo(d){ if(!K.steps.length) return; stopProg(); K.i=(K.i+d+K.steps.length)%K.steps.length; drawKeys(); playStep(K.steps[K.i]); }
 
 /* save the keyboard as a picture, or open sheet music */
@@ -194,8 +222,9 @@ function renderChat(extra){
   drawList();
 }
 function applyBoard(sp,force){ if(sp.board||force){ const c=chat(); if(sp.board){ c.board=sp.board; renderBoard(sp.board); } }
-  if(sp.keys) setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{}); }
-function restoreRoom(){ const c=chat(); renderBoard(c.board||null); if(c.keys&&c.keys.steps&&c.keys.steps.length) setSteps(c.keys.title,c.keys.steps.map(s=>({...s})),{}); else setSteps('',[],{}); }
+  if(sp.keys){ applyKeys(sp); setPane(sp.board?'board':'keys'); } }
+function applyKeys(sp){ if(sp.keys.dir&&$('clScDir')){ K.dir=sp.keys.dir; $('clScDir').value=sp.keys.dir; } setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{mode:sp.keys.mode||'harmonic'}); }
+function restoreRoom(){ const c=chat(); renderBoard(c.board||null); if(c.keys&&c.keys.steps&&c.keys.steps.length) setSteps(c.keys.title,c.keys.steps.map(s=>({...s})),{mode:c.keys.mode||'harmonic'}); else setSteps('',[],{}); }
 let pendingCtx=null;
 const GREET_Q=['How may I be of help to you today?','What do you want to tell me?',"What's on your mind today?"]; let greetPick='';
 
@@ -236,7 +265,7 @@ async function ask(q,opts){
   }catch(_){ err='Couldn\'t reach the coach. Check your internet connection and try again.'; }
   if(err) c.log.pop();
   busy=false; $('tSend').disabled=false; c.when=Date.now();
-  if(reply){ const sp=splitReply(reply); if(sp.board) c.board=sp.board; saveDB(); renderChat(); if(sp.board) renderBoard(sp.board); if(sp.keys) setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{}); $('tInput').value=''; if($('clAuto').checked) speak(sp.text,null); }
+  if(reply){ const sp=splitReply(reply); if(sp.board) c.board=sp.board; saveDB(); renderChat(); if(sp.board) renderBoard(sp.board); if(sp.keys) applyKeys(sp); $('tInput').value=''; if($('clAuto').checked) speak(sp.text,null); }
   else { saveDB(); renderChat({cls:'err',text:err}); $('tInput').value=q; }
 }
 
@@ -245,8 +274,18 @@ let view='home', slideAfterLoad=false, practice=false;
 function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||!!practice); document.body.dataset.clMini=(view==='chat'||practice==='scales'||practice==='chords')?'1':''; }
 function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; practice=false; syncBar(); h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
 function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; syncBar(); { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
+let pane='board';
+function setPane(p){ pane=p==='keys'?'keys':'board'; const el=$('clSlide'); if(el) el.dataset.pane=pane; document.querySelectorAll('#clPane button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===pane))); }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
 function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(practice){ practice=false; syncBar(); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
+function rowMenu(btn,c){
+  const old=document.getElementById('clPop'); if(old){ const same=old._for===btn; old.remove(); if(same) return; }
+  const pop=document.createElement('div'); pop.id='clPop'; pop.className='cl-pop'; pop.setAttribute('role','menu'); pop._for=btn;
+  const item=(t,fn,danger)=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitem'); b.textContent=t; if(danger) b.className='danger'; b.onclick=e=>{ e.stopPropagation(); pop.remove(); fn(); }; return b; };
+  pop.append(item('Rename',()=>{ const n=prompt('Name this chat',c.title); if(n&&n.trim()){ c.title=n.trim().slice(0,60); saveDB(); if(c.id===DB.cur) $('clName').textContent=c.title; drawList(); } }),
+    item('Delete',()=>{ if(!confirm('Delete this chat?')) return; DB.chats=DB.chats.filter(x=>x!==c); if(DB.cur===c.id) DB.cur=DB.chats.length?DB.chats[0].id:null; chat(); saveDB(); restoreRoom(); renderChat(); drawList(); },true));
+  document.body.appendChild(pop); { const r=btn.getBoundingClientRect(); pop.style.top=(r.bottom+4)+'px'; pop.style.right=Math.max(8,innerWidth-r.right)+'px'; } const close=e=>{ if(!pop.contains(e.target)){ pop.remove(); document.removeEventListener('pointerdown',close,true); } }; setTimeout(()=>document.addEventListener('pointerdown',close,true),0);
+}
 function drawer(open){ const d=$('clDrawer'); d.hidden=!open; if(open) drawList(); }
 function drawList(){
   const list=$('clList'); if(!list) return; list.textContent=''; const qs=(($('clSearch')||{}).value||'').trim().toLowerCase();
@@ -254,9 +293,9 @@ function drawList(){
     const row=document.createElement('div'); row.className='cl-row'+(c.id===DB.cur?' cur':'');
     const open=document.createElement('button'); open.type='button'; open.className='cl-open'; const t=document.createElement('b'); t.textContent=c.title; const s=document.createElement('small'); s.textContent=new Date(c.when).toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · '+Math.ceil(c.log.length/2)+' questions'; open.append(t,s);
     open.onclick=()=>{ DB.cur=c.id; saveDB(); stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); };
-    const ren=document.createElement('button'); ren.type='button'; ren.className='cl-mini'; ren.textContent='✎'; ren.title='Rename'; ren.onclick=()=>{ const n=prompt('Name this chat',c.title); if(n&&n.trim()){ c.title=n.trim().slice(0,60); saveDB(); if(c.id===DB.cur) $('clName').textContent=c.title; drawer(true); } };
-    const del=document.createElement('button'); del.type='button'; del.className='cl-mini'; del.textContent='🗑'; del.title='Delete'; del.onclick=()=>{ if(del.dataset.sure){ DB.chats=DB.chats.filter(x=>x!==c); if(DB.cur===c.id) DB.cur=DB.chats.length?DB.chats[0].id:null; chat(); saveDB(); restoreRoom(); renderChat(); drawList(); } else { del.dataset.sure='1'; del.textContent='Delete?'; setTimeout(()=>{ del.dataset.sure=''; del.textContent='🗑'; },2500); } };
-    row.append(open,ren,del); list.appendChild(row); });
+    const more=document.createElement('button'); more.type='button'; more.className='cl-mini cl-more'; more.textContent='\u22ef'; more.title='More'; more.setAttribute('aria-haspopup','menu'); more.setAttribute('aria-label','Chat options');
+    more.onclick=e=>{ e.stopPropagation(); rowMenu(more,c); };
+    row.append(open,more); list.appendChild(row); });
   if(!list.children.length) list.textContent=qs?'No chats match.':'No chats yet.';
 }
 function startNew(){ greetPick=''; hotGone={}; const c=chat(); if(c.log.length){ newChat(); saveDB(); } stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); $('tInput').focus(); }
@@ -367,6 +406,27 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 @media (prefers-reduced-motion:reduce){.cl-in .cl-box,.cl-in .cl-welcome{animation:none}}
 .cl-chat{max-width:900px;width:100%;margin:0 auto;flex:1}
 .cl-chat[hidden],.cl-home[hidden]{display:none!important}
+/* chat row menu */
+.cl-row{position:relative}
+.cl-more{font-size:20px;line-height:1;padding:0 12px}
+.cl-pop{position:fixed;z-index:200000;min-width:140px;padding:6px;border-radius:14px;background:var(--k231c0f,#1d2540);border:1px solid var(--k4a3f1d,#2c3a5e);box-shadow:0 14px 34px rgba(0,0,0,.55);display:grid;gap:2px}
+.cl-pop button{background:none;border:0;color:var(--stage-ink);text-align:left;padding:9px 12px;border-radius:9px;font:600 14px var(--body);cursor:pointer}
+.cl-pop button:hover{background:color-mix(in srgb,var(--hi) 18%,transparent)}
+.cl-pop button.danger{color:#ff8787}
+@media(min-width:1000px){.cl-mini{opacity:.55!important}.cl-row:hover .cl-mini{opacity:1!important}}
+/* whiteboard | keyboard toggle */
+.cl-pane button{font-weight:800;padding:8px 18px}
+#clSlide[data-pane=board] .cl-keys,#clSlide[data-pane=keys] .cl-boardwrap{display:none}
+/* harmonic | melodic */
+.cl-mode{justify-self:start}
+.cl-scale{display:none;flex-wrap:wrap;gap:8px;align-items:center}
+.cl-keys[data-mode=melodic] .cl-scale{display:flex}
+.cl-keys[data-mode=melodic] .cl-type,.cl-keys[data-mode=melodic] #clCheck{display:none}
+.cl-scale .btn{padding:7px 16px!important;font-size:14px!important}
+.cl-scale select{background:var(--k17130a,#141c33);color:var(--stage-ink);border:1.5px solid var(--k6b5826,#34446c);border-radius:10px;padding:7px 10px;font:600 14px var(--body)}
+.cl-keys[data-mode=melodic] .cl-step{display:inline-flex;flex-direction:column;align-items:center;gap:1px;min-width:46px;padding:6px 10px}
+.cl-keys[data-mode=melodic] .cl-step small{font:700 11px var(--body);opacity:.8}
+
 /* ---- chat view, in the style of a modern assistant ---- */
 .cl-chat{background:transparent;padding:0 4px;max-width:none;gap:10px}
 .cl-chat>*{width:100%;max-width:820px;margin-inline:auto}
@@ -490,13 +550,15 @@ function build(){
     <p class="help" style="margin:0">AI coach trained from real music lessons with real people all around the world.</p>
   </div>
   <aside class="cl-slide" id="clSlide" aria-label="Whiteboard and keyboard" aria-hidden="true">
-    <div class="cl-slidehead"><b>Whiteboard and keyboard</b><button class="btn" id="clX" type="button" aria-label="Close and return" title="Close">✕</button></div>
+    <div class="cl-slidehead"><div class="seg dark cl-pane" id="clPane" role="group" aria-label="Whiteboard or keyboard"><button type="button" data-p="board">Whiteboard</button><button type="button" data-p="keys">Keyboard</button></div><button class="btn" id="clX" type="button" aria-label="Close and return" title="Close">✕</button></div>
     <p class="cl-turn">Tip: turn your phone sideways for a wider keyboard.</p>
     <div class="cl-left">
       <div class="cl-boardwrap"><div class="cl-areahead"><span>Whiteboard</span><button class="btn" id="clClrBoard" type="button" title="Wipe the whiteboard">Clear board</button></div>
         <div class="cl-board" id="clBoard" aria-label="Whiteboard"></div></div>
       <div class="cl-keys">
         <div class="cl-khead"><span id="clKbdTitle">Keyboard</span><button class="btn" id="clClrKeys" type="button" title="Wipe the keyboard">Clear keyboard</button><div class="seg dark" id="clKbdSize" role="group" aria-label="Keyboard size"><button data-k="88">88 keys</button><button data-k="76">76 keys</button><button data-k="61">61 keys</button></div></div>
+        <div class="seg dark cl-mode" id="clMode" role="group" aria-label="Keyboard mode"><button type="button" data-m="harmonic" title="Chords: notes played together">Harmonic</button><button type="button" data-m="melodic" title="Scales: notes played one after another">Melodic</button></div>
+        <div class="cl-scale" id="clScale"><select id="clScKey" aria-label="Scale"></select><select id="clScHand" aria-label="Hand"><option value="rh">Right hand</option><option value="lh">Left hand</option><option value="both">Both hands</option></select><select id="clScDir" aria-label="Direction"><option value="up">Up</option><option value="down">Down</option><option value="updown">Up and down</option></select><button class="btn pri" id="clScGo" type="button">Show scale</button></div>
         <div id="clKbdWrap"></div>
         <div class="cl-steps" id="clSteps"></div>
         <div class="cl-notes"><b id="clStepName" style="color:#fff;font:800 15px var(--display);margin-right:8px"></b><span id="clStepNotes"></span></div>
@@ -529,12 +591,17 @@ function build(){
     if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
     else if(g==='ear'){ practice='ear'; syncBar(); if(window.EAR) EAR.open(); }
     else if(g==='scales'){ practice='scales'; syncBar(); slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
-    else if(g==='chords'){ practice='chords'; syncBar(); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
+    else if(g==='chords'){ practice='chords'; syncBar(); setPane('keys'); setMode('harmonic'); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
   $('clDots').onclick=()=>slide(!$('clSlide').classList.contains('on')); $('clX').onclick=()=>slide(false);
   $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
+  { const sel=$('clScKey'); SC_KEYS.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k+' major'; sel.appendChild(o); }); }
+  document.querySelectorAll('#clMode button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+  document.querySelectorAll('#clPane button').forEach(b=>b.onclick=()=>setPane(b.dataset.p));
+  $('clScGo').onclick=()=>showScale($('clScKey').value,$('clScHand').value,$('clScDir').value); $('clScDir').onchange=()=>{ K.dir=$('clScDir').value; };
+  setPane('board'); setMode('harmonic',true);
   $('clPrev').onclick=()=>stepGo(-1); $('clNext').onclick=()=>stepGo(1); $('clPlayProg').onclick=playProg;
   $('clPng').onclick=savePNG; $('clSheet').onclick=sheetMusic; $('clToStudio').onclick=toStudio; $('clAskKeys').onclick=askAboutKeys;
   $('clType').onsubmit=e=>{ e.preventDefault(); const v=$('clTypeIn').value.trim(); if(!v) return; const st=stepsFrom(v.split(/[\s|,]+/).filter(Boolean)); if(!st.length){ toast('I could not read those chords. Try names like Dm7 G7 Cmaj7.'); return; } setSteps(v,st,{play:true}); };
@@ -543,7 +610,7 @@ function build(){
 }
 
 window.CLASS={
-  sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{}); if(slideAfterLoad){ slideAfterLoad=false; slide(true); } },
+  sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{mode:'melodic'}); setPane('keys'); if(slideAfterLoad){ slideAfterLoad=false; slide(true); } },
   back,slide,setView,welcome,
   init:build,
   ask,

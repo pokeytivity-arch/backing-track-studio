@@ -52,5 +52,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build};
+window.SCALES={open,build,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();
