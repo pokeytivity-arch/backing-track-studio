@@ -257,8 +257,8 @@ function relNoteQ(){
   const root=pickRoot(items,RS.key), t0=60+root[2], nm=x=>spellAt(root,x.gen,x.semis), tc=tonicChord(iv);
   const lab=x=>rcat==='note'?x.deg+' · '+nm(x):nm(x);
   const target=tones[R(tones.length)];
-  const ctx=()=>{ clr(); drawKb([],[]); iv.forEach((x,i)=>{ S(t0+x,.55,.8,i*.42); timers.push(setTimeout(()=>drawKb([],[t0+x]),i*420)); }); const d=iv.length*.42+.35; tc.forEach(x=>S(t0+x,2,.75,d+.012*x)); S(t0-12,2,.7,d); timers.push(setTimeout(()=>drawKb([],tc.map(x=>t0+x)),d*1000)); timers.push(setTimeout(()=>drawKb([],[]),(d+2)*1000)); };
-  const play=()=>S(t0+target.semis,1.8,.9,0);
+  const ctx=()=>{ clr(); drawKb([],[]); const at=(ms,fn)=>timers.push(setTimeout(fn,ms)); iv.forEach((x,i)=>at(i*420,()=>{ S(t0+x,.55,.8,0); drawKb([],[t0+x]); })); const d=iv.length*420+350; at(d,()=>{ tc.forEach((x,i)=>S(t0+x,1.8,.75,.012*i)); S(t0-12,1.8,.7,0); drawKb([],tc.map(x=>t0+x)); }); at(d+1900,()=>drawKb([],[])); };
+  const play=()=>{ clr(); S(t0+target.semis,2,1,.12); };
   const opts=(rcat==='note'?tones.slice().sort((a,b)=>a.deg-b.deg):tones.slice().sort((a,b)=>a.semis-b.semis)).map(lab);
   const why=rcat==='note'?'That was '+nm(target)+', the '+target.deg+' of the '+nm({gen:1,semis:0})+' major scale ('+(RS.grp==='stable'?'a stable tone':'an active tone')+').':'That was '+nm(target)+' in '+nm({gen:1,semis:0})+' '+tname+'.';
   const tm=t0+target.semis; return {opts,ans:lab(target),ctx,play,why,kb:{lh:[t0],rh:[tm],spell:labelMap([[t0,nm({gen:1,semis:0})],[tm,nm(target)]])}};
