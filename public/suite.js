@@ -135,7 +135,7 @@ body[data-dest="class"] #psMini{display:flex}
 #suiteHub .dcard[data-k=plus]{--pp:35% 30%}
 #suiteHub .dcard .ic{margin-top:-6px}
 
-#suiteHub .sub{width:min(1240px,94vw);max-width:none;position:relative;left:50%;transform:translateX(-50%);font-size:clamp(14px,1.45vw,17px);display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;color:#d0d7e6;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+#suiteHub .sub{width:min(1240px,94vw);max-width:none;position:relative;left:50%;transform:translateX(-50%);font-size:clamp(11px,1.22vw,17px);display:flex;flex-wrap:nowrap;white-space:nowrap;justify-content:center;gap:6px 12px;color:#d0d7e6;text-shadow:0 2px 10px rgba(0,0,0,.5)}
 #suiteHub .sub i{font-style:normal;color:var(--hi,var(--ke8c25a,#ffd43b));opacity:.9}
 @media (max-width:1060px){#suiteHub .sub{width:auto;left:0;transform:none;flex-direction:column;align-items:center;gap:4px}#suiteHub .sub i{display:none}}
 
