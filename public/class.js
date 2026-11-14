@@ -236,7 +236,7 @@ async function ask(q,opts){
 
 /* ---------- the list of previous chats ---------- */
 let view='home', slideAfterLoad=false, practice=false;
-function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||practice); }
+function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||!!practice); document.body.dataset.clMini=(view==='chat'||practice==='scales'||practice==='chords')?'1':''; }
 function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; practice=false; syncBar(); h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
 function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; syncBar(); { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
@@ -509,9 +509,9 @@ function build(){
   document.querySelectorAll('.cl-box').forEach(b=>b.addEventListener('pointermove',e=>{ const r=b.getBoundingClientRect(); b.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); b.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); }));
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
     if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
-    else if(g==='ear'){ practice=true; syncBar(); if(window.EAR) EAR.open(); }
-    else if(g==='scales'){ practice=true; syncBar(); slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
-    else if(g==='chords'){ practice=true; syncBar(); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
+    else if(g==='ear'){ practice='ear'; syncBar(); if(window.EAR) EAR.open(); }
+    else if(g==='scales'){ practice='scales'; syncBar(); slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
+    else if(g==='chords'){ practice='chords'; syncBar(); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
   $('clDots').onclick=()=>slide(!$('clSlide').classList.contains('on')); $('clX').onclick=()=>slide(false);
   $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);

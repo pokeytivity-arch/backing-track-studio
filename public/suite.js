@@ -83,7 +83,7 @@ body[data-dest="plus"] .tx .txitem{border-top-color:var(--k6b5826,#34446c);color
 body[data-dest="plus"] .tx h3{color:var(--stage-muted);text-transform:uppercase;letter-spacing:.12em;font:600 12px var(--body)!important}
 body[data-dest="plus"] .tx .help{color:var(--stage-muted)}
 #psMini{position:fixed;right:28px;bottom:22px;z-index:120;display:none;gap:8px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 8px 24px rgba(0,0,0,.28);font:600 13px var(--body)}
-body[data-dest="class"] #psMini{display:flex}
+body[data-dest="class"][data-cl-mini="1"] #psMini{display:flex}
 #psMini button{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
 #psMini button.pri{background:var(--hi,var(--ke8c25a,#ffd43b));color:#151b28;border-color:transparent}
 @media(max-width:700px){body[data-dest="class"] .card[data-panel="teacher"].panel-active,body[data-dest="plus"] .card[data-panel="transcribe"].panel-active{left:0!important;top:40px!important;width:100vw!important;height:calc(100vh - 40px)!important;border-radius:0}#psMini{right:10px;bottom:10px}}
