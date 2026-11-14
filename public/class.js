@@ -235,11 +235,12 @@ async function ask(q,opts){
 }
 
 /* ---------- the list of previous chats ---------- */
-let view='home', slideAfterLoad=false;
-function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
-function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
+let view='home', slideAfterLoad=false, practice=false;
+function syncBar(){ const r=$('clRoot'); if(r) r.classList.toggle('cl-work',view==='chat'||practice); }
+function welcome(){ const h=$('clHome'); if(!h||view!=='home') return; practice=false; syncBar(); h.classList.remove('cl-in'); void h.offsetWidth; h.classList.add('cl-in'); }
+function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; syncBar(); { const r=$('clRoot'); if(r) r.classList.toggle('cl-inchat',v==='chat'); } if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
-function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
+function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(practice){ practice=false; syncBar(); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
 function drawer(open){ const d=$('clDrawer'); d.hidden=!open; if(open) drawList(); }
 function drawList(){
   const list=$('clList'); if(!list) return; list.textContent=''; const qs=(($('clSearch')||{}).value||'').trim().toLowerCase();
@@ -322,6 +323,9 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-mini{background:none;border:0;color:var(--stage-muted);cursor:pointer;padding:0 8px;font-size:13px}.cl-mini:hover{color:var(--hi)}
 @media(max-width:900px){.cl{overflow:auto}.cl-chat{min-height:60vh}.cl-chat .t-log{min-height:42vh}}
 .cl-bar .cl-back{padding:6px 12px;font-size:18px;line-height:1}
+.cl-brand{font:800 clamp(24px,3.2vw,32px)/1 var(--display,var(--body))!important;letter-spacing:-.02em}
+.cl:not(.cl-work) #clDots,.cl:not(.cl-inchat) #clChats,.cl:not(.cl-inchat) #clNew{display:none}
+.cl-home{gap:10px;padding-top:0;margin-top:-8px}
 .cl-dots{margin-left:auto;font-size:22px;line-height:1;padding:2px 14px 6px;position:relative}
 .cl-dots.new:after{content:"";position:absolute;top:4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--hi);box-shadow:0 0 0 0 var(--hi);animation:clPulse 1.4s infinite}
 @keyframes clPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}100%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}
@@ -431,7 +435,7 @@ function build(){
   root.innerHTML=`
   <div class="cl-bar">
     <button class="btn cl-back" id="clBack" type="button" aria-label="Back" title="Back">←</button>
-    <span class="cl-brand">🎓 Class</span>
+    <span class="cl-brand">Class Area</span>
     <button class="btn" id="clChats" type="button">☰ Chats</button>
     <button class="btn" id="clNew" type="button">＋ New chat</button>
     <button class="btn cl-dots" id="clDots" type="button" aria-label="Whiteboard and keyboard" aria-expanded="false" title="Whiteboard and keyboard">⋯</button>
@@ -505,9 +509,9 @@ function build(){
   document.querySelectorAll('.cl-box').forEach(b=>b.addEventListener('pointermove',e=>{ const r=b.getBoundingClientRect(); b.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); b.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); }));
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
     if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
-    else if(g==='ear'){ if(window.EAR) EAR.open(); }
-    else if(g==='scales'){ slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
-    else if(g==='chords'){ slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
+    else if(g==='ear'){ practice=true; syncBar(); if(window.EAR) EAR.open(); }
+    else if(g==='scales'){ practice=true; syncBar(); slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
+    else if(g==='chords'){ practice=true; syncBar(); slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
   $('clDots').onclick=()=>slide(!$('clSlide').classList.contains('on')); $('clX').onclick=()=>slide(false);
   $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);
