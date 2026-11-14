@@ -1,7 +1,7 @@
 /* voicings.js: Class > Chord practice > Voicings.
    You type the notes of a chord (any order, any inversion); it names the chord and shows each voicing on the keyboard.
    The voicings, their formulas and their descriptions are written exactly as the director gave them (see TRI and NINTH below).
-   In a formula: numbers are chord tones (1 3 5 7 9), "/" separates left hand from right hand, a "." between two tones lifts the next one an octave (1.3 is a tenth).
+   In a formula: numbers are chord tones (1 3 5 7 9), "/" separates left hand from right hand, a "." lifts the next tone an octave (1.3 is a tenth); a dot just before "/" is an octave gap between the hands.
    The first tone starts in the octave that begins at the given C, and every tone after it goes up from the one before. */
 (function(){
 'use strict';
@@ -10,12 +10,15 @@ const BASE={C:0,D:2,E:4,F:5,G:7,A:9,B:11}, LETTERS='CDEFGAB', SYM={'-2':'𝄫','
 const mod=(n,m)=>((n%m)+m)%m;
 
 /* ----- the director's voicings ----- */
-const TRI=[ // starts around C4 (shifted down an octave if the top would pass C6)
+const TRI=[ // start around C4, then moved down an octave if the top would pass G5 (singable register C2 to G5)
   {f:'3 / 1 5', d:'Drop-2 voicing of root position'},
   {f:'5 / 3 1', d:'Drop-2 voicing of first inversion'},
   {f:'1 / 5 3', d:'Drop-2 voicing of second inversion'}
 ];
 const NINTH=[ // oct = the C where the first tone's octave begins; only = chord kinds it is for (omitted = all three)
+  {f:'1./3 5 7 9', oct:2, d:'Part-over-root voicing'},
+  {f:'1./ 7 9 3 5', oct:2, d:'Combination of the part-over-root voicing and A and B voicing'},
+  {f:'1. / 5 7 9 3', oct:2, d:'Upper-structure voicing technique', only:['maj9','dom9']},
   {f:'1.3 / 7 9 5', oct:2, d:'Combination of the part-over-root voicing and drop-2 voicing'},
   {f:'1.7 / 3 5 9', oct:3, d:'Combination of the part-over-root voicing, A and B voicing and drop-2 voicing'},
   {f:'1 5 / 7 9 3 5', oct:3, d:'Combination of A and B voicing and part over root voicing'},
@@ -25,8 +28,7 @@ const NINTH=[ // oct = the C where the first tone's octave begins; only = chord 
   {f:'3 7 9', oct:4, d:'Combination of rootless voicing and A and B voicing'},
   {f:'7 9 3 5', oct:3, d:'Combination of rootless voicing and A and B voicing'}
 ];
-/* Waiting for the director to clarify (not shown yet): "1./3 5 7 9" (C2, part-over-root), "1./ 7 9 3 5" (C2, part-over-root and A and B),
-   "1. / 5 7 9 3" (C2, upper-structure, major and dominant only). */
+/* In a formula a dot right before the slash is an octave gap between the last left-hand note and the first right-hand note. */
 
 /* ----- reading what was typed ----- */
 function readNotes(text){
@@ -71,7 +73,7 @@ function place(formula,oct,T){
 }
 function voicingsFor(root,K){
   const T=tones(root,K), list=[], tri=K.nine?(K.k==='min9'?KINDS[1]:KINDS[0]):K, TT=tones(root,tri);
-  TRI.forEach(v=>{ let n=place(v.f,4,TT); if(Math.max.apply(null,n.map(x=>x.midi))>84) n=n.map(x=>Object.assign({},x,{midi:x.midi-12})); list.push({f:v.f,d:v.d,notes:n,group:'Triad voicings'}); });
+  TRI.forEach(v=>{ let n=place(v.f,4,TT); while(Math.max.apply(null,n.map(x=>x.midi))>79) n=n.map(x=>Object.assign({},x,{midi:x.midi-12})); list.push({f:v.f,d:v.d,notes:n,group:'Triad voicings'}); });
   if(K.nine) NINTH.forEach(v=>{ if(v.only&&!v.only.includes(K.k)) return; list.push({f:v.f,d:v.d,notes:place(v.f,v.oct,T),group:'Ninth chord voicings'}); });
   return list;
 }
