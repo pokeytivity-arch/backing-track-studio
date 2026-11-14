@@ -686,7 +686,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-z (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zb (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2385,7 +2385,7 @@ function fingering(lh,rh){
   L(lh); R(rh); return f;
 }
 function fingerText(lh,rh){ const f=fingering(lh,rh), s=a=>[...a].sort((x,y)=>x-y).map(m=>f[m]).join('-'); return {lh:s(lh),rh:s(rh)}; }
-function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false,fmap=null}={}){
+function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false,fmap=null,spell=null}={}){
   const all=[...lh,...rh]; if(lo==null){ lo=Math.min(...all); lo-=((lo%12)+12)%12; } if(hi==null){ hi=Math.max(...all); hi+=11-(((hi%12)+12)%12); }
   const NS='http://www.w3.org/2000/svg', whites=[]; for(let m=lo;m<=hi;m++) if(KB_WHITE.includes(((m%12)+12)%12)) whites.push(m);
   const ww=14, W=whites.length*ww, H=height, bw=9, bh=H*0.62;
@@ -2396,13 +2396,13 @@ function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false,
   const col=m=>lh.includes(m)?'#1c7ed6':rh.includes(m)?'#f76707':null;
   const el=(tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e; };
   whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1,'data-m':m});
-    if(c&&labels){ const t=el('text',{x:1+i*ww+ww/2,y:H-5,'text-anchor':'middle','font-size':8,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[m%12]; }
+    if(c&&labels){ const L=spell&&spell[m]!=null?[].concat(spell[m]):[N[m%12]]; L.forEach((tx,k)=>{ const t=el('text',{x:1+i*ww+ww/2,y:H-5-(L.length-1-k)*9,'text-anchor':'middle','font-size':tx.length>2?6.2:8,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=tx; }); }
     if(((m%12)+12)%12===0){ const t=el('text',{x:1+i*ww+2,y:H-(c?(fingers?30:16):5),'font-size':6,'font-family':'Arial',fill:c?'#fff':'#999'}); t.textContent='C'+(Math.floor(m/12)-1); }
     if(c&&FG[m]){ el('circle',{cx:1+i*ww+ww/2,cy:H-22,r:5.2,fill:'#fff'}); const t=el('text',{x:1+i*ww+ww/2,y:H-19.4,'text-anchor':'middle','font-size':7.5,'font-family':'Arial','font-weight':800,fill:c}); t.textContent=FG[m]; } });
   for(let m=lo;m<=hi;m++){ const pc=((m%12)+12)%12; if(KB_WHITE.includes(pc)) continue;
     const i=whites.indexOf(m-1); if(i<0) continue; const c=col(m), x=1+(i+1)*ww-bw/2;
     el('rect',{x,y:1,width:bw,height:bh,rx:1.5,fill:c||'#222',stroke:'#111','stroke-width':0.8,'data-m':m});
-    if(c&&labels){ const t=el('text',{x:x+bw/2,y:bh-4,'text-anchor':'middle','font-size':6,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=N[pc]; }
+    if(c&&labels){ const L=spell&&spell[m]!=null?[].concat(spell[m]):[N[pc]]; L.forEach((tx,k)=>{ const t=el('text',{x:x+bw/2,y:bh-4-(L.length-1-k)*7,'text-anchor':'middle','font-size':tx.length>2?4.6:6,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=tx; }); }
     if(c&&FG[m]){ el('circle',{cx:x+bw/2,cy:bh-14,r:4.3,fill:'#fff'}); const t=el('text',{x:x+bw/2,y:bh-11.4,'text-anchor':'middle','font-size':6.6,'font-family':'Arial','font-weight':800,fill:c}); t.textContent=FG[m]; } }
   return svg;
 }
@@ -2936,7 +2936,7 @@ init();
 <script src="suite.js" defer></script>
 <script src="class.js?v=w" defer></script>
 <script src="progress.js" defer></script>
-<script src="ear.js?v=y" defer></script>
+<script src="ear.js?v=zz" defer></script>
 <script src="practice.js?v=x" defer></script>
 <script src="scales.js" defer></script>
 <script src="check.js" defer></script>
