@@ -155,7 +155,7 @@ async function open(){
   mount(); room.classList.add('on'); room.innerHTML='<div class="w"><p class="mut">Loading…</p></div>';
   try{ const r=await fetch('challenge-plans.json'); PLANS=await r.json(); }catch(_){ PLANS=[]; }
   let ok=await loadAcct();
-  if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); ok=true; }
+  if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||(window.ACCOUNT&&ACCOUNT.name())||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); ok=true; }
   view=ok?'home':'auth'; render();
 }
 function close(){ if(room) room.classList.remove('on'); shade.classList.remove('on'); }
@@ -172,7 +172,8 @@ function render(){
 }
 function head(w,sub){
   const h=el('div','row'); h.style.justifyContent='space-between';
-  const l=el('div'); l.innerHTML='<h1>90 Day Challenge</h1><div class="mut">'+esc(sub||'Practice a little every day. Stay consistent.')+'</div>'; h.appendChild(l);
+  const l=el('div'); l.innerHTML='<h1><button id="chBk" aria-label="Back" title="Back" style="margin-right:10px;padding:2px 12px">←</button>90 Day Challenge</h1><div class="mut">'+esc(sub||'Practice a little every day. Stay consistent.')+'</div>'; h.appendChild(l);
+  l.querySelector('#chBk').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await api('POST',{action:'logout'}); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
 }
 /* --- sign in --- */
@@ -320,5 +321,6 @@ function sheet(it){
   draw();
 }
 window.addEventListener('pagehide',()=>{ if(D&&!tok){ try{ localStorage.setItem(GK,JSON.stringify({data:D,name:acct&&acct.name||''})); }catch(_){} } });
-window.CHALLENGE={open,close};
+function back(){ if(!room||!room.classList.contains('on')) return false; if(shade.classList.contains('on')){ shade.classList.remove('on'); return true; } if(view==='build'||view==='cert'){ view='home'; render(); return true; } return false; }
+window.CHALLENGE={open,close,back};
 })();

@@ -212,7 +212,7 @@ function hotDraw(){ const box=$('hotL'); if(!box) return; const list=HOT.map((h,
 function hotInit(){ hotDraw(); try{ fetch('/api/hot').then(r=>r.json()).then(d=>{ hotCounts=d.counts||{}; hotDraw(); }).catch(()=>{}); }catch(e){} }
 async function ask(q,opts){
   try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
-  q=(q||'').trim(); if(!q||busy) return; stopSpeak();
+  q=(q||'').trim(); if(!q||busy) return; stopSpeak(); setView('chat'); slide(false);
   if(opts&&opts.fresh){ const c=chat(); if(c.log.length){ newChat(); restoreRoom(); } }
   busy=true; $('tSend').disabled=true; const c=chat(); c.log.push({role:'user',content:q}); if(c.title==='New chat') c.title=autoTitle(c.log); c.when=Date.now(); renderChat({cls:'bot wait',text:'Thinking…'});
   const context={level:$('tLevel').value};
@@ -233,6 +233,10 @@ async function ask(q,opts){
 }
 
 /* ---------- the list of previous chats ---------- */
+let view='home', slideAfterLoad=false;
+function setView(v){ view=v; const h=$('clHome'),c=$('clChatView'); if(h) h.hidden=v!=='home'; if(c) c.hidden=v!=='chat'; if(v==='chat'){ const L=$('tLog'); if(L) L.scrollTop=L.scrollHeight; } }
+function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
+function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
 function drawer(open){
   const d=$('clDrawer'); d.hidden=!open; if(!open) return; const list=$('clList'); list.textContent='';
   DB.chats.slice().sort((a,b)=>b.when-a.when).forEach(c=>{
@@ -312,7 +316,34 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-open{flex:1;min-width:0;text-align:left;background:none;border:0;color:var(--stage-ink);padding:8px 10px;cursor:pointer;display:grid;gap:2px;font:inherit}
 .cl-open b{font:700 14px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cl-open small{color:var(--stage-muted);font-size:12px}
 .cl-mini{background:none;border:0;color:var(--stage-muted);cursor:pointer;padding:0 8px;font-size:13px}.cl-mini:hover{color:var(--hi)}
-@media(max-width:900px){.cl{overflow:auto}.cl-grid{grid-template-columns:1fr;flex:none}.cl-left{overflow:visible}.cl-chat{min-height:60vh}}
+@media(max-width:900px){.cl{overflow:auto}.cl-chat{min-height:60vh}}
+.cl-bar .cl-back{padding:6px 12px;font-size:18px;line-height:1}
+.cl-dots{margin-left:auto;font-size:22px;line-height:1;padding:2px 14px 6px;position:relative}
+.cl-dots.new:after{content:"";position:absolute;top:4px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--hi);box-shadow:0 0 0 0 var(--hi);animation:clPulse 1.4s infinite}
+@keyframes clPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}100%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}
+.cl-home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:860px;width:100%;margin:8px auto;align-content:start;flex:1}
+.cl-box{display:grid;gap:6px;text-align:left;padding:22px 22px 20px;border-radius:20px;border:1.5px solid var(--k6b5826,#34446c);background:var(--k0d0b07,#0c1222);color:var(--stage-ink);cursor:pointer;font:inherit;min-height:150px;align-content:start;transition:border-color .2s,box-shadow .2s,background .2s}
+.cl-box:hover,.cl-box:focus-visible{border-color:var(--hi);box-shadow:0 0 0 1px var(--hi),0 14px 34px -12px rgba(0,0,0,.6)}
+.cl-box i{font-style:normal;font-size:34px;line-height:1}
+.cl-box b{font:800 24px var(--display);letter-spacing:-.01em}
+.cl-box span{color:var(--stage-muted);font:500 15px/1.4 var(--body)}
+.cl-chat{max-width:900px;width:100%;margin:0 auto;flex:1}
+.cl-chat[hidden],.cl-home[hidden]{display:none!important}
+.cl-chathead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.cl-chatbtns{display:inline-flex;gap:6px}.cl-chatbtns .btn{padding:5px 12px!important;font-size:13px!important}
+.cl-set{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.cl-slide{position:absolute;top:0;right:0;bottom:0;width:min(700px,100%);z-index:40;background:var(--stage,#070b14);border:1px solid var(--k6b5826,#34446c);border-radius:16px 0 0 16px;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:-20px 0 50px rgba(0,0,0,.55);transform:translateX(108%);visibility:hidden;transition:transform .34s cubic-bezier(.2,.8,.2,1),visibility 0s .34s}
+.cl-slide.on{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.2,.8,.2,1)}
+.cl-slidehead{display:flex;align-items:center;justify-content:space-between;font:800 16px var(--display);color:var(--stage-ink)}
+.cl-slidehead .btn{padding:5px 13px!important;font-size:16px!important}
+.cl-turn{display:none;margin:0;color:var(--stage-muted);font-size:13px}
+.cl-areahead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+.cl-areahead span{font:700 12px var(--body);color:var(--stage-muted);text-transform:uppercase;letter-spacing:.08em}
+.cl-areahead .btn,.cl-khead .btn{padding:4px 11px!important;font-size:12px!important}
+.cl-slide .cl-left{overflow:visible;padding:0}
+@media(max-width:700px){.cl-home{grid-template-columns:1fr}.cl-box{min-height:0}.cl-slide{position:fixed;top:36px;left:0;right:0;bottom:0;width:100%;border-radius:0;z-index:150001}.cl-turn{display:block}}
+@media(max-width:900px) and (orientation:landscape) and (max-height:520px){.cl-slide{position:fixed;top:36px;left:0;right:0;bottom:0;width:100%;border-radius:0;z-index:150001}.cl-slide .cl-left{flex-direction:row;align-items:flex-start;gap:10px}.cl-slide .cl-boardwrap{flex:0 0 38%;min-width:0}.cl-slide .cl-keys{flex:1;min-width:0}.cl-face{max-height:50vh}.cl-turn{display:none}}
+
 `;
 function build(){
   const card=$('teacherCard'); if(!card||$('clRoot')) return;
@@ -320,24 +351,48 @@ function build(){
   card.querySelectorAll('.card-h,.t-opts,#tLog,#tChips,#tForm,p.help').forEach(e=>e.remove());
   const root=document.createElement('div'); root.id='clRoot'; root.className='cl';
   root.innerHTML=`
-  <div class="cl-bar t-opts">
+  <div class="cl-bar">
+    <button class="btn cl-back" id="clBack" type="button" aria-label="Back" title="Back">←</button>
     <span class="cl-brand">🎓 Class</span>
     <button class="btn" id="clChats" type="button">☰ Chats</button>
-    <button class="btn" id="clEar" type="button">🎧 Ear training</button>
-    <button class="btn" id="clScales" type="button">🎼 Scales</button>
     <button class="btn" id="clNew" type="button">＋ New chat</button>
-    <span class="cl-clr" role="group" aria-label="Clear"><button class="btn" id="clClrBoard" type="button" title="Wipe the whiteboard">Clear board</button><button class="btn" id="clClrKeys" type="button" title="Wipe the keyboard">Clear keyboard</button><button class="btn" id="clClrChat" type="button" title="Delete the messages in this chat">Clear chat</button></span>
-    <label for="tLevel" class="flabel">My level</label>
-    <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
-    <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
-    <label class="t-chk"><input type="checkbox" id="clAuto"> Read replies aloud</label>
-    <button class="btn" id="tCopyAll" type="button">Copy chat</button>
+    <button class="btn cl-dots" id="clDots" type="button" aria-label="Whiteboard and keyboard" aria-expanded="false" title="Whiteboard and keyboard">⋯</button>
   </div>
-  <div class="cl-grid">
+  <div class="cl-home" id="clHome">
+    <button type="button" class="cl-box" data-go="chat"><i>💬</i><b>Consultation</b><span>Talk it through with Pokey, one step at a time.</span></button>
+    <button type="button" class="cl-box" data-go="ear"><i>🎧</i><b>Ear training</b><span>Train your ear with short quizzes.</span></button>
+    <button type="button" class="cl-box" data-go="scales"><i>🎼</i><b>Scales</b><span>Load a scale on the keyboard with fingering.</span></button>
+    <button type="button" class="cl-box" data-go="chords"><i>🎹</i><b>Chords</b><span>Type chords and see and hear them on the keyboard.</span></button>
+  </div>
+  <div class="cl-chat" id="clChatView" hidden>
+    <div class="cl-chathead"><span class="cl-chatname" id="clName"></span><span class="cl-chatbtns"><button class="btn" id="tCopyAll" type="button">Copy chat</button><button class="btn" id="clClrChat" type="button" title="Wipe this chat">Clear chat</button></span></div>
+    <div class="cl-set"><label for="tLevel" class="flabel">My level</label>
+      <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
+      <label class="t-chk"><input type="checkbox" id="tShare" checked> Show it my chord chart</label>
+      <label class="t-chk"><input type="checkbox" id="clAuto"> Read replies aloud</label></div>
+    <div id="tLog" class="t-log" aria-live="polite"></div>
+    <div class="t-chips" id="tChips">
+      <div class="hot" id="hot"><div class="hot-h">🔥 Hot topics <span>the more students open a topic, the higher it climbs</span></div><div class="hot-l" id="hotL"></div></div>
+      <button class="btn chip" type="button">Explain the chords in my chart</button>
+      <button class="btn chip" type="button">Teach me the 2-5-1 progression</button>
+      <button class="btn chip" type="button">Quiz me on what I'm learning</button>
+      <button class="btn chip" type="button">How do I find the bass note for a melody?</button>
+    </div>
+    <form id="tForm" class="cl-form">
+      <label for="tInput" class="sr">Your answer or question</label>
+      <textarea id="tInput" rows="2" maxlength="2000" placeholder="Type your answer or ask Pokey anything…"></textarea>
+      <span></span><div class="row"><button class="btn" id="clMic" type="button">🎤 Speak</button><button class="btn pri" id="tSend" type="submit">Send</button></div>
+    </form>
+    <p class="help" style="margin:0">AI coach trained from real music lessons with real people all around the world.</p>
+  </div>
+  <aside class="cl-slide" id="clSlide" aria-label="Whiteboard and keyboard" aria-hidden="true">
+    <div class="cl-slidehead"><b>Whiteboard and keyboard</b><button class="btn" id="clX" type="button" aria-label="Close and return" title="Close">✕</button></div>
+    <p class="cl-turn">Tip: turn your phone sideways for a wider keyboard.</p>
     <div class="cl-left">
-      <div class="cl-board" id="clBoard" aria-label="Whiteboard"></div>
+      <div class="cl-boardwrap"><div class="cl-areahead"><span>Whiteboard</span><button class="btn" id="clClrBoard" type="button" title="Wipe the whiteboard">Clear board</button></div>
+        <div class="cl-board" id="clBoard" aria-label="Whiteboard"></div></div>
       <div class="cl-keys">
-        <div class="cl-khead"><span id="clKbdTitle">Keyboard</span><div class="seg dark" id="clKbdSize" role="group" aria-label="Keyboard size"><button data-k="88">88 keys</button><button data-k="76">76 keys</button><button data-k="61">61 keys</button></div></div>
+        <div class="cl-khead"><span id="clKbdTitle">Keyboard</span><button class="btn" id="clClrKeys" type="button" title="Wipe the keyboard">Clear keyboard</button><div class="seg dark" id="clKbdSize" role="group" aria-label="Keyboard size"><button data-k="88">88 keys</button><button data-k="76">76 keys</button><button data-k="61">61 keys</button></div></div>
         <div id="clKbdWrap"></div>
         <div class="cl-steps" id="clSteps"></div>
         <div class="cl-notes"><b id="clStepName" style="color:#fff;font:800 15px var(--display);margin-right:8px"></b><span id="clStepNotes"></span></div>
@@ -352,24 +407,7 @@ function build(){
         <form class="cl-type" id="clType"><input id="clTypeIn" placeholder="Type chords to see them, e.g. Dm7 G7 Cmaj7" aria-label="Type chords"><button class="btn" type="submit">Show</button></form>
       </div>
     </div>
-    <div class="cl-chat">
-      <div class="cl-chatname" id="clName"></div>
-      <div id="tLog" class="t-log" aria-live="polite"></div>
-      <div class="t-chips" id="tChips">
-        <div class="hot" id="hot"><div class="hot-h">🔥 Hot topics <span>the more students open a topic, the higher it climbs</span></div><div class="hot-l" id="hotL"></div></div>
-        <button class="btn chip" type="button">Explain the chords in my chart</button>
-        <button class="btn chip" type="button">Teach me the 2-5-1 progression</button>
-        <button class="btn chip" type="button">Quiz me on what I'm learning</button>
-        <button class="btn chip" type="button">How do I find the bass note for a melody?</button>
-      </div>
-      <form id="tForm" class="cl-form">
-        <label for="tInput" class="sr">Your question</label>
-        <textarea id="tInput" rows="2" maxlength="2000" placeholder="Ask anything about piano, chords or your chart…"></textarea>
-        <span></span><div class="row"><button class="btn" id="clMic" type="button">🎤 Speak</button><button class="btn pri" id="tSend" type="submit">Ask</button></div>
-      </form>
-      <p class="help" style="margin:0">AI coach trained from real music lessons with real people all around the world.</p>
-    </div>
-  </div>
+  </aside>
   <aside class="cl-drawer" id="clDrawer" hidden><h3>Your chats</h3><div id="clList"></div><button class="btn" id="clCloseDrawer" type="button">Close</button></aside>`;
   card.appendChild(root);
   $('tLevel').value=store.get('bt-teacher-level',''); $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
@@ -382,8 +420,14 @@ function build(){
   hotInit();
   $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
-  $('clScales').onclick=()=>window.SCALES&&SCALES.open();
-  $('clEar').onclick=()=>window.EAR&&EAR.open();
+  document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
+    if(g==='chat'){ setView('chat'); setTimeout(()=>{ try{ $('tInput').focus({preventScroll:true}); }catch(_){} },60); }
+    else if(g==='ear'){ if(window.EAR) EAR.open(); }
+    else if(g==='scales'){ slideAfterLoad=true; if(window.SCALES) SCALES.open(); }
+    else if(g==='chords'){ slide(true); setTimeout(()=>{ try{ $('clTypeIn').focus(); }catch(_){} },350); } });
+  $('clDots').onclick=()=>slide(!$('clSlide').classList.contains('on')); $('clX').onclick=()=>slide(false);
+  $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
+  setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
   $('clPrev').onclick=()=>stepGo(-1); $('clNext').onclick=()=>stepGo(1); $('clPlayProg').onclick=playProg;
@@ -394,7 +438,8 @@ function build(){
 }
 
 window.CLASS={
-  sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{}); },
+  sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{}); if(slideAfterLoad){ slideAfterLoad=false; slide(true); } },
+  back,slide,setView,
   init:build,
   ask,
   // from the Studio or Studio+: open Class and ask about what the student is practicing

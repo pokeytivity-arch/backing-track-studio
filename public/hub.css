@@ -1,0 +1,32 @@
+/* Home screen: steady cards (no tilt), livelier photo animation and light, top-right buttons */
+#suiteHub .cards{perspective:none}
+#suiteHub .dcard,#suiteHub .dcard:hover,#suiteHub .dcard:focus-visible{transform:none!important;transform-style:flat!important;transition:box-shadow .3s,border-color .3s,background .3s}
+#suiteHub .dcard .ic,#suiteHub .dcard .nm,#suiteHub .dcard .bl,#suiteHub .dcard .go,#suiteHub .badge{transform:none!important}
+/* the photos drift gently all the time and move boldly on hover */
+#suiteHub .dcard .phi{animation:kbIdle 14s ease-in-out infinite alternate}
+@keyframes kbIdle{from{transform:scale(1.06) translate(-1%,0)}to{transform:scale(1.16) translate(1.5%,-1.5%)}}
+#suiteHub .dcard:hover .phi{animation-duration:5.5s!important}
+@keyframes kbClass{from{transform:scale(1.08) translate(-4%,1%)}to{transform:scale(1.42) translate(5%,-5%)}}
+@keyframes kbStudio{from{transform:scale(1.4) translate(6%,2%)}to{transform:scale(1.4) translate(-6%,-3%)}}
+@keyframes kbPlus{from{transform:scale(1.08) translate(0,2%)}to{transform:scale(1.45) translate(-5%,-4%)}}
+#suiteHub .dcard[data-k="studio"]:hover .phi{animation-duration:6.5s!important}
+#suiteHub .dcard[data-k="plus"]:hover .phi{animation-duration:5s!important}
+/* light: a bright sweep across every photo and a stronger glow on hover */
+#suiteHub .dcard .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.42) 50%,transparent 70%);transform:translateX(-130%);opacity:0;pointer-events:none}
+#suiteHub .dcard:hover .ph::after{opacity:1;animation:scanPlus 2.2s ease-in-out infinite}
+#suiteHub .dcard[data-k="plus"] .ph::after{background:linear-gradient(100deg,transparent 30%,rgba(150,210,255,.5) 50%,transparent 70%)}
+#suiteHub .dcard:hover{box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 0 0 2px rgba(var(--gl),.7),0 0 70px 6px rgba(var(--gl),.7),0 0 170px 24px rgba(var(--gl),.38),0 40px 60px -12px rgba(0,0,0,.8)!important;animation:glowPulse 2.4s ease-in-out infinite}
+@keyframes glowPulse{50%{filter:brightness(1.12)}}
+#suiteHub .dcard:hover:before{background:radial-gradient(640px circle at var(--mx) var(--my),rgba(255,255,255,.34),transparent 60%)}
+#suiteHub .dcard:hover .ph{filter:saturate(1.3) brightness(1.2)!important}
+@media (prefers-reduced-motion:reduce){#suiteHub .dcard .phi,#suiteHub .dcard:hover{animation:none!important}}
+/* top-right buttons */
+#hubTop{position:absolute;top:14px;right:18px;z-index:5;display:flex;align-items:center;gap:10px}
+.thbtn{display:inline-flex;align-items:center;gap:7px;font:600 14px var(--body,system-ui)}
+.hubth{border:1px solid rgba(255,255,255,.35);background:rgba(10,10,14,.5);color:#fff;border-radius:999px;padding:7px 14px;cursor:pointer;backdrop-filter:blur(6px)}
+.hubth:hover{background:rgba(255,255,255,.18)}
+.thdot{width:14px;height:14px;border-radius:50%;background:conic-gradient(#d4af37,#86b494,#d4818b,#d08c5c,#2445d4,#d4af37)}
+#hubTop .ac-av{width:40px;height:40px;font-size:15px}
+#suiteHub .pro{display:block;margin:16px auto 0;padding:12px 24px;border-radius:999px;border:0;background:var(--hi,#ffd43b);color:#151b28;font:800 16px var(--body,system-ui);cursor:pointer;box-shadow:0 10px 30px -8px rgba(0,0,0,.6)}
+#suiteHub .pro:hover{filter:brightness(1.08)}
+body[data-dest="class"] .ps-clear{display:none!important}

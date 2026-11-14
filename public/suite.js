@@ -10,6 +10,7 @@ const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Bring in a recording or play into the microphone and see the notes fall onto the keys.',panel:'transcribe'},
+  account:{name:'Account',icon:'👤',blurb:'',panel:null},
   challenge:{name:'90 Day Challenge',icon:'🏆',blurb:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.',panel:null}
 };
 const ORDER=['class','studio','plus','challenge'];
@@ -162,7 +163,7 @@ body[data-dest="class"] #psMini{display:flex}
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
-hub.innerHTML='<div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
+hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span></p><div class="cards" id="psCards"></div><button type="button" class="pro" id="psPro">⭐ Get a professional practice plan</button><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
 
 const ICONS={
@@ -179,26 +180,30 @@ function renderHub(){
       b.addEventListener('pointerleave',()=>{ v.pause(); b.classList.remove('vid'); }); } b.insertBefore(p,b.firstChild); } b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
     b.onclick=()=>go(k); box.appendChild(b); });
 
-  if(!matchMedia('(hover:none)').matches&&!matchMedia('(prefers-reduced-motion:reduce)').matches) box.querySelectorAll('.dcard').forEach(c=>{
-    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height; c.style.setProperty('--ry',((x-.5)*12).toFixed(2)+'deg'); c.style.setProperty('--rx',((.5-y)*10).toFixed(2)+'deg'); c.style.setProperty('--mx',(x*100)+'%'); c.style.setProperty('--my',(y*100)+'%'); });
-    c.addEventListener('pointerleave',()=>{ c.style.setProperty('--rx','0deg'); c.style.setProperty('--ry','0deg'); });
+  if(!matchMedia('(hover:none)').matches) box.querySelectorAll('.dcard').forEach(c=>{
+    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); });
   });
+  document.getElementById('psPro').onclick=()=>{ go('challenge'); };
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
 }
-function showHub(){ renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); }
+function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }
 
 /* ---------- moving between destinations ---------- */
 function stopEverything(){ try{ if(typeof playing!=='undefined'&&(playing||paused)&&typeof stop==='function') stop(); }catch(_){} try{ if(window.TX&&TX.S&&TX.S.playing) document.getElementById('txPlay').click(); }catch(_){} }
+const HIST=[]; let navBack=false;
+const place=()=>hub.classList.contains('on')?'hub':cur;
 function go(k){
-  if(!DEST[k]) return; const prev=cur; hideHub(); if(prev&&prev!==k) stopEverything();
-  cur=k; put(k); document.body.dataset.dest=k;
+  if(!DEST[k]) return; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
+  cur=k; if(k!=='account') put(k); document.body.dataset.dest=k;
+  if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
   if(window.CHALLENGE&&k!=='challenge') CHALLENGE.close();
   if(k==='class'){ openPanel('teacher'); setTimeout(()=>{ const i=document.getElementById('tInput'); if(i) i.focus({preventScroll:true}); },80); }
   else if(k==='plus'){ openPanel('transcribe'); if(window.TX&&TX.restoreLast) TX.restoreLast(); }
+  else if(k==='account'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.ACCOUNT) ACCOUNT.open(); }
   else if(k==='challenge'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.CHALLENGE) CHALLENGE.open(); }
   else { try{ closePanel(); }catch(_){} window.scrollTo(0,0); }
   chip(); window.dispatchEvent(new Event('resize'));
@@ -222,7 +227,16 @@ function heads(){
     const d=document.createElement('div'); d.className='ps-head'; d.innerHTML='<span class="lbl"></span><h1></h1><p></p>'; d.querySelector('.lbl').textContent=lbl; d.querySelector('h1').textContent=t; d.querySelector('p').textContent=sub;
     const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });
 }
-window.SUITE={go,home:showHub,current:()=>cur,DEST,ORDER};
+function back(){
+  if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back()}[cur]; try{ if(h&&h()) return; }catch(_){} }
+  let t=HIST.pop(); if(t===place()) t=HIST.pop();
+  navBack=true; try{ if(t==='hub'||!t) { if(!hub.classList.contains('on')) showHub(); } else go(t); } finally{ navBack=false; }
+}
+function addBackBtn(){
+  const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psBackBtn')) return;
+  const b=document.createElement('button'); b.id='psBackBtn'; b.type='button'; b.className='menu-btn'; b.textContent='←'; b.title='Back'; b.setAttribute('aria-label','Back'); b.style.cssText='font-size:18px;padding:0 10px'; b.onclick=back; mb.insertBefore(b,mb.firstChild);
+}
+window.SUITE={go,home:showHub,current:()=>cur,DEST,ORDER,back};
 
 
 /* ---------- clear buttons + clear after an hour away ---------- */
@@ -249,7 +263,7 @@ function addClear(){
 }
 
 function boot(){
-  addChip(); addClear(); mini(); heads();
+  addBackBtn(); addChip(); addClear(); mini(); heads();
   const first=()=>setTimeout(()=>{ idleCheck(); touchActive(); },400); if(document.readyState==='complete') first(); else window.addEventListener('load',first);
   let lt=0; ['pointerdown','keydown','touchstart','input'].forEach(ev=>document.addEventListener(ev,()=>{ const n=Date.now(); if(n-lt>20000){ lt=n; touchActive(); } },true));
   setInterval(()=>{ if(busyPlaying()) touchActive(); else idleCheck(); },60000);

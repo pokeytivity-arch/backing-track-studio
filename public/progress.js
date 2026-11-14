@@ -28,7 +28,7 @@ function mark(){ const v=load(), t=today(); if(!v.days.includes(t)){ v.days.push
 function topic(id){ const v=load(); v.topics[id]=Date.now(); save(v); mark(); }
 function startDrill(){ const v=load(); v.drills[today()]=1; save(v); mark(); const d=todays(); if(window.CLASS) CLASS.askAbout(d.q,{fresh:true}); }
 function hub(){
-  const foot=document.getElementById('psFoot'); if(!foot) return; let el=document.getElementById('psProg'); if(!el){ el=document.createElement('div'); el.id='psProg'; foot.parentNode.insertBefore(el,foot); }
+  const el=document.getElementById('acProg'); if(!el) return;
   const v=load(), s=streak(v), d=todays(), done=!!v.drills[today()], n=Object.keys(v.topics).length;
   el.innerHTML='<div class="pp-st"><b>'+(s>0?'🔥 '+s+'-day streak':'Start your streak today')+'</b><span>'+(v.days.includes(today())?'You practiced today':'Practice today to '+(s>0?'keep it going':'begin'))+'</span></div>'
    +'<div class="pp-st"><b>'+n+' topic'+(n===1?'':'s')+' explored</b><span>Open Hot Topics in Class to add more</span></div>'
@@ -39,5 +39,5 @@ const css=document.createElement('style'); css.textContent='#psProg{display:flex
 document.head.appendChild(css);
 document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('#playBtn')) mark(); },true);
 window.PSPROG={mark,topic,hub,streak:()=>streak(load()),todays,DRILLS};
-if(window.SUITE&&document.getElementById('psFoot')) hub();
+
 })();
