@@ -41,7 +41,7 @@ function parseBoard(src){
 }
 const NOTE_PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function noteMidi(s){ const m=/^([A-Ga-g])([#b♯♭]?)(-?\d)$/.exec(String(s).trim()); if(!m) return null; let pc=NOTE_PC[m[1].toUpperCase()]; if(m[2]==='#'||m[2]==='♯') pc++; if(m[2]==='b'||m[2]==='♭') pc--; return 12*(+m[3]+1)+pc; }
-function notesList(v){ const a=Array.isArray(v)?v:String(v||'').split(/[\s,]+/); return a.map(noteMidi).filter(x=>x!=null&&x>=21&&x<=108); }
+function notesList(v,hand){ if(window.ASSIGN){ const t=Array.isArray(v)?v.join(' '):String(v||''); return ASSIGN.parse(t,hand||'rh').notes.map(n=>n.midi); } const a=Array.isArray(v)?v:String(v||'').split(/[\s,]+/); return a.map(noteMidi).filter(x=>x!=null&&x>=21&&x<=108); }
 function stepsFrom(list){
   const out=[];
   (Array.isArray(list)?list:[]).slice(0,16).forEach(s=>{
@@ -52,7 +52,7 @@ function stepsFrom(list){
   if(!out.length) return [];
   let prev=null; const vz=out.map(o=>{ const v=sheetVoicing(o.ev,prev); if(v) prev=v.rh; return v; });
   return out.map((o,i)=>{ let lh=vz[i].lh, rh=vz[i].rh;
-    if(o.obj){ const l=notesList(o.obj.lh), r=notesList(o.obj.rh); if(l.length||r.length){ lh=l; rh=r; } }
+    if(o.obj){ const l=notesList(o.obj.lh,'lh'), r=notesList(o.obj.rh,'rh'); if(l.length||r.length){ lh=l; rh=r; } }
     const n=o.ev.name; return {name:n?(n.root+n.q):o.src,src:o.src,lh,rh,fing:(o.obj&&o.obj.fing!=null)?String(o.obj.fing).slice(0,10):'',lfing:(o.obj&&o.obj.lfing!=null)?String(o.obj.lfing).slice(0,10):''}; });
 }
 function cleanKeys(o){ if(!o) return null;
