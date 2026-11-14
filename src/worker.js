@@ -244,12 +244,54 @@ async function account(request, env) {
   return json({ token: tok, name: acct.name || '', email: acct.email, data: acct.data || null }, 200);
 }
 
+
+/* ---------- teachers and student results (ear training). A teacher makes a code and keeps a private key; students enter the code once. ---------- */
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const newCode = () => { const a = crypto.getRandomValues(new Uint8Array(6)); return [...a].map(x => CODE_CHARS[x % CODE_CHARS.length]).join(''); };
+const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+async function teach(request, env, act) {
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  let b; try { b = await request.json(); } catch (_) { return json({ error: 'bad_json' }, 400); }
+  const ip = request.headers.get('cf-connecting-ip') || 'x', day = new Date().toISOString().slice(0, 10), lk = 'lim:teach:' + act + ':' + day + ':' + ip;
+  const cap = act === 'submit' ? 400 : 60, tries = +(await env.LESSONS.get(lk)) || 0; if (tries >= cap) return json({ error: 'slow_down' }, 429);
+  await env.LESSONS.put(lk, String(tries + 1), { expirationTtl: 172800 });
+  if (act === 'create') {
+    const name = clip(b.name, 60); if (!name) return json({ error: 'name' }, 400);
+    let code = newCode(); for (let i = 0; i < 5 && await env.LESSONS.get('tch:' + code); i++) code = newCode();
+    const key = rnd(24);
+    await env.LESSONS.put('tch:' + code, JSON.stringify({ name, keyHash: await sha(key), made: Date.now() }));
+    return json({ code, key, name }, 200);
+  }
+  const code = clip(b.code, 12).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const t = code ? await env.LESSONS.get('tch:' + code, 'json') : null;
+  if (!t) return json({ error: 'no_code' }, 404);
+  if (act === 'join') return json({ ok: true, teacher: t.name, code }, 200);
+  if (act === 'submit') {
+    const r = b.result; if (!r || typeof r !== 'object') return json({ error: 'result' }, 400);
+    const body = JSON.stringify({ student: clip(b.student, 60) || 'Student', device: clip(b.device, 60), at: Date.now(), result: r });
+    if (body.length > 8000) return json({ error: 'too_big' }, 413);
+    await env.LESSONS.put('tr:' + code + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3), body, { expirationTtl: 60 * 60 * 24 * 730 });
+    return json({ ok: true, teacher: t.name }, 200);
+  }
+  if (act === 'results') {
+    if ((await sha(clip(b.key, 80))) !== t.keyHash) return json({ error: 'wrong_key' }, 403);
+    const l = await env.LESSONS.list({ prefix: 'tr:' + code + ':', limit: 1000 });
+    const names = l.keys.map(k => k.name).slice(-300);
+    const items = (await Promise.all(names.map(n => env.LESSONS.get(n, 'json')))).filter(Boolean).reverse();
+    return json({ teacher: t.name, code, items }, 200);
+  }
+  return json({ error: 'unknown' }, 404);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/admin/lessons') {
       if (request.method !== 'POST') return json({ error: 'method' }, 405);
       try { return await adminLessons(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
+    if (url.pathname.startsWith('/api/teach/')) {
+      try { return await teach(request, env, url.pathname.slice(11)); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     if (url.pathname === '/api/acct') {
       try { return await account(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }

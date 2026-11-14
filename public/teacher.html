@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Teacher view · Pokeytivity Piano Suite</title>
+<style>
+:root{--bg:#0f1729;--card:#16203a;--line:#34446c;--ink:#fff;--mut:#9aa6c0;--hi:#ffd43b;--ok:#33c36b;--bad:#ff6f79}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px}
+main{max-width:860px;margin:0 auto;display:grid;gap:16px}h1{margin:0;font-size:28px}h2{margin:0 0 6px;font-size:19px}p{margin:0;color:var(--mut)}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;display:grid;gap:12px}
+input{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:inherit;font:600 16px inherit}
+button{min-height:44px;padding:0 18px;border-radius:999px;border:1.5px solid var(--line);background:transparent;color:inherit;font:700 15px inherit;cursor:pointer}button.pri{background:var(--hi);color:#151b28;border:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.code{font:800 34px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:var(--hi)}
+.msg{color:var(--hi);min-height:1.3em;font-size:14px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:15px}th{color:var(--mut);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+details{border:1px solid var(--line);border-radius:12px;padding:10px 12px}summary{cursor:pointer;font-weight:700}.it{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px}.it b.ok{color:var(--ok)}.it b.bad{color:var(--bad)}.it span{grid-column:1/-1;color:var(--mut);font-size:13px}
+.key{font:600 13px ui-monospace,Menlo,monospace;word-break:break-all;color:var(--mut)}
+</style></head><body><main id="app"></main>
+<script>
+(function(){
+'use strict';
+const app=document.getElementById('app'), SK='ps-teacher-key';
+const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x!=null) e.textContent=x; return e; };
+const get=()=>{ try{ return JSON.parse(localStorage.getItem(SK)||'null'); }catch(_){ return null; } };
+const set=v=>{ try{ if(v) localStorage.setItem(SK,JSON.stringify(v)); else localStorage.removeItem(SK); }catch(_){} };
+async function post(act,body){ const r=await fetch('/api/teach/'+act,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); let j={}; try{ j=await r.json(); }catch(_){} if(!r.ok) throw Object.assign(new Error(j.error||'failed'),{code:j.error}); return j; }
+const when=t=>{ try{ return new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}); }catch(_){ return ''; } };
+const btn=(t,fn,pri)=>{ const b=el('button',pri?'pri':'',t); b.type='button'; b.onclick=fn; return b; };
+
+function setup(){
+  app.textContent=''; app.appendChild(el('h1',null,'Teacher view'));
+  const c=el('div','card'); c.appendChild(el('h2',null,'Make your teacher code'));
+  c.appendChild(el('p',null,'Give the code to your students. When a student adds it in Ear training, each test they finish arrives here.'));
+  const nm=el('input'); nm.placeholder='Your name (students will see it)'; const m=el('div','msg');
+  c.append(nm,btn('Create my code',async()=>{ if(!nm.value.trim()){ m.textContent='Enter your name.'; return; } m.textContent='Creating…'; try{ const j=await post('create',{name:nm.value}); set({code:j.code,key:j.key,name:j.name}); dash(); }catch(e){ m.textContent='Could not create it. Try again.'; } },true),m);
+  const c2=el('div','card'); c2.appendChild(el('h2',null,'Already have a code?')); c2.appendChild(el('p',null,'Use your code and private key to open your results on this device.'));
+  const a=el('input'); a.placeholder='Code'; const k=el('input'); k.placeholder='Private key'; const m2=el('div','msg');
+  c2.append(a,k,btn('Open my results',async()=>{ m2.textContent='Checking…'; try{ const j=await post('results',{code:a.value,key:k.value.trim()}); set({code:j.code,key:k.value.trim(),name:j.teacher}); dash(); }catch(e){ m2.textContent=e.code==='wrong_key'||e.code==='no_code'?'That code and key do not match.':'Could not reach the server.'; } }),m2);
+  app.append(c,c2);
+}
+async function dash(){
+  const t=get(); if(!t) return setup(); app.textContent='';
+  app.appendChild(el('h1',null,'Hello, '+t.name));
+  const c=el('div','card'); c.appendChild(el('p',null,'Your teacher code. Give it to your students:'));
+  c.appendChild(el('div','code',t.code));
+  const row=el('div','row'); row.append(btn('Copy code',()=>{ try{ navigator.clipboard.writeText(t.code); }catch(_){} }),btn('Show private key',()=>{ k.hidden=!k.hidden; }),btn('Refresh',dash),btn('Sign out here',()=>{ if(confirm('Remove this code from this device? Keep your private key to come back.')){ set(null); setup(); } }));
+  const k=el('div','key','Private key (keep it safe, it opens your results on another device): '+t.key); k.hidden=true; c.append(row,k); app.appendChild(c);
+  const res=el('div','card'); res.appendChild(el('p',null,'Loading results…')); app.appendChild(res);
+  let j; try{ j=await post('results',{code:t.code,key:t.key}); }catch(e){ res.textContent=''; res.appendChild(el('p',null,'Could not load results. Check your connection and press Refresh.')); return; }
+  res.textContent=''; const items=j.items||[];
+  if(!items.length){ res.appendChild(el('h2',null,'No results yet')); res.appendChild(el('p',null,'When a student adds your code and finishes a test, it appears here.')); return; }
+  const by={}; items.forEach(i=>{ const key=i.student+'|'+(i.device||''); (by[key]||(by[key]={name:i.student,list:[]})).list.push(i); });
+  res.appendChild(el('h2',null,'Students')); const tb=el('table'), th=el('tr'); ['Student','Tests','Average','Last test'].forEach(x=>th.appendChild(el('th',null,x))); tb.appendChild(th);
+  Object.values(by).forEach(s=>{ const tr=el('tr'); let sc=0,tot=0; s.list.forEach(i=>{ sc+=+i.result.score||0; tot+=+i.result.total||0; }); [s.name,s.list.length,tot?Math.round(100*sc/tot)+'%':'–',when(s.list[0].at)].forEach(x=>tr.appendChild(el('td',null,String(x)))); tb.appendChild(tr); }); res.appendChild(tb);
+  res.appendChild(el('h2',null,'Recent tests'));
+  items.slice(0,60).forEach(i=>{ const r=i.result||{}, d=el('details'), sm=el('summary',null,i.student+' · '+(r.test||'Test')+' · '+r.score+' / '+r.total+' · '+when(i.at)); d.appendChild(sm);
+    (r.items||[]).forEach(x=>{ const row=el('div','it'); row.appendChild(el('b',x.w?'bad':'ok',String(x.n))); row.appendChild(el('div',null,x.r+' right'+(x.w?' · '+x.w+' wrong':''))); if(x.t) row.appendChild(el('span',null,x.t)); d.appendChild(row); }); res.appendChild(d); });
+  res.appendChild(btn('Download all as CSV',()=>{ const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"'; const lines=[['Student','Test','Score','Out of','When'].map(q).join(',')]; items.forEach(i=>lines.push([i.student,i.result.test,i.result.score,i.result.total,new Date(i.at).toISOString()].map(q).join(','))); const a=el('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download='results.csv'; a.click(); }));
+}
+get()?dash():setup();
+})();
+</script></body></html>
