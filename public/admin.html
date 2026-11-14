@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Owner tools · Pokeytivity Piano Suite</title>
+<style>
+body{margin:0;background:#0f1729;color:#fff;font:16px/1.45 system-ui,-apple-system,sans-serif;padding:20px}main{max-width:520px;margin:0 auto;display:grid;gap:12px}h1{margin:0 0 4px;font-size:26px}p{margin:0;color:#9aa6c0;font-size:14px}
+label{font-weight:600;font-size:13px}input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid #34446c;background:transparent;color:inherit;font:600 16px inherit}
+button{min-height:48px;border-radius:999px;border:0;background:#ffd43b;color:#151b28;font:800 16px inherit;cursor:pointer}.m{min-height:1.4em;color:#ffd43b;font-size:14px}
+</style></head><body><main>
+<h1>Owner tools</h1>
+<p>Reset a student's or teacher's password. Your admin token is typed here only. It is sent to the server to check, and it is never saved on this device.</p>
+<label for="t">Admin token</label><input id="t" type="password" autocomplete="off">
+<label for="e">Account email</label><input id="e" type="email" autocomplete="off">
+<label for="p">New password (at least 6 characters)</label><input id="p" type="text" autocomplete="off">
+<button id="go" type="button">Reset password</button><div class="m" id="m" aria-live="polite"></div>
+<script>
+document.getElementById('go').onclick=async()=>{
+  const m=document.getElementById('m'); m.textContent='Working…';
+  try{
+    const r=await fetch('/api/acct',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'adminreset',adminToken:document.getElementById('t').value,email:document.getElementById('e').value.trim().toLowerCase(),password:document.getElementById('p').value})});
+    const j=await r.json().catch(()=>({}));
+    m.textContent=r.ok?'Done. Tell them their new password and ask them to sign in.':({auth:'The admin token is not right.',no_account:'No account with that email.',weak_password:'Use at least 6 characters.'}[j.error]||'Something went wrong.');
+    if(r.ok) document.getElementById('p').value='';
+  }catch(_){ m.textContent='Could not reach the server.'; }
+};
+</script></main></body></html>

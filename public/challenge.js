@@ -58,7 +58,7 @@ CAT.forEach(c=>{ (function w(o,p){ (o.groups||o.subs||[]).forEach(g=>w(g,p.conca
 /* ---------- account ---------- */
 const TK='ps-tok';
 let tok=''; try{ tok=localStorage.getItem(TK)||''; }catch(_){}
-const BYPASS=true;   // for now: no sign-in needed. Progress is kept on this device until accounts are switched on (set to false).
+const BYPASS=false;   // for now: no sign-in needed. Progress is kept on this device until accounts are switched on (set to false).
 const GK='ps-ch-guest';
 let acct=null, D=null, PLANS=[], saveT=0, saving=false;
 async function api(method,body){
@@ -187,20 +187,15 @@ function head(w,sub){
   const h=el('div','row'); h.style.justifyContent='space-between';
   const l=el('div'); l.innerHTML='<h1><button id="chBk" aria-label="Back" title="Back" style="margin-right:10px;padding:2px 12px">←</button>90 Day Challenge</h1><div class="mut">'+esc(sub||'Practice a little every day. Stay consistent.')+'</div>'; h.appendChild(l);
   l.querySelector('#chBk').onclick=()=>{ if(window.SUITE) SUITE.back(); };
-  const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await api('POST',{action:'logout'}); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
+  const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await AUTH.signOut(); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
 }
 /* --- sign in --- */
 function authView(w){
   w.innerHTML='<h1>90 Day Challenge</h1><p class="mut">Create a free account so your plan and check-ins follow you to any phone or computer.</p>';
-  let mode='in'; const box=el('div','box'); box.style.maxWidth='440px'; w.appendChild(box);
-  const draw=()=>{ box.innerHTML='<div class="tabs"><button class="'+(mode==='in'?'on':'')+'" id="a1">Sign in</button><button class="'+(mode==='up'?'on':'')+'" id="a2">Create account</button></div>'+(mode==='up'?'<label>Your name (shown on your certificate)</label><input type="text" id="an" maxlength="60" autocomplete="name">':'')+'<label>Email</label><input type="email" id="ae" autocomplete="email"><label>Password (6 or more characters)</label><input type="password" id="ap" autocomplete="'+(mode==='up'?'new-password':'current-password')+'"><p id="aerr" class="mut" style="color:var(--danger)"></p><button class="pri" id="ago">'+(mode==='up'?'Create account':'Sign in')+'</button><p class="mut" style="font-size:13px">Forgot your password? Ask Pokey\'s team to reset it for you.</p>';
-    box.querySelector('#a1').onclick=()=>{ mode='in'; draw(); }; box.querySelector('#a2').onclick=()=>{ mode='up'; draw(); };
-    const go=async()=>{ const b=box.querySelector('#ago'), er=box.querySelector('#aerr'); b.disabled=true; er.textContent='';
-      const j=await api('POST',{action:mode==='up'?'signup':'login',email:box.querySelector('#ae').value,password:box.querySelector('#ap').value,name:mode==='up'?box.querySelector('#an').value:''}); b.disabled=false;
-      if(j.token){ tok=j.token; try{ localStorage.setItem(TK,tok); }catch(_){} acct={name:j.name,email:j.email}; D=Object.assign(emptyData(),j.data||{}); view='home'; render(); return; }
-      const T={bad_email:'That email does not look right.',weak_password:'Use a password with at least 6 characters.',exists:'An account with that email already exists. Sign in instead.',wrong:'Email or password is not right.',slow_down:'Too many tries today. Please try again tomorrow.'}; er.textContent=T[j.error]||'Something went wrong. Please try again.'; };
-    box.querySelector('#ago').onclick=go; box.querySelector('#ap').onkeydown=e=>{ if(e.key==='Enter') go(); }; };
-  draw();
+  const box=el('div','box au-box'); w.appendChild(box);
+  AUTH.form(box,async()=>{ tok=AUTH.token(); await loadAcct();
+    if(D&&!D.plan){ let g=null; try{ g=JSON.parse(localStorage.getItem(GK)||'null'); }catch(_){} if(g&&g.data&&g.data.plan){ D=Object.assign(emptyData(),g.data); flush(); } }
+    view='home'; render(); });
 }
 /* --- choose a plan --- */
 function planLen(p){ return p.week.reduce((a,d)=>a+d.length,0); }

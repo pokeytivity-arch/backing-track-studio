@@ -588,16 +588,16 @@ audio{width:100%}
 <div id="txTitle"></div><span class="txkb" id="txKbSeg" role="group" aria-label="Keyboard size"><button type="button" data-k="88">88</button><button type="button" data-k="76">76</button><button type="button" data-k="61">61</button><button type="button" data-k="0">Fit</button></span></div>
         <p class="help" id="txMsg" aria-live="polite"></p>
         <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
-          <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any recording into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Choose an audio file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or open the menu ☰ for more.</small></div></div>
+          <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any audio or video into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Upload file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or open the menu ☰ for more.</small></div></div>
         <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
         <aside class="txmenu" id="txMenu" aria-label="Studio+ menu" aria-hidden="true">
           <div class="txmh"><b>Studio+ menu</b><button class="btn" id="txMenuX" type="button" aria-label="Close menu">✕</button></div>
           <h3 class="txmt">Recording</h3>
         <div class="txrow">
-          <button class="btn pri" id="txFileBtn">Choose an audio file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.mp4,.mov,.m4v,.webm" hidden>
+          <button class="btn pri" id="txFileBtn">Upload file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.oga,.aac,.flac,.caf,.aif,.aiff,.wma,.mp4,.m4v,.mov,.webm,.mkv,.3gp,.mpg,.mpeg,.avi" hidden>
           <button class="btn rec" id="txRec">● Record with the microphone</button>
         </div>
-          <p class="help txfine">Choose an audio file or record with the microphone. Pokey finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.</p>
+          <p class="help txfine">Upload an audio or video file (mp3, m4a, wav, ogg, mp4, mov) or record with the microphone. Pokey finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.</p>
           <h3 class="txmt">Playback and display</h3>
         <div class="txrow">
           <label>Speed <span class="stp"><button type="button" id="txSpDn" aria-label="Slower">−</button><output id="txSpeed">100%</output><button type="button" id="txSpUp" aria-label="Faster">+</button></span></label>
@@ -688,7 +688,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zn (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zp (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2934,11 +2934,12 @@ function init(){
 }
 init();
 </script>
+<script src="auth.js" defer></script>
 <script src="transcribe.js" defer></script>
 <script src="suite.js" defer></script>
 <script src="class.js?v=w" defer></script>
 <script src="progress.js" defer></script>
-<script src="ear.js?v=zv" defer></script>
+<script src="ear.js?v=zw" defer></script>
 <script src="practice.js?v=z" defer></script>
 <script src="scales.js" defer></script>
 <script src="check.js" defer></script>

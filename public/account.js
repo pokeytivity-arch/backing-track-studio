@@ -33,14 +33,26 @@ const css=document.createElement('style'); css.textContent=`
 #acProg .pp-dr{cursor:pointer;border-color:var(--hi,#e8c25a)}#acProg .pp-dr i{font-style:normal;font-weight:700;color:var(--accent)}
 `; document.head.appendChild(css);
 let room=null;
+function authBox(box){
+  box.textContent=''; if(!window.AUTH){ box.textContent='Sign-in is not available right now.'; return; }
+  const u=AUTH.user();
+  if(!u){ const p=document.createElement('p'); p.className='mut'; p.textContent='Create a free account to keep your progress on every device, and to join a teacher or share results.'; box.appendChild(p); const f=document.createElement('div'); f.className='au-box'; box.appendChild(f); AUTH.form(f,()=>{ render(); }); return; }
+  const who=document.createElement('p'); who.innerHTML='<b></b> <span class="mut"></span>'; who.firstChild.textContent=u.name||'Signed in'; who.lastChild.textContent=u.email; box.appendChild(who);
+  const lab=document.createElement('label'); lab.textContent='Account type'; box.appendChild(lab);
+  const g=document.createElement('div'); g.className='au-roles'; AUTH.ROLE_INFO.forEach(([k,t,d])=>{ const l=document.createElement('label'); l.className='au-role'; const r=document.createElement('input'); r.type='radio'; r.name='ac_role'; r.value=k; r.checked=(u.role||'none')===k; r.onchange=async()=>{ await AUTH.setRole(k); }; const s=document.createElement('span'); const b=document.createElement('b'); b.textContent=t; const sm=document.createElement('small'); sm.textContent=d; s.append(b,sm); l.append(r,s); g.appendChild(l); }); box.appendChild(g);
+  const out=document.createElement('button'); out.type='button'; out.className='btn'; out.textContent='Sign out'; out.onclick=async()=>{ await AUTH.signOut(); render(); }; box.appendChild(out);
+}
+
 function render(){
   room.textContent=''; const w=document.createElement('div'); w.className='w'; room.appendChild(w);
   w.innerHTML='<div class="top"><button class="bk" id="acBack" aria-label="Back" title="Back">←</button><h1>Your account</h1></div>'
    +'<div class="box prof"><div id="acBig"></div><div><label for="acName">Your name</label><input type="text" id="acName" maxlength="60" placeholder="Your name"><div style="margin-top:8px"><button class="btn" id="acPick">Change photo</button><button class="btn" id="acDel">Remove photo</button><input type="file" id="acFile" accept="image/*" hidden></div><p class="mut" style="margin:6px 0 0">Your photo and name are saved on this device.</p></div></div>'
+   +'<h2>Sign in</h2><div class="box" id="acAuth"></div>'
    +'<h2>Your progress</h2><div id="acProg"></div>'
    +'<h2>Keep going</h2><div class="box"><button class="btn pri" id="acPro">⭐ Get a professional practice plan</button><button class="btn" id="acCh">90 Day Challenge</button></div>';
+  authBox(w.querySelector('#acAuth'));
   const big=avatar(); big.classList.add('big'); big.onclick=()=>w.querySelector('#acFile').click(); w.querySelector('#acBig').appendChild(big);
-  const nm=w.querySelector('#acName'); nm.value=get(NK); nm.oninput=()=>{ set(NK,nm.value.trim()); refresh(); };
+  const nm=w.querySelector('#acName'); nm.value=get(NK); nm.oninput=()=>{ set(NK,nm.value.trim()); refresh(); }; nm.onchange=()=>{ try{ if(window.AUTH&&AUTH.user()) AUTH.api('PUT',{name:nm.value.trim()}); }catch(_){} };
   w.querySelector('#acPick').onclick=()=>w.querySelector('#acFile').click();
   w.querySelector('#acDel').onclick=()=>{ set(PK,''); refresh(); };
   w.querySelector('#acFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const im=new Image(); const u=URL.createObjectURL(f);
@@ -53,6 +65,7 @@ function render(){
 function open(){ if(!room){ room=document.createElement('div'); room.id='acRoom'; document.body.appendChild(room); } render(); room.classList.add('on'); }
 function close(){ if(room) room.classList.remove('on'); }
 window.ACCOUNT={open,close,avatar,refresh,back:()=>false,name:()=>get(NK)};
+window.addEventListener('ps-auth',()=>{ try{ const u=window.AUTH&&AUTH.user(); if(u&&u.name&&!get(NK)){ set(NK,u.name); refresh(); } }catch(_){} });
 /* the top-right buttons on the home screen */
 let n=0; (function wait(){ const top=document.getElementById('hubTop'); if(top&&!top.querySelector('.ac-av')) top.appendChild(avatar()); const mb=document.querySelector('.menubar'); if(mb&&!mb.querySelector('.ac-av')) mb.appendChild(avatar()); if((!top||!mb||!top.querySelector('.ac-av')||!mb.querySelector('.ac-av'))&&n++<100) setTimeout(wait,100); })();
 })();

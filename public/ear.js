@@ -90,7 +90,7 @@ function build(){
     '<div class="e-msg" id="earMsg" aria-live="polite"></div><div class="e-opts" id="earOpts"></div>'+
     '<div class="e-kb" id="earKb"><div class="e-lbl"><span>Keyboard</span></div><div id="earKbWrap"></div></div>';
   document.body.appendChild(ov);
-  $('#earX').onclick=close; $('#earTch').onclick=()=>tpanel();
+  $('#earX').onclick=close; $('#earTch').onclick=()=>tpanel(); syncTch();
   $('#earDots').onclick=()=>{ close(); try{ if(window.CLASS) CLASS.slide(true); }catch(_){} };
   ov.querySelectorAll('#earMode button').forEach(b=>b.onclick=()=>{ mode=b.dataset.m; try{ localStorage.setItem('ps-ear-mode',mode); }catch(_){} render(); });
   document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape') close(); });
@@ -391,37 +391,39 @@ function done(){
   if(miss.length){ const ask=el('button','e-btn','Ask Pokey about what I missed'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('In ear training ('+(mode==='rel'?RCATS.find(c=>c[0]===rcat)[1]+' relative pitch':CATS.find(c=>c[0]===cat)[1]+' recognition')+') I missed: '+miss.join(', ')+'. Help me hear the difference and give me something to practice on the keyboard.',{fresh:true}); }; msg.appendChild(ask); }
 }
 
-/* ---------- teacher: students add a teacher's code once; finished tests are sent to that teacher ---------- */
-const TK='ps-teacher';
-const tget=()=>{ try{ return JSON.parse(localStorage.getItem(TK)||'null'); }catch(_){ return null; } };
-const tset=v=>{ try{ if(v) localStorage.setItem(TK,JSON.stringify(v)); else localStorage.removeItem(TK); }catch(_){} };
-async function tpost(act,body){ const r=await fetch('/api/teach/'+act,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); let j={}; try{ j=await r.json(); }catch(_){} if(!r.ok) throw Object.assign(new Error(j.error||'failed'),{code:j.error}); return j; }
+/* ---------- teacher: students add a teacher's code once; finished tests are sent to that teacher (needs a signed-in Student account) ---------- */
+const U=()=>window.AUTH?AUTH.user():null;
+function syncTch(){ const b=document.getElementById('earTch'); if(!b) return; const u=U(); b.hidden=!!u&&(u.role||'none')==='none'; b.textContent=u&&u.role==='teacher'?'Teacher page':'Teacher'; }
+window.addEventListener('ps-auth',syncTch); try{ if(window.AUTH) AUTH.ready().then(syncTch); }catch(_){}
 function tpanel(after){
   const old=ov.querySelector('.e-pop'); if(old) old.remove();
-  const pop=el('div','e-pop'), card=el('div'); pop.appendChild(card); const t=tget();
+  const u=U();
+  if(!u){ if(!window.AUTH) return; AUTH.open({title:'Sign in to add a teacher',why:'A free account lets you join a teacher and send them your test results.',role:'student',mode:'up'}).then(x=>{ syncTch(); if(x) tpanel(after); }); return; }
+  if(u.role==='teacher'){ window.open('teacher.html','_blank','noopener'); return; }
+  if(u.role!=='student') return;
+  const pop=el('div','e-pop'), card=el('div'); pop.appendChild(card);
   const close1=()=>{ pop.remove(); if(after) after(); };
-  card.appendChild(el('h2',null,t?'Your teacher':'Add a teacher'));
+  card.appendChild(el('h2',null,u.teacher?'Your teacher':'Add a teacher'));
   const msg=el('div','e-tmsg'); msg.setAttribute('aria-live','polite');
-  if(t){
-    card.appendChild(el('p',null,'Your finished ear-training tests are sent to '+t.teacher+' (code '+t.code+') as '+t.student+'.'));
-    const row=el('div','row'), rm=el('button','e-btn','Remove teacher'), ok=el('button','e-btn pri','Done'); rm.type=ok.type='button'; rm.onclick=()=>{ tset(null); close1(); }; ok.onclick=close1; row.append(ok,rm); card.append(row);
+  if(u.teacher){
+    card.appendChild(el('p',null,'Your finished ear-training tests are sent to '+u.teacher.name+' (code '+u.teacher.code+').'));
+    const row=el('div','row'), rm=el('button','e-btn','Remove teacher'), ok=el('button','e-btn pri','Done'); rm.type=ok.type='button'; rm.onclick=async()=>{ await AUTH.post('leave'); await AUTH.refresh(); close1(); }; ok.onclick=close1; row.append(ok,rm); card.append(row);
   } else {
     card.appendChild(el('p',null,'Ask your teacher for their code. Once you add it, each test you finish is sent to them.'));
     const code=el('input'); code.placeholder='Teacher code'; code.setAttribute('aria-label','Teacher code'); code.autocapitalize='characters'; code.autocomplete='off';
-    const nm=el('input'); nm.placeholder='Your name'; nm.setAttribute('aria-label','Your name'); try{ nm.value=(window.ACCOUNT&&ACCOUNT.name&&ACCOUNT.name())||''; }catch(_){}
     const row=el('div','row'), go=el('button','e-btn pri','Add teacher'), no=el('button','e-btn','Cancel'); go.type=no.type='button'; no.onclick=close1;
-    go.onclick=async()=>{ const c=code.value.trim(), n=nm.value.trim(); if(!c||!n){ msg.textContent='Enter the code and your name.'; return; } go.disabled=true; msg.textContent='Checking…';
-      try{ const j=await tpost('join',{code:c}); tset({code:j.code,teacher:j.teacher,student:n}); close1(); }catch(e){ go.disabled=false; msg.textContent=e.code==='no_code'?'That code was not found. Check it with your teacher.':'Could not reach the server. Try again.'; } };
-    row.append(go,no); card.append(code,nm,row);
+    go.onclick=async()=>{ if(!code.value.trim()){ msg.textContent='Enter the code.'; return; } go.disabled=true; msg.textContent='Checking…';
+      const j=await AUTH.post('join',{code:code.value}); if(j.ok){ await AUTH.refresh(); close1(); return; } go.disabled=false; msg.textContent=j.error==='no_code'?'That code was not found. Check it with your teacher.':'Could not add the teacher. Try again.'; };
+    row.append(go,no); card.append(code,row);
   }
-  const link=el('a',null,'I am a teacher →'); link.href='teacher.html'; link.target='_blank'; link.rel='noopener'; link.style.cssText='color:var(--hi,#ffd43b);font-weight:700;font-size:14px'; card.append(msg,link);
-  ov.appendChild(pop); const f=pop.querySelector('input,button'); if(f) f.focus();
+  card.append(msg); ov.appendChild(pop); const f=pop.querySelector('input,button'); if(f) f.focus();
 }
 function report(host,label,score,total,rows){
-  const line=el('div','e-tmsg'); line.style.margin='6px 0'; host.appendChild(line); const t=tget();
-  if(!t){ const b=el('button','e-btn','Add a teacher to send results'); b.type='button'; b.onclick=()=>tpanel(()=>{ line.remove(); report(host,label,score,total,rows); }); line.appendChild(b); return; }
+  const u=U(); if(u&&(u.role||'none')!=='student') return;
+  const line=el('div','e-tmsg'); line.style.margin='6px 0'; host.appendChild(line);
+  if(!u||!u.teacher){ const b=el('button','e-btn',u?'Add a teacher to send results':'Sign in to send results to a teacher'); b.type='button'; b.onclick=()=>tpanel(()=>{ line.remove(); report(host,label,score,total,rows); }); line.appendChild(b); return; }
   const result={test:label,score,total,items:rows.map(x=>({n:x.name,r:x.r,w:x.w,t:String(x.text||'').slice(0,140)})).slice(0,60)};
-  const send=async()=>{ line.textContent='Sending to '+t.teacher+'…'; try{ await tpost('submit',{code:t.code,student:t.student,device:localStorage.getItem('ps-device')||'',result}); line.textContent='Sent to '+t.teacher+' ✓'; }catch(e){ line.textContent=''; const b=el('button','e-btn','Could not send. Try again'); b.type='button'; b.onclick=send; line.appendChild(b); } };
+  const send=async()=>{ line.textContent='Sending to '+u.teacher.name+'…'; const j=await AUTH.post('submit',{result}); if(j.ok){ line.textContent='Sent to '+u.teacher.name+' ✓'; return; } line.textContent=''; const b=el('button','e-btn','Could not send. Try again'); b.type='button'; b.onclick=send; line.appendChild(b); };
   send();
 }
 window.EAR={open,close,kit:{KEYS,CH,CHK,pickRoot,spellAt,labelMap}};

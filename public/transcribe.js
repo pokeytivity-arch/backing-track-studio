@@ -197,12 +197,29 @@ async function proTranscribe(buf,onProg){
   throw Object.assign(new Error('timeout'),{code:'timeout'});
 }
 
+/* Videos and unusual files: if the browser will not decode the file directly, play it silently and record its sound as it plays. */
+async function soundFromPlayback(blob,ctx){
+  const url=URL.createObjectURL(blob), v=document.createElement('video'); v.src=url; v.playsInline=true; v.preload='auto'; v.setAttribute('playsinline','');
+  try{
+    await new Promise((res,rej)=>{ v.onloadedmetadata=res; v.onerror=()=>rej(new Error('This file could not be opened. Try an mp3, m4a, wav, ogg, mp4 or mov file.')); setTimeout(()=>rej(new Error('This file took too long to open. Try a shorter file.')),20000); });
+    const dur=Math.min(isFinite(v.duration)&&v.duration>0?v.duration:MAX_SEC,MAX_SEC);
+    const src=ctx.createMediaElementSource(v), sp=ctx.createScriptProcessor(4096,2,1), mute=ctx.createGain(); mute.gain.value=0; src.connect(sp); sp.connect(mute); mute.connect(ctx.destination);
+    const chunks=[]; let n=0; sp.onaudioprocess=e=>{ const a=e.inputBuffer.getChannelData(0), b=e.inputBuffer.numberOfChannels>1?e.inputBuffer.getChannelData(1):a, o=new Float32Array(a.length); for(let i=0;i<a.length;i++) o[i]=(a[i]+b[i])/2; chunks.push(o); n+=o.length; };
+    if(ctx.state!=='running') await ctx.resume();
+    try{ await v.play(); }catch(_){ throw new Error('Your browser needs a tap to read this video. Press Upload file and choose it again.'); }
+    await new Promise(res=>{ const t=setInterval(()=>{ const c=v.currentTime; say('Reading the sound from your video… '+fmt(c)+' of '+fmt(dur)); if(v.ended||c>=dur){ clearInterval(t); res(); } },500); v.onended=()=>{ clearInterval(t); res(); }; });
+    v.pause(); sp.disconnect(); src.disconnect();
+    if(n<ctx.sampleRate) throw new Error('No sound could be read from this file.');
+    const out=ctx.createBuffer(1,n,ctx.sampleRate), d=out.getChannelData(0); let k=0; chunks.forEach(c=>{ d.set(c,k); k+=c.length; }); return out;
+  } finally { try{ URL.revokeObjectURL(url); }catch(_){} v.removeAttribute('src'); try{ v.load(); }catch(_){} }
+}
 async function transcribeBlob(blob,title){
   if(S.busy) return; S.busy=true; clearCurrent(true); setBusy(true);
   try{
     work(0,1); say('');
     const ab=await blob.arrayBuffer(), ctx=ensureCtx();
-    const buf=await new Promise((res,rej)=>ctx.decodeAudioData(ab.slice(0),res,()=>rej(new Error('This audio file could not be read. Try an mp3, m4a, wav or ogg file.'))));
+    let buf; try{ buf=await new Promise((res,rej)=>{ const p=ctx.decodeAudioData(ab.slice(0),res,()=>rej(new Error('decode'))); if(p&&p.catch) p.catch(()=>{}); }); }
+    catch(_){ say('Opening this file another way…'); buf=await soundFromPlayback(blob,ctx); }
     const long=buf.duration>MAX_SEC;
     proWhy='';
     if(!$('txPro')||$('txPro').checked){
@@ -236,7 +253,7 @@ function clearCurrent(quiet){
   const set=(id,f)=>{ const e=$(id); if(e) f(e); };
   set('txTitle',e=>e.textContent=''); set('txKey',e=>e.textContent='Key: –'); set('txTime',e=>e.textContent='0:00 / 0:00'); set('txSeek',e=>{ e.max='0'; e.value='0'; });
   ['txPlay','txBack','txMidi','txWav','txAsk'].forEach(id=>set(id,e=>e.disabled=true));
-  if(!quiet) say('Removed. Choose an audio file or record to start again.'); try{ draw(0); }catch(_){}
+  if(!quiet) say('Removed. Upload a file or record to start again.'); try{ draw(0); }catch(_){}
 }
 
 function showResult({blob,notes,dur,title,long,fresh,pro}){
@@ -480,7 +497,7 @@ function draw(t){
     if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-5); } }
   // the line where notes land
   const lg=g.createLinearGradient(0,fallH-3,0,fallH+2); lg.addColorStop(0,'rgba(255,255,255,0)'); lg.addColorStop(1,'rgba(255,255,255,.55)'); g.fillStyle=lg; g.fillRect(0,fallH-3,W,5);
-  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.72)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Choose an audio file or record with the microphone',W0/2,fallH/2); }
+  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.72)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Upload a file or record with the microphone',W0/2,fallH/2); }
 }
 
 /* ---------- MIDI export (format 0) ---------- */
@@ -503,6 +520,7 @@ function updLegend(){ const l=$('txLegend'); if(!l) return; l.innerHTML=S.hands=
 function init(){
   if(!$('txCanvas')||X) return; X=1;
   $('txFileBtn').onclick=()=>$('txFile').click();
+  { const card=$('txCard'); if(card){ card.addEventListener('dragover',e=>e.preventDefault()); card.addEventListener('drop',e=>{ e.preventDefault(); const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f&&!S.busy) transcribeBlob(f,f.name.replace(/\.[^.]+$/,'')); }); } }
   $('txFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) transcribeBlob(f,f.name.replace(/\.[^.]+$/,'')); e.target.value=''; };
   $('txRec').onclick=toggleRec;
   $('txPlay').onclick=()=>S.playing?pausePlay():startPlay();

@@ -201,11 +201,13 @@ async function sessionUser(request, env) {
   const acct = await env.LESSONS.get('acct:' + id, 'json');
   return acct ? { id, acct, tok } : null;
 }
+const ROLES = ['student', 'teacher', 'none'];
+const pub = (a, token) => Object.assign(token ? { token } : {}, { name: a.name || '', email: a.email, role: a.role || 'none', teacher: a.teacher || null, tcode: a.tcode || null, data: a.data || null });
 async function account(request, env) {
   if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
   if (request.method === 'GET') {
     const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
-    return json({ name: u.acct.name || '', email: u.acct.email, data: u.acct.data || null }, 200);
+    return json(pub(u.acct, null), 200);
   }
   if (request.method === 'PUT') {
     const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
@@ -213,8 +215,9 @@ async function account(request, env) {
     let b; try { b = JSON.parse(raw); } catch (e) { return json({ error: 'bad_json' }, 400); }
     if (b.data !== undefined) u.acct.data = b.data;
     if (typeof b.name === 'string') u.acct.name = b.name.slice(0, 60);
+    if (typeof b.role === 'string' && ROLES.includes(b.role)) { u.acct.role = b.role; if (b.role !== 'student') delete u.acct.teacher; }
     await env.LESSONS.put('acct:' + u.id, JSON.stringify(u.acct));
-    return json({ ok: true }, 200);
+    return json(pub(u.acct, null), 200);
   }
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
   let b = {}; try { b = await request.json(); } catch (e) {}
@@ -235,50 +238,52 @@ async function account(request, env) {
   const id = await sha(email); let acct = await env.LESSONS.get('acct:' + id, 'json');
   if (action === 'signup') {
     if (acct) return json({ error: 'exists' }, 409);
-    const salt = rnd(16); acct = { email, name: String(b.name || '').trim().slice(0, 60), salt, hash: await pbk(pw, salt), made: Date.now(), data: null };
+    const salt = rnd(16); acct = { email, name: String(b.name || '').trim().slice(0, 60), role: ROLES.includes(b.role) ? b.role : 'none', salt, hash: await pbk(pw, salt), made: Date.now(), data: null };
     await env.LESSONS.put('acct:' + id, JSON.stringify(acct));
   } else if (action === 'login') {
     if (!acct || (await pbk(pw, acct.salt)) !== acct.hash) return json({ error: 'wrong' }, 401);
   } else return json({ error: 'bad_action' }, 400);
   const tok = rnd(24); await env.LESSONS.put('sess:' + tok, id, { expirationTtl: SESS_TTL });
-  return json({ token: tok, name: acct.name || '', email: acct.email, data: acct.data || null }, 200);
+  return json(pub(acct, tok), 200);
 }
 
 
-/* ---------- teachers and student results (ear training). A teacher makes a code and keeps a private key; students enter the code once. ---------- */
+/* ---------- teachers and student results (ear training). Needs a signed-in account: teachers have a code, students join it. ---------- */
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newCode = () => { const a = crypto.getRandomValues(new Uint8Array(6)); return [...a].map(x => CODE_CHARS[x % CODE_CHARS.length]).join(''); };
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
 async function teach(request, env, act) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
-  let b; try { b = await request.json(); } catch (_) { return json({ error: 'bad_json' }, 400); }
-  const ip = request.headers.get('cf-connecting-ip') || 'x', day = new Date().toISOString().slice(0, 10), lk = 'lim:teach:' + act + ':' + day + ':' + ip;
-  const cap = act === 'submit' ? 400 : 60, tries = +(await env.LESSONS.get(lk)) || 0; if (tries >= cap) return json({ error: 'slow_down' }, 429);
-  await env.LESSONS.put(lk, String(tries + 1), { expirationTtl: 172800 });
-  if (act === 'create') {
-    const name = clip(b.name, 60); if (!name) return json({ error: 'name' }, 400);
-    let code = newCode(); for (let i = 0; i < 5 && await env.LESSONS.get('tch:' + code); i++) code = newCode();
-    const key = rnd(24);
-    await env.LESSONS.put('tch:' + code, JSON.stringify({ name, keyHash: await sha(key), made: Date.now() }));
-    return json({ code, key, name }, 200);
+  let b = {}; try { b = await request.json(); } catch (_) {}
+  const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
+  const a = u.acct, save = () => env.LESSONS.put('acct:' + u.id, JSON.stringify(a));
+  if (act === 'mycode') {
+    if (a.role !== 'teacher') return json({ error: 'role' }, 403);
+    if (!a.tcode) { let code = newCode(); for (let i = 0; i < 5 && await env.LESSONS.get('tch:' + code); i++) code = newCode(); a.tcode = code; await env.LESSONS.put('tch:' + code, JSON.stringify({ name: a.name || 'Teacher', owner: u.id, made: Date.now() })); await save(); }
+    else { const t = await env.LESSONS.get('tch:' + a.tcode, 'json'); if (t && t.name !== (a.name || 'Teacher')) { t.name = a.name || 'Teacher'; await env.LESSONS.put('tch:' + a.tcode, JSON.stringify(t)); } }
+    return json({ code: a.tcode, name: a.name || 'Teacher' }, 200);
   }
-  const code = clip(b.code, 12).toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const t = code ? await env.LESSONS.get('tch:' + code, 'json') : null;
-  if (!t) return json({ error: 'no_code' }, 404);
-  if (act === 'join') return json({ ok: true, teacher: t.name, code }, 200);
+  if (act === 'join') {
+    if (a.role !== 'student') return json({ error: 'role' }, 403);
+    const code = clip(b.code, 12).toUpperCase().replace(/[^A-Z0-9]/g, ''), t = code ? await env.LESSONS.get('tch:' + code, 'json') : null;
+    if (!t) return json({ error: 'no_code' }, 404);
+    a.teacher = { code, name: t.name }; await save(); return json({ ok: true, teacher: a.teacher }, 200);
+  }
+  if (act === 'leave') { delete a.teacher; await save(); return json({ ok: true }, 200); }
   if (act === 'submit') {
+    if (a.role !== 'student' || !a.teacher) return json({ error: 'role' }, 403);
     const r = b.result; if (!r || typeof r !== 'object') return json({ error: 'result' }, 400);
-    const body = JSON.stringify({ student: clip(b.student, 60) || 'Student', device: clip(b.device, 60), at: Date.now(), result: r });
+    const body = JSON.stringify({ student: a.name || a.email.split('@')[0], uid: u.id.slice(0, 12), at: Date.now(), result: r });
     if (body.length > 8000) return json({ error: 'too_big' }, 413);
-    await env.LESSONS.put('tr:' + code + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3), body, { expirationTtl: 60 * 60 * 24 * 730 });
-    return json({ ok: true, teacher: t.name }, 200);
+    await env.LESSONS.put('tr:' + a.teacher.code + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3), body, { expirationTtl: 60 * 60 * 24 * 730 });
+    return json({ ok: true, teacher: a.teacher.name }, 200);
   }
   if (act === 'results') {
-    if ((await sha(clip(b.key, 80))) !== t.keyHash) return json({ error: 'wrong_key' }, 403);
-    const l = await env.LESSONS.list({ prefix: 'tr:' + code + ':', limit: 1000 });
+    if (a.role !== 'teacher' || !a.tcode) return json({ error: 'role' }, 403);
+    const l = await env.LESSONS.list({ prefix: 'tr:' + a.tcode + ':', limit: 1000 });
     const names = l.keys.map(k => k.name).slice(-300);
     const items = (await Promise.all(names.map(n => env.LESSONS.get(n, 'json')))).filter(Boolean).reverse();
-    return json({ teacher: t.name, code, items }, 200);
+    return json({ teacher: a.name || 'Teacher', code: a.tcode, items }, 200);
   }
   return json({ error: 'unknown' }, 404);
 }
