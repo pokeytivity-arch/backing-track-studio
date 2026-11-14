@@ -195,12 +195,15 @@ function renderHub(){
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
 }
-function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); }
+function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }
 
 /* ---------- moving between destinations ---------- */
 function stopEverything(){ try{ if(typeof playing!=='undefined'&&(playing||paused)&&typeof stop==='function') stop(); }catch(_){} try{ if(window.TX&&TX.S&&TX.S.playing) document.getElementById('txPlay').click(); }catch(_){} }
 const HIST=[]; let navBack=false;
+let popping=false;
+function hpush(){ if(popping) return; const p=place(); try{ if(!history.state){ history.replaceState({ps:p},''); return; } if(history.state.ps===p) return; history.pushState({ps:p},''); }catch(_){} }
+window.addEventListener('popstate',e=>{ const t=e.state&&e.state.ps; if(!t) return; popping=true; navBack=true; try{ if(t==='hub'){ if(!hub.classList.contains('on')) showHub(); } else if(DEST[t]) go(t); } finally{ popping=false; navBack=false; } });
 const place=()=>hub.classList.contains('on')?'hub':cur;
 function go(k){
   if(!DEST[k]) return; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
@@ -213,7 +216,7 @@ function go(k){
   else if(k==='account'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.ACCOUNT) ACCOUNT.open(); }
   else if(k==='challenge'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.CHALLENGE) CHALLENGE.open(); }
   else { try{ closePanel(); }catch(_){} window.scrollTo(0,0); }
-  chip(); window.dispatchEvent(new Event('resize'));
+  chip(); window.dispatchEvent(new Event('resize')); hpush();
 }
 function chip(){ const c=document.getElementById('psChip'); if(c) c.textContent=DEST[cur]?DEST[cur].name+' ▾':'Piano Suite ▾'; }
 const NAVC={class:['#5b8cff','#2a45c9'],studio:['#ffd24d','#e0911a'],plus:['#b78bff','#6a35d8'],challenge:['#ff8a8a','#d6336c']};

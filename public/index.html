@@ -70,6 +70,7 @@ h2{font:700 15px/1.2 var(--display);margin:0;letter-spacing:.01em;text-transform
 .voice{font:600 15px var(--mono);color:var(--hi);margin-top:8px;min-height:1.3em}
 .meter{display:grid;gap:10px;justify-items:end;text-align:right}
 .stage{position:relative}
+.room-back{margin:-4px 0 -6px}.room-back .btn{padding:6px 14px;font-size:18px;line-height:1;background:transparent;color:var(--stage-ink);border:1px solid var(--k4a3f1d,#3a4668);border-radius:999px;cursor:pointer}.room-back .btn:hover{border-color:var(--hi)}
 .corner-tools{position:absolute;top:18px;right:20px;display:flex;gap:8px;z-index:2}
 .icontog{height:42px;min-width:42px;padding:0 10px;border-radius:999px;border:2px solid var(--k6b5826,#34446c);background:var(--stage-2);color:var(--stage-muted);display:inline-grid;place-items:center;cursor:pointer;transition:all .12s}
 .icontog svg{width:22px;height:22px}
@@ -388,6 +389,7 @@ audio{width:100%}
   </header>
 
   <section class="stage" id="stage" aria-label="Now playing">
+    <div class="room-back"><button class="btn" id="stBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button></div>
     <div class="stage-top">
       <div>
         <div class="lbl">Now</div>
@@ -537,6 +539,7 @@ audio{width:100%}
         .tx .txtop{display:flex;align-items:center;gap:12px;margin:0 0 8px}
         .tx .txtop #txTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         #txMenuBtn{font-size:22px;line-height:1;padding:6px 14px}
+        #txRoomBack{font-size:18px;line-height:1;padding:6px 14px;margin-right:8px}
         .tx .txstage{position:relative}
         .tx .txempty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center;padding:20px;background:#070b14;border-radius:10px 10px 0 0;bottom:27%}
         .tx .txempty[hidden]{display:none}
@@ -579,7 +582,7 @@ audio{width:100%}
         .tx .stp output,.tx .stpv{min-width:58px;text-align:center;font:800 17px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums;letter-spacing:.02em}
         .tx .stpv{min-width:34px;display:inline-block}
         </style>
-        <div class="txtop"><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Studio+ menu" aria-expanded="false" title="Menu">☰</button>
+        <div class="txtop"><button class="btn" id="txRoomBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Studio+ menu" aria-expanded="false" title="Menu">☰</button>
 <div id="txTitle"></div></div>
         <p class="help" id="txMsg" aria-live="polite"></p>
         <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
@@ -683,7 +686,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-w (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-x (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
