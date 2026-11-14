@@ -127,6 +127,7 @@ function render(){
     const vh=el('div','e-seg sm'); seg(vh,[['v','Together'],['h','One by one']],st.vh,k=>{ st.vh=k; save(); vh.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); r2.appendChild(vh);
     pick();
     const ask=el('button','e-btn','Ask Pokey about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
+    const vb=el('button','e-btn','Voicings'); vb.type='button'; vb.onclick=()=>{ if(window.VOICE) VOICE.open(); }; r2.appendChild(vb);
     $('#prLbl').textContent='Chord practice'; if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); }
   }
 }
