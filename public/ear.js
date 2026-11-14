@@ -101,7 +101,7 @@ function render(){
   ov.querySelectorAll('#earMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===mode)));
   sgStop(); const cats=$('#earCats'); cats.textContent=''; cats.hidden=mode==='sing';
   (mode==='rel'?RCATS:CATS).forEach(([k,t])=>{ const rl=mode==='rel', b=el('button','e-cat',t+' '+(rl?'relative pitch':mode==='aware'?'awareness':'recognition')); b.type='button'; b.setAttribute('aria-pressed',String(k===(rl?rcat:cat))); b.onclick=()=>{ if(rl){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else { cat=k; try{ localStorage.setItem('ps-ear-cat',k); }catch(_){} } render(); }; cats.appendChild(b); });
-  $('#earKb').hidden=mode!=='aware';
+  $('#earKb').hidden=mode!=='aware'&&mode!=='sing';
   $('#earLbl').textContent=mode==='sing'?'Singing test':mode==='rel'?'Relative pitch · '+RCATS.find(c=>c[0]===rcat)[1]:(mode==='aware'?'Awareness':'Recognition')+' · '+CATS.find(c=>c[0]===cat)[1];
   $('#earMsg').textContent=''; $('#earOpts').textContent=''; $('#earCtl').textContent=''; $('#earBig').textContent=''; $('#earSub').textContent='';
   if(mode==='aware') awareness(); else if(mode==='sing') singing(); else if(mode==='rel') relUI(); else recognition();
@@ -145,13 +145,13 @@ function awareness(){
 /* ---------- singing test: sing the scale or mode into the microphone ---------- */
 let sg=null;
 function sgStop(){ if(!sg) return; clearInterval(sg.timer); try{ sg.stream.getTracks().forEach(t=>t.stop()); }catch(_){} try{ sg.src.disconnect(); }catch(_){} sg=null; }
-const sgSet=()=>{ if(!sg) return; [...$('#earOpts').children].forEach((b,i)=>{ b.className='e-opt sg'+(sg.state[i]==='ok'?' ok':sg.state[i]==='near'?' near':sg.state[i]==='miss'?' bad':'')+(i===sg.i&&!sg.done?' now':''); }); };
+const sgSet=()=>{ if(!sg) return; drawKb(sg.notes.slice(0,sg.i),sg.done?[]:[sg.notes[sg.i]]); [...$('#earOpts').children].forEach((b,i)=>{ b.className='e-opt sg'+(sg.state[i]==='ok'?' ok':sg.state[i]==='near'?' near':sg.state[i]==='miss'?' bad':'')+(i===sg.i&&!sg.done?' now':''); }); };
 function singing(){
   const ctl=$('#earCtl'), big=$('#earBig'), sub=$('#earSub'), msg=$('#earMsg'), opts=$('#earOpts');
   const types=[...SCALES,...MODES];
   ctl.appendChild(sel('aRoot',NAMES,0)); ctl.appendChild(sel('aType',types.map(x=>x[0]),0)); ctl.appendChild(sel('aDir',['Up','Down','Up and down'],0));
   const btn=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
-  big.textContent='Sing a scale'; sub.textContent='Choose the starting note and the scale or mode. I play the first note, you press Ready, then sing each note in turn.';
+  drawKb([],[]); big.textContent='Sing a scale'; sub.textContent='Choose the starting note and the scale or mode. I play the first note, you press Ready, then sing each note in turn.';
   btn('Start',()=>{
     const r=60+(+ctl.querySelector('#aRoot').value), t=types[+ctl.querySelector('#aType').value], dir=+ctl.querySelector('#aDir').value, up=t[1].map(x=>r+x);
     const notes=dir===0?up:dir===1?up.slice().reverse():up.concat(up.slice(0,-1).reverse());
@@ -193,7 +193,7 @@ function sgTick(){
   else { sg.first[sg.i]=false; sg.err[sg.i]++; if(!sg.wrong[sg.i].includes(sung)) sg.wrong[sg.i].push(sung); if(d<=1.5){ sg.state[sg.i]='near'; if(!sg.worst[sg.i]) sg.worst[sg.i]='near'; msg.textContent='Close: you sang '+sung+', a semitone away from '+midiName(T)+'. Try again.'; } else { sg.state[sg.i]='miss'; sg.worst[sg.i]='miss'; msg.textContent='You sang '+sung+'. We need '+midiName(T)+'. Try again.'; } sgSet(); }
 }
 function sgDone(){
-  const s=sg, n=s.notes.length, good=s.first.filter(Boolean).length; sgStop(); sg=null;
+  const s=sg, n=s.notes.length, good=s.first.filter(Boolean).length; sgStop(); sg=null; drawKb(s.notes,[]);
   const big=$('#earBig'), sub=$('#earSub'), msg=$('#earMsg'), ctl=$('#earCtl'); ctl.textContent='';
   big.textContent=good+' / '+n; sub.textContent='First-try notes in '+midiName(s.r)+' '+s.tname.toLowerCase();
   msg.textContent=(good===n?'Every note on the first try. ':good>=n*.7?'Good singing. ':'Keep at it. Hear the scale, then sing it again. ')+' ';
