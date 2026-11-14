@@ -60,7 +60,7 @@ function assignments(active){
   const body=el('div'); body.style.cssText='display:grid;gap:12px';
   const area=sel([['Note','Note'],['Scale','Scale'],['Interval','Interval'],['Chord','Chord'],['Pattern','Pattern']]), mode=sel([['','Any'],['Awareness','Awareness'],['Recognition','Recognition'],['Singing','Singing']]), room=sel([['scales','Scale practice'],['chords','Chord practice']]);
   const steps=[{label:'',lh:'',rh:''}]; const prev=el('div'), rowsBox=el('div'); rowsBox.style.cssText='display:grid;gap:8px';
-  const help=el('p',null,'Type notes with a space between them. Use # for sharp, b for flat, ## or x for double sharp, bb for double flat (for example F# Bb Cx Ebb). An octave number is optional (C4 is middle C); without it, the first left-hand note starts in octave 3, the right hand in octave 4, and each next note goes up from the one before.'); help.style.fontSize='13px';
+  const help=el('p',null,'Type notes with a space between them. Use # for sharp, b for flat, ## or x for double sharp, bb for double flat (for example F# Bb Cx Ebb). An octave number is optional (C4 is middle C); without it, the first left-hand note starts in octave 3, the right hand in octave 4, and each next note goes up from the one before. A dot between notes lifts the next note one more octave: C.E is a tenth, C.A is a thirteenth, C..E is a seventeenth.'); help.style.fontSize='13px';
   const bad=el('div','msg');
   function drawSteps(){ rowsBox.textContent='';
     steps.forEach((s,i)=>{ const r=el('div','row'); r.style.cssText='display:grid;grid-template-columns:90px 1fr 1fr auto;gap:8px;align-items:center';

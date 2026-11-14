@@ -10,15 +10,21 @@ const SYM={'#':'♯','##':'𝄪','x':'𝄪','b':'♭','bb':'𝄫'};
 function parse(text,hand){
   const out=[], bad=[]; let prev=null;
   String(text||'').replace(/[♯]/g,'#').replace(/[♭]/g,'b').replace(/𝄪/g,'x').replace(/𝄫/g,'bb').split(/[\s,;|]+/).filter(Boolean).forEach(tok=>{
-    const m=/^([A-Ga-g])(##|bb|x|X|#|b)?(-?\d)?$/.exec(tok);
-    if(!m){ bad.push(tok); return; }
-    const L=m[1].toUpperCase(), acc=m[2]?m[2].toLowerCase():'', d=acc==='#'?1:acc==='##'||acc==='x'?2:acc==='b'?-1:acc==='bb'?-2:0;
-    let midi;
-    if(m[3]!=null) midi=12*(+m[3]+1)+BASE[L]+d;
-    else if(prev==null) midi=12*((hand==='lh'?3:4)+1)+BASE[L]+d;
-    else { midi=BASE[L]+d+12*Math.floor(prev/12); while(midi<=prev) midi+=12; while(midi-12>prev) midi-=12; }
-    if(midi<21||midi>108){ bad.push(tok); return; }
-    prev=midi; out.push({midi,label:L+(SYM[acc]||''),hand});
+    /* a dot between notes lifts the next note one octave: C.E is a tenth, C.A a thirteenth, C..E a seventeenth */
+    const parts=tok.split(/(\.+)/).filter(x=>x!==''); let up=0;
+    parts.forEach(part=>{
+      if(/^\.+$/.test(part)){ up+=part.length; return; }
+      const m=/^([A-Ga-g])(##|bb|x|X|#|b)?(-?\d)?$/.exec(part);
+      if(!m){ bad.push(tok); return; }
+      const L=m[1].toUpperCase(), acc=m[2]?m[2].toLowerCase():'', d=acc==='#'?1:acc==='##'||acc==='x'?2:acc==='b'?-1:acc==='bb'?-2:0;
+      let midi;
+      if(m[3]!=null) midi=12*(+m[3]+1)+BASE[L]+d;
+      else if(prev==null) midi=12*((hand==='lh'?3:4)+1)+BASE[L]+d+12*up;
+      else { midi=BASE[L]+d+12*Math.floor(prev/12); while(midi<=prev) midi+=12; while(midi-12>prev) midi-=12; midi+=12*up; }
+      up=0;
+      if(midi<21||midi>108){ bad.push(tok); return; }
+      prev=midi; out.push({midi,label:L+(SYM[acc]||''),hand});
+    });
   });
   return {notes:out,bad};
 }
