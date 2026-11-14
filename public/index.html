@@ -540,6 +540,7 @@ audio{width:100%}
         .tx .txtop{display:flex;align-items:center;gap:12px;margin:0 0 8px}
         .tx .txtop #txTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         #txMenuBtn{font-size:22px;line-height:1;padding:6px 14px}
+        .tx .txkb{display:inline-flex;gap:2px;padding:3px;border-radius:999px;border:1.5px solid var(--k6b5826,#34446c);flex:none}.tx .txkb button{border:0;background:transparent;color:inherit;font:700 13px var(--body);padding:7px 12px;border-radius:999px;cursor:pointer;min-height:34px;opacity:.8}.tx .txkb button[aria-pressed=true]{background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28);opacity:1}
         #txRoomBack{font-size:18px;line-height:1;padding:6px 14px;margin-right:8px}
         .tx .txstage{position:relative}
         .tx .txempty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center;padding:20px;background:#070b14;border-radius:10px 10px 0 0;bottom:27%}
@@ -584,7 +585,7 @@ audio{width:100%}
         .tx .stpv{min-width:34px;display:inline-block}
         </style>
         <div class="txtop"><button class="btn" id="txRoomBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Studio+ menu" aria-expanded="false" title="Menu">☰</button>
-<div id="txTitle"></div></div>
+<div id="txTitle"></div><span class="txkb" id="txKbSeg" role="group" aria-label="Keyboard size"><button type="button" data-k="88">88</button><button type="button" data-k="76">76</button><button type="button" data-k="61">61</button><button type="button" data-k="0">Fit</button></span></div>
         <p class="help" id="txMsg" aria-live="polite"></p>
         <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
           <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any recording into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Choose an audio file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or open the menu ☰ for more.</small></div></div>
@@ -601,7 +602,7 @@ audio{width:100%}
         <div class="txrow">
           <label>Speed <span class="stp"><button type="button" id="txSpDn" aria-label="Slower">−</button><output id="txSpeed">100%</output><button type="button" id="txSpUp" aria-label="Faster">+</button></span></label>
           <label>Transpose <span class="stp"><button type="button" id="txTrDn" aria-label="Down a semitone">−</button><output id="txTr">0</output><button type="button" id="txTrUp" aria-label="Up a semitone">+</button></span></label>
-          <label>Keyboard <select id="txKbd"><option value="88" selected>88 keys</option><option value="76">76 keys</option><option value="61">61 keys</option><option value="0">Fit the notes</option></select></label>
+          <label>Keyboard <select id="txKbd"><option value="88">88 keys</option><option value="76">76 keys</option><option value="61" selected>61 keys (5 octaves)</option><option value="0">Fit the notes</option></select></label>
           <label>Colours <select id="txHands"><option value="auto">Left and right hand</option><option value="c4">Split at middle C</option><option value="note">By note name</option></select></label>
           <span class="help" id="txLegend"></span>
           <label>Look-ahead <select id="txLook"><option value="2">2 s</option><option value="4" selected>4 s</option><option value="8">8 s</option></select></label>
@@ -687,7 +688,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zl (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zm (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>

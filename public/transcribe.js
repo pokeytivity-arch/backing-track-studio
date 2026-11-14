@@ -9,7 +9,7 @@ const MAJ=[6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88], MIN=[6.
 const MAX_SEC=300;
 let X=null; // state
 const S={notes:[],dur:0,audio:null,url:null,ac:null,gain:null,mixNote:1,rate:1,tr:0,names:false,look:4,loopA:null,loopB:null,
-  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto',kbd:88};
+  met:false,bpm:100,bpb:4,metOrigin:0,raf:0,sched:new Set(),metNext:0,lo:48,hi:84,title:'',a4:440,rec:null,recChunks:null,playing:false,busy:false,hands:'auto',kbd:61};
 const nm=(p,flats)=>(flats?NAMES_F:NAMES_S)[((p%12)+12)%12];
 const oct=p=>Math.floor(p/12)-1;
 const isBlack=p=>[1,3,6,8,10].includes(((p%12)+12)%12);
@@ -297,6 +297,7 @@ function detectKey(){
 
 /* ---------- note range for the keyboard ---------- */
 const KB={61:[36,96],76:[28,103],88:[21,108]};
+function syncKb(){ document.querySelectorAll('#txKbSeg button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===S.kbd))); }
 function fitRange(){
   if(S.kbd&&KB[S.kbd]){ S.lo=KB[S.kbd][0]; S.hi=KB[S.kbd][1]; return; }
   if(!S.notes.length){ S.lo=36; S.hi=95; return; }
@@ -509,15 +510,16 @@ function init(){
   $('txSeek').oninput=e=>seek(+e.target.value/100);
   const setRate=p=>{ p=Math.max(25,Math.min(150,Math.round(p/5)*5)); S.rate=p/100; $('txSpeed').textContent=p+'%'; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
   $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
-  try{ const k=+localStorage.getItem('tx-kbd3'); if(KB[k]){ S.kbd=k; $('txKbd').value=String(k); } }catch(_){}
-  try{ if(!localStorage.getItem('tx-kbd3')&&matchMedia('(max-width:700px)').matches){ S.kbd=0; $('txKbd').value='0'; } }catch(_){}
+  try{ const raw=localStorage.getItem('tx-kbd4'), k=+raw; if(raw!==null&&(KB[k]||k===0)){ S.kbd=k; } }catch(_){}
+  $('txKbd').value=String(S.kbd); syncKb();
   fitRange();
   { const menu=$('txMenu'), mb=$('txMenuBtn'); const tog=o=>{ menu.classList.toggle('on',o); menu.setAttribute('aria-hidden',o?'false':'true'); mb.setAttribute('aria-expanded',o?'true':'false'); };
     mb.onclick=()=>tog(!menu.classList.contains('on')); $('txMenuX').onclick=()=>tog(false);
     $('txQFile').onclick=()=>$('txFileBtn').click(); $('txQRec').onclick=()=>$('txRec').click();
     ['txFileBtn','txRec'].forEach(id=>$(id).addEventListener('click',()=>{ if(matchMedia('(max-width:900px)').matches) setTimeout(()=>tog(false),150); }));
     window.TXMENU={close:()=>{ if(menu.classList.contains('on')){ tog(false); return true; } return false; },open:()=>tog(true)}; }
-  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd3',e.target.value); }catch(_){} fitRange(); draw(cur()); };
+  $('txKbd').onchange=e=>{ S.kbd=+e.target.value||0; try{ localStorage.setItem('tx-kbd4',e.target.value); }catch(_){} syncKb(); fitRange(); draw(cur()); };
+  document.querySelectorAll('#txKbSeg button').forEach(b=>b.onclick=()=>{ $('txKbd').value=b.dataset.k; $('txKbd').dispatchEvent(new Event('change')); });
   $('txHands').onchange=e=>{ S.hands=e.target.value; try{ localStorage.setItem('tx-hands',S.hands); }catch(_){} assignHands(); draw(cur()); updLegend(); };
   try{ const hv=localStorage.getItem('tx-hands'); if(['auto','c4','note'].includes(hv)){ S.hands=hv; $('txHands').value=hv; } }catch(_){}
   updLegend();
