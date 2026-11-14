@@ -202,7 +202,7 @@ async function sessionUser(request, env) {
   return acct ? { id, acct, tok } : null;
 }
 const ROLES = ['student', 'teacher', 'none'];
-const pub = (a, token) => Object.assign(token ? { token } : {}, { name: a.name || '', email: a.email, role: a.role || 'none', teacher: a.teacher || null, tcode: a.tcode || null, data: a.data || null });
+const pub = (a, token) => Object.assign(token ? { token } : {}, { name: a.name || '', email: a.email, role: a.role || 'none', teachers: a.teachers || [], tcode: a.tcode || null, pending: (a.students || []).filter(x => x.status === 'pending').length, data: a.data || null });
 async function account(request, env) {
   if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
   if (request.method === 'GET') {
@@ -215,7 +215,7 @@ async function account(request, env) {
     let b; try { b = JSON.parse(raw); } catch (e) { return json({ error: 'bad_json' }, 400); }
     if (b.data !== undefined) u.acct.data = b.data;
     if (typeof b.name === 'string') u.acct.name = b.name.slice(0, 60);
-    if (typeof b.role === 'string' && ROLES.includes(b.role)) { u.acct.role = b.role; if (b.role !== 'student') delete u.acct.teacher; }
+    if (typeof b.role === 'string' && ROLES.includes(b.role)) { u.acct.role = b.role; }
     await env.LESSONS.put('acct:' + u.id, JSON.stringify(u.acct));
     return json(pub(u.acct, null), 200);
   }
@@ -252,38 +252,106 @@ async function account(request, env) {
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newCode = () => { const a = crypto.getRandomValues(new Uint8Array(6)); return [...a].map(x => CODE_CHARS[x % CODE_CHARS.length]).join(''); };
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+let _env = null; const env_get = id => _env.LESSONS.get('acct:' + id, 'json');
+const putAcct = (id, a) => _env.LESSONS.put('acct:' + id, JSON.stringify(a));
+const who = (a, id) => (a.name || (a.email || '').split('@')[0] || 'Student');
+const AKINDS = ['chart', 'ear', 'exercise'];
+const cleanSpec = (kind, sp) => {
+  sp = sp && typeof sp === 'object' ? sp : {};
+  if (kind === 'chart') { const steps = (Array.isArray(sp.steps) ? sp.steps : []).slice(0, 64).map(x => ({ label: clip(x && x.label, 40), lh: clip(x && x.lh, 80), rh: clip(x && x.rh, 80) })).filter(x => x.lh || x.rh); return { steps }; }
+  if (kind === 'ear') return { area: clip(sp.area, 20), mode: clip(sp.mode, 12) };
+  return { room: clip(sp.room, 12) };
+};
 async function teach(request, env, act) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  _env = env;
   let b = {}; try { b = await request.json(); } catch (_) {}
   const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
-  const a = u.acct, save = () => env.LESSONS.put('acct:' + u.id, JSON.stringify(a));
+  const a = u.acct, save = () => putAcct(u.id, a), isT = a.role === 'teacher';
   if (act === 'mycode') {
-    if (a.role !== 'teacher') return json({ error: 'role' }, 403);
+    if (!isT) return json({ error: 'role' }, 403);
     if (!a.tcode) { let code = newCode(); for (let i = 0; i < 5 && await env.LESSONS.get('tch:' + code); i++) code = newCode(); a.tcode = code; await env.LESSONS.put('tch:' + code, JSON.stringify({ name: a.name || 'Teacher', owner: u.id, made: Date.now() })); await save(); }
     else { const t = await env.LESSONS.get('tch:' + a.tcode, 'json'); if (t && t.name !== (a.name || 'Teacher')) { t.name = a.name || 'Teacher'; await env.LESSONS.put('tch:' + a.tcode, JSON.stringify(t)); } }
     return json({ code: a.tcode, name: a.name || 'Teacher' }, 200);
   }
+  /* a student asks to join a teacher by code; the teacher has to accept */
   if (act === 'join') {
     if (a.role !== 'student') return json({ error: 'role' }, 403);
     const code = clip(b.code, 12).toUpperCase().replace(/[^A-Z0-9]/g, ''), t = code ? await env.LESSONS.get('tch:' + code, 'json') : null;
-    if (!t) return json({ error: 'no_code' }, 404);
-    a.teacher = { code, name: t.name }; await save(); return json({ ok: true, teacher: a.teacher }, 200);
+    if (!t || t.owner === u.id) return json({ error: 'no_code' }, 404);
+    const ta = await env.LESSONS.get('acct:' + t.owner, 'json'); if (!ta || ta.tcode !== code) return json({ error: 'no_code' }, 404);
+    a.teachers = a.teachers || []; ta.students = ta.students || [];
+    if (a.teachers.some(x => x.code === code)) return json({ error: 'already' }, 409);
+    if (a.teachers.length >= 30 || ta.students.length >= 500) return json({ error: 'full' }, 409);
+    a.teachers.push({ code, name: t.name, status: 'pending' });
+    const m = ta.students.find(x => x.id === u.id); if (m) { m.status = m.status === 'active' ? 'active' : 'pending'; m.name = who(a); } else ta.students.push({ id: u.id, name: who(a), status: 'pending' });
+    await save(); await putAcct(t.owner, ta); return json({ ok: true, teachers: a.teachers }, 200);
   }
-  if (act === 'leave') { delete a.teacher; await save(); return json({ ok: true }, 200); }
+  /* either side ends a link, or a student cancels a request */
+  if (act === 'leave') {
+    const code = clip(b.code, 12).toUpperCase();
+    a.teachers = (a.teachers || []).filter(x => x.code !== code);
+    const t = await env.LESSONS.get('tch:' + code, 'json');
+    if (t) { const ta = await env.LESSONS.get('acct:' + t.owner, 'json'); if (ta && ta.students) { ta.students = ta.students.filter(x => x.id !== u.id); await putAcct(t.owner, ta); } }
+    await save(); return json({ ok: true }, 200);
+  }
+  if (act === 'respond' || act === 'removestudent') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const id = clip(b.id, 80), m = (a.students || []).find(x => x.id === id); if (!m) return json({ error: 'none' }, 404);
+    const sa = await env.LESSONS.get('acct:' + id, 'json');
+    const accept = act === 'respond' && !!b.accept;
+    if (accept) m.status = 'active'; else a.students = a.students.filter(x => x.id !== id);
+    if (sa) { sa.teachers = sa.teachers || []; const t = sa.teachers.find(x => x.code === a.tcode); if (t) { if (accept) { t.status = 'active'; t.name = a.name || 'Teacher'; } else sa.teachers = sa.teachers.filter(x => x.code !== a.tcode); } await putAcct(id, sa); }
+    await save(); return json({ ok: true, students: a.students }, 200);
+  }
   if (act === 'submit') {
-    if (a.role !== 'student' || !a.teacher) return json({ error: 'role' }, 403);
+    const act1 = (a.teachers || []).filter(x => x.status === 'active'), code = clip(b.code, 12).toUpperCase();
+    const t = a.role === 'student' && (code ? act1.find(x => x.code === code) : act1.length === 1 ? act1[0] : null);
+    if (!t) return json({ error: 'role' }, 403);
     const r = b.result; if (!r || typeof r !== 'object') return json({ error: 'result' }, 400);
-    const body = JSON.stringify({ student: a.name || a.email.split('@')[0], uid: u.id.slice(0, 12), at: Date.now(), result: r });
+    const body = JSON.stringify({ student: who(a), uid: u.id.slice(0, 12), at: Date.now(), result: r });
     if (body.length > 8000) return json({ error: 'too_big' }, 413);
-    await env.LESSONS.put('tr:' + a.teacher.code + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3), body, { expirationTtl: 60 * 60 * 24 * 730 });
-    return json({ ok: true, teacher: a.teacher.name }, 200);
+    await env.LESSONS.put('tr:' + t.code + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3), body, { expirationTtl: 60 * 60 * 24 * 730 });
+    return json({ ok: true, teacher: t.name }, 200);
   }
   if (act === 'results') {
-    if (a.role !== 'teacher' || !a.tcode) return json({ error: 'role' }, 403);
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const students = a.students || [], ok = new Set(students.filter(x => x.status === 'active').map(x => x.id.slice(0, 12)));
     const l = await env.LESSONS.list({ prefix: 'tr:' + a.tcode + ':', limit: 1000 });
     const names = l.keys.map(k => k.name).slice(-300);
-    const items = (await Promise.all(names.map(n => env.LESSONS.get(n, 'json')))).filter(Boolean).reverse();
-    return json({ teacher: a.name || 'Teacher', code: a.tcode, items }, 200);
+    const items = (await Promise.all(names.map(n => env.LESSONS.get(n, 'json')))).filter(x => x && ok.has(x.uid)).reverse();
+    return json({ teacher: a.name || 'Teacher', code: a.tcode, students, items }, 200);
+  }
+  /* assignments: a chord chart (left and right hand notes), an ear-training task, or a scale/chord exercise */
+  if (act === 'acreate') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const kind = AKINDS.includes(b.kind) ? b.kind : null, title = clip(b.title, 80); if (!kind || !title) return json({ error: 'bad' }, 400);
+    const ids = new Set((a.students || []).filter(x => x.status === 'active').map(x => x.id));
+    const to = Array.isArray(b.to) ? b.to.filter(x => ids.has(x)).slice(0, 500) : 'all';
+    const body = JSON.stringify({ kind, title, note: clip(b.note, 600), spec: cleanSpec(kind, b.spec), to: to === 'all' || (Array.isArray(to) && !to.length) ? 'all' : to, at: Date.now() });
+    if (body.length > 9000) return json({ error: 'too_big' }, 413);
+    const key = 'as:' + a.tcode + ':' + String(Date.now()).padStart(14, '0') + ':' + rnd(3);
+    await env.LESSONS.put(key, body, { expirationTtl: 60 * 60 * 24 * 730 }); return json({ ok: true, id: key }, 200);
+  }
+  if (act === 'alist') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const l = await env.LESSONS.list({ prefix: 'as:' + a.tcode + ':', limit: 1000 }), names = l.keys.map(k => k.name).slice(-60);
+    const items = (await Promise.all(names.map(async n => { const v = await env.LESSONS.get(n, 'json'); return v && Object.assign({ id: n }, v); }))).filter(Boolean).reverse();
+    return json({ items }, 200);
+  }
+  if (act === 'adelete') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const id = clip(b.id, 80); if (!id.startsWith('as:' + a.tcode + ':')) return json({ error: 'bad' }, 400);
+    await env.LESSONS.delete(id); return json({ ok: true }, 200);
+  }
+  if (act === 'mine') {
+    const ts = (a.teachers || []).filter(x => x.status === 'active').slice(0, 10), out = [];
+    await Promise.all(ts.map(async t => {
+      const l = await env.LESSONS.list({ prefix: 'as:' + t.code + ':', limit: 1000 });
+      const vals = await Promise.all(l.keys.map(k => k.name).slice(-30).map(async n => { const v = await env.LESSONS.get(n, 'json'); return v && Object.assign({ id: n, teacher: t.name, code: t.code }, v); }));
+      vals.forEach(v => { if (v && (v.to === 'all' || (Array.isArray(v.to) && v.to.includes(u.id)))) out.push(v); });
+    }));
+    out.sort((x, y) => y.at - x.at); return json({ items: out.slice(0, 40) }, 200);
   }
   return json({ error: 'unknown' }, 404);
 }

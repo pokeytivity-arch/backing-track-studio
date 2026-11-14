@@ -396,35 +396,21 @@ const U=()=>window.AUTH?AUTH.user():null;
 function syncTch(){ const b=document.getElementById('earTch'); if(!b) return; const u=U(); b.hidden=!!u&&(u.role||'none')==='none'; b.textContent=u&&u.role==='teacher'?'Teacher page':'Teacher'; }
 window.addEventListener('ps-auth',syncTch); try{ if(window.AUTH) AUTH.ready().then(syncTch); }catch(_){}
 function tpanel(after){
-  const old=ov.querySelector('.e-pop'); if(old) old.remove();
   const u=U();
   if(!u){ if(!window.AUTH) return; AUTH.open({title:'Sign in to add a teacher',why:'A free account lets you join a teacher and send them your test results.',role:'student',mode:'up'}).then(x=>{ syncTch(); if(x) tpanel(after); }); return; }
   if(u.role==='teacher'){ window.open('teacher.html','_blank','noopener'); return; }
   if(u.role!=='student') return;
-  const pop=el('div','e-pop'), card=el('div'); pop.appendChild(card);
-  const close1=()=>{ pop.remove(); if(after) after(); };
-  card.appendChild(el('h2',null,u.teacher?'Your teacher':'Add a teacher'));
-  const msg=el('div','e-tmsg'); msg.setAttribute('aria-live','polite');
-  if(u.teacher){
-    card.appendChild(el('p',null,'Your finished ear-training tests are sent to '+u.teacher.name+' (code '+u.teacher.code+').'));
-    const row=el('div','row'), rm=el('button','e-btn','Remove teacher'), ok=el('button','e-btn pri','Done'); rm.type=ok.type='button'; rm.onclick=async()=>{ await AUTH.post('leave'); await AUTH.refresh(); close1(); }; ok.onclick=close1; row.append(ok,rm); card.append(row);
-  } else {
-    card.appendChild(el('p',null,'Ask your teacher for their code. Once you add it, each test you finish is sent to them.'));
-    const code=el('input'); code.placeholder='Teacher code'; code.setAttribute('aria-label','Teacher code'); code.autocapitalize='characters'; code.autocomplete='off';
-    const row=el('div','row'), go=el('button','e-btn pri','Add teacher'), no=el('button','e-btn','Cancel'); go.type=no.type='button'; no.onclick=close1;
-    go.onclick=async()=>{ if(!code.value.trim()){ msg.textContent='Enter the code.'; return; } go.disabled=true; msg.textContent='Checking…';
-      const j=await AUTH.post('join',{code:code.value}); if(j.ok){ await AUTH.refresh(); close1(); return; } go.disabled=false; msg.textContent=j.error==='no_code'?'That code was not found. Check it with your teacher.':'Could not add the teacher. Try again.'; };
-    row.append(go,no); card.append(code,row);
-  }
-  card.append(msg); ov.appendChild(pop); const f=pop.querySelector('input,button'); if(f) f.focus();
+  if(window.ASSIGN) ASSIGN.open();
 }
 function report(host,label,score,total,rows){
   const u=U(); if(u&&(u.role||'none')!=='student') return;
   const line=el('div','e-tmsg'); line.style.margin='6px 0'; host.appendChild(line);
-  if(!u||!u.teacher){ const b=el('button','e-btn',u?'Add a teacher to send results':'Sign in to send results to a teacher'); b.type='button'; b.onclick=()=>tpanel(()=>{ line.remove(); report(host,label,score,total,rows); }); line.appendChild(b); return; }
+  const act=u?(u.teachers||[]).filter(t=>t.status==='active'):[];
+  if(!u||!act.length){ const b=el('button','e-btn',!u?'Sign in to send results to a teacher':(u.teachers||[]).length?'Waiting for your teacher to accept':'Add a teacher to send results'); b.type='button'; b.onclick=()=>tpanel(); line.appendChild(b); return; }
   const result={test:label,score,total,items:rows.map(x=>({n:x.name,r:x.r,w:x.w,t:String(x.text||'').slice(0,140)})).slice(0,60)};
-  const send=async()=>{ line.textContent='Sending to '+u.teacher.name+'…'; const j=await AUTH.post('submit',{result}); if(j.ok){ line.textContent='Sent to '+u.teacher.name+' ✓'; return; } line.textContent=''; const b=el('button','e-btn','Could not send. Try again'); b.type='button'; b.onclick=send; line.appendChild(b); };
-  send();
+  act.forEach(t=>{ const l=el('div'); line.appendChild(l);
+    const send=async()=>{ l.textContent='Sending to '+t.name+'…'; const j=await AUTH.post('submit',{result,code:t.code}); if(j.ok){ l.textContent='Sent to '+t.name+' ✓'; return; } l.textContent=''; const b=el('button','e-btn','Could not send to '+t.name+'. Try again'); b.type='button'; b.onclick=send; l.appendChild(b); };
+    send(); });
 }
 window.EAR={open,close,kit:{KEYS,CH,CHK,pickRoot,spellAt,labelMap}};
 })();

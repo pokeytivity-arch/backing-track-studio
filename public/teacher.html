@@ -15,6 +15,7 @@ details{border:1px solid var(--line);border-radius:12px;padding:10px 12px}summar
 .key{font:600 13px ui-monospace,Menlo,monospace;word-break:break-all;color:var(--mut)}
 </style></head><body><main id="app"></main>
 <script src="auth.js"></script>
+<script src="assign.js"></script>
 <script>
 (function(){
 'use strict';
@@ -32,19 +33,71 @@ async function start(){
 async function dash(u){
   const mc=await AUTH.post('mycode'); if(!mc.code){ app.appendChild(el('p',null,'Could not load your code. Refresh and try again.')); return; }
   app.querySelector('h1').textContent='Hello, '+(u.name||'teacher');
-  const c=el('div','card'); c.appendChild(el('p',null,'Your teacher code. Give it to your students:')); c.appendChild(el('div','code',mc.code));
+  const c=el('div','card'); c.appendChild(el('p',null,'Your teacher code. Give it to your students; they add it, then you accept them below:')); c.appendChild(el('div','code',mc.code));
   const row=el('div','row'); row.append(btn('Copy code',()=>{ try{ navigator.clipboard.writeText(mc.code); }catch(_){} }),btn('Refresh',()=>start()),btn('Sign out',async()=>{ await AUTH.signOut(); start(); })); c.appendChild(row); app.appendChild(c);
-  const res=el('div','card'); res.appendChild(el('p',null,'Loading results…')); app.appendChild(res);
-  const j=await AUTH.post('results'); res.textContent=''; if(!j.items){ res.appendChild(el('p',null,'Could not load results. Check your connection and press Refresh.')); return; }
-  const items=j.items;
-  if(!items.length){ res.appendChild(el('h2',null,'No results yet')); res.appendChild(el('p',null,'When a student signs in as a Student, adds your code and finishes a test, it appears here.')); return; }
+  const res=el('div','card'); res.appendChild(el('p',null,'Loading…')); app.appendChild(res);
+  const j=await AUTH.post('results'); res.remove(); if(!j.items){ app.appendChild(el('p',null,'Could not load. Check your connection and press Refresh.')); return; }
+  const students=j.students||[], active=students.filter(s=>s.status==='active'), pend=students.filter(s=>s.status==='pending');
+  /* requests */
+  const rq=el('div','card'); rq.appendChild(el('h2',null,'Requests'));
+  if(!pend.length) rq.appendChild(el('p',null,'No one is waiting. When a student adds your code, they appear here for you to accept.'));
+  pend.forEach(s=>{ const r=el('div','row'); r.appendChild(el('b',null,s.name)); r.append(btn('Accept',async()=>{ await AUTH.post('respond',{id:s.id,accept:true}); start(); },true),btn('Decline',async()=>{ await AUTH.post('respond',{id:s.id,accept:false}); start(); })); rq.appendChild(r); });
+  app.appendChild(rq);
+  /* students */
+  const st=el('div','card'); st.appendChild(el('h2',null,'Your students ('+active.length+')'));
+  if(!active.length) st.appendChild(el('p',null,'None yet.'));
+  active.forEach(s=>{ const r=el('div','row'); r.appendChild(el('span',null,s.name)); const rm=btn('Remove',async()=>{ if(!confirm('Remove '+s.name+'? They will stop receiving your assignments and you will stop seeing their results.')) return; await AUTH.post('removestudent',{id:s.id}); start(); }); rm.style.marginLeft='auto'; r.appendChild(rm); st.appendChild(r); });
+  app.appendChild(st);
+  assignments(active);
+  results(j.items);
+}
+function assignments(active){
+  const box=el('div','card'); box.appendChild(el('h2',null,'New assignment')); app.appendChild(box);
+  const lab=(t,node)=>{ const l=el('label',null,t); l.style.cssText='display:grid;gap:4px;font-size:13px;color:var(--mut)'; l.appendChild(node); return l; };
+  const sel=(opts)=>{ const s=el('select'); opts.forEach(([v,t])=>{ const o=el('option',null,t); o.value=v; s.appendChild(o); }); s.style.cssText='padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:inherit;font:600 16px inherit'; return s; };
+  const kind=sel([['chart','Chord chart (notes for the keyboard)'],['ear','Ear training task'],['exercise','Scale or chord exercise']]);
+  const title=el('input'); title.placeholder='Title'; title.maxLength=80; const note=el('textarea'); note.placeholder='Instructions for the student (optional)'; note.maxLength=600; note.rows=2; note.style.cssText='width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:inherit;font:16px inherit';
+  const body=el('div'); body.style.cssText='display:grid;gap:12px';
+  const area=sel([['Note','Note'],['Scale','Scale'],['Interval','Interval'],['Chord','Chord'],['Pattern','Pattern']]), mode=sel([['','Any'],['Awareness','Awareness'],['Recognition','Recognition'],['Singing','Singing']]), room=sel([['scales','Scale practice'],['chords','Chord practice']]);
+  const steps=[{label:'',lh:'',rh:''}]; const prev=el('div'), rowsBox=el('div'); rowsBox.style.cssText='display:grid;gap:8px';
+  const help=el('p',null,'Type notes with a space between them. Use # for sharp, b for flat, ## or x for double sharp, bb for double flat (for example F# Bb Cx Ebb). An octave number is optional (C4 is middle C); without it, the first left-hand note starts in octave 3, the right hand in octave 4, and each next note goes up from the one before.'); help.style.fontSize='13px';
+  const bad=el('div','msg');
+  function drawSteps(){ rowsBox.textContent='';
+    steps.forEach((s,i)=>{ const r=el('div','row'); r.style.cssText='display:grid;grid-template-columns:90px 1fr 1fr auto;gap:8px;align-items:center';
+      const mk=(k,ph)=>{ const x=el('input'); x.value=s[k]; x.placeholder=ph; x.maxLength=80; x.autocapitalize='off'; x.autocomplete='off'; x.spellcheck=false; x.oninput=()=>{ s[k]=x.value; preview(); }; return x; };
+      r.append(mk('label','Step'),mk('lh','Left hand'),mk('rh','Right hand')); const d=btn('✕',()=>{ if(steps.length>1){ steps.splice(i,1); drawSteps(); preview(); } }); d.setAttribute('aria-label','Remove step'); d.style.minWidth='44px'; d.style.padding='0'; r.appendChild(d); rowsBox.appendChild(r); }); }
+  function preview(){ prev.textContent=''; const data=ASSIGN.build(steps), b=[]; data.forEach((d,i)=>d.bad.forEach(t=>b.push('step '+(i+1)+': “'+t+'”'))); bad.textContent=b.length?'Not understood, so not shown: '+b.join(', '):''; if(steps.some(s=>s.lh||s.rh)) prev.appendChild(ASSIGN.chartView(steps.filter(s=>s.lh||s.rh))); }
+  const add=btn('+ Add step',()=>{ steps.push({label:'',lh:'',rh:''}); drawSteps(); });
+  function drawBody(){ body.textContent=''; if(kind.value==='chart'){ body.append(help,rowsBox,add,bad,prev); drawSteps(); preview(); } else if(kind.value==='ear'){ body.append(lab('Area',area),lab('Mode',mode)); } else body.append(lab('Which',room)); }
+  kind.onchange=drawBody; drawBody();
+  const who=el('div'); who.style.cssText='display:grid;gap:6px'; const all=el('input'); all.type='checkbox'; all.checked=true; all.style.width='auto'; const allL=el('label',null,' Send to all my students'); allL.prepend(all); who.appendChild(allL);
+  const picks=active.map(s=>{ const i=el('input'); i.type='checkbox'; i.style.width='auto'; i.disabled=true; const l=el('label',null,' '+s.name); l.style.marginLeft='22px'; l.prepend(i); who.appendChild(l); return [s,i]; });
+  all.onchange=()=>picks.forEach(([s,i])=>{ i.disabled=all.checked; if(all.checked) i.checked=false; });
+  const msg=el('div','msg'); const send=btn('Send assignment',async()=>{
+    if(!title.value.trim()){ msg.textContent='Give it a title.'; return; }
+    if(!active.length){ msg.textContent='Accept a student first.'; return; }
+    const to=all.checked?'all':picks.filter(([s,i])=>i.checked).map(([s])=>s.id); if(to!=='all'&&!to.length){ msg.textContent='Choose who it is for.'; return; }
+    const spec=kind.value==='chart'?{steps:steps.filter(s=>s.lh||s.rh)}:kind.value==='ear'?{area:area.value,mode:mode.value}:{room:room.value};
+    if(kind.value==='chart'&&!spec.steps.length){ msg.textContent='Add at least one step with notes.'; return; }
+    send.disabled=true; msg.textContent='Sending…'; const j=await AUTH.post('acreate',{kind:kind.value,title:title.value,note:note.value,spec,to}); send.disabled=false;
+    if(j.ok){ start(); return; } msg.textContent='Could not send. Try again.'; },true);
+  box.append(lab('Type',kind),title,note,body,el('h2',null,'Send to'),who,send,msg);
+  const list=el('div','card'); list.appendChild(el('h2',null,'Assignments you sent')); app.appendChild(list); list.appendChild(el('p',null,'Loading…'));
+  AUTH.post('alist').then(j=>{ list.textContent=''; list.appendChild(el('h2',null,'Assignments you sent')); if(!j.items||!j.items.length){ list.appendChild(el('p',null,'None yet.')); return; }
+    j.items.forEach(it=>{ const d=el('details'); d.appendChild(el('summary',null,it.title+' · '+(it.kind==='chart'?'Chord chart':it.kind==='ear'?'Ear training':'Exercise')+' · '+when(it.at)+' · '+(it.to==='all'?'all students':(it.to.length+' student'+(it.to.length===1?'':'s')))));
+      if(it.note) d.appendChild(el('p',null,it.note)); if(it.kind==='chart') d.appendChild(ASSIGN.chartView((it.spec||{}).steps)); else d.appendChild(el('p',null,JSON.stringify(it.spec)));
+      const del=btn('Delete',async()=>{ if(!confirm('Delete this assignment?')) return; await AUTH.post('adelete',{id:it.id}); start(); }); del.style.marginTop='8px'; d.appendChild(del); list.appendChild(d); }); });
+}
+function results(items){
+  const res=el('div','card'); app.appendChild(res);
+  if(!items.length){ res.appendChild(el('h2',null,'No results yet')); res.appendChild(el('p',null,'When an accepted student finishes an ear-training test, it appears here.')); return; }
   const by={}; items.forEach(i=>{ (by[i.uid]||(by[i.uid]={name:i.student,list:[]})).list.push(i); });
-  res.appendChild(el('h2',null,'Students')); const tb=el('table'), th=el('tr'); ['Student','Tests','Average','Last test'].forEach(x=>th.appendChild(el('th',null,x))); tb.appendChild(th);
+  res.appendChild(el('h2',null,'Results')); const tb=el('table'), th=el('tr'); ['Student','Tests','Average','Last test'].forEach(x=>th.appendChild(el('th',null,x))); tb.appendChild(th);
   Object.values(by).forEach(s=>{ const tr=el('tr'); let sc=0,tot=0; s.list.forEach(i=>{ sc+=+i.result.score||0; tot+=+i.result.total||0; }); [s.name,s.list.length,tot?Math.round(100*sc/tot)+'%':'–',when(s.list[0].at)].forEach(x=>tr.appendChild(el('td',null,String(x)))); tb.appendChild(tr); }); res.appendChild(tb);
   res.appendChild(el('h2',null,'Recent tests'));
   items.slice(0,60).forEach(i=>{ const r=i.result||{}, d=el('details'), sm=el('summary',null,i.student+' · '+(r.test||'Test')+' · '+r.score+' / '+r.total+' · '+when(i.at)); d.appendChild(sm);
     (r.items||[]).forEach(x=>{ const row=el('div','it'); row.appendChild(el('b',x.w?'bad':'ok',String(x.n))); row.appendChild(el('div',null,x.r+' right'+(x.w?' · '+x.w+' wrong':''))); if(x.t) row.appendChild(el('span',null,x.t)); d.appendChild(row); }); res.appendChild(d); });
-  res.appendChild(btn('Download all as CSV',()=>{ const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"'; const lines=[['Student','Test','Score','Out of','When'].map(q).join(',')]; items.forEach(i=>lines.push([i.student,i.result.test,i.result.score,i.result.total,new Date(i.at).toISOString()].map(q).join(','))); const a=el('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download='results.csv'; a.click(); }));
+  res.appendChild(btn('Download all as CSV',()=>{ const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"'; const lines=[['Student','Test','Score','Out of','When'].map(q).join(',')]; items.forEach(i=>lines.push([i.student,i.result.test,i.result.score,i.result.total,new Date(i.at).toISOString()].map(q).join(','))); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'})); a.download='results.csv'; a.click(); }));
 }
 start();
 })();

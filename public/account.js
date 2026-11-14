@@ -48,9 +48,10 @@ function render(){
   w.innerHTML='<div class="top"><button class="bk" id="acBack" aria-label="Back" title="Back">←</button><h1>Your account</h1></div>'
    +'<div class="box prof"><div id="acBig"></div><div><label for="acName">Your name</label><input type="text" id="acName" maxlength="60" placeholder="Your name"><div style="margin-top:8px"><button class="btn" id="acPick">Change photo</button><button class="btn" id="acDel">Remove photo</button><input type="file" id="acFile" accept="image/*" hidden></div><p class="mut" style="margin:6px 0 0">Your photo and name are saved on this device.</p></div></div>'
    +'<h2>Sign in</h2><div class="box" id="acAuth"></div>'
+   +'<h2>Teachers &amp; assignments</h2><div class="box" id="acTeach"></div>'
    +'<h2>Your progress</h2><div id="acProg"></div>'
    +'<h2>Keep going</h2><div class="box"><button class="btn pri" id="acPro">⭐ Get a professional practice plan</button><button class="btn" id="acCh">90 Day Challenge</button></div>';
-  authBox(w.querySelector('#acAuth'));
+  authBox(w.querySelector('#acAuth')); { const th=w.querySelector('#acTeach'); try{ if(window.ASSIGN) ASSIGN.mount(th); if(window.AUTH) AUTH.refresh().then(()=>{ if(room.classList.contains('on')&&document.body.contains(th)) ASSIGN.mount(th); }); }catch(_){} }
   const big=avatar(); big.classList.add('big'); big.onclick=()=>w.querySelector('#acFile').click(); w.querySelector('#acBig').appendChild(big);
   const nm=w.querySelector('#acName'); nm.value=get(NK); nm.oninput=()=>{ set(NK,nm.value.trim()); refresh(); }; nm.onchange=()=>{ try{ if(window.AUTH&&AUTH.user()) AUTH.api('PUT',{name:nm.value.trim()}); }catch(_){} };
   w.querySelector('#acPick').onclick=()=>w.querySelector('#acFile').click();

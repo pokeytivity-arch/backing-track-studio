@@ -15,7 +15,7 @@ async function post(path,body){
   let j={}; try{ j=await r.json(); }catch(_){} j._s=r.status; return j;
 }
 function emit(){ try{ window.dispatchEvent(new CustomEvent('ps-auth',{detail:me})); }catch(_){} }
-function setMe(j){ me=j&&j.email?{name:j.name||'',email:j.email,role:j.role||'none',teacher:j.teacher||null,tcode:j.tcode||null}:null; emit(); }
+function setMe(j){ me=j&&j.email?{name:j.name||'',email:j.email,role:j.role||'none',teachers:j.teachers||[],tcode:j.tcode||null,pending:j.pending||0}:null; emit(); }
 let readyP=null;
 function ready(){ if(!readyP) readyP=(async()=>{ if(!tok) return null; const j=await api('GET'); if(j._s===200) setMe(j); else if(j._s===401){ tok=''; try{ localStorage.removeItem(TK); }catch(_){} } return me; })(); return readyP; }
 async function refresh(){ const j=await api('GET'); if(j._s===200) setMe(j); return me; }
