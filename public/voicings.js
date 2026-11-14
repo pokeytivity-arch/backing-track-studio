@@ -13,19 +13,20 @@ const mod=(n,m)=>((n%m)+m)%m;
 const TRI=[ // starts around C4 (shifted down an octave if the top would pass C6)
   {f:'3 / 1 5', d:'Drop-2 voicing of root position'},
   {f:'5 / 3 1', d:'Drop-2 voicing of first inversion'},
-  {f:'1 / 5 3', d:'Drop-2 voicing of first inversion'}
+  {f:'1 / 5 3', d:'Drop-2 voicing of second inversion'}
 ];
 const NINTH=[ // oct = the C where the first tone's octave begins; only = chord kinds it is for (omitted = all three)
   {f:'1.3 / 7 9 5', oct:2, d:'Combination of the part-over-root voicing and drop-2 voicing'},
   {f:'1.7 / 3 5 9', oct:3, d:'Combination of the part-over-root voicing, A and B voicing and drop-2 voicing'},
   {f:'1 5 / 7 9 3 5', oct:3, d:'Combination of A and B voicing and part over root voicing'},
+  {f:'1 / 7 9 3 5', oct:3, d:'The B voicing'},
   {f:'1 5 / 3 5 7 9', oct:3, d:'Combination of A and B voicing and part over root voicing'},
   {f:'3 5 7 9', oct:4, d:'Combination of rootless voicing and A and B voicing'},
   {f:'3 7 9', oct:4, d:'Combination of rootless voicing and A and B voicing'},
   {f:'7 9 3 5', oct:3, d:'Combination of rootless voicing and A and B voicing'}
 ];
 /* Waiting for the director to clarify (not shown yet): "1./3 5 7 9" (C2, part-over-root), "1./ 7 9 3 5" (C2, part-over-root and A and B),
-   "1. / 5 7 9 3" (C2, upper-structure, major and dominant only), and a second "1 5 / 7 9 3 5" (C3) described as the B voicing. */
+   "1. / 5 7 9 3" (C2, upper-structure, major and dominant only). */
 
 /* ----- reading what was typed ----- */
 function readNotes(text){
