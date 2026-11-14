@@ -190,13 +190,14 @@ function renderChat(extra){
     log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
   log.scrollTop=log.scrollHeight; $('tChips').hidden=c.log.length>0;
-  { const v=$('clChatView'); if(v) v.classList.toggle('empty',!c.log.length); let nm=''; try{ nm=(window.ACCOUNT&&ACCOUNT.name&&ACCOUNT.name())||''; }catch(_){} const g=$('clGreetT'); if(g) g.textContent='Welcome to class'+(nm?', '+nm:''); }
+  { const v=$('clChatView'); if(v) v.classList.toggle('empty',!c.log.length); let nm=''; try{ nm=(window.ACCOUNT&&ACCOUNT.name&&ACCOUNT.name())||''; }catch(_){} const hr=new Date().getHours(); const tod=hr<5?'Good evening':hr<12?'Good morning':hr<17?'Good afternoon':'Good evening'; const g=$('clGreetT'); if(g) g.textContent=tod+(nm?', '+nm:''); const gs=$('clGreetS'); if(gs){ if(!greetPick) greetPick=GREET_Q[Math.floor(Math.random()*GREET_Q.length)]; gs.textContent=greetPick; } }
   drawList();
 }
 function applyBoard(sp,force){ if(sp.board||force){ const c=chat(); if(sp.board){ c.board=sp.board; renderBoard(sp.board); } }
   if(sp.keys) setSteps(sp.keys.title,sp.keys.steps.map(s=>({...s})),{}); }
 function restoreRoom(){ const c=chat(); renderBoard(c.board||null); if(c.keys&&c.keys.steps&&c.keys.steps.length) setSteps(c.keys.title,c.keys.steps.map(s=>({...s})),{}); else setSteps('',[],{}); }
 let pendingCtx=null;
+const GREET_Q=['How may I be of help to you today?','What do you want to tell me?',"What's on your mind today?"]; let greetPick='';
 
 const HOT=[
  {id:'phraseology',t:'Hymn phraseology',q:'Teach me the phraseology of a hymn: antecedent and consequent, the four phrases, and what to play on each phrase.'},
@@ -208,9 +209,14 @@ const HOT=[
  {id:'251',t:'The 2-5-1 progression',q:'Teach me the 2-5-1 progression.'},
  {id:'cadences',t:'Cadences',q:'Teach me cadences: perfect, plagal, and deceptive, and how to play them.'}];
 let hotCounts={};
-function hotDraw(){ const box=$('hotL'); if(!box) return; const list=HOT.map((h,i)=>({h,i,n:hotCounts[h.id]||0})).sort((a,b)=>b.n-a.n||a.i-b.i);
-  box.innerHTML=''; list.forEach((x,r)=>{ const b=document.createElement('button'); b.type='button'; b.className='hot-b'+(r===0&&x.n>0?' top':''); b.textContent=x.h.t+' '; const s=document.createElement('i'); s.textContent=x.n+' '+(x.n===1?'view':'views'); b.appendChild(s);
+let hotGone={}, hotShown={};
+function hotDraw(){ const box=$('hotL'); if(!box) return; const all=HOT.map((h,i)=>({h,i,n:hotCounts[h.id]||0})).sort((a,b)=>b.n-a.n||a.i-b.i).filter(x=>!hotGone[x.h.id]); const list=all.slice(0,4);
+  const wrap=$('hot'); if(wrap) wrap.hidden=!list.length;
+  const prev=hotShown; hotShown={};
+  box.innerHTML=''; list.forEach((x,r)=>{ hotShown[x.h.id]=1; const b=document.createElement('button'); b.type='button'; b.className='hot-b'+(r===0&&x.n>0?' top':'')+(prev[x.h.id]||!Object.keys(prev).length?'':' pop'); b.textContent=x.h.t+' '; const s=document.createElement('i'); s.textContent=x.n+' '+(x.n===1?'view':'views'); b.appendChild(s);
+    const xb=document.createElement('span'); xb.className='hot-x'; xb.setAttribute('role','button'); xb.setAttribute('aria-label','Close this topic'); xb.title='Close'; xb.textContent='\u00d7'; xb.onclick=e=>{ e.stopPropagation(); hotGone[x.h.id]=1; hotDraw(); }; b.appendChild(xb);
     b.onclick=()=>{ hotCounts[x.h.id]=(hotCounts[x.h.id]||0)+1; try{ if(window.PSPROG) PSPROG.topic(x.h.id); }catch(_){} try{ fetch('/api/hot',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:x.h.id})}).catch(()=>{}); }catch(e){} ask(x.h.q); }; box.appendChild(b); }); }
+function hotClear(){ HOT.forEach(h=>hotGone[h.id]=1); hotDraw(); }
 function hotInit(){ hotDraw(); try{ fetch('/api/hot').then(r=>r.json()).then(d=>{ hotCounts=d.counts||{}; hotDraw(); }).catch(()=>{}); }catch(e){} }
 async function ask(q,opts){
   try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
@@ -253,7 +259,7 @@ function drawList(){
     row.append(open,ren,del); list.appendChild(row); });
   if(!list.children.length) list.textContent=qs?'No chats match.':'No chats yet.';
 }
-function startNew(){ const c=chat(); if(c.log.length){ newChat(); saveDB(); } stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); $('tInput').focus(); }
+function startNew(){ greetPick=''; hotGone={}; const c=chat(); if(c.log.length){ newChat(); saveDB(); } stopProg(); stopSpeak(); restoreRoom(); renderChat(); drawer(false); $('tInput').focus(); }
 
 
 /* ---------- clearing ---------- */
@@ -369,7 +375,19 @@ body[data-dest="class"] #teacherCard{display:flex!important;flex-direction:colum
 .cl-chat .t-msg.user{background:var(--k231c0f,#1d2540)!important;color:var(--stage-ink)!important;border-radius:20px 20px 6px 20px;padding:10px 16px;max-width:85%}
 .cl-chat .t-msg.bot{background:none!important;border:0!important;padding:2px 2px!important;max-width:100%;color:var(--stage-ink);font-size:16.5px;line-height:1.6}
 .cl-greet{display:none;align-items:center;justify-content:center;gap:14px;text-align:center;margin-bottom:6px}
-.cl-greet svg{width:42px;height:42px;color:var(--hi);flex:none}
+.cl-greet{flex-direction:column;gap:6px}
+.cl-greet p{margin:0;font:500 clamp(16px,2.2vw,21px) var(--body);color:var(--stage-muted)}
+.hot-h{display:flex;align-items:baseline;gap:12px}
+.hot-h span.hot-t{font:600 14px var(--body);margin:0}
+.hot-clr{margin-left:auto;background:none;border:0;color:var(--stage-muted);font:500 11px var(--body);cursor:pointer;padding:2px 4px;text-decoration:underline;text-underline-offset:3px}
+.hot-clr:hover{color:var(--hi)}
+.hot-l{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media(max-width:760px){.hot-l{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+.hot-b{position:relative}.hot-l .hot-b{padding-right:36px!important;min-height:96px!important}
+.hot-x{position:absolute;top:8px;right:10px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;font:400 20px/1 var(--body);opacity:.55}
+.hot-x:hover{opacity:1;background:color-mix(in srgb,var(--hi) 25%,transparent)}
+.hot-b.pop{animation:hotPop .5s cubic-bezier(.2,.9,.25,1.2) both}
+@keyframes hotPop{from{opacity:0;transform:scale(.85) translateY(10px)}to{opacity:1;transform:none}}
 .cl-greet h2{text-transform:none;margin:0;font:700 clamp(26px,4vw,40px)/1.15 var(--display);color:var(--stage-ink);letter-spacing:-.01em}
 .cl-chat.empty{justify-content:flex-start;padding-bottom:4vh}.cl-chat.empty>.cl-greet{margin-top:auto}.cl-chat.empty>p.help{margin-bottom:auto}
 .cl-chat.empty .cl-greet{display:flex;order:1}
@@ -450,7 +468,7 @@ function build(){
     </div>
   </div>
   <div class="cl-chat" id="clChatView" hidden>
-    <div class="cl-greet" id="clGreet"><svg viewBox="0 0 48 48" aria-hidden="true"><g stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M24 4v12M24 32v12M4 24h12M32 24h12M10 10l8 8M30 30l8 8M38 10l-8 8M18 30l-8 8"/></g></svg><h2 id="clGreetT">Welcome to class</h2></div>
+    <div class="cl-greet" id="clGreet"><h2 id="clGreetT">Hello</h2><p id="clGreetS"></p></div>
     <div class="cl-chathead"><span class="cl-chatname" id="clName"></span><span class="cl-chatbtns"><button class="btn" id="tCopyAll" type="button">Copy chat</button><button class="btn" id="clClrChat" type="button" title="Wipe this chat">Clear chat</button></span></div>
     <div class="cl-set"><label for="tLevel" class="flabel">My level</label>
       <select id="tLevel"><option value="">Not sure</option><option>Beginners</option><option>Intermediate</option><option>Progressive</option><option>Pre-advanced</option></select>
@@ -458,7 +476,7 @@ function build(){
       <label class="t-chk"><input type="checkbox" id="clAuto"> Read replies aloud</label></div>
     <div id="tLog" class="t-log" aria-live="polite"></div>
     <div class="t-chips" id="tChips">
-      <div class="hot" id="hot"><div class="hot-h">🔥 Hot topics <span>the more students open a topic, the higher it climbs</span></div><div class="hot-l" id="hotL"></div></div>
+      <div class="hot" id="hot"><div class="hot-h"><span class="hot-t">Here's what other musicians are talking about</span><button type="button" class="hot-clr" id="hotClr">Clear all</button></div><div class="hot-l" id="hotL"></div></div>
       <button class="btn chip" type="button">Explain the chords in my chart</button>
       <button class="btn chip" type="button">Teach me the 2-5-1 progression</button>
       <button class="btn chip" type="button">Quiz me on what I'm learning</button>
@@ -504,7 +522,7 @@ function build(){
   $('tCopyAll').onclick=()=>{ const c=chat(); if(!c.log.length){ toast('Nothing to copy yet'); return; } tCopy(c.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:splitReply(m.content).text)).join('\n\n')); };
   $('tChips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>ask(b.textContent));
   hotInit();
-  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('clNew2').onclick=startNew; $('clSearch').oninput=drawList; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
+  $('clChats').onclick=()=>drawer($('clDrawer').hidden); $('clCloseDrawer').onclick=()=>drawer(false); $('clNew').onclick=startNew; $('hotClr').onclick=hotClear; $('clNew2').onclick=startNew; $('clSearch').oninput=drawList; $('clClrBoard').onclick=clearBoard; $('clClrKeys').onclick=clearKeys; $('clClrChat').onclick=()=>clearChat(false);
   $('clCheck').onclick=()=>window.CHECK&&CHECK.toggle();
   document.querySelectorAll('.cl-box').forEach(b=>b.addEventListener('pointermove',e=>{ const r=b.getBoundingClientRect(); b.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); b.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); }));
   document.querySelectorAll('.cl-box').forEach(b=>b.onclick=()=>{ const g=b.dataset.go;
