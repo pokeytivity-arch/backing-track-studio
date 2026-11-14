@@ -224,6 +224,12 @@ async function account(request, env) {
   const action = String(b.action || '');
   if (action === 'logout') { const u = await sessionUser(request, env); if (u) await env.LESSONS.delete('sess:' + u.tok); return json({ ok: true }, 200); }
   const email = String(b.email || '').trim().toLowerCase(), pw = String(b.password || '');
+  if (action === 'adminlist') {
+    if (!env.ADMIN_TOKEN || !same(b.adminToken, env.ADMIN_TOKEN)) return json({ error: 'auth' }, 401);
+    const keys = []; let cursor; for (let i = 0; i < 10; i++) { const l = await env.LESSONS.list({ prefix: 'acct:', limit: 1000, cursor }); keys.push(...l.keys.map(k => k.name)); if (l.list_complete) break; cursor = l.cursor; }
+    const rows = []; for (let i = 0; i < keys.length; i += 40) { const got = await Promise.all(keys.slice(i, i + 40).map(k => env.LESSONS.get(k, 'json'))); got.forEach(a => { if (a) rows.push({ name: a.name || '', email: a.email || '', role: a.role || 'none', made: a.made || 0, teachers: (a.teachers || []).length, students: (a.students || []).length, code: a.tcode || '' }); }); }
+    rows.sort((x, y) => y.made - x.made); return json({ total: rows.length, rows }, 200);
+  }
   if (action === 'adminreset') {
     if (!env.ADMIN_TOKEN || !same(b.adminToken, env.ADMIN_TOKEN)) return json({ error: 'auth' }, 401);
     const id = await sha(email), acct = await env.LESSONS.get('acct:' + id, 'json'); if (!acct) return json({ error: 'no_account' }, 404);
