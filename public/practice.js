@@ -97,7 +97,7 @@ function drawKb(){
   const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg); tab(svg,s);
-  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
+  if(window.PSHANDS){ if(kind==="scales"){ handPos(); } if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
 /* the name tab above the keys: every note of the scale has a cell over its key showing its letter, solfa or number; the note being played lights up in its hand's colour */
@@ -112,6 +112,23 @@ function tab(svg,s){
   const blk=m=>[1,3,6,8,10].includes(((m%12)+12)%12), u=1/Wv*100;
   Object.keys(cell).forEach(m=>{ if(pos[m]==null) return; m=+m; let x=pos[m]; if(!blk(m)){ if(blk(m-1)&&(m-1) in cell) x+=1.9*u; if(blk(m+1)&&(m+1) in cell) x-=1.9*u; }
     const c=el('span',on[m]?'on '+on[m]:'',cell[m].t); c.style.left=(x-cw/2)+'%'; c.style.width=cw+'%'; bar.appendChild(c); });
+}
+/* hand positions: the notes between two crossings form one position of the hand. Every finger has a key in it (the fingers the scale does not
+   use there sit over the next scale notes in line), so the hand stays in place, the playing finger goes down and the others wait just above their keys. */
+function handPos(){
+  if(steps.__pos===steps.length) return; steps.__pos=steps.length;
+  [['rh','fing','rpos',1],['lh','lfing','lpos',-1]].forEach(([hk,fk,pk,dir])=>{
+    const seq=steps.map(x=>x[hk]&&x[hk].length&&x[fk]?[x[hk][0],+x[fk]]:null);
+    const base=[...new Set(seq.filter(Boolean).map(v=>v[0]))]; if(!base.length) return;
+    const ext=[...new Set(base.flatMap(m=>[m-24,m-12,m,m+12,m+24]))].sort((a,b)=>a-b);
+    let grp=[]; const flush=()=>{ if(!grp.length) return; const fm={}; grp.forEach(i=>{ const [m,f]=seq[i]; if(fm[f]==null) fm[f]=m; });
+      const have=Object.keys(fm).map(Number); const pos={};
+      for(let j=1;j<=5;j++){ if(fm[j]!=null){ pos[j]=fm[j]; continue; } const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); const ix=ext.indexOf(fm[r])+(j-r)*dir; pos[j]=ext[Math.max(0,Math.min(ext.length-1,ix))]; }
+      grp.forEach(i=>{ steps[i][pk]=pos; }); grp=[]; };
+    seq.forEach((v,i)=>{ if(!v){ flush(); return; } const p=grp.length?seq[grp[grp.length-1]]:null;
+      if(p){ const dm=v[0]-p[0], df=v[1]-p[1]; const same=(dm===0&&df===0)||(dm!==0&&df!==0&&Math.sign(df)===Math.sign(dm)*dir); if(!same) flush(); }
+      grp.push(i); });
+    flush(); });
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 
