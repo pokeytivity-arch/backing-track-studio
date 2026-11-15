@@ -68,7 +68,7 @@ function layout(kb){
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; for(let q=36;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; const u=white?1+(n+.5)*14:1+n*14; return u/(36*14+2)*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.12:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
@@ -213,7 +213,7 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.12, ay0=pb-.74*k*M.middle.len+1.95*lk*.94-kw*.15, set2=set;
+  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, ay0=pb-.74*k*M.middle.len+1.95*lk*.94-kw*.15, set2=set;
   if(skinM) skinM.setAttribute('values',SKINM[skin]);
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
