@@ -23,7 +23,9 @@ const LIB=(window.SCALELIB&&SCALELIB.list)||[];
 const TYPES=LIB.map(x=>({id:x.rid,lid:x.id,g:x.grp,l:x.name,fam:x.fam,d:x.deg.split(' '),keys:x.keys,s:x.deg.split(' ').map(t=>{ const m=/^(bb|b|#)?(\d)$/.exec(t); return MAJS[+m[2]]+(!m[1]?0:m[1]==='#'?1:m[1]==='b'?-1:-2); })}));
 /* Enharmonic keys sound the same, so they share the fingering of their twin */
 /* Fingering families from the lessons. lhm = left hand over several octaves: first octave, repeated octave, last note */
-['C','G','D','A','E','B'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
+['C','G','D','A','E'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
+/* B major left hand is 4 3 2 1 4 3 2 1 (his fingering); over several octaves it follows B minor, which has the same one-octave fingering */
+SC.B.lhm={f:'4 3 2 1 4 3 2',r:'1 3 2 1 4 3 2',l:'1'};
 ['Bb','Eb','Ab','Db'].forEach(k=>{ SC[k].lh='3 2 1 4 3 2 1 2'; SC[k].lhm={f:'3 2 1 4 3 2 1',r:'3 2 1 4 3 2 1',l:'3'}; });
 SC.Gb.lhm={f:'4 3 2 1 3 2 1',r:'4 3 2 1 3 2 1',l:'4'};
 SC.F.lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'};

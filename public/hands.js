@@ -212,7 +212,7 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), ay0=pb-kw*.15, set2=set;
+  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), ay0=pb+kw*.3, set2=set;
   if(skinM) skinM.setAttribute('values',SKINM[skin]);
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
@@ -226,13 +226,16 @@ function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
   const names=['index','middle','ring','pinky'], tips=[];
   /* thumb: its base glides from the side of the hand to under the palm while it crosses */
   { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=[cx+(-1.45+1.35*h.c)*dir*kw,pb-lk*1.2], B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
-    let tx=h.fx[0], ty=h.fy[0]; if(h.f!==1){ const ln=k*m.len, nx=B[0]-dir*.075*ln, ny=B[1]+.997*ln, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
-    const t=place(h.pi.thumb,m,B,tx,ty,.8,1.9,1); tips[0]=t; }
+    let tx=h.fx[0], ty=h.fy[0]; if(h.f!==1){ const ln=k*m.len, nx=B[0]-dir*.5*ln*.9, ny=B[1]+.866*ln*.9, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
+    const t=place(h.pi.thumb,m,B,tx,ty,.7,1.9,1); tips[0]=t;
+    const under=h.c>.35; if(under!==h.tu||h.pi.thumb.parentNode!==h.pg){ h.tu=under; if(under) h.pg.insertBefore(h.pi.thumb,h.pg.firstChild); else h.pg.appendChild(h.pi.thumb); } }
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
   names.forEach((n,j)=>{ const i=j+1, m=M[n], B=P(pm.ax+m.base[0],pm.ay+m.base[1]); let tx=h.fx[i], ty=h.fy[i], playing=h.f===i+1;
-    if(!playing){ const dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len; tx=B[0]+dx/L*ln*.97; ty=B[1]+dy/L*ln*.97; }
-    tips[i]=place(h.pi[n],m,B,tx,ty,.8,1.4,1); });
+    const W=P(pm.ax,pm.ay+300), nx0=B[0]-W[0], ny0=B[1]-W[1], nl=Math.hypot(nx0,ny0)||1;
+    if(!playing){ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1; dx=dx/L*.6+nx0/nl*.4; dy=dy/L*.6+ny0/nl*.4; L=Math.hypot(dx,dy)||1; const ln=k*m.len; tx=B[0]+dx/L*ln*.8; ty=B[1]+dy/L*ln*.8; }
+    tips[i]=place(h.pi[n],m,B,tx,ty,.62,1.3,1); });
   if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ h.pg.insertBefore(h.pi[names[i-1]],h.pi.palm); }); }
+  if(!h.tu&&h.pg.lastChild!==h.pi.thumb) h.pg.appendChild(h.pi.thumb);
   /* numbers on the tips; every number sits on the top layer */
   { const nodes=[h.thumb].concat(h.fing), A=nodes[h.f-1];
     nodes.forEach((nd,i)=>{ const t=tips[i]; nail(nd,t[0],t[1],kw,i+1,i===h.f-1,T,t[2],t[3],kw*.8); [nd.n,nd.t].forEach(x=>{ if(x.parentNode!==h.top) h.top.appendChild(x); }); });
@@ -242,7 +245,7 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   /* a small numbered badge on the fingertip (yellow on the finger that is playing) */
   const bx=tx-ux*kw*.28, by=ty-uy*kw*.28, r=kw*(act?.38:.33); n.bx=bx; n.by=by;
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
-  const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
+  const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num); set(n.n,{display:'none'}); set(n.t,{display:'none'});
 }
 window.PSHANDS={lead,pause,sync,tones:TONES,isOn:()=>on};
 })();
