@@ -129,7 +129,7 @@ function render(){
   clr(); const SC=window.SCALES, hand=$('#prHand'), cats=$('#prCats'), ctl=$('#prCtl'); ctl.textContent=''; cats.textContent=''; document.querySelectorAll('#prRoom .p-sels').forEach(n=>n.remove()); $('#prMsg').textContent='';
   $('#prH').textContent=kind==='scales'?'Scale practice':'Chord practice'; ov.setAttribute('aria-label',$('#prH').textContent);
   if(kind==='scales'){
-    hand.hidden=false; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); loadScale(); });
+    hand.hidden=false; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); hand.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); });
     const types=(SC&&SC.types)||[], tl=id=>(types.find(t=>t.id===id)||{l:'Major'}).l, isMaj=st.type==='major';
     (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',SYMK(k)+(isMaj?' major':'')); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
     const sel=(lab,opts,val,fn)=>{ const w=el('label','p-sel'); w.appendChild(el('span',null,lab)); const s2=document.createElement('select'); s2.setAttribute('aria-label',lab); let og=null,gl=''; opts.forEach(o=>{ if(o.g!==undefined&&o.g!==gl){ gl=o.g; og=document.createElement('optgroup'); og.label=gl; s2.appendChild(og); } const op=document.createElement('option'); op.value=o.v; op.textContent=o.t; if(o.v===val) op.selected=true; (og&&o.g!==undefined?og:s2).appendChild(op); }); s2.onchange=()=>fn(s2.value); w.appendChild(s2); return w; };
