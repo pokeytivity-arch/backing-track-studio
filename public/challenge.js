@@ -64,7 +64,7 @@ async function api(method,body){
 function emptyData(){ return {v:1,plan:null,start:null,checks:{},history:[],done:[]}; }
 async function loadAcct(){
   if(!tok) return false; const j=await api('GET'); if(j._s!==200){ if(j._s===401){ tok=''; try{ localStorage.removeItem(TK); }catch(_){} } return false; }
-  acct={name:j.name,email:j.email}; D=Object.assign(emptyData(),j.data||{}); return true;
+  acct={name:j.name,email:j.email,role:j.role}; D=Object.assign(emptyData(),j.data||{}); return true;
 }
 function queueSave(){ clearTimeout(saveT); saveT=setTimeout(flush,600); }
 async function flush(){ if(!D) return; if(!tok){ try{ localStorage.setItem(GK,JSON.stringify({data:D,name:acct&&acct.name||''})); }catch(_){} return; } if(saving){ queueSave(); return; } saving=true; const j=await api('PUT',{data:D,name:acct&&acct.name}); saving=false; if(j._s!==200) note('Could not save just now. Check your connection.'); }
@@ -197,6 +197,7 @@ function authView(w){
 function planLen(p){ return p.week.reduce((a,d)=>a+d.length,0); }
 function chooseView(w){
   head(w,'Pick a plan, then check in every day for 90 days.');
+  const tb=el('div'); w.appendChild(tb); teachBox(tb);
   w.appendChild(el('h2','','Ready-made plans'));
   const g=el('div','pgrid'); w.appendChild(g);
   const TONES=[['--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9','<path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/>'],
@@ -298,10 +299,36 @@ function buildView(w){
   CAT.forEach(c=>{ const d=el('details'); d.appendChild(el('summary','',esc(c.name))); const fill=(box,o)=>{ (o.subs||o.groups||[]).forEach(s=>{ const dd=el('details'); dd.appendChild(el('summary','',esc(s.name))); fill(dd,s); box.appendChild(dd); }); (o.items||[]).forEach(it=>{ const r=el('div','opt'); r.appendChild(el('span','',esc(it.name))); r.appendChild(addBtn(it)); box.appendChild(r); }); }; fill(d,c); w.appendChild(d); });
   const r=el('div','row'); r.style.marginTop='18px';
   const total=draft.week.reduce((a,d)=>a+d.length,0);
-  const go=el('button','pri','Start my 90 days'); go.disabled=!total; go.onclick=()=>{ startPlan({id:'mine',name:draft.name.trim()||'My plan',official:false,week:draft.week}); };
+  const go=el('button','pri',draft.target?'Send to '+draft.target.name:'Start my 90 days'); go.disabled=!total;
+  go.onclick=draft.target?async()=>{ go.disabled=true; const j=await apiT('plset',{id:draft.target.id,name:draft.name.trim()||'Practice plan',week:draft.week}); if(j._s===200){ msg='Plan sent to '+draft.target.name+'.'; draft=null; view='home'; render(); } else { go.disabled=false; alert('Could not send the plan. Try again.'); } }:()=>{ startPlan({id:'mine',name:draft.name.trim()||'My plan',official:false,week:draft.week}); };
   const cn=el('button','','Cancel'); cn.onclick=()=>{ view='home'; render(); }; r.append(go,cn); w.appendChild(r);
   if(!total) w.appendChild(el('p','mut','Add at least one practice item to start.'));
   w.appendChild(el('p','mut','Plans you build or change are tracked like any other, but only the ready-made plans earn a certificate.'));
+}
+/* --- teachers and students: practice plans --- */
+async function apiT(act,body){ const r=await fetch('/api/teach/'+act,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tok},body:JSON.stringify(body||{})}); let j={}; try{ j=await r.json(); }catch(_){} j._s=r.status; return j; }
+function planStats(c){ const D0=D; D={plan:c.plan,start:c.start,checks:c.checks||{},history:[],done:[]}; try{ if(!D.plan||!D.start) return null; const st=stats(); return {pct:st.pct,items:st.items,days:st.days,day:Math.max(1,dayNum())}; } catch(_){ return null; } finally{ D=D0; } }
+async function teachBox(box){
+  if(!tok||!acct||!acct.role||acct.role==='none') return;
+  if(acct.role==='student'){
+    const j=await apiT('plmine'); if(j._s!==200||!j.teachers||!j.teachers.length) return;
+    const b=el('div','box'); b.appendChild(el('h2','','From my teacher'));
+    (j.plans||[]).forEach(pl=>{ const r=el('div','item'); r.innerHTML='<span class="nm">'+esc(pl.name)+' <span class="mut">from '+esc(pl.teacher)+(pl.note?' · '+esc(pl.note):'')+'</span></span>'; const g=el('button','pri sm','Start this plan'); g.onclick=()=>startPlan({id:'teacher',name:pl.name,official:false,week:pl.week}); const c=el('button','sm','Customize'); c.onclick=()=>{ draft={id:'mine',name:pl.name+' (my version)',official:false,week:pl.week.map(d=>d.slice())}; pick=0; view='build'; render(); }; r.append(g,c); b.appendChild(r); });
+    if(!(j.plans||[]).length) b.appendChild(el('p','mut','Your teacher has not sent a plan yet.'));
+    j.teachers.forEach(t=>{ const r=el('div','row'); const q=el('button','sm',t.asked?'Requested, waiting for '+t.name:'Ask '+t.name+' for a practice plan'); q.disabled=!!t.asked; q.onclick=async()=>{ q.disabled=true; const k=await apiT('plreq',{code:t.code}); q.textContent=k._s===200?'Requested, waiting for '+t.name:'Try again'; if(k._s!==200) q.disabled=false; }; r.appendChild(q); b.appendChild(r); });
+    box.appendChild(b); return;
+  }
+  if(acct.role==='teacher'){
+    const j=await apiT('plstudents'); if(j._s!==200) return;
+    const b=el('div','box'); b.appendChild(el('h2','','My students'));
+    if(!j.students.length) b.appendChild(el('p','mut','No students yet. Share your teacher code so they can join.'));
+    j.students.forEach(st=>{ const r=el('div','item'); r.innerHTML='<span class="nm">'+esc(st.name||'Student')+' <span class="mut">'+(st.plan?'Plan: '+esc(st.plan):'No plan yet')+(st.request?' · asked for a plan':'')+'</span></span>';
+      const m=el('button','pri sm','Make a plan'); m.onclick=()=>{ draft={id:'mine',name:'Practice plan for '+(st.name||'student'),official:false,week:[[],[],[],[],[],[],[]],target:{id:st.id,name:st.name||'student'}}; pick=0; view='build'; render(); };
+      const v=el('button','sm','See progress'); v.onclick=async()=>{ v.disabled=true; const p=await apiT('plprogress',{id:st.id}); v.disabled=false; if(p._s!==200) return; const old=r.nextSibling&&r.nextSibling.className==='tprog'?r.nextSibling:null; if(old){ old.remove(); return; } const d=el('div','tprog'); const ps=planStats(p.challenge); let h='<p><b>90 Day Challenge:</b> '+(ps?esc(p.challenge.plan.name)+', day '+Math.min(ps.day,90)+' of 90. Practice items done '+ps.items+'%, days finished '+ps.days+'%.':'not started.')+'</p>';
+        h+='<p><b>Practice plan you sent:</b> '+(p.sent?esc(p.sent.name)+', sent '+esc(new Date(p.sent.at).toLocaleDateString()):'none yet')+'</p>'; if(p.challenge.history&&p.challenge.history.length) h+='<p class="mut">Past attempts: '+p.challenge.history.map(x=>esc(x.plan)+' '+esc(x.pct)+'%').join('; ')+'</p>'; d.innerHTML=h; r.after(d); };
+      r.append(m,v); b.appendChild(r); });
+    box.appendChild(b);
+  }
 }
 /* --- practice sheet: notes in any key, hear them, show them on the Class keyboard, ask Pokey --- */
 let keyPick='C';

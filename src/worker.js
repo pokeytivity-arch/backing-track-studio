@@ -350,6 +350,39 @@ async function teach(request, env, act) {
     const id = clip(b.id, 80); if (!id.startsWith('as:' + a.tcode + ':')) return json({ error: 'bad' }, 400);
     await env.LESSONS.delete(id); return json({ ok: true }, 200);
   }
+  /* ---------- practice plans: a teacher writes a week of scale/chord/progression ids for a student; a student can ask for one; the teacher can see the plan and the 90 Day Challenge progress ---------- */
+  const cleanWeek = w => (Array.isArray(w) ? w : []).slice(0, 7).concat([[], [], [], [], [], [], []]).slice(0, 7).map(d => (Array.isArray(d) ? d : []).slice(0, 30).map(x => clip(x, 24)).filter(Boolean));
+  if (act === 'plset') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const id = clip(b.id, 80); if (!(a.students || []).some(x => x.id === id && x.status === 'active')) return json({ error: 'none' }, 404);
+    const week = cleanWeek(b.week); if (!week.some(d => d.length)) return json({ error: 'bad' }, 400);
+    await env.LESSONS.put('pl:' + a.tcode + ':' + id, JSON.stringify({ name: clip(b.name, 60) || 'Practice plan', note: clip(b.note, 400), week, at: Date.now() }));
+    await env.LESSONS.delete('rq:' + a.tcode + ':' + id); return json({ ok: true }, 200);
+  }
+  if (act === 'plmine') {
+    const ts = (a.teachers || []).filter(x => x.status === 'active').slice(0, 10), plans = [];
+    await Promise.all(ts.map(async t => { const v = await env.LESSONS.get('pl:' + t.code + ':' + u.id, 'json'); if (v) plans.push(Object.assign({ teacher: t.name, code: t.code }, v)); }));
+    const asked = {}; await Promise.all(ts.map(async t => { asked[t.code] = !!(await env.LESSONS.get('rq:' + t.code + ':' + u.id)); }));
+    return json({ plans, teachers: ts.map(t => ({ code: t.code, name: t.name, asked: asked[t.code] })) }, 200);
+  }
+  if (act === 'plreq') {
+    const code = clip(b.code, 12).toUpperCase(), t = a.role === 'student' && (a.teachers || []).find(x => x.code === code && x.status === 'active'); if (!t) return json({ error: 'role' }, 403);
+    await env.LESSONS.put('rq:' + code + ':' + u.id, JSON.stringify({ student: who(a), note: clip(b.note, 300), at: Date.now() }), { expirationTtl: 60 * 60 * 24 * 90 }); return json({ ok: true }, 200);
+  }
+  if (act === 'plstudents') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const l = await env.LESSONS.list({ prefix: 'rq:' + a.tcode + ':', limit: 200 }), reqs = {};
+    await Promise.all(l.keys.map(async k => { reqs[k.name.split(':')[2]] = await env.LESSONS.get(k.name, 'json'); }));
+    const out = await Promise.all((a.students || []).filter(x => x.status === 'active').map(async st => {
+      const pl = await env.LESSONS.get('pl:' + a.tcode + ':' + st.id, 'json'); return { id: st.id, name: st.name, plan: pl ? pl.name : '', request: reqs[st.id] || null }; }));
+    return json({ students: out }, 200);
+  }
+  if (act === 'plprogress') {
+    if (!isT || !a.tcode) return json({ error: 'role' }, 403);
+    const id = clip(b.id, 80); if (!(a.students || []).some(x => x.id === id && x.status === 'active')) return json({ error: 'none' }, 404);
+    const sa = await env.LESSONS.get('acct:' + id, 'json'), d = (sa && sa.data) || {}, pl = await env.LESSONS.get('pl:' + a.tcode + ':' + id, 'json');
+    return json({ name: sa ? who(sa) : '', sent: pl, challenge: { plan: d.plan ? { name: d.plan.name, week: d.plan.week } : null, start: d.start || null, checks: d.checks || {}, history: (d.history || []).slice(0, 10) } }, 200);
+  }
   if (act === 'mine') {
     const ts = (a.teachers || []).filter(x => x.status === 'active').slice(0, 10), out = [];
     await Promise.all(ts.map(async t => {
