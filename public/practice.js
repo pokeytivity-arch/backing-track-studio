@@ -97,7 +97,7 @@ function drawKb(){
   const rng=kbRange(); const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:rng[0],hi:rng[1],height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg); tab(svg,s);
-  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
+  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else if(kind==="chords"&&s&&typeof fingering==="function") PSHANDS.sync(wrap,true,chordHands(s),drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
 /* the name tab above the keys: every note of the scale has a cell over its key showing its letter, solfa or number; the note being played lights up in its hand's colour */
@@ -138,6 +138,18 @@ function kbRange(){
   /* always three octaves, placed over the notes in use */
   const mid=(Math.min(...ms)+Math.max(...ms))/2; let lo=Math.round((mid-18)/12)*12; lo=Math.max(24,Math.min(72,lo));
   return [lo,lo+36];
+}
+/* chords: every finger of each hand gets a key. The chord's own fingering (the numbers shown on the keys) presses its notes together;
+   the other fingers wait over the neighbouring white keys, a step apart, as a hand naturally sits */
+function chordHands(s){
+  const F=fingering(s.lh||[],s.rh||[]), W=[0,2,4,5,7,9,11], isW=m=>W.includes(((m%12)+12)%12);
+  const side=(notes,dir)=>{ if(!notes||!notes.length) return null; const pos={}; notes.forEach(m=>{ const f=F[m]; if(f&&pos[f]==null) pos[f]=m; });
+    const have=Object.keys(pos).map(Number); if(!have.length) return null; const press=have.slice();
+    for(let j=1;j<=5;j++){ if(pos[j]!=null) continue; const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); let m=pos[r], n=Math.abs(j-r), st=Math.sign(j-r)*dir;
+      while(n>0){ m+=st; while(!isW(m)) m+=st; n--; } pos[j]=m; }
+    const f=press.includes(1)?1:Math.min(...press); return {pos,press,f,note:pos[f]}; };
+  const R=side(s.rh,1), L=side(s.lh,-1);
+  return {rh:R?[R.note]:[],fing:R?String(R.f):'',rpos:R?R.pos:null,rpress:R?R.press:null,lh:L?[L.note]:[],lfing:L?String(L.f):'',lpos:L?L.pos:null,lpress:L?L.press:null};
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 

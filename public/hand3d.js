@@ -159,7 +159,7 @@ function poseHand(h, d, s) {
     const offs = [P[1].clone().sub(P[0]), P[2].clone().sub(P[1]), tipR.clone().sub(P[2])].map((o, j) => o.applyQuaternion(rest[names[j]].q.clone().invert()));
     const fk = () => { const pts = [P[0].clone()]; for (let j = 0; j < 3; j++) pts.push(pts[j].clone().add(offs[j].clone().applyQuaternion(Q[j]))); return pts; };
     if (h.tq) for (let j = 0; j < 3; j++) Q[j].copy(h.tq[j]);
-    const lim = [1.1, 1.3, 1.3];
+    const lim = [1.4, 1.5, 1.4];
     for (let it = 0; it < 10; it++) for (let j = 2; j >= 0; j--) {
       const pts = fk(), e = pts[3].clone().sub(pts[j]).normalize(), t = T.clone().sub(pts[j]).normalize();
       const r = new THREE.Quaternion().setFromUnitVectors(e, t); const ang = 2 * Math.acos(Math.min(1, Math.abs(r.w)));

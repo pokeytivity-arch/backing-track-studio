@@ -27,18 +27,18 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=7').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=8').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 function pose3(h){
   const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y, hf=+h.f||0;
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
-  const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=i===hf-1, blk=sy<kbH*.6;
+  const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=i===hf-1||!!(h.press&&h.press.includes(i+1)), blk=sy<kbH*.6;
     tips.push([h.fx[i],sy,(blk?.011*s:0)+(play?0:.008*s)]); }
   let az=0; for(let i=1;i<5;i++) az+=tips[i][1]; az/=4; az+=.062*s;
   /* the thumb hangs free, out to its side and a little lifted, unless it is playing or passing under */
   if(hf!==1&&h.c<.3){ tips[0]=[tips[1][0]-dir*kw*1.25,az-.034*s,.02*s]; }
   else { tips[0][1]=Math.min(kbH-kw*.2,tips[0][1]); tips[0][2]=hf===1?0:.006*s; }
   /* the thumb is shorter than the fingers: when it plays the whole hand leans in so it can reach its key, then eases back */
-  const want=hf===1?Math.min(az,tips[0][1]+.03*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
+  const want=hf===1?Math.min(az,tips[0][1]+.01*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
   /* when the thumb plays, the hand moves a little towards the little finger so the thumb is clear of the index finger */
   const wx=hf===1?dir*kw*.55:0; h.ax3=h.ax3==null?wx:h.ax3+(wx-h.ax3)*.2; if(Math.abs(wx-h.ax3)>.3){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
   P3.pose({side:h.side,on:true,f:hf,ax:h.x+h.ax3,ay:.03*s,az,th:-dir*.25*h.c,tips});
@@ -123,11 +123,12 @@ function target(h,m,f,pos){
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init; if(h.side==='rh'&&phase2) h.fast=true;
   for(let i=0;i<5;i++){
+    if(i!==fi&&pos&&h.press&&h.press.includes(i+1)&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?Math.max(geo.HP+kw*.3,yF(p)-kw*.45):yF(p)-kw*.1; continue; }
     if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?Math.max(geo.HP+kw*.3,yF(m)-kw*.45):yF(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
     else if(i===0){ if(!over||!h.init){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; } }
     else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.8*LMAX[i]*lk-kw*.1; }
     /* in a hand position every other finger waits just above its own key */
-    if(pos&&!k&&i!==fi&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yF(p)-kw*.45):yF(p)-kw*.1)-kw*.12; }
+    if(pos&&!k&&i!==fi&&pos[i+1]!=null&&!(h.press&&h.press.includes(i+1))){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yF(p)-kw*.45):yF(p)-kw*.1)-kw*.12; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
@@ -140,6 +141,7 @@ function sync(kb,avail,s,cb){
   if(!ro&&window.ResizeObserver){ ro=new ResizeObserver(()=>{ if(lastA&&lastA[0]&&lastA[0].isConnected&&host) sync(...lastA); }); }
   if(ro&&ro.__t!==kb){ ro.disconnect(); ro.observe(kb); ro.__t=kb; }
   const hasR=s&&s.rh&&s.rh.length&&s.fing, hasL=s&&s.lh&&s.lh.length&&s.lfing;
+  H.rh.press=s&&s.rpress||null; H.lh.press=s&&s.lpress||null;
   target(H.rh,on&&hasR?s.rh[0]:null,hasR?+s.fing:0,s&&s.rpos||null); target(H.lh,on&&hasL?s.lh[0]:null,hasL?+s.lfing:0,s&&s.lpos||null);
   ['rh','lh'].forEach(k=>{ if(!H[k].on) set(H[k].g,{display:'none'}); });
   if(!raf&&!paused){ last=0; raf=requestAnimationFrame(tick); }
