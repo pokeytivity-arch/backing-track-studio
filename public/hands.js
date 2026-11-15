@@ -24,7 +24,7 @@ const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
 function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
-  h.fore=el(g,'path',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
+  h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
   h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'});
   H[side]=h; return h;
 }
@@ -36,8 +36,8 @@ let on=true; try{ on=localStorage.getItem('ps-hands')!=='0'; }catch(_){}
 let onChange=null, ctrl=null, btn=null, sw=null;
 function mount(h0){
   if(svg) return; host=h0; host.style.position='relative';
-  const wrap=document.createElement('div'); wrap.className='p-hands'; wrap.style.cssText='position:absolute;left:0;right:0;bottom:-12px;pointer-events:none;overflow:hidden;z-index:3';
-  svg=document.createElementNS(NS,'svg'); svg.setAttribute('aria-hidden','true'); svg.style.cssText='display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))'; wrap.appendChild(svg); host.insertBefore(wrap,host.firstChild); host._hw=wrap;
+  const wrap=document.createElement('div'); wrap.className='p-hands'; wrap.style.cssText='position:absolute;left:0;right:0;bottom:-12px;pointer-events:none;overflow:visible;z-index:3';
+  svg=document.createElementNS(NS,'svg'); svg.setAttribute('aria-hidden','true'); svg.style.cssText='display:block;overflow:visible;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))'; wrap.appendChild(svg); host.insertBefore(wrap,host.firstChild); host._hw=wrap;
   defs=el(svg,'defs',{}); gp=el(defs,'linearGradient',{id:'psgp',x1:0,x2:1,y1:0,y2:0}); gs=[0,1,2,3].map(()=>el(gp,'stop',{})); makeHand('lh'); makeHand('rh');
   ctrl=document.createElement('div'); ctrl.className='p-hctl'; ctrl.style.cssText='position:absolute;right:4px;bottom:2px;display:flex;gap:6px;align-items:center;z-index:4;pointer-events:auto';
   btn=document.createElement('button'); btn.type='button'; btn.style.cssText='min-height:20px;height:20px;padding:0 9px;border-radius:999px;border:1.5px solid #3a4a74;background:#0c1426;color:#eef2ff;font:700 12px system-ui,sans-serif;cursor:pointer';
@@ -129,7 +129,25 @@ function draw(h){
   const T=TONES[skin], {kw,lk}=geo, dir=h.side==='rh'?1:-1, g=h.g, c=h.c, lerp=(a,b)=>a+(b-a)*c; set(g,{display:'',transform:'translate(0 '+(geo.HP+geo.kbH)+') scale(1 -1)'});
   const palmH=lk*PALMH, pb=h.py, pt=pb-palmH, cx=h.x;
   [[0,T.d],[.3,T.s],[.62,mix(T.s,'#ffffff',.14)],[1,T.d]].forEach(([o,col],i)=>set(gs[i],{offset:o,'stop-color':col}));
-  set(h.fore,{d:'M'+(cx-kw*1.1)+' '+(pt+kw*.1)+'L'+(cx-kw*1.3)+' -6L'+(cx+kw*1.3)+' -6L'+(cx+kw*1.1)+' '+(pt+kw*.1)+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1});
+  set(h.fore,{d:'M'+(cx-kw*1.1)+' '+(pt+kw*.1)+'L'+(cx-kw*1.3)+' '+(pt-kw*2.2)+'L'+(cx+kw*1.3)+' '+(pt-kw*2.2)+'L'+(cx+kw*1.1)+' '+(pt+kw*.1)+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1});
+
+  /* dressed wrist: bare wrist with the watch (left hand) or bracelet (right hand), a white shirt cuff, then a black suit sleeve running off the bottom */
+  { const Wy=d=>(pt-d*kw).toFixed(1), Wx=d=>(cx+d*kw).toFixed(1);
+    set(h.sl,{d:'M'+Wx(-1.75)+' '+Wy(1.85)+'L'+Wx(1.75)+' '+Wy(1.85)+'L'+Wx(1.95)+' '+Wy(3.4)+'L'+Wx(-1.95)+' '+Wy(3.4)+'Z',fill:'#2a2d37',stroke:'#4b4f5e','stroke-width':1,'stroke-linejoin':'round'});
+    set(h.cu,{d:'M'+Wx(-1.45)+' '+Wy(1.25)+'L'+Wx(1.45)+' '+Wy(1.25)+'L'+Wx(1.5)+' '+Wy(2.05)+'L'+Wx(-1.5)+' '+Wy(2.05)+'Z',fill:'#fbfbf8',stroke:'#c9c9c2','stroke-width':1,'stroke-linejoin':'round'});
+    set(h.cb,{cx:Wx(dir*.95),cy:Wy(1.65),r:(kw*.13).toFixed(1),fill:'#e4e4de',stroke:'#b9b9b0','stroke-width':.8});
+    const A=h.ac; set(A,{transform:'translate(0 '+(-kw*.3).toFixed(1)+')'}); while(A.firstChild) A.removeChild(A.firstChild);
+    if(h.side==='lh'){
+      el(A,'path',{d:'M'+Wx(-1.2)+' '+Wy(.12)+'L'+Wx(1.2)+' '+Wy(.12)+'L'+Wx(1.2)+' '+Wy(.9)+'L'+Wx(-1.2)+' '+Wy(.9)+'Z',fill:'#241a12',stroke:'#0c0805','stroke-width':1});
+      el(A,'rect',{x:Wx(-.78),y:Wy(.98),width:(kw*1.56).toFixed(1),height:(kw*.98).toFixed(1),rx:(kw*.3).toFixed(1),fill:'#d9b25a',stroke:'#8a6a1f','stroke-width':1});
+      el(A,'rect',{x:Wx(-.64),y:Wy(.84),width:(kw*1.28).toFixed(1),height:(kw*.7).toFixed(1),rx:(kw*.22).toFixed(1),fill:'#0f1b33',stroke:'#f3e3b0','stroke-width':.8});
+      el(A,'path',{d:'M'+Wx(0)+' '+Wy(.49)+'L'+Wx(0)+' '+Wy(.7)+'M'+Wx(0)+' '+Wy(.49)+'L'+Wx(.3)+' '+Wy(.4),stroke:'#f3e3b0','stroke-width':1,'stroke-linecap':'round'});
+      el(A,'rect',{x:Wx(.78),y:Wy(.62),width:(kw*.12).toFixed(1),height:(kw*.24).toFixed(1),rx:1,fill:'#d9b25a'});
+    } else {
+      el(A,'path',{d:'M'+Wx(-1.2)+' '+Wy(.18)+'L'+Wx(1.2)+' '+Wy(.18)+'L'+Wx(1.2)+' '+Wy(.55)+'L'+Wx(-1.2)+' '+Wy(.55)+'Z',fill:'#d9b25a',stroke:'#8a6a1f','stroke-width':1});
+      for(let i=-4;i<=4;i++) el(A,'circle',{cx:Wx(i*.27),cy:Wy(.37),r:(kw*.1).toFixed(1),fill:'#f6e3a2',stroke:'#8a6a1f','stroke-width':.6});
+      el(A,'path',{d:'M'+Wx(-1.2)+' '+Wy(.64)+'L'+Wx(1.2)+' '+Wy(.64)+'L'+Wx(1.2)+' '+Wy(.78)+'L'+Wx(-1.2)+' '+Wy(.78)+'Z',fill:'#c9a24a',stroke:'#8a6a1f','stroke-width':.8});
+    } }
   /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
   const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.2; let ty0=Math.min(h.fy[0],baseY+lk*3.4);
   const X=d=>(cx+dir*d*kw).toFixed(1), Y=d=>(pb-d*kw).toFixed(1);
