@@ -414,8 +414,9 @@ function loadChords(text,quiet){
   if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; chordTip([]); return; }
   steps=out.map(x=>handFit(invert(x))); steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]); chordTip(list);
 }
-document.addEventListener('keydown',e=>{ if(e.code!=='Space'&&e.key!==' ') return; if(!ov||ov.hidden||kind!=='scales') return;
+/* spacebar in the practice room: caught first (capture phase) so the Studio behind never starts its backing track */
+window.addEventListener('keydown',e=>{ if(e.code!=='Space'&&e.key!==' ') return; if(!ov||ov.hidden) return;
   const t=e.target, tg=t&&t.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(t&&t.isContentEditable)) return;
-  e.preventDefault(); if(t&&t.blur&&tg==='BUTTON') t.blur(); playPause(); });
+  e.preventDefault(); e.stopImmediatePropagation(); if(t&&t.blur&&tg==='BUTTON') t.blur(); if(kind==='scales') playPause(); },true);
 window.PRACTICE={open,close};
 })();
