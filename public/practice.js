@@ -94,7 +94,7 @@ function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') retur
 function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales') handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
-  const rng=kbRange(); const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:rng[0],hi:rng[1],height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  if(kind==='chords'&&s&&s.rfm&&typeof fingering==='function') fm=Object.assign(fingering(s.lh||[],[]),s.rfm); const rng=kbRange(); const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:rng[0],hi:rng[1],height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg); tab(svg,s);
   if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else if(kind==="chords"&&s&&typeof fingering==="function") PSHANDS.sync(wrap,true,chordHands(s),drawKb); else PSHANDS.sync(null,false); }
@@ -142,7 +142,7 @@ function kbRange(){
 /* chords: every finger of each hand gets a key. The chord's own fingering (the numbers shown on the keys) presses its notes together;
    the other fingers wait over the neighbouring white keys, a step apart, as a hand naturally sits */
 function chordHands(s){
-  const F=fingering(s.lh||[],s.rh||[]), W=[0,2,4,5,7,9,11], isW=m=>W.includes(((m%12)+12)%12);
+  const F=Object.assign(fingering(s.lh||[],s.rh||[]),s.rfm||{}), W=[0,2,4,5,7,9,11], isW=m=>W.includes(((m%12)+12)%12);
   const side=(notes,dir)=>{ if(!notes||!notes.length) return null; const pos={}; notes.forEach(m=>{ const f=F[m]; if(f&&pos[f]==null) pos[f]=m; });
     const have=Object.keys(pos).map(Number); if(!have.length) return null; const press=have.slice();
     for(let j=1;j<=5;j++){ if(pos[j]!=null) continue; const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); let m=pos[r], n=Math.abs(j-r), st=Math.sign(j-r)*dir;
@@ -168,7 +168,7 @@ function chips(){
 function play1(s,len){ try{ if(kind==='chords'&&st.vh==='h'){ [...s.lh,...s.rh].sort((a,b)=>a-b).forEach((m,i)=>CLASS.sound(m,1.1,.8,i*.5)); } else CLASS.playStep(s,len||1.6); }catch(_){} }
 function show(){
   const s=steps[cur]; $('#prBig').style.fontSize='';
-  if(kind==='chords'){ if(s){ $('#prBig').textContent=s.name; const N=names(s), t=(typeof fingerText==='function')?fingerText(s.lh,s.rh):null; $('#prSub').textContent='Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+(t?'  ·  Fingers: LH '+t.lh+', RH '+t.rh:''); } else { $('#prBig').textContent=steps.length?'Tap a chord':'Type chords'; $('#prSub').textContent=steps.length?'Tap a chord below, or press Play.':'Type chord names like Dm7 G7 Cmaj7, then press Show.'; } }
+  if(kind==='chords'){ if(s){ $('#prBig').textContent=s.name; const N=names(s), t=(typeof fingerText==='function')?fingerText(s.lh,s.rh):null; if(t&&s.rfm) t.rh=[...s.rh].sort((x,y)=>x-y).map(m=>s.rfm[m]).join('-'); $('#prSub').textContent='Left hand '+s.lh.map(m=>N[m%12]).join(' ')+'  ·  Right hand '+s.rh.map(m=>N[m%12]).join(' ')+(t?'  ·  Fingers: LH '+t.lh+', RH '+t.rh:''); } else { $('#prBig').textContent=steps.length?'Tap a chord':'Type chords'; $('#prSub').textContent=steps.length?'Tap a chord below, or press Play.':'Type chord names like Dm7 G7 Cmaj7, then press Show.'; } }
   drawKb();
 }
 function seq(){ const n=steps.length, up=[...Array(n).keys()]; return st.dir==='down'?up.slice().reverse():st.dir==='updown'?up.concat(up.slice(0,-1).reverse()):up; }
@@ -278,6 +278,8 @@ function render(){
     pick();
     const ask=el('button','e-btn','Ask Pokey about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
     const vb=el('button','e-btn','Voicings'); vb.type='button'; vb.onclick=()=>{ if(window.VOICE) VOICE.open(); }; r2.appendChild(vb);
+    /* triads only: root position, first inversion, second inversion in the right hand */
+    const ib=el('button','e-btn','Inversion: '+INV[st.inv||0]); ib.type='button'; ib.id='prInv'; ib.onclick=()=>{ if(ib.getAttribute('aria-disabled')==='true') return; st.inv=((st.inv||0)+1)%3; save(); ib.textContent='Inversion: '+INV[st.inv]; const c=cur; loadChords(st.chords,true); if(c>=0&&c<steps.length){ cur=c; show(); } if(steps[cur>=0?cur:0]) play1(steps[cur>=0?cur:0]); }; r2.appendChild(ib);
     $('#prLbl').textContent='Chord practice'; if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); chordTip([]); }
   }
 }
@@ -341,11 +343,27 @@ function chordTip(list){
   (list||[]).forEach(n=>{ const m=String(n).match(/^([A-G])(#|b)?(m|min|-)(?!aj|a)/); if(!m) return; let k=m[1]+(m[2]||''); if(k==='A#') k='Bb'; if(k==='Db'||k==='Gb'||k==='Ab') return; if(MCH[k]&&!seen[k==='Eb'?'D#':k]){ seen[k==='Eb'?'D#':k]=1; t.appendChild(el('p',null,MCH[k])); } });
   t.hidden=!t.children.length;
 }
+const INV=['Root','1st','2nd'];
+/* is this chord a triad? returns its root and the other two tones (as pitch classes, stacked in thirds or as a sus chord) */
+function triad(s){ const all=[...(s.lh||[]),...(s.rh||[])]; const pcs=[...new Set(all.map(m=>((m%12)+12)%12))]; if(pcs.length!==3) return null;
+  const shapes=[[4,7],[3,7],[3,6],[4,8],[2,7],[5,7]]; const bass=((Math.min(...all)%12)+12)%12;
+  const order=[bass,...pcs.filter(x=>x!==bass)];
+  for(const r of order){ const iv=pcs.filter(x=>x!==r).map(x=>(x-r+12)%12).sort((a,b)=>a-b); if(shapes.some(sh=>sh[0]===iv[0]&&sh[1]===iv[1])) return {r,t:iv.map(i=>(r+i)%12)}; }
+  return null; }
+/* the right hand plays the chosen inversion; of the three fingerings 1 2 4, 1 3 5 and 1 2 5 it takes the one that fits these gaps best */
+function invert(s){ const T=triad(s); if(!T||!(s.rh&&s.rh.length)) return s; s.tri=true; const inv=st.inv||0;
+  const pcs=[T.r,T.t[0],T.t[1]], seq=[pcs.slice(0),[pcs[1],pcs[2],pcs[0]],[pcs[2],pcs[0],pcs[1]]][inv];
+  const low=Math.min(...s.rh)-2; let m=low; while(((m%12)+12)%12!==seq[0]) m++; const rh=[m]; for(let i=1;i<3;i++){ let n=rh[i-1]+1; while(((n%12)+12)%12!==seq[i]) n++; rh.push(n); }
+  const g=[rh[1]-rh[0],rh[2]-rh[1]], pref={'1,2':2,'1,3':4,'2,4':3,'3,5':3,'2,5':5}, F=[[1,2,4],[1,3,5],[1,2,5]];
+  let best=F[1], bc=1e9; F.forEach(f=>{ const c=Math.abs(g[0]-pref[f[0]+','+f[1]])+Math.abs(g[1]-pref[f[1]+','+f[2]]); if(c<bc){ bc=c; best=f; } });
+  const rfm={}; rh.forEach((n,i)=>rfm[n]=best[i]);
+  return Object.assign({},s,{rh,rfm,fing:'',name:s.name+(inv?' ('+INV[inv]+' inversion)':'')}); }
+function invBtn(){ const b=document.getElementById('prInv'); if(!b) return; const ok=steps.some(x=>x.tri); b.setAttribute('aria-disabled',String(!ok)); b.style.opacity=ok?'':'.45'; b.title=ok?'Play the triads in root position, first or second inversion':'Inversions work on triads only'; }
 function loadChords(text,quiet){
   clr(); st.chords=String(text||'').trim(); save();
   const list=normChords(st.chords).slice(0,16); const out=(window.CLASS&&CLASS.stepsFrom)?CLASS.stepsFrom(list):[];
   if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; chordTip([]); return; }
-  steps=out; cur=0; chips(); show(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]); chordTip(list);
+  steps=out.map(invert); cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]); chordTip(list);
 }
 window.PRACTICE={open,close};
 })();
