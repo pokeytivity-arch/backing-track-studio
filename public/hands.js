@@ -25,7 +25,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'});
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{});
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
@@ -190,10 +190,14 @@ function draw(h){
   set(h.pl,{cx:cx,cy:pt+palmH*.56,rx:kw*.85,ry:palmH*.3,fill:'#ffffff',opacity:.1});
   { let d=''; for(let i=1;i<=4;i++){ const kx=cx+KNUCK[i]*dir*kw, ex=cx+(kx-cx)*.5; d+='M'+kx.toFixed(1)+' '+(pb-kw*.42).toFixed(1)+'Q'+((kx+ex)/2).toFixed(1)+' '+(pt+palmH*.55).toFixed(1)+' '+ex.toFixed(1)+' '+(pt+palmH*.14).toFixed(1); d+='M'+(kx-kw*.24).toFixed(1)+' '+(pb-kw*.66).toFixed(1)+'Q'+kx.toFixed(1)+' '+(pb-kw*.84).toFixed(1)+' '+(kx+kw*.24).toFixed(1)+' '+(pb-kw*.66).toFixed(1); }
     set(h.td,{d:d,stroke:T.e,'stroke-width':.8,opacity:.26}); }
+  /* the finger that is playing always shows its number on top; a neighbour's number that would sit on it is hidden, so you can always tell which finger is used */
+  { const nodes=[h.thumb].concat(h.fing), A=nodes[h.f-1];
+    nodes.forEach((nd,i)=>{ const a=i===h.f-1, tgt=a?h.top:nd.g; [nd.n,nd.t].forEach(x=>{ if(x.parentNode!==tgt) tgt.appendChild(x); });
+      const hide=!a&&A&&Math.hypot(nd.bx-A.bx,nd.by-A.by)<kw*.85; [nd.n,nd.t].forEach(x=>x.setAttribute('opacity',hide?0:(a?1:.9))); }); }
 }
 function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   /* a small numbered badge on the fingertip (yellow on the finger that is playing) */
-  const bx=tx-ux*kw*.28, by=ty-uy*kw*.28, r=kw*.33;
+  const bx=tx-ux*kw*.28, by=ty-uy*kw*.28, r=kw*(act?.38:.33); n.bx=bx; n.by=by;
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
 }
