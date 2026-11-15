@@ -35,8 +35,12 @@ const TYPES=[
  {id:'super',g:'Modes of the melodic minor',l:'Super Locrian',f:[0,1,3,4,6,8,10,12]}
 ];
 /* Enharmonic keys sound the same, so they share the fingering of their twin */
+/* Fingering families from the lessons. lhm = left hand over several octaves: first octave, repeated octave, last note */
+['C','G','D','A','E','B'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
+['Bb','Eb','Ab','Db'].forEach(k=>{ SC[k].lh='3 2 1 4 3 2 1 2'; SC[k].lhm={f:'3 2 1 4 3 2 1',r:'3 2 1 4 3 2 1',l:'3'}; });
+SC.Gb.lhm={f:'4 3 2 1 3 2 1',r:'4 3 2 1 3 2 1',l:'4'};
 const TWIN={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
-Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; });
+Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; SC[k].lhm=SC[TWIN[k]].lhm; });
 const LET='CDEFGAB', NAT={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function spellScale(key,f){ // letters in order from the tonic, accidentals from the formula
   const r=key[0], i0=LET.indexOf(r), base=NAT[r]+(key[1]==='b'?-1:key[1]==='#'?1:0);
@@ -57,7 +61,7 @@ function build(key,hand,type,oct){
     if(hand==='lh'||hand==='both'){ const m=(hand==='both'?lBoth:lOnly)+semi; st.lh=[m]; st.spell[m]=dsp; }
     if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
     if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
-    if(hand!=='rh'&&lhF&&oct===1) st.lfing=lhF[i]||'';
+    if(hand!=='rh'&&isMaj&&d.lh){ if(oct===1) st.lfing=lhF[i]||''; else if(d.lhm){ const M=d.lhm; st.lfing=top?M.l:(i<7?M.f.split(' ')[i]:M.r.split(' ')[(i-7)%7]); } }
     steps.push(st); }
   return steps;
 }
