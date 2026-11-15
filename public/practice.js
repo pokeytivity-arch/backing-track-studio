@@ -9,13 +9,15 @@ const DIRS=[['up','Up'],['down','Down'],['updown','Up and down']];
 const CDIRS=[['up','Open'],['down','Close'],['updown','Open and close']];
 const MOTIONS=[['similar','Similar'],['contrary','Contrary']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
+let paused=false, waitL=false, pauseFn=null;
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
 let st={sys:'letter',family:'regular',motion:'similar',mode:'learn',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
 let curDesc=false;
-const clr=()=>{ curDesc=false; timers.forEach(clearTimeout); timers=[]; playing=false; const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
+const updPause=()=>{ const b=document.getElementById('prPause'); if(!b) return; b.disabled=!playing||waitL; b.style.opacity=b.disabled?'.45':''; b.textContent=paused?'▶ Resume':'❚❚ Pause'; };
+const clr=()=>{ curDesc=false; timers.forEach(clearTimeout); timers=[]; playing=false; paused=false; waitL=false; pauseFn=null; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} updPause(); const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
 
 const css=document.createElement('style'); css.textContent=`
 #prRoom .p-leg{display:flex;gap:18px;align-items:center;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
@@ -130,17 +132,24 @@ function learnLines(a,b){
 function showLearn(lines,go){
   let t=document.getElementById('prLearn'); if(!t){ t=el('div','p-learn'); t.id='prLearn'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
   t.textContent=''; const h=el('b',null,'Pause: thumb crossing'); t.appendChild(h); lines.forEach(x=>t.appendChild(el('p',null,x)));
-  const b=el('button','e-btn pri','Continue'); b.type='button'; b.onclick=()=>{ t.hidden=true; go(); }; t.appendChild(b); t.hidden=false; try{ t.scrollIntoView({block:'nearest'}); }catch(_){}
+  const b=el('button','e-btn pri','Continue'); b.type='button'; b.onclick=()=>{ t.hidden=true; waitL=false; updPause(); go(); }; t.appendChild(b); t.hidden=false; try{ t.scrollIntoView({block:'nearest'}); }catch(_){}
 }
 function playAll(){
   if(playing){ clr(); return; } if(!steps.length) return;
   const order=kind==='scales'?seq():[...Array(steps.length).keys()], gap=(60/st.bpm)*(kind==='scales'?1:(steps.length>1?2:4))*1000;
-  playing=true; $('#prPlay').textContent='■ Stop'; let p=0;
-  const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); play1(curS(),gap/1000*(kind==='scales'?1.6:1.05));
-    timers.push(setTimeout(()=>{ if(!playing) return; p++; if(p>=order.length){ if(st.loop) p=0; else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); },gap)); };
+  playing=true; $('#prPlay').textContent='■ Stop'; let p=0, t0=0, rem=0; paused=false; waitL=false;
+  const adv=()=>{ if(!playing||paused) return; p++; if(p>=order.length){ if(st.loop) p=0; else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); };
+  const sched=ms=>{ rem=ms; t0=Date.now(); timers.push(setTimeout(adv,ms)); };
+  const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); play1(curS(),gap/1000*(kind==='scales'?1.6:1.05)); sched(gap); };
   const tick=()=>{ if(!playing) return;
-    if(kind==='scales'&&st.mode==='learn'&&p>0&&order[p]===order[p-1]+1){ const ln=learnLines(steps[order[p-1]],steps[order[p]]); if(ln.length){ showLearn(ln,go); return; } }
+    if(kind==='scales'&&st.mode==='learn'&&p>0&&order[p]===order[p-1]+1){ const ln=learnLines(steps[order[p-1]],steps[order[p]]); if(ln.length){ waitL=true; updPause(); showLearn(ln,go); return; } }
     go(); };
+  /* Pause keeps the place in the scale and freezes the hands; Resume carries on with the time that was left on the current note */
+  pauseFn=()=>{ if(!playing||waitL) return;
+    if(!paused){ paused=true; timers.forEach(clearTimeout); timers=[]; rem=Math.max(0,rem-(Date.now()-t0)); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); }catch(_){} }
+    else { paused=false; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} sched(rem); }
+    updPause(); };
+  updPause();
   tick();
 }
 
@@ -166,7 +175,8 @@ function toStudio(){
   window.STUDIO_SCALE({title,steps:list,rests,info,hand:st.hand,dir:st.dir,key:st.key,type:st.type});
 }
 function transport(ctl){
-  const b=el('button','e-btn pri',kind==='scales'?'▶ Play scale':'▶ Play chords'); b.id='prPlay'; b.type='button'; b.onclick=playAll; ctl.appendChild(b);
+  const b=el('button','e-btn pri',kind==='scales'?'▶ Play scale':'▶ Play chords'); b.id='prPlay'; b.type='button'; b.onclick=()=>{ playAll(); updPause(); }; ctl.appendChild(b);
+  { const pb=el('button','e-btn','❚❚ Pause'); pb.id='prPause'; pb.type='button'; pb.onclick=()=>{ if(pauseFn) pauseFn(); }; ctl.appendChild(pb); updPause(); }
   if(kind==='scales'){ const sb=el('button','e-btn','Practice in Studio'); sb.id='prStudio'; sb.type='button'; sb.onclick=toStudio; { const w=studioWhy(); sb.disabled=!!w; sb.title=w||'Practice this scale with a backing track in the Studio'; if(w) sb.style.opacity='.45'; } ctl.appendChild(sb); }
   const t=el('label','p-rng'); t.innerHTML='Tempo <input type="range" min="40" max="200" step="2"><span></span>'; const r=t.querySelector('input'), o=t.querySelector('span'); r.value=st.bpm; o.textContent=st.bpm; r.oninput=()=>{ st.bpm=+r.value; o.textContent=r.value; save(); }; ctl.appendChild(t);
   const l=el('label','p-rng'); l.innerHTML='<input type="checkbox"> Loop'; const c=l.querySelector('input'); c.checked=!!st.loop; c.onchange=()=>{ st.loop=c.checked; save(); }; ctl.appendChild(l);
@@ -202,7 +212,7 @@ function render(){
     if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
-      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d); if(fg) r2.append(fg); r3.append(ask,$('#prStudio'),pl); ctl.append(r1,r2,r3); hand.classList.add('sm');
+      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d); if(fg) r2.append(fg); r3.append(ask,$('#prStudio'),$('#prPause'),pl); ctl.append(r1,r2,r3); hand.classList.add('sm');
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); /* desktop: Scale and Note sit with the other controls */ const sl=[...ms.querySelectorAll('.p-sel')]; sl.reverse().forEach(x=>{ x.classList.add('p-sel-d'); ctl.insertBefore(x,ctl.firstChild); }); ms.remove(); }
     loadScale();
   } else {

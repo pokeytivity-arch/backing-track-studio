@@ -17,7 +17,7 @@ const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over th
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
 const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
-let ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
+let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
 
@@ -71,12 +71,13 @@ function target(h,m,f){
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   if(k) h.k=k; h.cT=k?1:0;
+  h.fast=h.side==='rh'&&!!k;   /* right hand crossing: the thumb goes under and the fingers move over as fast as they can */
   const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-1.95*lk*.94+kw*.15;
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
   if(h.init&&Math.abs(fullX-h.tx)>kw*4.2) h.init=false;   /* a big jump (restart, or a far tap) moves the hand straight there instead of dragging it across the keys */
   h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
-  const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
+  const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init; if(h.side==='rh'&&phase2) h.fast=true;
   for(let i=0;i<5;i++){
     if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?yOf(m)-lk*1.1:yOf(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
     else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; }
@@ -95,12 +96,14 @@ function sync(kb,avail,s,cb){
   const hasR=s&&s.rh&&s.rh.length&&s.fing, hasL=s&&s.lh&&s.lh.length&&s.lfing;
   target(H.rh,on&&hasR?s.rh[0]:null,hasR?+s.fing:0); target(H.lh,on&&hasL?s.lh[0]:null,hasL?+s.lfing:0);
   ['rh','lh'].forEach(k=>{ if(!H[k].on) set(H[k].g,{display:'none'}); });
-  if(!raf){ last=0; raf=requestAnimationFrame(tick); }
+  if(!raf&&!paused){ last=0; raf=requestAnimationFrame(tick); }
 }
+function pause(b){ paused=!!b; if(paused){ if(raf){ cancelAnimationFrame(raf); raf=0; } } else if(!raf){ last=0; raf=requestAnimationFrame(tick); } }
 function tick(t){
   raf=0; if(!svg||!host||!host.isConnected) return; const dt=Math.min(.05,last?(t-last)/1000:.016); last=t;
-  const k1=1-Math.exp(-dt*13), k2=1-Math.exp(-dt*22); let moving=false;
+  let moving=false;
   ['lh','rh'].forEach(k=>{ const h=H[k]; if(!h.on){ set(h.g,{display:'none'}); return; }
+    const sp=h.fast?5:1, k1=1-Math.exp(-dt*13*sp), k2=1-Math.exp(-dt*22*sp);
     h.x+=(h.tx-h.x)*k1*.8; h.py+=(h.ty-h.py)*k1*.8; h.c+=(h.cT-h.c)*k1;
     let mv=Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01;
     for(let i=0;i<5;i++){ const kk=i===0?k1:k2, far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
@@ -173,5 +176,5 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
 }
-window.PSHANDS={sync,tones:TONES,isOn:()=>on};
+window.PSHANDS={pause,sync,tones:TONES,isOn:()=>on};
 })();
