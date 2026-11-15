@@ -207,3 +207,5 @@
 
 /* Scale room: the note boxes and the line of note letters are not shown (desktop and phone) */
 #prRoom[data-kind=scales] #prChips,#prRoom[data-kind=scales] #prSub{display:none !important}
+@media (min-width:701px){ #prRoom[data-kind=scales] .e-now{align-items:start;gap:6px 32px} #prRoom[data-kind=scales] .e-now .e-lbl{margin-top:0} #prRoom[data-kind=scales] .e-big{min-height:0;line-height:.95} }
+@media (min-width:701px) and (max-height:820px){ #prRoom[data-kind=scales] .e-now{grid-template-columns:minmax(0,.6fr) minmax(0,1.6fr);gap:4px 20px} #prRoom[data-kind=scales]{gap:8px} #prRoom[data-kind=scales] .e-big{font-size:clamp(40px,9vh,72px)} #prRoom[data-kind=scales] .e-ctl{gap:6px 8px} #prRoom[data-kind=scales] #prMsg{font-size:16px;min-height:0;margin:0} #prRoom[data-kind=scales] .e-kb{padding:8px 12px 6px} #prRoom[data-kind=scales] .p-kbw{margin-top:0} #prRoom[data-kind=scales] .e-kb .e-lbl{margin-bottom:2px} #prRoom[data-kind=scales]{padding-bottom:4px} }
