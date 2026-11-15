@@ -6,9 +6,11 @@ const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x
 const FLAT_N=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'], SHARP_N=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const LH='#1c7ed6', RH='#f76707';
 const DIRS=[['up','Up'],['down','Down'],['updown','Up and down']];
+const CDIRS=[['up','Open'],['down','Close'],['updown','Open and close']];
+const MOTIONS=[['similar','Similar'],['contrary','Contrary']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={mode:'learn',oct:1,type:'major',key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
+let st={motion:'similar',mode:'learn',oct:1,type:'major',key:'C',hand:'rh',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
@@ -81,9 +83,13 @@ function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLA
 /* ---------- steps ---------- */
 function chips(){
   const box=$('#prChips'); box.textContent='';
-  steps.forEach((s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,DSP(s.name)));
-    if(kind==='scales'){ const f=el('small'); if(s.lfing){ f.appendChild(el('b','l','L '+s.lfing)); } if(s.fing){ f.appendChild(el('b','r','R '+s.fing)); } if(!s.lfing&&!s.fing) f.textContent='–'; b.appendChild(f); }
-    b.onclick=()=>{ clr(); cur=i; show(); play1(s); }; box.appendChild(b); });
+  const mk=(s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,DSP(s.name)));
+    if(kind==='scales'){ const f=el('small'); if(s.lfing){ f.appendChild(el('b','l','L '+s.lfing)); } if(s.fing){ f.appendChild(el('b','r','R '+s.fing)); } if(s.lname&&!s.lfing) f.appendChild(el('b','l','L '+DSP(s.lname))); if(!s.lfing&&!s.fing&&!s.lname) f.textContent='–'; b.appendChild(f); }
+    b.onclick=()=>{ clr(); cur=i; show(); play1(s); }; return b; };
+  if(kind==='scales'&&steps.length>7&&(steps.length-1)%7===0){ /* one octave per line: C D E F G A B / C D E F G A B (the top note ends the last line) */
+    const rows=(steps.length-1)/7; for(let r=0;r<rows;r++){ const row=el('div','p-orow'); for(let i=r*7;i<r*7+7;i++) row.appendChild(mk(steps[i],i)); if(r===rows-1) row.appendChild(mk(steps[steps.length-1],steps.length-1)); box.appendChild(row); }
+    return; }
+  steps.forEach((s,i)=>{ box.appendChild(mk(s,i)); });
 }
 function play1(s,len){ try{ if(kind==='chords'&&st.vh==='h'){ [...s.lh,...s.rh].sort((a,b)=>a-b).forEach((m,i)=>CLASS.sound(m,1.1,.8,i*.5)); } else CLASS.playStep(s,len||1.6); }catch(_){} }
 function show(){
@@ -129,15 +135,16 @@ function render(){
   clr(); const SC=window.SCALES, hand=$('#prHand'), cats=$('#prCats'), ctl=$('#prCtl'); ctl.textContent=''; cats.textContent=''; document.querySelectorAll('#prRoom .p-sels').forEach(n=>n.remove()); $('#prMsg').textContent='';
   $('#prH').textContent=kind==='scales'?'Scale practice':'Chord practice'; ov.setAttribute('aria-label',$('#prH').textContent);
   if(kind==='scales'){
-    hand.hidden=false; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); hand.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); });
+    hand.hidden=st.motion==='contrary'; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); hand.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); });
     const types=(SC&&SC.types)||[], tl=id=>(types.find(t=>t.id===id)||{l:'Major'}).l, isMaj=st.type==='major';
     (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',SYMK(k)+(isMaj?' major':'')); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
     const sel=(lab,opts,val,fn)=>{ const w=el('label','p-sel'); w.appendChild(el('span',null,lab)); const s2=document.createElement('select'); s2.setAttribute('aria-label',lab); let og=null,gl=''; opts.forEach(o=>{ if(o.g!==undefined&&o.g!==gl){ gl=o.g; og=document.createElement('optgroup'); og.label=gl; s2.appendChild(og); } const op=document.createElement('option'); op.value=o.v; op.textContent=o.t; if(o.v===val) op.selected=true; (og&&o.g!==undefined?og:s2).appendChild(op); }); s2.onchange=()=>fn(s2.value); w.appendChild(s2); return w; };
     const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',(SC&&SC.keys||[]).map(k=>({v:k,t:SYMK(k)})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
     cats.classList.add('p-keybtns');
-    const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,DIRS,st.dir,k=>{ st.dir=k; save(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
+    const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,st.motion==='contrary'?CDIRS:DIRS,st.dir,k=>{ st.dir=k; save(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
+    const mo=el('div','e-seg sm'); mo.setAttribute('role','group'); mo.setAttribute('aria-label','Motion'); seg(mo,MOTIONS,st.motion,k=>{ st.motion=k; if(k==='contrary'&&st.oct>2) st.oct=2; save(); clr(); render(); },true); ctl.appendChild(mo);
     const md=el('div','e-seg sm'); md.setAttribute('role','group'); md.setAttribute('aria-label','Mode'); seg(md,[['learn','Learning'],['practice','Practice']],st.mode,k=>{ st.mode=k; save(); clr(); md.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); ctl.appendChild(md);
-    ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'},{v:'3',t:'Three octaves'}],String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
+    ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion==='contrary'?[]:[{v:'3',t:'Three octaves'}]),String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
     ctl.lastChild.classList.add('p-octs');
     transport(ctl); ctl.appendChild(d);
     const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
@@ -200,9 +207,10 @@ function keyTip(){
   p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
 }
 function loadScale(){
-  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type,st.oct); cur=-1; chips();
-  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':''); $('#prSub').textContent=(maj&&st.oct===1)?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
+  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type,st.oct,st.motion); cur=-1; chips();
+  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':'')+(st.motion==='contrary'?' · contrary motion':''); $('#prSub').textContent=(maj&&st.oct===1)?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
+  if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start together on the '+SYMK(st.key)+'. Open: the right hand goes up and the left hand goes down. Close: they come back together. The fingering for contrary motion is not in the lessons yet.'; drawKb(); keyTip(); return; }
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
   $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
   drawKb(); keyTip();

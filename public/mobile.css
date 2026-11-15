@@ -151,3 +151,7 @@
   html.ps-rot body #prRoom .e-kb svg{height:88px!important}
 }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom[data-kind=scales] .e-now{grid-template-columns:1fr} html.ps-rot body #prRoom[data-kind=scales] .e-now>div:first-child{display:none} }
+
+#prRoom .p-chips:has(.p-orow){display:grid;gap:10px}
+#prRoom .p-orow{display:flex;gap:8px;flex-wrap:nowrap}
+#prRoom .p-orow .p-chip{flex:1 1 0;min-width:0;padding:10px 4px 8px}

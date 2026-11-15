@@ -46,7 +46,22 @@ function spellScale(key,f){ // letters in order from the tonic, accidentals from
   const r=key[0], i0=LET.indexOf(r), base=NAT[r]+(key[1]==='b'?-1:key[1]==='#'?1:0);
   return f.map((semi,i)=>{ const L=LET[(i0+i)%7]; let d=((base+semi)-NAT[L])%12; if(d>6) d-=12; if(d<-6) d+=12; return L+(d>0?'#'.repeat(d):d<0?'b'.repeat(-d):''); });
 }
-function build(key,hand,type,oct){
+function buildContrary(key,type,oct){
+  oct=Math.max(1,Math.min(2,Math.round(+oct)||1));
+  const T=TYPES.find(t=>t.id===type)||TYPES[0], d=SC[key], names=spellScale(key,T.f), f7=T.f.slice(0,7), N=7*oct;
+  const dsp=nm=>nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
+  const T0=60+d.m%12; /* hands meet on the tonic; two octaves open and close always fit between C2 and C7 */
+  const steps=[];
+  for(let n=0;n<=N;n++){
+    const q=Math.floor(n/7), r=n%7, top=n===N;
+    const up=top?12*oct:f7[r]+12*q, down=top?12*oct:(r===0?12*q:12*q+(12-f7[7-r]));
+    const rn=top?names[0]:names[r], ln=top?names[0]:names[(7-r)%7];
+    const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:'',lfing:'',spell:{}};
+    st.spell[rm]=dsp(rn); st.spell[lm]=dsp(ln); steps.push(st); }
+  return steps;
+}
+function build(key,hand,type,oct,motion){
+  if(motion==='contrary') return buildContrary(key,type,oct);
   oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
   const T=TYPES.find(t=>t.id===type)||TYPES[0], isMaj=T.id==='major', d=SC[key], names=spellScale(key,T.f);
   const f7=T.f.slice(0,7), N=7*oct, p=d.m%12;
@@ -90,5 +105,5 @@ function go(){
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
 function acc(key){ const n=spellScale(key,TYPES[0].f).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
-window.SCALES={open,build,acc,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,buildContrary,acc,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();
