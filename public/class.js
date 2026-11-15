@@ -89,7 +89,11 @@ function renderBoard(b){
 }
 
 /* ---------- sound ---------- */
-async function ready(){ await ensureCtx(); try{ loadBank(ctx); }catch(_){} }
+/* practice volumes (keyboard and metronome), kept apart from the Studio mix; the Studio sets its own levels whenever it plays */
+let BUSN=0;
+const VOL=(()=>{ try{ const v=JSON.parse(localStorage.getItem('pr-vol')||'null'); if(v&&isFinite(v.keys)&&isFinite(v.click)) return v; }catch(_){} return {keys:0.8,click:0.8}; })();
+function applyVol(){ try{ if(typeof playing!=='undefined'&&playing) return; if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=VOL.keys; E.ch.click.g.gain.value=VOL.click; } }catch(_){} }
+async function ready(){ await ensureCtx(); try{ loadBank(ctx); }catch(_){} applyVol(); }
 async function sound(midi,dur,vel,delay){ await ready(); const t=ctx.currentTime+0.03+(delay||0); E.note(t,midi,dur,vel||0.8,'piano','keys'); }
 async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=len||1.6;
   s.lh.forEach((m,i)=>E.note(t+i*0.012,m,d,0.75,'piano','keys')); s.rh.forEach((m,i)=>E.note(t+0.03+i*0.018,m,d,0.7,'piano','keys')); }
@@ -620,7 +624,14 @@ window.CLASS={
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
   /* exact timing for rhythm practice: notes and metronome clicks placed on the audio clock */
-  clock:{ ready, now:()=>ctx?ctx.currentTime:0, step(s,t,d){ s.lh.forEach(m=>E.note(t,m,d,0.75,'piano','keys')); s.rh.forEach(m=>E.note(t,m,d,0.72,'piano','keys')); }, click(t,acc){ E.click(t,!!acc); } },
+  vol:{ get:k=>VOL[k], set(k,v){ VOL[k]=Math.max(0,Math.min(1,+v||0)); try{ localStorage.setItem('pr-vol',JSON.stringify(VOL)); }catch(_){} applyVol(); } },
+  /* rhythm practice schedules well ahead (so a busy screen can't make notes late); each run gets its own little buses so pausing or stopping silences
+     everything already scheduled at once */
+  clock:{ ready, now:()=>ctx?ctx.currentTime:0,
+    bus(){ if(!E||!E.ch||!E.ch.keys) return null; const id='pr'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(E.ch.keys.g); c.connect(E.ch.click.g); E.ch[id]={g:k}; E.ch[id+'c']={g:c}; return {id,k,c}; },
+    kill(b){ if(!b) return; try{ b.k.disconnect(); b.c.disconnect(); }catch(_){} delete E.ch[b.id]; delete E.ch[b.id+'c']; },
+    step(s,t,d,b){ const ch=b?b.id:'keys'; s.lh.forEach(m=>E.note(t,m,d,0.75,'piano',ch)); s.rh.forEach(m=>E.note(t,m,d,0.72,'piano',ch)); },
+    click(t,acc,b){ if(!b){ E.click(t,!!acc); return; } const o=E.osc('square',acc?1760:1180), g=E.gain(); E.perc(g,t,acc?0.32:0.2,0.04); o.connect(g).connect(b.c); o.start(t); o.stop(t+0.06); } },
   stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },
   reopenPractice(k){ practice=k; syncBar(); if(window.PRACTICE) PRACTICE.open(k,{resume:true}); },
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }

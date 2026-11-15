@@ -210,9 +210,12 @@ export function init(wrapEl) {
 }
 export const isReady = () => ready, isFailed = () => failed;
 
+let lastSz = '';
 export function resize(g) {
   G = g; if (!renderer) return;
-  const H = Math.round(g.HP + g.KH + g.kw * 7); canvas.style.width = g.W + 'px'; canvas.style.height = H + 'px'; renderer.setSize(g.W, H, false);
+  const H = Math.round(g.HP + g.KH + g.kw * 7);
+  const sz = [Math.round(g.W), H, g.kw.toFixed(3)].join(',');   /* resizing clears and reallocates the canvas: only do it when the size really changed */
+  if (sz === lastSz) return; lastSz = sz; canvas.style.width = g.W + 'px'; canvas.style.height = H + 'px'; renderer.setSize(g.W, H, false);
   cam.left = 0; cam.right = g.W; cam.top = 0; cam.bottom = -H; cam.updateProjectionMatrix();
   plane.scale.set(g.W * 1.2, H * 1.2, 1); plane.position.set(g.W / 2, 0, H / 2);
   key.position.set(g.W * .35, g.kw * 30, -g.kw * 6); key.target.position.set(g.W / 2, 0, H / 2);

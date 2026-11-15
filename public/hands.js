@@ -27,7 +27,7 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=15').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=16').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 function pose3(h){
   const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y, hf=+h.f||0;
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
@@ -153,9 +153,10 @@ function sync(kb,avail,s,cb){
 }
 function lead(s){ if(lastA&&!paused) sync(lastA[0],lastA[1],s,lastA[3]); }   /* the hands get ready for the next note a little early */
 function pause(b){ paused=!!b; if(paused){ if(raf){ cancelAnimationFrame(raf); raf=0; } } else if(!raf){ last=0; raf=requestAnimationFrame(tick); } }
+let lastR=0;
 function tick(t){
   raf=0; if(!svg||!host||!host.isConnected) return; const dt=Math.min(.05,last?(t-last)/1000:.016); last=t;
-  let moving=false;
+  let moving=false; const dl=[];
   ['lh','rh'].forEach(k=>{ const h=H[k]; if(!h.on){ set(h.g,{display:'none'}); if(P3) P3.pose({side:k,on:false}); return; }
     const sp=h.fast?5:1, k1=1-Math.exp(-dt*13*sp), k2=1-Math.exp(-dt*22*sp);
     h.x+=(h.tx-h.x)*k1*.8; h.py+=(h.ty-h.py)*k1*.8; h.c+=(h.cT-h.c)*k1;
@@ -163,8 +164,10 @@ function tick(t){
     for(let i=0;i<5;i++){ const ov=i===h.over, kk=i===0?k1:(ov?1-Math.exp(-dt*8):k2), far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=ov&&Math.abs(h.ftx[i]-h.fx[i])>geo.kw*.5?h.fty[i]-geo.kw*.9:far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
       h.fx[i]+=(h.ftx[i]-h.fx[i])*kk; h.fy[i]+=(ty-h.fy[i])*kk; if(Math.abs(h.ftx[i]-h.fx[i])>.3||Math.abs(ty-h.fy[i])>.3) mv=true; }
     if(h.cT===1&&!h.rel&&h.f){ const i=h.f-1; if(Math.abs(h.ftx[i]-h.fx[i])<geo.kw*.12&&Math.abs(h.fty[i]-h.fy[i])<geo.kw*.3){ h.rel=true; target(h,h.cm,h.cf); mv=true; } }
-    if(mv) moving=true; draw(h); });
-  if(P3&&mode==='3d'){ P3.show(true); P3.render(); }
+    if(mv) moving=true; dl.push(h); });
+  /* the 3D hands are posed and drawn at most about 30 times a second while moving, so fast passages leave the page time to keep the music steady */
+  const skip=P3&&mode==='3d'&&moving&&lastR&&t-lastR<30;
+  if(!skip){ dl.forEach(draw); if(P3&&mode==='3d'){ P3.show(true); P3.render(); } lastR=t; }
   if(moving) raf=requestAnimationFrame(tick);
 }
 
