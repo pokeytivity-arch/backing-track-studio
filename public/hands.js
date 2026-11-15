@@ -73,6 +73,7 @@ function target(h,m,f){
   if(k) h.k=k; h.cT=k?1:0;
   const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-1.95*lk*.94+kw*.15;
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
+  if(h.init&&Math.abs(fullX-h.tx)>kw*4.2) h.init=false;   /* a big jump (restart, or a far tap) moves the hand straight there instead of dragging it across the keys */
   h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
@@ -130,11 +131,12 @@ function draw(h){
   [[0,T.d],[.3,T.s],[.62,mix(T.s,'#ffffff',.14)],[1,T.d]].forEach(([o,col],i)=>set(gs[i],{offset:o,'stop-color':col}));
   set(h.fore,{d:'M'+(cx-kw*1.1)+' '+(pt+kw*.1)+'L'+(cx-kw*1.3)+' -6L'+(cx+kw*1.3)+' -6L'+(cx+kw*1.1)+' '+(pt+kw*.1)+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1});
   /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
-  const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.2, ty0=Math.min(h.fy[0],baseY+lk*3.4);
+  const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.2; let ty0=Math.min(h.fy[0],baseY+lk*3.4);
   const X=d=>(cx+dir*d*kw).toFixed(1), Y=d=>(pb-d*kw).toFixed(1);
   const mound='M'+X(-1.2)+' '+Y(-.2)+'C'+X(-2.1)+' '+Y(-.2)+' '+X(-2.4)+' '+Y(1.5)+' '+X(-1.85)+' '+Y(2.7)+'Q'+X(-1.5)+' '+Y(3.3)+' '+X(-1.0)+' '+Y(3.2)+'Z';
   set(h.m1,{d:mound,fill:T.s,stroke:T.e,'stroke-width':1,'stroke-linejoin':'round'});
-  finger(h.thumb,baseX,baseY,h.fx[0],ty0,kw*1.4,T,h.f===1,1,kw,.6,[.55,1]);
+  let ttx=h.fx[0]; { const dx=ttx-baseX, dy=ty0-baseY, dl=Math.hypot(dx,dy), mxl=lk*2.7+kw*.6; if(dl>mxl){ ttx=baseX+dx*mxl/dl; ty0=baseY+dy*mxl/dl; } }
+  finger(h.thumb,baseX,baseY,ttx,ty0,kw*1.4,T,h.f===1,1,kw,.6,[.55,1]);
   set(h.m2,{d:mound,fill:T.s,stroke:'none'});
   /* fingers 2 to 5: each reaches from its knuckle to its own tip position; the one playing goes on top */
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
