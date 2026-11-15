@@ -21,8 +21,13 @@ const PALMH=1.8;                                /* the back of the hand is as lo
 let PH={ready:false,meta:null,lmeta:null}; const kick=()=>{ if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } };
 try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
-  fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=4')); kick(); }).catch(()=>{}); }catch(_){}
-let real=true; try{ if(localStorage.getItem('ps-hreal')==='0') real=false; }catch(_){}
+  fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; setSrc(); kick(); }).catch(()=>{}); }catch(_){}
+/* three looks: 'real' (stock photo, both hands), 'me' (Pokey's own right hand, mirrored for the left), 'drawn' (vector) */
+let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
+let real=mode!=='drawn';
+fetch('hands/me/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.mmeta=m; if(mode==='me'){ setSrc(); kick(); } } }).catch(()=>{});
+function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/me/'?'?v=1':'?v=4';
+  Object.keys(h.pi).forEach(n=>{ const u=pre+n+'.webp'+q; if(h.pi[n].getAttribute('href')!==u) h.pi[n].setAttribute('href',u); }); }); }
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
@@ -52,14 +57,14 @@ function mount(h0){
       const mf=el(defs,'mask',{id:'pswf',maskContentUnits:'objectBoundingBox',x:0,y:0,width:1,height:1}); el(mf,'rect',{x:0,y:0,width:1,height:1,fill:'url(#pswg2)'}); }
     const mk=el(defs,'mask',{id:'psmk',maskContentUnits:'objectBoundingBox',x:-.1,y:0,width:1.2,height:1}); el(mk,'rect',{x:-.1,y:0,width:1.2,height:1,fill:'url(#psfd)'}); }
   { const f=el(defs,'filter',{id:'psskin',x:'-5%',y:'-5%',width:'110%',height:'110%','color-interpolation-filters':'sRGB'}); skinM=el(f,'feColorMatrix',{type:'matrix',values:SKINM[skin]}); }
-  makeHand('lh'); makeHand('rh');
+  makeHand('lh'); makeHand('rh'); setSrc();
   ctrl=document.createElement('div'); ctrl.className='p-hctl'; ctrl.style.cssText='position:absolute;right:4px;bottom:2px;display:flex;gap:6px;align-items:center;z-index:4;pointer-events:auto';
   btn=document.createElement('button'); btn.type='button'; btn.style.cssText='min-height:20px;height:20px;padding:0 9px;border-radius:999px;border:1.5px solid #3a4a74;background:#0c1426;color:#eef2ff;font:700 12px system-ui,sans-serif;cursor:pointer';
   btn.onclick=()=>{ on=!on; try{ localStorage.setItem('ps-hands',on?'1':'0'); }catch(_){} if(onChange) onChange(); };
   sw=document.createElement('span'); sw.setAttribute('role','group'); sw.setAttribute('aria-label','Skin tone'); sw.style.cssText='display:flex;gap:5px';
   TONES.forEach((t,i)=>{ const b=document.createElement('button'); b.type='button'; b.title=t.n+' skin'; b.setAttribute('aria-label',t.n+' skin tone'); b.style.cssText='width:18px;height:18px;min-height:18px;padding:0;border-radius:50%;border:2px solid '+(i===skin?'#fff':'rgba(255,255,255,.25)')+';background:'+t.s+';cursor:pointer'; b.onclick=()=>{ skin=i; try{ localStorage.setItem('ps-skin',String(i)); }catch(_){} [...sw.children].forEach((x,j)=>{ x.style.borderColor=j===i?'#fff':'rgba(255,255,255,.25)'; }); if(!raf){ last=0; raf=requestAnimationFrame(tick); } }; sw.appendChild(b); });
-  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const rl=()=>{ rb.textContent=real?'Realistic':'Drawn'; rb.title='Switch to '+(real?'drawn':'realistic')+' hands'; }; rl();
-  rb.onclick=()=>{ real=!real; try{ localStorage.setItem('ps-hreal',real?'1':'0'); }catch(_){} rl(); kick(); };
+  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic',me:'Personal',drawn:'Drawn'}, NX={real:'me',me:'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]].toLowerCase()+' hands'; }; rl();
+  rb.onclick=()=>{ mode=NX[mode]; if(mode==='me'&&!PH.mmeta) mode=NX[mode]; real=mode!=='drawn'; try{ localStorage.setItem('ps-hmode',mode); }catch(_){} setSrc(); rl(); sw.style.display=on&&mode!=='me'?'flex':'none'; kick(); };
   ctrl.append(sw,rb,btn); host.appendChild(ctrl);
 }
 function layout(kb){
@@ -72,7 +77,7 @@ function layout(kb){
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
         yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.34:HP+KH*0.62};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
-  sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
+  sw.style.display=on&&mode!=='me'?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
 /* Crossing pose. Phase one (thumb under): after finger k (2 to 4) the thumb travels under the palm and lands between finger k and the next one
    (for 3 that is between the middle and ring fingers) while finger k stays where it is. Phase two (fingers over the thumb or the hand moving on):
@@ -222,11 +227,11 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.34, set2=set;
+  const M=(mode==='me'&&PH.mmeta)||(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.34, set2=set;
   /* short keys (phone): the hand is drawn flatter to match, as if the keyboard were seen at an angle. Work in the unflattened space, then squash it about the fingertip line */
   const ry=Math.max(.55,Math.min(1,geo.kbH/(4.4*kw))), Y=y=>wy+(y-wy)/ry, ay0=Y(pb+1.95*lk*.94-kw*.15)-.74*k*M.middle.len;
   set(h.pg,{transform:ry<.999?'translate(0 '+wy.toFixed(1)+') scale(1 '+ry.toFixed(3)+') translate(0 '+(-wy).toFixed(1)+')':''});
-  if(skinM) skinM.setAttribute('values',SKINM[skin]);
+  if(skinM) skinM.setAttribute('values',mode==='me'?SKINM[1]:SKINM[skin]);
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
   const mat=(a,b,c,d,e,f)=>'matrix('+[a,b,c,d,e,f].map(v=>v.toFixed(3)).join(' ')+')';
