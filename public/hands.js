@@ -10,8 +10,8 @@ const TONES=[
   {n:'Tan',s:'#c98f5f',d:'#a66d42',e:'#8a5733'},
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
-const SKINM=[ '1.75 0 0 0 .1  0 1.95 0 0 .1  0 0 2.05 0 .1  0 0 0 1 0', '1.5 0 0 0 .05  0 1.6 0 0 .05  0 0 1.62 0 .04  0 0 0 1 0', '1.25 0 0 0 .02  0 1.27 0 0 .015  0 0 1.25 0 .01  0 0 0 1 0', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0', '.8 0 0 0 0  0 .74 0 0 0  0 0 .7 0 0  0 0 0 1 0' ]; let skinM=null;
-let skin=3; try{ const r=localStorage.getItem('ps-skin'), v=r===null?-1:+r; if(v>=0&&v<TONES.length) skin=v; }catch(_){}
+const SKINM=[ '1.06 0 0 0 .03  0 1.09 0 0 .04  0 0 1.12 0 .05  0 0 0 1 0', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0', '.84 0 0 0 0  0 .74 0 0 0  0 0 .64 0 0  0 0 0 1 0', '.6 0 0 0 0  0 .47 0 0 0  0 0 .38 0 0  0 0 0 1 0', '.4 0 0 0 0  0 .3 0 0 0  0 0 .24 0 0  0 0 0 1 0' ]; let skinM=null;
+let skin=1; try{ const r=localStorage.getItem('ps-skin'), v=r===null?-1:+r; if(v>=0&&v<TONES.length) skin=v; }catch(_){}
 const LMAX=[1.6,2.0,2.2,2.0,1.55];       /* reach from the knuckle to the fingertip, in key widths, when the finger is playing (a resting finger is curled, so it looks shorter from above) */
 const KY=[0,-.08,.08,-.08,-.3];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
@@ -19,9 +19,9 @@ const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
 const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
 let PH={ready:false,meta:null,lmeta:null}; const kick=()=>{ if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } };
-try{ fetch('hands/meta.json?v=2').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
+try{ fetch('hands/meta.json?v=3').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
-  fetch('hands/lh/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=1')); kick(); }).catch(()=>{}); }catch(_){}
+  fetch('hands/lh/meta.json?v=3').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=3')); kick(); }).catch(()=>{}); }catch(_){}
 let real=true; try{ if(localStorage.getItem('ps-hreal')==='0') real=false; }catch(_){}
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
@@ -31,7 +31,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; const pre=(side==='lh'&&PH.lmeta)?'hands/lh/':'hands/', vq=pre==='hands/'?'?v=2':'?v=1'; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:pre+n+'.webp'+vq,preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; const pre=(side==='lh'&&PH.lmeta)?'hands/lh/':'hands/', vq='?v=3'; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:pre+n+'.webp'+vq,preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
