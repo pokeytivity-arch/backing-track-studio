@@ -77,6 +77,8 @@ function rig(gl, side) {
       : [f + '-metacarpal', f + '-phalanx-proximal', f + '-phalanx-intermediate', f + '-phalanx-distal', f + '-tip'];
     let parent = wrist; names.forEach(n => { parent.attach(bones[n]); parent = bones[n]; });
   });
+  /* this model's thumb is short for a pianist's reach: lengthen its three bones a little */
+  ['thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'].forEach(n => bones[n].position.multiplyScalar(1.16));
   root.updateMatrixWorld(true);
   /* rest pose in the gltf root's space */
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), rest = {};
@@ -153,14 +155,20 @@ function poseHand(h, d, s) {
 
   /* thumb: cyclic coordinate descent over its three joints, in the root's space */
   { const names = ['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal'];
-    const T = toLocal(new THREE.Vector3(d.tips[0][0], d.tips[0][2], d.tips[0][1]));
+    /* the thumb plays (or rests) where it naturally falls along its key: anywhere from near the front edge back to where the black keys end,
+       so it never has to fold under the hand to reach the very front */
+    const nat = h.root.localToWorld(rest['thumb-tip'].p.clone()); let tx = d.tips[0][0], tz = d.tips[0][1], ty = d.tips[0][2];
+    /* a pianist's thumb lies about two centimetres behind the index fingertip, on its own key */
+    if (d.thr) tz = Math.max(d.thr[0], Math.min(d.thr[1], d.tips[1][1] + s * .02));
+    if (d.threst) { tx = d.thx != null ? nat.x + (d.thx - nat.x) * .7 : nat.x; ty = s * .012; }
+    const T = toLocal(new THREE.Vector3(tx, ty, tz));
     const Q = names.map(nm => rest[nm].q.clone()), P = names.map(nm => rest[nm].p.clone()), tipR = rest['thumb-tip'].p.clone();
     /* forward kinematics from the rest offsets */
     const offs = [P[1].clone().sub(P[0]), P[2].clone().sub(P[1]), tipR.clone().sub(P[2])].map((o, j) => o.applyQuaternion(rest[names[j]].q.clone().invert()));
     const fk = () => { const pts = [P[0].clone()]; for (let j = 0; j < 3; j++) pts.push(pts[j].clone().add(offs[j].clone().applyQuaternion(Q[j]))); return pts; };
-    if (h.tq) for (let j = 0; j < 3; j++) Q[j].copy(h.tq[j]);
-    const lim = d.open ? [2.0, 1.8, 1.5] : [1.4, 1.5, 1.4];
-    for (let it = 0; it < (d.open ? 18 : 10); it++) for (let j = 2; j >= 0; j--) {
+    /* a real thumb reaches from its base joint and keeps its two outer joints nearly straight, so the base does most of the work */
+    const lim = d.open ? [2.0, 1.3, 1.0] : [1.6, 1.2, .9];
+    for (let it = 0; it < (d.open ? 20 : 14); it++) for (let j = 0; j < 3; j++) {
       const pts = fk(), e = pts[3].clone().sub(pts[j]).normalize(), t = T.clone().sub(pts[j]).normalize();
       const r = new THREE.Quaternion().setFromUnitVectors(e, t); const ang = 2 * Math.acos(Math.min(1, Math.abs(r.w)));
       if (ang > .25) r.slerp(new THREE.Quaternion(), 1 - .25 / ang);
