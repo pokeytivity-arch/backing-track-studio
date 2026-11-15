@@ -16,7 +16,7 @@ const SC={ // notes, first midi note (right hand, octave 4), right-hand fingers,
  Gb:{n:'Gb Ab Bb Cb Db Eb F Gb',m:66,rh:'2 3 4 1 2 3 1 2',lh:'4 3 2 1 3 2 1 4'},
  'C#':{n:'',m:61,rh:'',lh:''}, 'D#':{n:'',m:63,rh:'',lh:''}, 'F#':{n:'',m:66,rh:'',lh:''}, 'G#':{n:'',m:68,rh:'',lh:''}, 'A#':{n:'',m:70,rh:'',lh:''}
 };
-const ORDER=['C','G','D','A','E','B','F#','C#','G#','D#','A#','F','Bb','Eb','Ab','Db','Gb'];
+const ORDER=['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
 /* Scale types come from the library (scale-library.js): degrees against the major scale. Only Natural major carries the lessons' fingering for now. */
 const MAJS={1:0,2:2,3:4,4:5,5:7,6:9,7:11};
 const LIB=(window.SCALELIB&&SCALELIB.list)||[];
