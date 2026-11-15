@@ -200,7 +200,7 @@ function render(){
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
       const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d); r3.append(ask,$('#prStudio'),pl); ctl.append(r1,r2,r3); hand.classList.add('sm');
-    } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); }
+    } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); /* desktop: Scale and Note sit with the other controls */ const sl=[...ms.querySelectorAll('.p-sel')]; sl.reverse().forEach(x=>{ x.classList.add('p-sel-d'); ctl.insertBefore(x,ctl.firstChild); }); ms.remove(); }
     loadScale();
   } else {
     hand.hidden=true;
