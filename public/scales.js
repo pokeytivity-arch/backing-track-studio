@@ -26,6 +26,11 @@ const TYPES=LIB.map(x=>({id:x.rid,lid:x.id,g:x.grp,l:x.name,fam:x.fam,d:x.deg.sp
 ['C','G','D','A','E','B'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
 ['Bb','Eb','Ab','Db'].forEach(k=>{ SC[k].lh='3 2 1 4 3 2 1 2'; SC[k].lhm={f:'3 2 1 4 3 2 1',r:'3 2 1 4 3 2 1',l:'3'}; });
 SC.Gb.lhm={f:'4 3 2 1 3 2 1',r:'4 3 2 1 3 2 1',l:'4'};
+/* Right-hand fingering for the natural and harmonic minor scales (his logic: white-key minors use the 1 2 3 - 1 2 3 4 (5) pattern, F minor the F major pattern, Eb and Bb the Gb and Db major fingering taken from Eb and from Bb, C# F# G# 2 3 - 1 2 3 - 1 2 3 and, over several octaves, 2 3 - 1 2 3 1 2 | 3 4 1 2 3 1 2 | ... | 3). The melodic minor uses the fingering of its major, except F#. Left hand: not given yet. */
+const MIN={}; ['C','D','E','G','A','B'].forEach(k=>{ MIN[k]={rh:'1 2 3 1 2 3 4 5'}; });
+MIN.F={rh:'1 2 3 4 1 2 3 4'}; MIN.Eb={rh:'3 1 2 3 4 1 2 3'}; MIN.Bb={rh:'4 1 2 3 1 2 3 4'};
+['C#','F#','G#'].forEach(k=>{ MIN[k]={rh:'2 3 1 2 3 1 2 3',rhm:{f:'2 3 1 2 3 1 2'.split(' '),r:'3 4 1 2 3 1 2'.split(' '),l:'3'}}; });
+Object.entries({'D#':'Eb','A#':'Bb','Db':'C#','Gb':'F#','Ab':'G#'}).forEach(([k,v])=>{ MIN[k]=MIN[v]; });
 const TWIN={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
 Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; SC[k].lhm=SC[TWIN[k]].lhm; });
 const LET='CDEFGAB', NAT={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
@@ -56,7 +61,8 @@ function build(key,hand,type,oct,motion){
   if(motion==='contrary') return buildContrary(key,type,oct);
   oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
   const T=typeOf(type), isMaj=T.id==='major', d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct, p=d.m%12;
-  const rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null;
+  const fam=isMaj?(d.rh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?((key==='F#'||key==='Gb')?MIN[key]:(d.rh?d:null)):null;
+  const rhF=fam&&fam.rh?fam.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null;
   /* start notes keep every hand inside the keyboard (C2 to C7) */
   const r0=(60+p+12*oct<=96)?60+p:48+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=48+p;
   const steps=[];
@@ -65,7 +71,7 @@ function build(key,hand,type,oct,motion){
     const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:'',spell:{}};
     if(hand==='lh'||hand==='both'){ const m=(hand==='both'?lBoth:lOnly)+semi; st.lh=[m]; st.spell[m]=dsp; }
     if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
-    if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
+    if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; else if(fam.rhm){ const M=fam.rhm; st.fing=top?M.l:(i<7?M.f[i]:M.r[(i-7)%7]); } } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
     if(hand!=='rh'&&isMaj&&d.lh){ if(oct===1) st.lfing=lhF[i]||''; else if(d.lhm){ const M=d.lhm; st.lfing=top?M.l:(i<7?M.f.split(' ')[i]:M.r.split(' ')[(i-7)%7]); } }
     const SF=SCALELIB.solfa[T.id]; if(SF){ st.sol=top?SF.up[0]:SF.up[deg]; if(SF.down) st.solD=top?SF.down[0]:SF.down[deg]; }
     steps.push(st); }
