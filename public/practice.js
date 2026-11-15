@@ -268,7 +268,7 @@ function loadScale(){
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start together on the '+SYMK(st.key)+'. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
-  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
+  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Press Play scale to hear it.';
   drawKb(); keyTip();
 }
 function chordTip(list){
