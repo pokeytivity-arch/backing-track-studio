@@ -13,8 +13,8 @@ const TONES=[
 let skin=1; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
 const LMAX=[2.1,2.4,2.6,2.4,2.0];            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
-const KNUCK=[-1.7,-1.275,-0.425,0.425,1.275];   /* where each finger joins the palm */
-const FW=[0.95,0.82,0.84,0.8,0.7];
+const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
+const FW=[1.0,0.92,0.94,0.9,0.8];
 const PALMH=3.4;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
 let ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
@@ -101,7 +101,7 @@ function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp){
   set(n.b,{d:'M'+P(bx,by,wb,1)+'L'+P(mx,my,wm,1)+'L'+P(ex,ey,wt,1)+'A'+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 0 '+P(ex,ey,wt,-1)+'L'+P(mx,my,wm,-1)+'L'+P(bx,by,wb,-1)+'Z',fill:T.s,stroke:T.e,'stroke-width':1});
   set(n.hl,{d:'M'+P(bx+ux*kw*.3,by+uy*kw*.3,wb,-.38)+'L'+P(ex-ux*kw*.1,ey-uy*kw*.1,wt,-.3),stroke:mix('#ffffff',T.s,.55),'stroke-width':wb*.2,opacity:.55});
   set(n.sh,{d:'M'+P(bx+ux*kw*.3,by+uy*kw*.3,wb,.5)+'L'+P(ex-ux*kw*.2,ey-uy*kw*.2,wt,.45),stroke:T.d,'stroke-width':wb*.16,opacity:.5});
-  [[.36,n.c1],[.66,n.c2]].forEach(([f,c])=>{ const qx=bx+dx*f, qy=by+dy*f, w=wb*.3; set(c,{d:'M'+(qx-px*w).toFixed(1)+' '+(qy-py*w).toFixed(1)+'Q'+(qx+ux*kw*.07).toFixed(1)+' '+(qy+uy*kw*.07).toFixed(1)+' '+(qx+px*w).toFixed(1)+' '+(qy+py*w).toFixed(1),stroke:T.e,'stroke-width':.9,opacity:.6}); });
+  set(n.c1,{d:'M0 0'}); set(n.c2,{d:'M0 0'});
   nail(n,tx,ty,kw,num,act,T,ux,uy,wt);
 }
 function draw(h){
@@ -120,18 +120,17 @@ function draw(h){
   order.forEach(i=>{ const slot=lerp(SLOT[i],sx(h.k,i)), bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15, tx=cx+slot*dir*kw, ty=by+h.ext[i]*LMAX[i]*kw-kw*.1;
     finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw); });
   /* back of the hand: wrist narrows, knuckle line curves over the finger roots */
-  const w1=kw*1.3, w2=kw*1.95, kl=[-1.78,-1.35,-.45,.45,1.35,1.78];
+  const w1=kw*1.3, w2=kw*1.9, kl=[-1.78,-1.35,-.45,.45,1.35,1.78];
   set(h.palm,{d:'M'+(cx-w1)+' '+pt+'C'+(cx-w1*1.25)+' '+(pt+palmH*.35)+' '+(cx-w2)+' '+(pt+palmH*.4)+' '+(cx-w2)+' '+(pb-kw*.55)+'Q'+(cx-w2)+' '+(pb+kw*.1)+' '+(cx-kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx-kw*.45)+' '+(pb+kw*.22)+' '+cx+' '+(pb+kw*.2)+'Q'+(cx+kw*.45)+' '+(pb+kw*.22)+' '+(cx+kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx+w2)+' '+(pb+kw*.1)+' '+(cx+w2)+' '+(pb-kw*.55)+'C'+(cx+w2)+' '+(pt+palmH*.4)+' '+(cx+w1*1.25)+' '+(pt+palmH*.35)+' '+(cx+w1)+' '+pt+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1,'stroke-linejoin':'round'});
   set(h.sheen,{d:'M0 0',stroke:'none'});
-  [0,1,2,3].forEach(i=>{ const kx=cx+KNUCK[i+1]*dir*kw, wx=cx+(i-1.5)*kw*.62;
-    set(h.tend[i],{d:'M'+wx+' '+(pb-palmH*.55)+'Q'+((wx+kx)/2)+' '+(pb-palmH*.28)+' '+kx+' '+(pb-kw*.4),stroke:T.d,'stroke-width':1.3,opacity:.3});
-    set(h.kn[i],{d:'M'+(kx-kw*.26)+' '+(pb-kw*.1)+'Q'+kx+' '+(pb+kw*.1)+' '+(kx+kw*.26)+' '+(pb-kw*.1),stroke:T.e,'stroke-width':1.1,opacity:.55}); });
+  h.tend.forEach(e=>set(e,{d:'M0 0'})); h.kn.forEach(e=>set(e,{d:'M0 0'}));
 }
 function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
-  const a=Math.atan2(uy,ux)*180/Math.PI-90, cxn=tx-ux*kw*.3, cyn=ty-uy*kw*.3, rt='rotate('+a+' '+cxn+' '+cyn+')';
-  set(n.n,{cx:cxn,cy:cyn,rx:Math.max(kw*.24,wt*.33),ry:kw*.32,fill:act?'#ffd43b':mix('#fbe3da',T.s,.35),stroke:T.e,'stroke-width':.8,transform:rt});
-  set(n.ns,{cx:cxn-kw*.05,cy:cyn-kw*.07,rx:kw*.07,ry:kw*.13,fill:'#fff',opacity:.5,transform:rt});
-  const tx2=cxn, ty2=cyn-kw*.17; set(n.t,{x:tx2,y:ty2,'font-size':Math.max(8,Math.min(12,kw*.5)),fill:'#2a1a0d',transform:'translate('+tx2+' '+ty2+') scale(1 -1) translate('+(-tx2)+' '+(-ty2)+')'}); n.t.textContent=String(num);
+  /* a small numbered badge on the fingertip (yellow on the finger that is playing) */
+  const bx=tx-ux*kw*.28, by=ty-uy*kw*.28, r=kw*.33;
+  set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
+  set(n.ns,{rx:0,ry:0});
+  const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
 }
 window.PSHANDS={sync,tones:TONES,isOn:()=>on};
 })();
