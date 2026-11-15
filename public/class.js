@@ -5,7 +5,7 @@
 const $=id=>document.getElementById(id);
 const KEY='ps-class-v2', MAXCHATS=60, MAXMSG=60;
 let DB={cur:null,chats:[]}, busy=false, R=null;
-const K={steps:[],i:0,playing:false,timer:null,title:'',size:61,mode:'harmonic',dir:'up',mem:{},p:0};
+const K={steps:[],i:0,playing:false,timer:null,title:'',size:88,mode:'harmonic',dir:'up',mem:{},p:0};
 const SC_KEYS=['C','G','D','A','E','B','F','Bb','Eb','Ab','Db','Gb'];
 const PLAYLBL=()=>K.mode==='melodic'?'▶ Play scale':'▶ Play progression';
 
@@ -584,7 +584,7 @@ function build(){
   card.appendChild(root);
   $('tLevel').value=store.get('bt-teacher-level',''); $('tLevel').onchange=()=>store.set('bt-teacher-level',$('tLevel').value);
   $('clAuto').checked=!!store.get('cl-auto',false); $('clAuto').onchange=e=>store.set('cl-auto',e.target.checked);
-  K.size=+store.get('cl-kbd',61)||61;
+  K.size=+store.get('cl-kbd88',88)||88;
   $('tForm').onsubmit=e=>{ e.preventDefault(); ask($('tInput').value); };
   $('tInput').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); ask($('tInput').value); } };
   $('tCopyAll').onclick=()=>{ const c=chat(); if(!c.log.length){ toast('Nothing to copy yet'); return; } tCopy(c.log.map(m=>(m.role==='user'?'Student: ':'Coach: ')+(m.role==='user'?m.content:splitReply(m.content).text)).join('\n\n')); };
@@ -602,7 +602,7 @@ function build(){
   $('clBack').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   setTimeout(()=>{ try{ const mo=new MutationObserver(()=>{ if(!$('clSlide').classList.contains('on')) $('clDots').classList.add('new'); }); mo.observe($('clBoard'),{childList:true,subtree:true,characterData:true}); mo.observe($('clSteps'),{childList:true}); }catch(_){} },2500);
   $('clMic').onclick=mic; if(!(window.SpeechRecognition||window.webkitSpeechRecognition)) $('clMic').title='Speaking needs Chrome, Edge or Safari';
-  document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd',K.size); drawKeys(); });
+  document.querySelectorAll('#clKbdSize button').forEach(b=>b.onclick=()=>{ K.size=+b.dataset.k; store.set('cl-kbd88',K.size); drawKeys(); });
   { const sel=$('clScKey'); SC_KEYS.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k+' major'; sel.appendChild(o); }); }
   document.querySelectorAll('#clMode button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
   document.querySelectorAll('#clPane button').forEach(b=>b.onclick=()=>setPane(b.dataset.p));
