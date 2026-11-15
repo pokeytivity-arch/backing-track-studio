@@ -70,7 +70,7 @@ function layout(kb){
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.62};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
@@ -92,20 +92,22 @@ function target(h,m,f,pos){
   const over=!!k&&h.init&&h.pm!=null&&h.pf===1&&f>=2&&k===f; h.over=over?fi:-1;   /* the thumb stays on its key while this finger passes over it */
   if(k) h.k=k; h.cT=k?1:0;
   h.fast=h.side==='rh'&&!!k;   /* right hand crossing: the thumb goes under and the fingers move over as fast as they can */
-  const slot=k?sx(k,fi):SLOT[fi]; let fullX=xOf(m)-slot*dir*kw; let fullY=yOf(m)-1.95*lk*.94+kw*.15;
+  /* in a black-key position (two or more of fingers 2-5 on black keys) the hand moves forward and white notes are played further in, between the black keys */
+  const isW=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), deep=!!pos&&[2,3,4,5].filter(q=>pos[q]!=null&&!isW(pos[q])).length>=2, yF=q=>deep&&isW(q)?geo.HP+geo.kbH*.45:yOf(q);
+  const slot=k?sx(k,fi):SLOT[fi]; let fullX=xOf(m)-slot*dir*kw; let fullY=yF(m)-1.95*lk*.94+kw*.15;
   /* in a hand position the hand sits over its keys: placed from where fingers 2 to 5 belong */
-  if(pos&&!k){ let a=0,n=0,yy=0; for(let q=2;q<=5;q++) if(pos[q]!=null){ a+=xOf(pos[q])-SLOT[q-1]*dir*kw; yy+=yOf(pos[q]); n++; } if(n){ fullX=a/n; fullY=yy/n-1.95*lk*.94+kw*.15; } }
+  if(pos&&!k){ let a=0,n=0,yy=0; for(let q=2;q<=5;q++) if(pos[q]!=null){ a+=xOf(pos[q])-SLOT[q-1]*dir*kw; yy+=yF(pos[q]); n++; } if(n){ fullX=a/n; fullY=yy/n-1.95*lk*.94+kw*.15; } }
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
   if(h.init&&Math.abs(fullX-h.tx)>kw*4.2) h.init=false;   /* a big jump (restart, or a far tap) moves the hand straight there instead of dragging it across the keys */
   h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init; if(h.side==='rh'&&phase2) h.fast=true;
   for(let i=0;i<5;i++){
-    if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?Math.max(geo.HP+kw*.3,yOf(m)-kw*.45):yOf(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
+    if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?Math.max(geo.HP+kw*.3,yF(m)-kw*.45):yF(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
     else if(i===0){ if(!over||!h.init){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; } }
     else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.8*LMAX[i]*lk-kw*.1; }
     /* in a hand position every other finger waits just above its own key */
-    if(pos&&!k&&i!==fi&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yOf(p)-kw*.45):yOf(p)-kw*.1)-kw*.12; }
+    if(pos&&!k&&i!==fi&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yF(p)-kw*.45):yF(p)-kw*.1)-kw*.12; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
