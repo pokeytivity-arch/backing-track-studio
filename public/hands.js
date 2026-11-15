@@ -10,13 +10,15 @@ const TONES=[
   {n:'Tan',s:'#c98f5f',d:'#a66d42',e:'#8a5733'},
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
-let skin=1; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
+const SKINM=[ '1.2 0 0 0 .03  0 1.4 0 0 .04  0 0 1.5 0 .05  0 0 0 1 0', '1.1 0 0 0 .01  0 1.2 0 0 .015  0 0 1.25 0 .015  0 0 0 1 0', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0', '.78 0 0 0 0  0 .68 0 0 0  0 0 .62 0 0  0 0 0 1 0', '.52 0 0 0 0  0 .42 0 0 0  0 0 .36 0 0  0 0 0 1 0' ]; let skinM=null;
+let skin=2; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
 const LMAX=[1.6,2.0,2.2,2.0,1.55];       /* reach from the knuckle to the fingertip, in key widths, when the finger is playing (a resting finger is curled, so it looks shorter from above) */
 const KY=[0,-.08,.08,-.08,-.3];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
 const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
+let PH={ready:false,meta:null}; try{ fetch('hands/meta.json').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } }).catch(()=>{}); }catch(_){}
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
@@ -25,7 +27,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',{href:'hands/'+n+'.webp',preserveAspectRatio:'none'}); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
@@ -42,6 +44,7 @@ function mount(h0){
     lg('pssl',[[0,'#13151b'],[.5,'#32353f'],[1,'#13151b']]); lg('pscu',[[0,'#dedfd7'],[.5,'#ffffff'],[1,'#dedfd7']]);
     const fg=el(defs,'linearGradient',{id:'psfd',x1:0,x2:0,y1:0,y2:1}); el(fg,'stop',{offset:0,'stop-color':'#000'}); el(fg,'stop',{offset:.65,'stop-color':'#fff'});
     const mk=el(defs,'mask',{id:'psmk',maskContentUnits:'objectBoundingBox',x:-.1,y:0,width:1.2,height:1}); el(mk,'rect',{x:-.1,y:0,width:1.2,height:1,fill:'url(#psfd)'}); }
+  { const f=el(defs,'filter',{id:'psskin',x:'-5%',y:'-5%',width:'110%',height:'110%','color-interpolation-filters':'sRGB'}); skinM=el(f,'feColorMatrix',{type:'matrix',values:SKINM[skin]}); }
   makeHand('lh'); makeHand('rh');
   ctrl=document.createElement('div'); ctrl.className='p-hctl'; ctrl.style.cssText='position:absolute;right:4px;bottom:2px;display:flex;gap:6px;align-items:center;z-index:4;pointer-events:auto';
   btn=document.createElement('button'); btn.type='button'; btn.style.cssText='min-height:20px;height:20px;padding:0 9px;border-radius:999px;border:1.5px solid #3a4a74;background:#0c1426;color:#eef2ff;font:700 12px system-ui,sans-serif;cursor:pointer';
@@ -154,10 +157,10 @@ function draw(h){
 
   /* dressed wrist: bare wrist with the watch (left hand) or bracelet (right hand), a white shirt cuff, then a black suit sleeve running off the bottom */
   { const Wy=d=>(pt-d*kw).toFixed(1), Wx=d=>(cx+d*kw).toFixed(1);
-    set(h.sl,{d:'M'+Wx(-1.7)+' '+Wy(1.8)+'L'+Wx(1.7)+' '+Wy(1.8)+'C'+Wx(1.82)+' '+Wy(2.3)+' '+Wx(2.12)+' '+Wy(2.9)+' '+Wx(2.2)+' '+Wy(3.9)+'L'+Wx(-2.2)+' '+Wy(3.9)+'C'+Wx(-2.12)+' '+Wy(2.9)+' '+Wx(-1.82)+' '+Wy(2.3)+' '+Wx(-1.7)+' '+Wy(1.8)+'Z',fill:'url(#pssl)',stroke:'#3d404c','stroke-width':.8,'stroke-linejoin':'round',mask:'url(#psmk)'});
-    set(h.cu,{d:'M'+Wx(-1.8)+' '+Wy(1.25)+'Q'+Wx(0)+' '+Wy(1.15)+' '+Wx(1.8)+' '+Wy(1.25)+'L'+Wx(1.9)+' '+Wy(2.0)+'Q'+Wx(0)+' '+Wy(2.12)+' '+Wx(-1.9)+' '+Wy(2.0)+'Z',fill:'url(#pscu)',stroke:'#c4c4bc','stroke-width':.8,'stroke-linejoin':'round'});
-    set(h.cb,{cx:Wx(dir*1.4),cy:Wy(1.65),r:(kw*.13).toFixed(1),fill:'#e4e4de',stroke:'#b9b9b0','stroke-width':.8});
-    const WL=dir>0?1.75:1.3, WR=dir>0?1.3:1.75, A=h.ac; set(A,{transform:'translate(0 '+(-kw*.3).toFixed(1)+')'}); while(A.firstChild) A.removeChild(A.firstChild);
+    set(h.sl,{d:'M'+Wx(-2.4)+' '+Wy(1.8)+'L'+Wx(2.4)+' '+Wy(1.8)+'C'+Wx(2.55)+' '+Wy(2.3)+' '+Wx(2.85)+' '+Wy(2.9)+' '+Wx(2.95)+' '+Wy(3.9)+'L'+Wx(-2.95)+' '+Wy(3.9)+'C'+Wx(-2.85)+' '+Wy(2.9)+' '+Wx(-2.55)+' '+Wy(2.3)+' '+Wx(-2.4)+' '+Wy(1.8)+'Z',fill:'url(#pssl)',stroke:'#3d404c','stroke-width':.8,'stroke-linejoin':'round',mask:'url(#psmk)'});
+    set(h.cu,{d:'M'+Wx(-2.45)+' '+Wy(1.25)+'Q'+Wx(0)+' '+Wy(1.12)+' '+Wx(2.45)+' '+Wy(1.25)+'L'+Wx(2.55)+' '+Wy(2.0)+'Q'+Wx(0)+' '+Wy(2.14)+' '+Wx(-2.55)+' '+Wy(2.0)+'Z',fill:'url(#pscu)',stroke:'#c4c4bc','stroke-width':.8,'stroke-linejoin':'round'});
+    set(h.cb,{cx:Wx(dir*1.9),cy:Wy(1.65),r:(kw*.13).toFixed(1),fill:'#e4e4de',stroke:'#b9b9b0','stroke-width':.8});
+    const WL=dir>0?2.3:1.7, WR=dir>0?1.7:2.3, A=h.ac; set(A,{transform:'translate(0 '+(-kw*.3).toFixed(1)+')'}); while(A.firstChild) A.removeChild(A.firstChild);
     if(h.side==='lh'){
       el(A,'path',{d:'M'+Wx(-WL)+' '+Wy(.12)+'L'+Wx(WR)+' '+Wy(.12)+'L'+Wx(WR)+' '+Wy(.9)+'L'+Wx(-WL)+' '+Wy(.9)+'Z',fill:'#241a12',stroke:'#0c0805','stroke-width':1});
       el(A,'rect',{x:Wx(-.78),y:Wy(.98),width:(kw*1.56).toFixed(1),height:(kw*.98).toFixed(1),rx:(kw*.3).toFixed(1),fill:'#d9b25a',stroke:'#8a6a1f','stroke-width':1});
@@ -166,9 +169,11 @@ function draw(h){
       el(A,'rect',{x:Wx(.78),y:Wy(.62),width:(kw*.12).toFixed(1),height:(kw*.24).toFixed(1),rx:1,fill:'#d9b25a'});
     } else {
       el(A,'path',{d:'M'+Wx(-WL)+' '+Wy(.18)+'L'+Wx(WR)+' '+Wy(.18)+'L'+Wx(WR)+' '+Wy(.55)+'L'+Wx(-WL)+' '+Wy(.55)+'Z',fill:'#d9b25a',stroke:'#8a6a1f','stroke-width':1});
-      for(let i=-6;i<=6;i++) if(i*.27>-WL+.12&&i*.27<WR-.12) el(A,'circle',{cx:Wx(i*.27),cy:Wy(.37),r:(kw*.1).toFixed(1),fill:'#f6e3a2',stroke:'#8a6a1f','stroke-width':.6});
+      for(let i=-9;i<=9;i++) if(i*.27>-WL+.12&&i*.27<WR-.12) el(A,'circle',{cx:Wx(i*.27),cy:Wy(.37),r:(kw*.1).toFixed(1),fill:'#f6e3a2',stroke:'#8a6a1f','stroke-width':.6});
       el(A,'path',{d:'M'+Wx(-WL)+' '+Wy(.64)+'L'+Wx(WR)+' '+Wy(.64)+'L'+Wx(WR)+' '+Wy(.78)+'L'+Wx(-WL)+' '+Wy(.78)+'Z',fill:'#c9a24a',stroke:'#8a6a1f','stroke-width':.8});
     } }
+  if(PH.ready&&h.pg){ drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH); return; }
+  if(h.pg) set(h.pg,{display:'none'});
   /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
   const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.2; let ty0=Math.min(h.fy[0],baseY+lk*3.4);
   const X=d=>(cx+dir*d*kw).toFixed(1), Y=d=>(pb-d*kw).toFixed(1);
@@ -194,6 +199,35 @@ function draw(h){
   { const nodes=[h.thumb].concat(h.fing), A=nodes[h.f-1];
     nodes.forEach((nd,i)=>{ const a=i===h.f-1, tgt=a?h.top:nd.g; [nd.n,nd.t].forEach(x=>{ if(x.parentNode!==tgt) tgt.appendChild(x); });
       const hide=!a&&A&&Math.hypot(nd.bx-A.bx,nd.by-A.by)<kw*.85; [nd.n,nd.t].forEach(x=>x.setAttribute('opacity',hide?0:(a?1:.9))); }); }
+}
+
+/* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
+function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
+  const M=PH.meta, SCp=M.scale, k=kw/(155*SCp), ay0=pb-kw*.15, set2=set;
+  if(skinM) skinM.setAttribute('values',SKINM[skin]);
+  set(h.pg,{display:''}); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
+  h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
+  const mat=(a,b,c,d,e,f)=>'matrix('+[a,b,c,d,e,f].map(v=>v.toFixed(3)).join(' ')+')';
+  const pm=M.palm, P=(px,py)=>[cx+dir*k*(px-pm.ax), ay0+k*(pm.ay-py)];
+  set(h.pi.palm,{width:pm.w,height:pm.h,transform:mat(dir*k,0,0,-k,cx-dir*k*pm.ax,ay0+k*pm.ay)});
+  /* one sprite from its base to a target tip. */
+  const place=(img,m,B,tx,ty,smin,smax,wscale)=>{ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len, sy=Math.max(smin,Math.min(smax,L/ln)); const Ax=dx/L, Ay=dy/L, sx=(wscale||1)*Math.pow(sy,.35);
+    const a=k*sx*dir*Ay, b=-k*sx*dir*Ax, c=-k*sy*Ax, d=-k*sy*Ay, e=B[0]-a*m.bx-c*m.by, f=B[1]-b*m.bx-d*m.by;
+    set(img,{width:m.w,height:m.h,transform:mat(a,b,c,d,e,f)}); return [B[0]+Ax*ln*sy,B[1]+Ay*ln*sy,Ax,Ay]; };
+  const names=['index','middle','ring','pinky'], tips=[];
+  /* thumb: its base glides from the side of the hand to under the palm while it crosses */
+  { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=[cx+(-1.45+1.35*h.c)*dir*kw,pb-lk*1.2], B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
+    let tx=h.fx[0], ty=h.fy[0]; if(h.f!==1){ const ln=k*m.len, nx=B[0]-dir*.075*ln, ny=B[1]+.997*ln, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
+    const t=place(h.pi.thumb,m,B,tx,ty,.8,1.9,1); tips[0]=t; }
+  const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
+  names.forEach((n,j)=>{ const i=j+1, m=M[n], B=P(pm.ax+m.base[0],pm.ay+m.base[1]); let tx=h.fx[i], ty=h.fy[i], playing=h.f===i+1;
+    if(!playing){ const dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len; tx=B[0]+dx/L*ln*.97; ty=B[1]+dy/L*ln*.97; }
+    tips[i]=place(h.pi[n],m,B,tx,ty,.8,1.4,1); });
+  if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ h.pg.insertBefore(h.pi[names[i-1]],h.pi.palm); }); }
+  /* numbers on the tips; every number sits on the top layer */
+  { const nodes=[h.thumb].concat(h.fing), A=nodes[h.f-1];
+    nodes.forEach((nd,i)=>{ const t=tips[i]; nail(nd,t[0],t[1],kw,i+1,i===h.f-1,T,t[2],t[3],kw*.8); [nd.n,nd.t].forEach(x=>{ if(x.parentNode!==h.top) h.top.appendChild(x); }); });
+    nodes.forEach((nd,i)=>{ const a=i===h.f-1, hide=!a&&A&&Math.hypot(nd.bx-A.bx,nd.by-A.by)<kw*.85; [nd.n,nd.t].forEach(x=>x.setAttribute('opacity',hide?0:(a?1:.9))); }); }
 }
 function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   /* a small numbered badge on the fingertip (yellow on the finger that is playing) */
