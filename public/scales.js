@@ -80,7 +80,7 @@ function buildContrary(key,type,oct,alt){
 }
 function build(key,hand,type,oct,motion,alt){
   if(motion==='contrary') return buildContrary(key,type,oct,alt);
-  oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
+  oct=Math.max(1,Math.min(4,Math.round(+oct)||1));
   const T=typeOf(type), isMaj=T.id==='major', d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct, p=d.m%12;
   const mf=MODEID.includes(T.id)?(MODEF[key]&&MODEF[key][T.id]):null;
   const fam=mf||(isMaj?(d.rh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?((key==='F#'||key==='Gb')?MIN[key]:(d.rh?d:null)):null);
@@ -88,7 +88,7 @@ function build(key,hand,type,oct,motion,alt){
   const AL=alt?(isMaj?ALTM[key]:ALTX[key+':'+T.id]):null;
   const rhF=AL&&AL.rh?AL.rh.split(' '):fam&&fam.rh?fam.rh.split(' '):null, lhF=AL&&AL.lh?AL.lh.split(' '):lfam&&lfam.lh?lfam.lh.split(' '):null;
   /* start notes keep every hand inside the keyboard (C2 to C7) */
-  const r0=(60+p+12*oct<=96)?60+p:48+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=48+p;
+  const r0=(60+p+12*oct<=96)?60+p:(48+p+12*oct<=96)?48+p:36+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=(48+p+12*oct<=96)?48+p:36+p; /* four octaves with both hands only fit from C (RH C3 to C7, LH C2 to C6) */
   const steps=[];
   for(let i=0;i<=N;i++){
     const top=i===N, deg=i%n, semi=top?12*oct:f[deg]+12*Math.floor(i/n), nm=top?names[0]:names[deg], dsp=dispName(nm);
@@ -128,5 +128,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,maxOct:(k,h,mo)=>mo==='contrary'?2:(h==='both'&&SC[k]&&SC[k].m%12!==0)?3:4,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();
