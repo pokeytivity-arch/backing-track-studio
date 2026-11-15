@@ -23,10 +23,11 @@ try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.read
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
   fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; setSrc(); kick(); }).catch(()=>{}); }catch(_){}
 /* three looks: 'real' (stock photo, both hands), 'me' (Pokey's own right hand, mirrored for the left), 'drawn' (vector) */
-let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
+let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn'||v==='curve') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
 let real=mode!=='drawn';
+fetch('hands/curve/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.cmeta=m; if(mode==='curve'){ setSrc(); kick(); } } }).catch(()=>{});
 fetch('hands/me/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.mmeta=m; if(mode==='me'){ setSrc(); kick(); } } }).catch(()=>{});
-function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/me/'?'?v=1':'?v=4';
+function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='curve'&&PH.cmeta?'hands/curve/':mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/me/'||pre==='hands/curve/'?'?v=1':'?v=4';
   Object.keys(h.pi).forEach(n=>{ const u=pre+n+'.webp'+q; if(h.pi[n].getAttribute('href')!==u) h.pi[n].setAttribute('href',u); }); }); }
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
@@ -63,8 +64,8 @@ function mount(h0){
   btn.onclick=()=>{ on=!on; try{ localStorage.setItem('ps-hands',on?'1':'0'); }catch(_){} if(onChange) onChange(); };
   sw=document.createElement('span'); sw.setAttribute('role','group'); sw.setAttribute('aria-label','Skin tone'); sw.style.cssText='display:flex;gap:5px';
   TONES.forEach((t,i)=>{ const b=document.createElement('button'); b.type='button'; b.title=t.n+' skin'; b.setAttribute('aria-label',t.n+' skin tone'); b.style.cssText='width:18px;height:18px;min-height:18px;padding:0;border-radius:50%;border:2px solid '+(i===skin?'#fff':'rgba(255,255,255,.25)')+';background:'+t.s+';cursor:pointer'; b.onclick=()=>{ skin=i; try{ localStorage.setItem('ps-skin',String(i)); }catch(_){} [...sw.children].forEach((x,j)=>{ x.style.borderColor=j===i?'#fff':'rgba(255,255,255,.25)'; }); if(!raf){ last=0; raf=requestAnimationFrame(tick); } }; sw.appendChild(b); });
-  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic',me:'Personal',drawn:'Drawn'}, NX={real:'me',me:'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]].toLowerCase()+' hands'; }; rl();
-  rb.onclick=()=>{ mode=NX[mode]; if(mode==='me'&&!PH.mmeta) mode=NX[mode]; real=mode!=='drawn'; try{ localStorage.setItem('ps-hmode',mode); }catch(_){} setSrc(); rl(); sw.style.display=on&&mode!=='me'?'flex':'none'; kick(); };
+  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic',curve:'Curved',me:'Personal',drawn:'Drawn'}, NX={real:'curve',curve:'me',me:'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]].toLowerCase()+' hands'; }; rl();
+  rb.onclick=()=>{ mode=NX[mode]; if(mode==='curve'&&!PH.cmeta) mode=NX[mode]; if(mode==='me'&&!PH.mmeta) mode=NX[mode]; real=mode!=='drawn'; try{ localStorage.setItem('ps-hmode',mode); }catch(_){} setSrc(); rl(); sw.style.display=on&&mode!=='me'?'flex':'none'; kick(); };
   ctrl.append(sw,rb,btn); host.appendChild(ctrl);
 }
 function layout(kb){
@@ -226,7 +227,7 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(mode==='me'&&PH.mmeta)||(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, set2=set;
+  const M=(mode==='curve'&&PH.cmeta)||(mode==='me'&&PH.mmeta)||(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, set2=set;
   /* short keys (phone): the hand is drawn flatter to match, as if the keyboard were seen at an angle. Work in the unflattened space, then squash it about the fingertip line */
   const ry=Math.max(.55,Math.min(1,geo.kbH/(4.4*kw))), Y=y=>wy+(y-wy)/ry, ay0=Y(pb+1.95*lk*.94-kw*.15)-.74*k*M.middle.len;
   set(h.pg,{transform:ry<.999?'translate(0 '+wy.toFixed(1)+') scale(1 '+ry.toFixed(3)+') translate(0 '+(-wy).toFixed(1)+')':''});
