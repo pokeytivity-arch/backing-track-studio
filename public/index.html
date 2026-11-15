@@ -691,7 +691,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-cc (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-ce (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -809,13 +809,14 @@ function nameFromPcs(pcs,bass){
 function parseVoicing(tok){
   const inner=tok.replace(/^\[|\]$/g,'').trim(); const parts=inner.split(/\s*\/\s*/);
   if(parts.length>2) return null;
-  const rd=str=>str.split(/[\s,]+/).filter(Boolean).map(x=>{ const m=x.match(/^([A-G])([#b♯♭]?)(-?\d)?$/); return m?{pc:pcOf(m[1],m[2]),oct:m[3]!=null?+m[3]:null}:null; });
+  /* a dot lifts the next note one more octave: C.E = C then the E a tenth above */
+  const rd=str=>str.replace(/\./g,' .').split(/[\s,]+/).filter(Boolean).map(x=>{ const m=x.match(/^(\.?)([A-G])([#b♯♭]?)(-?\d)?$/); return m?{pc:pcOf(m[2],m[3]),oct:m[4]!=null?+m[4]:null,lift:!!m[1]}:null; });
   const lh=parts.length===2?rd(parts[0]):[], rh=rd(parts[parts.length-1]);
   if(lh.includes(null)||rh.includes(null)||!rh.length) return null;
   const place=(list,start)=>{ const out=[]; let prev=null; list.forEach(n=>{ let m;
       if(n.oct!=null) m=12*(n.oct+1)+n.pc;
       else if(prev==null){ m=start+((n.pc-start%12+12)%12); }
-      else { m=prev+1+((n.pc-(prev+1)%12+12)%12); }
+      else { m=prev+1+((n.pc-(prev+1)%12+12)%12); if(n.lift) m+=12; }
       out.push(m); prev=m; }); return out; };
   const L=place(lh,36), R=place(rh,Math.max(57,L.length?L[L.length-1]+3:57));
   const all=[...L,...R], bass=all[0]%12, pcs=[...new Set(all.map(m=>m%12))];
@@ -2981,8 +2982,8 @@ init();
 <script src="class.js?v=x" defer></script>
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zw" defer></script>
-<script src="hands.js?v=56" defer></script>
-<script src="practice.js?v=ap" defer></script>
+<script src="hands.js?v=58" defer></script>
+<script src="practice.js?v=ar" defer></script>
 <script src="scale-library.js" defer></script>
 <script src="scales.js?v=8" defer></script>
 <script src="check.js" defer></script>

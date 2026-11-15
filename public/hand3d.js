@@ -139,7 +139,7 @@ function poseHand(h, d, s) {
     const T = toLocal(new THREE.Vector3(d.tips[i][0], d.tips[i][2], d.tips[i][1]));
     const rel = T.clone().sub(P0), v = rel.dot(n), hz = rel.clone().sub(n.clone().multiplyScalar(v));
     const f0 = P3.clone().sub(P0); f0.sub(n.clone().multiplyScalar(f0.dot(n))); f0.normalize();
-    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); yaw = Math.max(-.4, Math.min(.4, yaw));
+    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.open ? .75 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
     const dist = hz.length() * Math.cos(Math.abs(yaw) > .39 ? 0 : 0);
     h.sol[i] = solve2(L1, L2, L3, dist, v, h.sol[i]);
     const [a1, a2] = h.sol[i], a3 = a2 * .7;

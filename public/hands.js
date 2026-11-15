@@ -22,26 +22,28 @@ let PH={ready:false,meta:null,lmeta:null}; const kick=()=>{ if(!raf&&svg){ last=
 try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
   fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=4')); kick(); }).catch(()=>{}); }catch(_){}
-let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='3d'||v==='real'||v==='drawn') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
+let mode='3d';   /* only the 3D hands are offered now; the photo and drawn hands stay in the code */
 let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=8').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=9').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 function pose3(h){
   const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y, hf=+h.f||0;
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
-  const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=i===hf-1||!!(h.press&&h.press.includes(i+1)), blk=sy<kbH*.6;
+  const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=h.press?h.press.includes(i+1):i===hf-1, blk=sy<kbH*.6;
     tips.push([h.fx[i],sy,(blk?.011*s:0)+(play?0:.008*s)]); }
-  let az=0; for(let i=1;i<5;i++) az+=tips[i][1]; az/=4; az+=.062*s;
+  const chord=!!h.press; let az=0; for(let i=1;i<5;i++) az+=tips[i][1]; az/=4; az+=(chord?.05:.062)*s;
   /* the thumb hangs free, out to its side and a little lifted, unless it is playing or passing under */
-  if(hf!==1&&h.c<.3){ tips[0]=[tips[1][0]-dir*kw*1.25,az-.034*s,.02*s]; }
+  if(hf!==1&&h.c<.3&&!(h.press&&h.press.includes(1))){ tips[0]=[tips[1][0]-dir*kw*1.25,az-.034*s,.02*s]; }
   else { tips[0][1]=Math.min(kbH-kw*.2,tips[0][1]); tips[0][2]=hf===1?0:.006*s; }
   /* the thumb is shorter than the fingers: when it plays the whole hand leans in so it can reach its key, then eases back */
-  const want=hf===1?Math.min(az,tips[0][1]+.01*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
+  const want=hf===1&&!chord?Math.min(az,tips[0][1]+.01*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
   /* when the thumb plays, the hand moves a little towards the little finger so the thumb is clear of the index finger */
   const wx=hf===1?dir*kw*.55:0; h.ax3=h.ax3==null?wx:h.ax3+(wx-h.ax3)*.2; if(Math.abs(wx-h.ax3)>.3){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
-  P3.pose({side:h.side,on:true,f:hf,ax:h.x+h.ax3,ay:.03*s,az,th:-dir*.25*h.c,tips});
+  /* in a chord the hand sits across the whole chord, thumb to little finger, so it opens evenly */
+  let axc=h.x+h.ax3; if(chord){ axc=(tips[0][0]+tips[4][0])/2+dir*kw*.45; }
+  P3.pose({side:h.side,open:chord,on:true,f:hf,ax:axc,ay:.03*s,az,th:-dir*.25*h.c,tips});
 }
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
@@ -80,7 +82,7 @@ function mount(h0){
   TONES.forEach((t,i)=>{ const b=document.createElement('button'); b.type='button'; b.title=t.n+' skin'; b.setAttribute('aria-label',t.n+' skin tone'); b.style.cssText='width:18px;height:18px;min-height:18px;padding:0;border-radius:50%;border:2px solid '+(i===skin?'#fff':'rgba(255,255,255,.25)')+';background:'+t.s+';cursor:pointer'; b.onclick=()=>{ skin=i; try{ localStorage.setItem('ps-skin',String(i)); }catch(_){} [...sw.children].forEach((x,j)=>{ x.style.borderColor=j===i?'#fff':'rgba(255,255,255,.25)'; }); if(!raf){ last=0; raf=requestAnimationFrame(tick); } }; sw.appendChild(b); });
   const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic','3d':'3D',drawn:'Drawn'}, NX={real:'3d','3d':'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]]+' hands'; }; rl();
   rb.onclick=()=>{ mode=NX[mode]; real=mode!=='drawn'; if(mode==='3d') load3d(); try{ localStorage.setItem('ps-hmode',mode); localStorage.setItem('ps-hreal',real?'1':'0'); }catch(_){} rl(); kick(); };
-  ctrl.append(sw,rb,btn); host.appendChild(ctrl);
+  ctrl.append(sw,btn); void rb; host.appendChild(ctrl);
 }
 function layout(kb){
   const sv=kb&&kb.firstElementChild, W=(sv&&sv.clientWidth)||kb.offsetWidth, KH=(sv&&sv.clientHeight)||kb.offsetHeight; if(!W||!KH) return false;
@@ -92,7 +94,7 @@ function layout(kb){
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
         yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.62};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
-  sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; if(P3) P3.resize(g3()); return true;
+  sw.style.display=on?'flex':'none'; btn.textContent='Hands'; btn.title=on?'Hide the hands':'Show the hands'; btn.setAttribute('aria-pressed',String(on)); btn.style.background=on?'#e9c46a':''; btn.style.color=on?'#1b1405':''; btn.style.borderColor=on?'#e9c46a':''; ctrl.hidden=false; if(P3) P3.resize(g3()); return true;
 }
 /* Crossing pose. Phase one (thumb under): after finger k (2 to 4) the thumb travels under the palm and lands between finger k and the next one
    (for 3 that is between the middle and ring fingers) while finger k stays where it is. Phase two (fingers over the thumb or the hand moving on):
