@@ -1,4 +1,5 @@
-/* Scale | Note drop-downs (phones only; desktop keeps the key buttons) */
+/* Scale | Note drop-downs (phone and desktop). The row of key buttons is no longer shown. */
+#prRoom .p-keybtns{display:none}
 .p-sels{display:grid;grid-template-columns:minmax(240px,1fr) 150px;gap:12px;max-width:520px;margin:2px 0 10px}
 .p-sel{display:grid;gap:4px;min-width:0}
 .p-sel span{font:700 11px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9fb0d8}
