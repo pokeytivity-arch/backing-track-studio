@@ -27,7 +27,7 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=9').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=10').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 function pose3(h){
   const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y, hf=+h.f||0;
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
@@ -38,11 +38,12 @@ function pose3(h){
   if(hf!==1&&h.c<.3&&!(h.press&&h.press.includes(1))){ tips[0]=[tips[1][0]-dir*kw*1.25,az-.034*s,.02*s]; }
   else { tips[0][1]=Math.min(kbH-kw*.2,tips[0][1]); tips[0][2]=hf===1?0:.006*s; }
   /* the thumb is shorter than the fingers: when it plays the whole hand leans in so it can reach its key, then eases back */
-  const want=hf===1&&!chord?Math.min(az,tips[0][1]+.01*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
+  const thP=h.press?h.press.includes(1):hf===1, want=thP?Math.min(az,tips[0][1]+(chord?.024:.01)*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
   /* when the thumb plays, the hand moves a little towards the little finger so the thumb is clear of the index finger */
   const wx=hf===1?dir*kw*.55:0; h.ax3=h.ax3==null?wx:h.ax3+(wx-h.ax3)*.2; if(Math.abs(wx-h.ax3)>.3){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
   /* in a chord the hand sits across the whole chord, thumb to little finger, so it opens evenly */
-  let axc=h.x+h.ax3; if(chord){ axc=(tips[0][0]+tips[4][0])/2+dir*kw*.45; }
+  /* in a chord the hand opens to its span: it sits across the whole chord, a little towards the thumb when the thumb has far to reach */
+  let axc=h.x+h.ax3; if(chord){ const span=Math.abs(tips[4][0]-tips[0][0])/kw; axc=(tips[0][0]+tips[4][0])/2+dir*kw*(span>6?.1:.45); }
   P3.pose({side:h.side,open:chord,on:true,f:hf,ax:axc,ay:.03*s,az,th:-dir*.25*h.c,tips});
 }
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};

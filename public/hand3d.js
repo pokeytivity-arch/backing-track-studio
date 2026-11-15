@@ -139,7 +139,7 @@ function poseHand(h, d, s) {
     const T = toLocal(new THREE.Vector3(d.tips[i][0], d.tips[i][2], d.tips[i][1]));
     const rel = T.clone().sub(P0), v = rel.dot(n), hz = rel.clone().sub(n.clone().multiplyScalar(v));
     const f0 = P3.clone().sub(P0); f0.sub(n.clone().multiplyScalar(f0.dot(n))); f0.normalize();
-    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.open ? .75 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
+    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.open ? .95 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
     const dist = hz.length() * Math.cos(Math.abs(yaw) > .39 ? 0 : 0);
     h.sol[i] = solve2(L1, L2, L3, dist, v, h.sol[i]);
     const [a1, a2] = h.sol[i], a3 = a2 * .7;
@@ -159,8 +159,8 @@ function poseHand(h, d, s) {
     const offs = [P[1].clone().sub(P[0]), P[2].clone().sub(P[1]), tipR.clone().sub(P[2])].map((o, j) => o.applyQuaternion(rest[names[j]].q.clone().invert()));
     const fk = () => { const pts = [P[0].clone()]; for (let j = 0; j < 3; j++) pts.push(pts[j].clone().add(offs[j].clone().applyQuaternion(Q[j]))); return pts; };
     if (h.tq) for (let j = 0; j < 3; j++) Q[j].copy(h.tq[j]);
-    const lim = [1.4, 1.5, 1.4];
-    for (let it = 0; it < 10; it++) for (let j = 2; j >= 0; j--) {
+    const lim = d.open ? [2.0, 1.8, 1.5] : [1.4, 1.5, 1.4];
+    for (let it = 0; it < (d.open ? 18 : 10); it++) for (let j = 2; j >= 0; j--) {
       const pts = fk(), e = pts[3].clone().sub(pts[j]).normalize(), t = T.clone().sub(pts[j]).normalize();
       const r = new THREE.Quaternion().setFromUnitVectors(e, t); const ang = 2 * Math.acos(Math.min(1, Math.abs(r.w)));
       if (ang > .25) r.slerp(new THREE.Quaternion(), 1 - .25 / ang);

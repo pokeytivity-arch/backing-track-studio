@@ -153,7 +153,11 @@ function chordHands(s){
   const F=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}), W=[0,2,4,5,7,9,11], isW=m=>W.includes(((m%12)+12)%12);
   const side=(notes,dir)=>{ if(!notes||!notes.length) return null; const pos={}; notes.forEach(m=>{ const f=F[m]; if(f&&pos[f]==null) pos[f]=m; });
     const have=Object.keys(pos).map(Number); if(!have.length) return null; const press=done?have.filter(f=>done.has(pos[f])):have.slice();
-    for(let j=1;j<=5;j++){ if(pos[j]!=null) continue; const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); let m=pos[r], n=Math.abs(j-r), st=Math.sign(j-r)*dir;
+    for(let j=1;j<=5;j++){ if(pos[j]!=null) continue;
+      /* a finger between two chord fingers sits evenly between them; one outside them steps out a white key at a time */
+      const lo=have.filter(x=>x<j), hi=have.filter(x=>x>j);
+      if(lo.length&&hi.length){ const a=Math.max(...lo), b=Math.min(...hi); let m=Math.round(pos[a]+(pos[b]-pos[a])*(j-a)/(b-a)); if(!isW(m)) m+=(pos[b]>pos[a]?1:-1); pos[j]=m; continue; }
+      const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); let m=pos[r], n=Math.abs(j-r), st=Math.sign(j-r)*dir;
       while(n>0){ m+=st; while(!isW(m)) m+=st; n--; } pos[j]=m; }
     const last=done?[...press].sort((a,b)=>all.indexOf(pos[b])-all.indexOf(pos[a]))[0]:null; const f=last||(press.includes(1)?1:press.length?Math.min(...press):Math.min(...have)); return {pos,press,f,note:pos[f]}; };
   const R=side(s.rh,1), L=side(s.lh,-1);
