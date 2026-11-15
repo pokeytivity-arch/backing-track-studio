@@ -91,8 +91,11 @@ function renderBoard(b){
 /* ---------- sound ---------- */
 /* practice volumes (keyboard and metronome), kept apart from the Studio mix; the Studio sets its own levels whenever it plays */
 let BUSN=0;
-const VOL=(()=>{ try{ const v=JSON.parse(localStorage.getItem('pr-vol')||'null'); if(v&&isFinite(v.keys)&&isFinite(v.click)) return v; }catch(_){} return {keys:0.8,click:0.8}; })();
-function applyVol(){ try{ if(typeof playing!=='undefined'&&playing) return; if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=VOL.keys; E.ch.click.g.gain.value=VOL.click; } }catch(_){} }
+/* volume faders work like a mixing desk: the fader position is spread evenly in decibels (about 36 dB of travel), so every bit of movement
+   sounds like the same change; the very bottom is silence. The default position gives the level the piano had before the faders existed. */
+const VDEF=0.87, VOL=(()=>{ try{ const v=JSON.parse(localStorage.getItem('pr-vol2')||'null'); if(v&&isFinite(v.keys)&&isFinite(v.click)) return v; }catch(_){} return {keys:VDEF,click:VDEF}; })();
+const vgain=p=>p<=0.015?0:1.4*Math.pow(10,-1.8*(1-p));
+function applyVol(){ try{ if(typeof playing!=='undefined'&&playing) return; if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=vgain(VOL.keys); E.ch.click.g.gain.value=vgain(VOL.click); } }catch(_){} }
 async function ready(){ await ensureCtx(); try{ loadBank(ctx); }catch(_){} applyVol(); }
 async function sound(midi,dur,vel,delay){ await ready(); const t=ctx.currentTime+0.03+(delay||0); E.note(t,midi,dur,vel||0.8,'piano','keys'); }
 async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=len||1.6;
@@ -624,7 +627,7 @@ window.CLASS={
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
   /* exact timing for rhythm practice: notes and metronome clicks placed on the audio clock */
-  vol:{ get:k=>VOL[k], set(k,v){ VOL[k]=Math.max(0,Math.min(1,+v||0)); try{ localStorage.setItem('pr-vol',JSON.stringify(VOL)); }catch(_){} applyVol(); } },
+  vol:{ def:VDEF, get:k=>VOL[k], set(k,v){ VOL[k]=Math.max(0,Math.min(1,+v||0)); try{ localStorage.setItem('pr-vol2',JSON.stringify(VOL)); }catch(_){} applyVol(); } },
   /* rhythm practice schedules well ahead (so a busy screen can't make notes late); each run gets its own little buses so pausing or stopping silences
      everything already scheduled at once */
   clock:{ ready, now:()=>ctx?ctx.currentTime:0,
