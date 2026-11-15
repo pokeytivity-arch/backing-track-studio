@@ -75,7 +75,7 @@ function layout(kb){
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.34:HP+KH*0.62};  /* white notes are played low on the wide part, leaving room for the key labels above */
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on&&mode!=='me'?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
@@ -97,8 +97,7 @@ function target(h,m,f,pos){
   const over=!!k&&h.init&&h.pm!=null&&h.pf===1&&f>=2&&k===f; h.over=over?fi:-1;   /* the thumb stays on its key while this finger passes over it */
   if(k) h.k=k; h.cT=k?1:0;
   h.fast=h.side==='rh'&&!!k;   /* right hand crossing: the thumb goes under and the fingers move over as fast as they can */
-  /* in a black-key position (two or more of fingers 2-5 on black keys) the hand moves forward and white notes are played further in, between the black keys */
-  const isW=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), deep=!!pos&&[2,3,4,5].filter(q=>pos[q]!=null&&!isW(pos[q])).length>=2, yF=q=>deep&&isW(q)?geo.HP+geo.kbH*.45:yOf(q);
+  const yF=yOf;
   const slot=k?sx(k,fi):SLOT[fi]; let fullX=xOf(m)-slot*dir*kw; let fullY=yF(m)-1.95*lk*.94+kw*.15;
   /* in a hand position the hand sits over its keys: placed from where fingers 2 to 5 belong */
   if(pos&&!k){ let a=0,n=0,yy=0; for(let q=2;q<=5;q++) if(pos[q]!=null){ a+=xOf(pos[q])-SLOT[q-1]*dir*kw; yy+=yF(pos[q]); n++; } if(n){ fullX=a/n; fullY=yy/n-1.95*lk*.94+kw*.15; } }
@@ -227,7 +226,7 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(mode==='me'&&PH.mmeta)||(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.34, set2=set;
+  const M=(mode==='me'&&PH.mmeta)||(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, set2=set;
   /* short keys (phone): the hand is drawn flatter to match, as if the keyboard were seen at an angle. Work in the unflattened space, then squash it about the fingertip line */
   const ry=Math.max(.55,Math.min(1,geo.kbH/(4.4*kw))), Y=y=>wy+(y-wy)/ry, ay0=Y(pb+1.95*lk*.94-kw*.15)-.74*k*M.middle.len;
   set(h.pg,{transform:ry<.999?'translate(0 '+wy.toFixed(1)+') scale(1 '+ry.toFixed(3)+') translate(0 '+(-wy).toFixed(1)+')':''});
