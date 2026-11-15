@@ -64,10 +64,12 @@ function mount(h0){
 }
 function layout(kb){
   const sv=kb&&kb.firstElementChild, W=(sv&&sv.clientWidth)||kb.offsetWidth, KH=(sv&&sv.clientHeight)||kb.offsetHeight; if(!W||!KH) return false;
-  const kw=W*14/(36*14+2), HP=36, lk=kw*Math.min(1,KH/(4.25*kw)), wh=[0,2,4,5,7,9,11];
+  /* the keyboard may show any range (the phone shows only the octaves in use): read it from the drawing */
+  const vb=sv&&sv.viewBox&&sv.viewBox.baseVal, Wv=(vb&&vb.width)||(36*14+2); let lo=36; if(sv){ const ms=[...sv.querySelectorAll('rect[data-m]')].map(r=>+r.dataset.m); if(ms.length) lo=Math.min(...ms); }
+  const kw=W*14/Wv, HP=36, lk=kw*Math.min(1,KH/(4.25*kw)), wh=[0,2,4,5,7,9,11];
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
-  geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; for(let q=36;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; const u=white?1+(n+.5)*14:1+n*14; return u/(36*14+2)*W; },
+  geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
         yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
@@ -218,7 +220,10 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, ay0=pb-.74*k*M.middle.len+1.95*lk*.94-kw*.15, set2=set;
+  const M=(h.side==='lh'&&PH.lmeta)||PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), wy=geo.HP+geo.kbH*.22, set2=set;
+  /* short keys (phone): the hand is drawn flatter to match, as if the keyboard were seen at an angle. Work in the unflattened space, then squash it about the fingertip line */
+  const ry=Math.max(.55,Math.min(1,geo.kbH/(4.4*kw))), Y=y=>wy+(y-wy)/ry, ay0=Y(pb+1.95*lk*.94-kw*.15)-.74*k*M.middle.len;
+  set(h.pg,{transform:ry<.999?'translate(0 '+wy.toFixed(1)+') scale(1 '+ry.toFixed(3)+') translate(0 '+(-wy).toFixed(1)+')':''});
   if(skinM) skinM.setAttribute('values',SKINM[skin]);
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
@@ -233,12 +238,12 @@ function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
     set(img,{width:m.w,height:m.h,transform:mat(a,b,c,d,e,f)}); return [B[0]+Ax*ln*sy,B[1]+Ay*ln*sy,Ax,Ay]; };
   const names=['index','middle','ring','pinky'], tips=[];
   /* thumb: its base glides from the side of the hand to under the palm while it crosses */
-  { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=Rt([cx+(-1.45+1.35*h.c)*dir*kw,pb-lk*1.2]), B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
-    let tx=h.fx[0], ty=h.fy[0]; if(h.f!==1&&!h.pos){ const ln=k*m.len, nx=B[0]-dir*.5*ln*.9, ny=B[1]+.866*ln*.9, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
+  { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=Rt([cx+(-1.45+1.35*h.c)*dir*kw,Y(pb-lk*1.2)]), B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
+    let tx=h.fx[0], ty=Y(h.fy[0]); if(h.f!==1){ const ln=k*m.len, nx=B[0]-dir*.5*ln*.9, ny=B[1]+.866*ln*.9, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
     const t=place(h.pi.thumb,m,B,tx,ty,.7,1.9,1); tips[0]=t;
     const under=h.c>.35&&!(h.f===1&&Math.hypot(h.fx[0]-h.ftx[0],h.fy[0]-h.fty[0])<kw*.6); if(under!==h.tu||h.pi.thumb.parentNode!==h.pg){ h.tu=under; if(under) h.pg.insertBefore(h.pi.thumb,h.pg.firstChild); else h.pg.appendChild(h.pi.thumb); } }
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
-  names.forEach((n,j)=>{ const i=j+1, m=M[n], B=P(pm.ax+m.base[0],pm.ay+m.base[1]); let tx=h.fx[i], ty=h.fy[i], playing=h.f===i+1;
+  names.forEach((n,j)=>{ const i=j+1, m=M[n], B=P(pm.ax+m.base[0],pm.ay+m.base[1]); let tx=h.fx[i], ty=Y(h.fy[i]), playing=h.f===i+1;
     const W=P(pm.ax,pm.ay+300), nx0=B[0]-W[0], ny0=B[1]-W[1], nl=Math.hypot(nx0,ny0)||1;
     if(!playing&&!h.pos){ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1; dx=dx/L*.6+nx0/nl*.4; dy=dy/L*.6+ny0/nl*.4; L=Math.hypot(dx,dy)||1; const ln=k*m.len; tx=B[0]+dx/L*ln*.8; ty=B[1]+dy/L*ln*.8; if(ty>wy+kw*.3){ const f=(wy+kw*.3-B[1])/(ty-B[1]); tx=B[0]+(tx-B[0])*f; ty=wy+kw*.3; } }
     tips[i]=place(h.pi[n],m,B,tx,ty,.5,1.3,1); });

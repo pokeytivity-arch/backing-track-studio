@@ -92,12 +92,12 @@ const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
 const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
 function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') return DSP(s.name); const sy=(desc&&s.solD)||s.sol; if(!sy) return DSP(s.name); return y==='solfa'?sy:(SCALELIB.solnum[sy]||sy); }
 function drawKb(){
-  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS();
+  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales') handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  const rng=kbRange(); const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:rng[0],hi:rng[1],height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg); tab(svg,s);
-  if(window.PSHANDS){ if(kind==="scales"){ handPos(); } if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
+  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
 /* the name tab above the keys: every note of the scale has a cell over its key showing its letter, solfa or number; the note being played lights up in its hand's colour */
@@ -129,6 +129,15 @@ function handPos(){
       if(p){ const dm=v[0]-p[0], df=v[1]-p[1]; const same=(dm===0&&df===0)||(dm!==0&&df!==0&&Math.sign(df)===Math.sign(dm)*dir); if(!same) flush(); }
       grp.push(i); });
     flush(); });
+}
+/* on a phone the keyboard shows only the octaves the scale uses (at least three), so the keys are bigger */
+function kbRange(){
+  const ph=document.documentElement.classList.contains('ps-rot')||matchMedia('(max-height:500px) and (pointer:coarse)').matches;
+  if(!ph||kind!=='scales'||!steps.length) return [36,96];
+  const ms=steps.flatMap(x=>[...(x.lh||[]),...(x.rh||[]),...Object.values(x.rpos||{}),...Object.values(x.lpos||{})]); if(!ms.length) return [36,96];
+  let lo=Math.floor(Math.min(...ms)/12)*12, hi=Math.ceil((Math.max(...ms)+1)/12)*12;
+  while(hi-lo<36){ if(lo>24) lo-=12; if(hi-lo<36&&hi<108) hi+=12; if(lo<=24&&hi>=108) break; }
+  return [Math.max(24,lo),Math.min(108,hi)];
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 
