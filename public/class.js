@@ -619,6 +619,8 @@ window.CLASS={
   // from the Studio or Studio+: open Class and ask about what the student is practicing
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
+  /* exact timing for rhythm practice: notes and metronome clicks placed on the audio clock */
+  clock:{ ready, now:()=>ctx?ctx.currentTime:0, step(s,t,d){ s.lh.forEach(m=>E.note(t,m,d,0.75,'piano','keys')); s.rh.forEach(m=>E.note(t,m,d,0.72,'piano','keys')); }, click(t,acc){ E.click(t,!!acc); } },
   stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },
   reopenPractice(k){ practice=k; syncBar(); if(window.PRACTICE) PRACTICE.open(k,{resume:true}); },
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }
