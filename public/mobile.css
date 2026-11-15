@@ -155,3 +155,44 @@
 #prRoom .p-chips:has(.p-orow){display:grid;gap:10px}
 #prRoom .p-orow{display:flex;gap:8px;flex-wrap:nowrap}
 #prRoom .p-orow .p-chip{flex:1 1 0;min-width:0;padding:10px 4px 8px}
+
+/* Scale room on a phone: row 1 Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 the toggles and Play scale; keyboard below */
+@media (max-width:700px){
+  html body #prRoom .p-r1,html body #prRoom .p-r2{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;width:100%}
+  html body #prRoom .p-r1 .p-sel{flex:1 1 0;min-width:0}
+  html body #prRoom .p-r1 .p-sel select{min-height:38px;padding:6px 30px 6px 10px;font-size:14px}
+  html body #prRoom .p-r1 .p-rng{flex:0 0 auto;gap:6px;font-size:13px}
+  html body #prRoom .p-r1 .p-rng input[type=range]{width:90px}
+  html body #prRoom .p-r1 .e-btn{flex:0 0 auto;padding:6px 12px;min-height:38px;font-size:13px}
+  html body #prRoom .p-r2 .e-seg{display:inline-flex;width:auto;flex:0 0 auto}
+  html body #prRoom .p-r2 .e-seg button{padding:6px 9px;font-size:12px;min-height:36px}
+  html body #prRoom .p-r2 #prPlay{margin-left:auto;padding:6px 14px;min-height:38px;font-size:14px}
+  html body #prRoom .p-r2 [hidden]{display:none}
+  html body #prRoom .e-seg button:disabled{opacity:.35}
+}
+/* Menu sheet that stands in for the phone's own drop-down while a page is turned sideways, so the list turns with the page */
+.ps-menu{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(5,8,18,.55)}
+.ps-menu .ps-sheet{width:min(88%,520px);max-height:88%;display:flex;flex-direction:column;background:#161f38;color:#eef2ff;border:1.5px solid #3a4a74;border-radius:16px;overflow:hidden;font:16px system-ui,sans-serif}
+.ps-menu .ps-t{padding:10px 16px;font:700 11px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9fb0d8;border-bottom:1px solid #2a3858}
+.ps-menu .ps-l{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ps-menu .ps-g{padding:10px 16px 4px;font:600 12px system-ui,sans-serif;color:#9fb0d8}
+.ps-menu button{display:flex;gap:10px;width:100%;text-align:left;padding:12px 16px;min-height:44px;border:0;border-radius:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.ps-menu button[aria-selected=true]{color:#f7d35c;font-weight:700}
+.ps-menu button[aria-selected=true]::before{content:"✓"}
+.ps-menu button[aria-selected=false]::before{content:"";width:1em}
+.ps-menu{padding-top:52px;box-sizing:border-box}
+.ps-menu .ps-sheet{max-height:100%}
+@media (max-width:700px){
+  html body #prRoom .p-r2{gap:4px 6px;flex-wrap:nowrap}
+  html body #prRoom .p-r2 .e-seg button{padding:5px 6px;font-size:11px;min-height:34px;white-space:nowrap}
+  html body #prRoom .p-r2 #prPlay{padding:6px 10px;font-size:13px;white-space:nowrap}
+}
+@media (max-width:700px){
+  html body #prRoom[data-kind=scales] .e-now>div,html body #prRoom[data-kind=scales] .e-ctl{min-width:0;max-width:100%;width:100%}
+  html body #prRoom .p-r1,html body #prRoom .p-r2{max-width:100%}
+  html body #prRoom .p-r2 .e-seg{padding:2px}
+  html body #prRoom .p-r2 .e-seg button{padding:5px 5px;font-size:10.5px}
+  html body #prRoom .p-r1{flex-wrap:nowrap}
+  html body #prRoom .p-r1 .p-rng input[type=range]{width:64px}
+  html body #prRoom .p-r1 .p-rng{font-size:11px;letter-spacing:.06em}
+}

@@ -39,13 +39,15 @@ function allowedKeys(type){ const T=typeOf(type); return T.keys?ORDER.filter(k=>
 function buildContrary(key,type,oct){
   oct=Math.max(1,Math.min(2,Math.round(+oct)||1));
   const T=typeOf(type), d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct;
+  /* contrary fingering comes from each hand's own up and down fingering: the right hand goes up the scale, the left hand goes down it (the same finger plays a note either way) */
+  const RF=(T.id==='major'&&d.rh)?build(key,'rh',type,oct,'similar').map(x=>x.fing):null, LF=(T.id==='major'&&d.lh)?build(key,'lh',type,oct,'similar').map(x=>x.lfing):null;
   const T0=60+d.m%12; /* hands meet on the tonic; two octaves open and close always fit between C2 and C7 */
   const steps=[];
   for(let i=0;i<=N;i++){
     const q=Math.floor(i/n), r=i%n, top=i===N;
     const up=top?12*oct:f[r]+12*q, down=top?12*oct:(r===0?12*q:12*q+(12-f[n-r]));
     const rn=top?names[0]:names[r], ln=top?names[0]:names[(n-r)%n];
-    const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:'',lfing:'',spell:{}};
+    const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:RF?(RF[i]||''):'',lfing:LF?(LF[N-i]||''):'',spell:{}};
     st.spell[rm]=dispName(rn); st.spell[lm]=dispName(ln); steps.push(st); }
   return steps;
 }
