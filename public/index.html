@@ -343,6 +343,8 @@ header.top,footer.credits{display:none}
 .menu-item:disabled{opacity:.4}
 .mi-check{font-weight:800;text-align:center}
 .mi-key{font:12px var(--mono);color:inherit;opacity:.6}
+.menu-head{font:700 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+.menu-btn.mmore{display:none}
 .menu-sep{height:1px;background:var(--line);margin:4px 6px}
 .info-dlg{border:1px solid var(--line);border-radius:14px;padding:20px 22px;max-width:520px;background:var(--surface);color:var(--ink)}
 .info-dlg::backdrop{background:rgba(10,14,28,.5)}
@@ -380,7 +382,7 @@ audio{width:100%}
 <script>try{var t=localStorage.getItem('ps-theme');if(t&&t!=='blue')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="hub.css">
-<link rel="stylesheet" href="mobile.css?v=c">
+<link rel="stylesheet" href="mobile.css?v=g">
 </head>
 <body>
 <div class="wrap">
@@ -688,7 +690,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.14-zze (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-a (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2689,6 +2691,7 @@ function buildMenubar(){
     close(); const pop=document.createElement('div'); pop.className='menu-pop'; pop.setAttribute('role','menu');
     m.items.forEach(it=>{
       if(it.sep){ const h=document.createElement('div'); h.className='menu-sep'; h.setAttribute('role','separator'); pop.appendChild(h); return; }
+      if(it.head){ const h=document.createElement('div'); h.className='menu-head'; h.textContent=it.head; pop.appendChild(h); return; }
       const b=document.createElement('button'); b.className='menu-item'; const isCheck=!!it.check;
       b.setAttribute('role',isCheck?'menuitemcheckbox':'menuitem'); if(isCheck) b.setAttribute('aria-checked',String(!!it.check()));
       const chk=document.createElement('span'); chk.className='mi-check'; chk.textContent=isCheck&&it.check()?'✓':'';
@@ -2712,6 +2715,9 @@ function buildMenubar(){
     b.onmouseenter=()=>{ if(open&&open.btn!==b) show(m,b,false); };
     b.onkeydown=ev=>{ if(ev.key==='ArrowDown'){ ev.preventDefault(); show(m,b,true); } };
     bar.appendChild(b); });
+  { const mm=document.createElement('button'); mm.className='menu-btn mmore'; mm.textContent='☰ Menu'; mm.setAttribute('aria-haspopup','menu'); mm.setAttribute('aria-expanded','false');
+    mm.onclick=e=>{ e.stopPropagation(); if(open&&open.btn===mm){ close(); return; } const items=[]; MENUS.forEach(m=>{ items.push({head:m.label}); m.items.forEach(x=>items.push(x)); }); show({items},mm,false); };
+    bar.appendChild(mm); }
   document.addEventListener('click',e=>{ if(open && !open.pop.contains(e.target)) close(); });
   window.addEventListener('resize',close); window.addEventListener('scroll',close,{passive:true});
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });

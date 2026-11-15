@@ -12,6 +12,20 @@
   html body .cl-box .go{display:none}
   html body .cl-box:after{content:"›";position:absolute;right:12px;top:50%;transform:translateY(-52%);font:700 26px var(--body);color:rgba(255,255,255,.7)}
 
+  /* Nothing may push the page wider than the screen */
+  html,body{max-width:100%;overflow-x:hidden}
+  html body .chart{max-width:100%;overflow-x:auto}
+
+  /* Menu bar: back, name, room chip and one Menu button (all the menus live inside it) */
+  html body .menubar{overflow:visible;gap:6px;height:44px;padding:0 8px}
+  html body .menubar .menu-btn:not(.mmore):not(#psChip):not(#psBackBtn){display:none}
+  html body .menubar #psChip{min-width:0;max-width:56vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html body .menubar .menu-btn.mmore{display:block;margin-left:auto;min-height:0;height:34px;line-height:1;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:700}
+  html body .menubar .menu-status{display:none}
+  html body .menu-pop{left:8px!important;right:8px!important;top:48px!important;min-width:0;max-width:none;max-height:calc(100dvh - 64px);overflow:auto;border-radius:16px;padding:6px 6px calc(10px + env(safe-area-inset-bottom))}
+  html body .menu-pop .menu-item{min-height:46px;font-size:16px;padding:8px 12px}
+  html body .menu-pop .mi-key{display:none}
+
   /* Install banner: one slim line */
   #psInstBar{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));padding:7px 10px;gap:8px;border-radius:14px}
   #psInstBar img{width:30px;height:30px}
