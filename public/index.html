@@ -691,7 +691,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-w (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-x (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2406,7 +2406,7 @@ function keyboardSVG(lh,rh,{lo=null,hi=null,labels=true,height=70,fingers=false,
   const el=(tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); svg.appendChild(e); return e; };
   whites.forEach((m,i)=>{ const c=col(m); el('rect',{x:1+i*ww,y:1,width:ww,height:H,rx:2,fill:c||'#fff',stroke:'#333','stroke-width':1,'data-m':m});
     if(c&&labels){ const L=spell&&spell[m]!=null?[].concat(spell[m]):[N[m%12]]; L.forEach((tx,k)=>{ const t=el('text',{x:1+i*ww+ww/2,y:H-5-(L.length-1-k)*9,'text-anchor':'middle','font-size':tx.length>2?6.2:8,'font-family':'Arial','font-weight':700,fill:'#fff'}); t.textContent=tx; }); }
-    if(((m%12)+12)%12===0){ const t=el('text',{x:1+i*ww+2,y:H-(c?(fingers?30:16):5),'font-size':6,'font-family':'Arial',fill:c?'#fff':'#999'}); t.textContent='C'+(Math.floor(m/12)-1); }
+    if(((m%12)+12)%12===0&&!c){ const t=el('text',{x:1+i*ww+2,y:H-(c?(fingers?30:16):5),'font-size':6,'font-family':'Arial',fill:c?'#fff':'#999'}); t.textContent='C'+(Math.floor(m/12)-1); }
     if(c&&FG[m]){ el('circle',{cx:1+i*ww+ww/2,cy:H-22,r:5.2,fill:'#fff'}); const t=el('text',{x:1+i*ww+ww/2,y:H-19.4,'text-anchor':'middle','font-size':7.5,'font-family':'Arial','font-weight':800,fill:c}); t.textContent=FG[m]; } });
   for(let m=lo;m<=hi;m++){ const pc=((m%12)+12)%12; if(KB_WHITE.includes(pc)) continue;
     const i=whites.indexOf(m-1); if(i<0) continue; const c=col(m), x=1+(i+1)*ww-bw/2;
