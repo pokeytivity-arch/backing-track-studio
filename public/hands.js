@@ -59,7 +59,7 @@ function layout(kb){
    (for 3 that is between the middle and ring fingers) while finger k stays where it is. Phase two (fingers over the thumb or the hand moving on):
    the thumb stays on its key and the palm slides past it so the next finger sits right beside the thumb. Descending right hand and ascending left hand
    do the same thing in reverse: finger k crosses over the thumb. sx() gives where each finger sits in the crossing pose (thumb 0). */
-const sx=(k,i)=>{ if(i===0) return 0; const j=i+1; return j<=k?-(k-j+1):(j-k); };
+const sx=(k,i)=>i===0?(SLOT[k-1]+SLOT[k])/2:SLOT[i];   /* in the crossing pose the fingers keep their shape; only the thumb moves, to sit between finger k and the next */
 function target(h,m,f){
   if(m==null||!f){ h.on=false; h.init=false; h.cm=null; h.cf=0; h.pm=null; h.pf=0; return; }
   const {kw,xOf,yOf}=geo, dir=h.side==='rh'?1:-1, fi=f-1;
@@ -70,14 +70,14 @@ function target(h,m,f){
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   if(k) h.k=k; h.cT=k?1:0;
-  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-LMAX[fi]*kw*.94+kw*.15-(fi?KY[fi]*kw:0);
-  /* the back of the hand is the steady part: it only follows part of the way (the fingers do the reaching), except when the thumb crosses */
-  if(!h.init||k){ h.tx=fullX; h.ty=fullY; } else if(chg){ h.tx+=(fullX-h.tx)*.5; h.ty+=(fullY-h.ty)*.5; }
+  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-2.35*kw*.94+kw*.15;
+  /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
+  h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
   for(let i=0;i<5;i++){
     if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=yOf(m)-(i===0?kw*.3:kw*.1); }   /* thumb plays on its side, fingers on their tips */
-    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?0:SLOT[0])*dir*kw; h.fty[0]=h.ty+.8*LMAX[0]*kw-kw*.2; }
+    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.8*LMAX[0]*kw-kw*.2; }
     else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*kw+.9*LMAX[i]*kw-kw*.1; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
@@ -138,7 +138,7 @@ function draw(h){
   /* fingers 2 to 5: each reaches from its knuckle to its own tip position; the one playing goes on top */
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
   if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ g.insertBefore(h.fing[i-1].g,h.palm); }); }
-  order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*kw; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*kw*1.04; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
+  order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*kw; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*kw*1.2; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
     finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw,.8); });
   /* back of the hand */
   const w1=kw*1.3, w2=kw*1.9;
