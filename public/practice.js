@@ -42,7 +42,7 @@ function build(){
     '<div class="e-cats" id="prCats"></div>'+
     '<div class="e-now"><div><div class="e-lbl" id="prLbl"></div><div class="e-big" id="prBig"></div><div class="e-sub" id="prSub"></div></div><div><div class="e-ctl" id="prCtl"></div></div></div>'+
     '<div class="p-chips" id="prChips"></div><div id="prPick"></div><div class="e-msg" id="prMsg" aria-live="polite"></div>'+
-    '<div class="e-kb"><div class="e-lbl"><span>Keyboard</span><span class="p-leg"><span><i style="background:'+LH+'"></i>Left hand</span><span><i style="background:'+RH+'"></i>Right hand</span></span></div><div id="prKb"></div></div>';
+    '<div class="e-kb"><div class="e-lbl"><span>Keyboard</span><span class="p-leg"><span><i style="background:'+LH+'"></i>Left hand</span><span><i style="background:'+RH+'"></i>Right hand</span></span></div><div class="p-kbw"><div id="prKb"></div></div></div>';
   document.body.appendChild(ov);
   $('#prX').onclick=close;
   $('#prDots').onclick=()=>{ close(); try{ if(window.CLASS) CLASS.slide(true); }catch(_){} };
@@ -95,6 +95,7 @@ function drawKb(){
   const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
+  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }

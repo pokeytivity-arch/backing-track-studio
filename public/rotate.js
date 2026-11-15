@@ -12,7 +12,7 @@ function which(){
   if(document.body.dataset.dest==='plus'&&vis(document.getElementById('txCard'))) return 'plus';
   return null;
 }
-function stretch(){ if(!root.classList.contains('ps-rot')) return; document.querySelectorAll('.e-kb svg').forEach(v=>{ if(v.getAttribute('preserveAspectRatio')!=='none') v.setAttribute('preserveAspectRatio','none'); }); }
+function stretch(){ if(!root.classList.contains('ps-rot')) return; document.querySelectorAll('.e-kb svg.kbd').forEach(v=>{ if(v.getAttribute('preserveAspectRatio')!=='none') v.setAttribute('preserveAspectRatio','none'); }); }
 function check(){ const hub=document.getElementById('suiteHub'); root.classList.toggle('ps-rot',mq.matches&&!(hub&&hub.classList.contains('on'))&&!!which()); stretch(); }
 mq.addEventListener?mq.addEventListener('change',check):mq.addListener(check);
 window.addEventListener('orientationchange',()=>setTimeout(check,250));

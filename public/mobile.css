@@ -120,7 +120,7 @@
   html.ps-rot body .corner-tools{transform:scale(.8);transform-origin:right top}
 }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .tx .txempty{bottom:40%!important} }
-@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .e-kb svg{height:78px!important;width:100%} html.ps-rot body .e-kb .e-lbl{margin:0} html.ps-rot body .e-kb{padding-top:2px;padding-bottom:2px} }
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .e-kb #prKb svg,html.ps-rot body .e-kb #earKb svg,html.ps-rot body .e-kb svg.kbd{height:78px!important;width:100%} html.ps-rot body .e-kb .e-lbl{margin:0} html.ps-rot body .e-kb{padding-top:2px;padding-bottom:2px} }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom .p-sels{grid-template-columns:2fr 1fr} }
 
 .p-tip{margin:10px 0;padding:12px 14px;border:1.5px solid #3a4a74;border-radius:14px;background:#0c1426;color:#dfe7ff;font-size:14px;line-height:1.45;display:grid;gap:10px;justify-items:start}.p-tip p{margin:0}.p-tip[hidden]{display:none}
@@ -148,7 +148,7 @@
   html.ps-rot body #prRoom .p-sel select{min-height:38px}
   html.ps-rot body #prRoom .e-ctl{gap:6px 10px}
   html.ps-rot body #prRoom .e-kb .e-lbl{display:none}
-  html.ps-rot body #prRoom .e-kb svg{height:88px!important}
+  html.ps-rot body #prRoom .e-kb #prKb svg{height:88px!important}
 }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom[data-kind=scales] .e-now{grid-template-columns:1fr} html.ps-rot body #prRoom[data-kind=scales] .e-now>div:first-child{display:none} }
 
