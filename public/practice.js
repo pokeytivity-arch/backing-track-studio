@@ -67,8 +67,8 @@ function resumeAsk(){
   go.onclick=()=>m.remove(); rs.onclick=()=>{ Object.assign(st,DEF); save(); m.remove(); loadScale(); render(); };
   body.appendChild(row); sh.append(t,body); m.appendChild(sh); document.body.appendChild(m); go.focus();
 }
-function open(k,o){ if(!ov) build(); try{ from=(window.SUITE&&SUITE.current())||from; }catch(_){} kind=k==='chords'?'chords':'scales'; ov.dataset.kind=kind; ov.hidden=false; clr(); steps=[]; cur=-1; render(); if(kind==='scales'&&!(o&&o.resume)&&!isDef()) resumeAsk(); }
-function close(){ clr(); if(ov) ov.hidden=true; try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
+function open(k,o){ if(!ov) build(); try{ from=(window.SUITE&&SUITE.current())||from; }catch(_){} kind=k==='chords'?'chords':'scales'; ov.dataset.kind=kind; ov.hidden=false; clr(); steps=[]; cur=-1; render(); if(kind==='scales'&&!(o&&o.resume)&&!isDef()) resumeAsk(); menuSync(); }
+function close(){ clr(); if(ov) ov.hidden=true; menuSync(); try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
 
 /* ---------- typed chord names: "D minor 9", "C major seventh", "Dm7 G7 Cmaj7" ---------- */
 const QW=new Set(['major','minor','min','dominant','diminished','augmented','suspended','half','half-diminished','add','seventh','ninth','eleventh','thirteenth','sixth','second','fourth','sus','maj','dim','aug']);
@@ -415,8 +415,72 @@ function loadChords(text,quiet){
   steps=out.map(x=>handFit(invert(x))); steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(list);
 }
 /* spacebar in the practice room: caught first (capture phase) so the Studio behind never starts its backing track */
+window.addEventListener('keydown',e=>{ if(!ov||ov.hidden||kind!=='scales'||e.ctrlKey||e.metaKey||e.altKey||e.code==='Space'||e.key===' ') return;
+  const t=e.target, tg=t&&t.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(t&&t.isContentEditable)||document.querySelector('dialog[open]')) return;
+  const f={s:()=>{ if(playing){ clr(); show(); } },l:()=>{ const c=loopBox(); if(c) c.click(); },'=':()=>tempo(5),'+':()=>tempo(5),'-':()=>tempo(-5),h:()=>{ const b=handsBtn(); if(b) b.click(); }}[e.key.toLowerCase()];
+  /* every other single-key Studio shortcut is switched off while practising */ if(/^[a-z=+\-\[\]?]$/i.test(e.key)){ e.stopImmediatePropagation(); if(f){ e.preventDefault(); f(); } } },true);
 window.addEventListener('keydown',e=>{ if(e.code!=='Space'&&e.key!==' ') return; if(!ov||ov.hidden) return;
   const t=e.target, tg=t&&t.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(t&&t.isContentEditable)) return;
   e.preventDefault(); e.stopImmediatePropagation(); if(t&&t.blur&&tg==='BUTTON') t.blur(); if(kind==='scales') playPause(); },true);
+/* ---------- the menu bar while Scale practice is open: its own menus, built from the room's controls ---------- */
+const K=k=>{ const b=ov&&ov.querySelector('#prRoom [data-k="'+k+'"]'); if(b) b.click(); };
+const ON=k=>{ const b=ov&&ov.querySelector('#prRoom [data-k="'+k+'"]'); return !!b&&b.getAttribute('aria-pressed')==='true'; };
+const SELF=lab=>{ const l=[...(ov?ov.querySelectorAll('#prRoom label.p-sel'):[])].find(x=>(x.firstChild&&x.firstChild.textContent||'').trim().toLowerCase()===lab); return l&&l.querySelector('select'); };
+const pickSel=(lab,v)=>{ const s=SELF(lab); if(s){ s.value=v; s.dispatchEvent(new Event('change',{bubbles:true})); } };
+const focusSel=lab=>{ const s=SELF(lab); if(s){ s.focus(); try{ s.showPicker&&s.showPicker(); }catch(_){} } };
+const tempo=d=>{ const r=ov&&ov.querySelector('#prRoom .p-rng input[type=range]'); if(!r) return; r.value=Math.max(+r.min||30,Math.min(+r.max||200,+r.value+d)); r.dispatchEvent(new Event('input',{bubbles:true})); r.dispatchEvent(new Event('change',{bubbles:true})); };
+const loopBox=()=>ov&&ov.querySelector('#prRoom .p-rng input[type=checkbox]');
+const handsBtn=()=>[...document.querySelectorAll('.p-hctl button')].find(b=>b.textContent==='Hands');
+const ctr=()=>st.motion==='contrary';
+function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0.find(m=>m.brand), win=S0.find(m=>m.label==='Window');
+  return [brand,
+  {label:'File',items:[
+    {label:'Practice in Studio',enabled:()=>{ const b=$('#prStudio'); return !!b&&!b.disabled; },run:()=>{ const b=$('#prStudio'); if(b) b.click(); }},
+    {label:'Ask Pokey about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask Pokey/.test(x.textContent)); if(b) b.click(); }},
+    {sep:true},
+    {label:'Reset to default settings',run:()=>{ clr(); Object.assign(st,JSON.parse(JSON.stringify(DEF))); save(); open('scales'); }},
+    {label:'Close scale practice',run:()=>{ const b=$('#prX'); if(b) b.click(); else close(); }}]},
+  {label:'Scale',items:[
+    {label:'Note…',run:()=>focusSel('note')},
+    {label:'Scale…',run:()=>focusSel('scale')},
+    {sep:true},
+    {label:'Regular scales',check:()=>ON('regular'),run:()=>K('regular')},
+    {label:'Exotic scales',check:()=>ON('exotic'),run:()=>K('exotic')},
+    {sep:true},
+    {label:'One octave',check:()=>+st.oct===1,run:()=>pickSel('octaves','1')},
+    {label:'Two octaves',check:()=>+st.oct===2,run:()=>pickSel('octaves','2')},
+    {label:'Three octaves',check:()=>+st.oct===3,enabled:()=>!ctr(),run:()=>pickSel('octaves','3')}]},
+  {label:'Hands',items:[
+    {label:'Right hand',check:()=>ON('rh'),run:()=>K('rh')},
+    {label:'Left hand',check:()=>ON('lh'),run:()=>K('lh')},
+    {label:'Both hands',check:()=>ON('both'),run:()=>K('both')},
+    {sep:true},
+    {label:'Similar motion',check:()=>ON('similar'),run:()=>K('similar')},
+    {label:'Contrary motion',check:()=>ON('contrary'),run:()=>K('contrary')},
+    {sep:true},
+    {label:'Show the hands',key:'H',check:()=>{ const b=handsBtn(); return !!b&&b.getAttribute('aria-pressed')==='true'; },run:()=>{ const b=handsBtn(); if(b) b.click(); }}]},
+  {label:'View',items:[
+    {label:'Letters',check:()=>ON('letter'),run:()=>K('letter')},
+    {label:'Solfa',check:()=>ON('solfa'),run:()=>K('solfa')},
+    {label:'Numbers',check:()=>ON('number'),run:()=>K('number')},
+    {sep:true},
+    {label:'Learning (explains each step)',check:()=>ON('learn'),run:()=>K('learn')},
+    {label:'Practice',check:()=>ON('practice'),run:()=>K('practice')}]},
+  {label:'Playback',items:[
+    {label:()=>!playing?'Play':paused?'Resume':'Pause',key:'Space',run:playPause},
+    {label:'Stop',key:'S',enabled:()=>playing,run:()=>{ clr(); show(); }},
+    {sep:true},
+    {label:()=>ctr()?'Open':'Up',check:()=>ON('up'),run:()=>K('up')},
+    {label:()=>ctr()?'Close':'Down',check:()=>ON('down'),run:()=>K('down')},
+    {label:()=>ctr()?'Open and close':'Up and down',check:()=>ON('updown'),run:()=>K('updown')},
+    {sep:true},
+    {label:'Loop',key:'L',check:()=>{ const c=loopBox(); return !!c&&c.checked; },run:()=>{ const c=loopBox(); if(c) c.click(); }},
+    {label:'Tempo up 5 BPM',key:'=',run:()=>tempo(5)},
+    {label:'Tempo down 5 BPM',key:'−',run:()=>tempo(-5)}]},
+  win,
+  {label:'Help',items:[
+    {label:'Keyboard shortcuts',key:'?',run:()=>{ const t=[['Space','Play / Pause'],['S','Stop'],['L','Loop on/off'],['= / −','Tempo up / down 5 BPM'],['H','Show / hide the hands']]; const d=document.createElement('dialog'); d.className='info-dlg'; d.innerHTML='<h2>Scale practice shortcuts</h2><table class="keys">'+t.map(([k,v])=>'<tr><td><kbd>'+k+'</kbd></td><td>'+v+'</td></tr>').join('')+'</table>'; const c=el('button','btn pri','Close'); c.onclick=()=>{ d.close(); d.remove(); }; d.appendChild(c); document.body.appendChild(d); d.showModal(); }},
+    {label:'Ask Pokey…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
+function menuSync(){ try{ if(!window.PSMENU) return; PSMENU.set(ov&&!ov.hidden&&kind==='scales'?scaleMenus():null); }catch(_){} }
 window.PRACTICE={open,close};
 })();
