@@ -13,9 +13,10 @@ const SC={ // notes, first midi note (right hand, octave 4), right-hand fingers,
  Eb:{n:'Eb F G Ab Bb C D Eb',m:63,rh:'3 1 2 3 4 1 2 3',lh:''},
  Ab:{n:'Ab Bb C Db Eb F G Ab',m:68,rh:'',lh:''},
  Db:{n:'Db Eb F Gb Ab Bb C Db',m:61,rh:'',lh:''},
- Gb:{n:'Gb Ab Bb Cb Db Eb F Gb',m:66,rh:'',lh:''}
+ Gb:{n:'Gb Ab Bb Cb Db Eb F Gb',m:66,rh:'2 3 4 1 2 3 1 2',lh:'4 3 2 1 3 2 1 4'},
+ 'C#':{n:'',m:61,rh:'',lh:''}, 'D#':{n:'',m:63,rh:'',lh:''}, 'F#':{n:'',m:66,rh:'',lh:''}, 'G#':{n:'',m:68,rh:'',lh:''}, 'A#':{n:'',m:70,rh:'',lh:''}
 };
-const ORDER=['C','G','D','A','E','B','F','Bb','Eb','Ab','Db','Gb'];
+const ORDER=['C','G','D','A','E','B','F#','C#','G#','D#','A#','F','Bb','Eb','Ab','Db','Gb'];
 /* Scale types: seven-note formulas (semitones above the tonic). Only major carries the lessons' fingering for now. */
 const TYPES=[
  {id:'major',g:'Major',l:'Major (Ionian)',f:[0,2,4,5,7,9,11,12]},
@@ -40,9 +41,9 @@ function spellScale(key,f){ // letters in order from the tonic, accidentals from
 }
 function build(key,hand,type){
   const T=TYPES.find(t=>t.id===type)||TYPES[0], isMaj=T.id==='major';
-  const d=SC[key], names=isMaj?d.n.split(' '):spellScale(key,T.f), rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null, UP=T.f;
+  const d=SC[key], names=spellScale(key,T.f), rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null, UP=T.f;
   const steps=names.map((nm,i)=>{
-    const mid=d.m+UP[i]; const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:''};
+    const mid=d.m+UP[i]; const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:''}; const dsp=nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭'); st.spell={}; if(hand==='lh'||hand==='both') st.spell[mid-(hand==='both'?24:12)]=dsp; if(hand==='rh'||hand==='both') st.spell[mid]=dsp;
     if(hand==='lh'||hand==='both') st.lh=[mid-(hand==='both'?24:12)];
     if(hand==='rh'||hand==='both') st.rh=[mid];
     if(hand!=='lh'){ if(rhF) st.fing=rhF[i]; else if(isMaj&&/^(C|F)$/.test(nm)&&!(i===7)) st.fing='1'; }
@@ -74,5 +75,6 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+function acc(key){ const n=spellScale(key,TYPES[0].f).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
+window.SCALES={open,build,acc,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();

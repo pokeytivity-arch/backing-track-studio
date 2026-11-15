@@ -122,3 +122,5 @@
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .tx .txempty{bottom:40%!important} }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .e-kb svg{height:78px!important;width:100%} html.ps-rot body .e-kb .e-lbl{margin:0} html.ps-rot body .e-kb{padding-top:2px;padding-bottom:2px} }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom .p-sels{grid-template-columns:2fr 1fr} }
+
+.p-tip{margin:10px 0;padding:12px 14px;border:1.5px solid #3a4a74;border-radius:14px;background:#0c1426;color:#dfe7ff;font-size:14px;line-height:1.45;display:grid;gap:10px;justify-items:start}.p-tip p{margin:0}.p-tip[hidden]{display:none}

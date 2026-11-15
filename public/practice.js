@@ -81,7 +81,7 @@ function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLA
 /* ---------- steps ---------- */
 function chips(){
   const box=$('#prChips'); box.textContent='';
-  steps.forEach((s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,s.name));
+  steps.forEach((s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,DSP(s.name)));
     if(kind==='scales'){ const f=el('small'); if(s.lfing){ f.appendChild(el('b','l','L '+s.lfing)); } if(s.fing){ f.appendChild(el('b','r','R '+s.fing)); } if(!s.lfing&&!s.fing) f.textContent='–'; b.appendChild(f); }
     b.onclick=()=>{ clr(); cur=i; show(); play1(s); }; box.appendChild(b); });
 }
@@ -115,9 +115,9 @@ function render(){
   if(kind==='scales'){
     hand.hidden=false; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); loadScale(); });
     const types=(SC&&SC.types)||[], tl=id=>(types.find(t=>t.id===id)||{l:'Major'}).l, isMaj=st.type==='major';
-    (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',k+(isMaj?' major':'')); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
+    (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',SYMK(k)+(isMaj?' major':'')); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
     const sel=(lab,opts,val,fn)=>{ const w=el('label','p-sel'); w.appendChild(el('span',null,lab)); const s2=document.createElement('select'); s2.setAttribute('aria-label',lab); let og=null,gl=''; opts.forEach(o=>{ if(o.g!==undefined&&o.g!==gl){ gl=o.g; og=document.createElement('optgroup'); og.label=gl; s2.appendChild(og); } const op=document.createElement('option'); op.value=o.v; op.textContent=o.t; if(o.v===val) op.selected=true; (og&&o.g!==undefined?og:s2).appendChild(op); }); s2.onchange=()=>fn(s2.value); w.appendChild(s2); return w; };
-    const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',(SC&&SC.keys||[]).map(k=>({v:k,t:k})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
+    const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',(SC&&SC.keys||[]).map(k=>({v:k,t:SYMK(k)})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
     cats.classList.add('p-keybtns');
     const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,DIRS,st.dir,k=>{ st.dir=k; save(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
     transport(ctl); ctl.appendChild(d);
@@ -147,13 +147,24 @@ function showPicked(ch,K){
   const rh=ch[1].map(([g,s])=>60+pc+s), lh=[36+pc]; const step={name:rootN+' '+ch[0].toLowerCase(),src:rootN+' '+ch[0],lh,rh,fing:'',lfing:'',nofing:true,spell:K.labelMap([[lh[0],rootN],...ch[1].map(([g,s],i)=>[rh[i],names[i]])])};
   steps=[step]; cur=0; chips(); $('#prBig').textContent=step.name[0].toUpperCase()+step.name.slice(1); $('#prBig').style.fontSize=step.name.length>12?'clamp(30px,4.6vw,64px)':''; $('#prSub').textContent=names.join('  ')+'  ·  root also in the left hand'; $('#prMsg').textContent='Tap Play chords to hear it '+(st.vh==='h'?'one note at a time.':'together.'); drawKb(); play1(step);
 }
+const DSP=n=>String(n).replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace(/^([A-G])b/,'$1♭');
+const OPP={'C#':'Db','D#':'Eb','G#':'Ab','A#':'Bb','F#':'Gb','Gb':'F#'};
+const SYMK=k=>k.replace('#','♯').replace(/b$/,'♭');
+function keyTip(){
+  let t=document.getElementById('prTip'); if(!t){ t=el('div','p-tip'); t.id='prTip'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
+  t.textContent=''; t.hidden=true; const SC=window.SCALES; if(kind!=='scales'||st.type!=='major'||!OPP[st.key]||!SC||!SC.acc) return;
+  const k=st.key, o=OPP[k], a=SC.acc(k), b=SC.acc(o), p=el('p',null,''); let msg;
+  if(k==='F#'||k==='Gb') msg='F♯ and G♭ major are both allowed in music: either way it is 6 (6 sharps or 6 flats). Use F♯ when G♭ is inconvenient: the 4th tone of G♭ is C♭, so switch to F♯ if you want a B. Use G♭ when the 7th tone of F♯, E♯, is inconvenient: G♭ has F as its 7th tone.';
+  else msg=SYMK(k)+' major has '+a.sharps+' sharps. '+SYMK(o)+' major has '+b.flats+' flats. The number of sharps in a key and the number of flats in the opposing key always add up to 12 ('+a.sharps+' + '+b.flats+' = 12). Switching to '+SYMK(o)+' takes you from '+a.sharps+' sharps to '+b.flats+' flats.';
+  p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
+}
 function loadScale(){
   clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type); cur=-1; chips();
-  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=st.key+' '+(maj?'major':TL); $('#prSub').textContent=maj?(g.slice(0,3).join(' ')+'  |  '+g.slice(3,7).join(' ')+'  |  '+g[7]):g.join(' ');
+  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL); $('#prSub').textContent=maj?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
   $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+st.key+(st.type==='major'?' major':' '+TL)+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
-  drawKb();
+  drawKb(); keyTip();
 }
 function loadChords(text,quiet){
   clr(); st.chords=String(text||'').trim(); save();
