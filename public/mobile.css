@@ -1,5 +1,15 @@
+/* Scale | Note drop-downs (phones only; desktop keeps the key buttons) */
+.p-sels{display:none}
+.p-sel{display:grid;gap:4px;min-width:0}
+.p-sel span{font:700 11px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9fb0d8}
+.p-sel select{width:100%;min-height:44px;padding:8px 36px 8px 14px;border-radius:14px;border:1.5px solid #3a4a74;background:#0c1426 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;color:#fff;font:600 16px system-ui,sans-serif;-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
+.p-sel select optgroup{color:#111;font-style:normal}
+.p-sel select option{color:#111}
 /* Phone layout. Loaded last so it wins. Desktop is untouched: everything is inside phone media queries. */
 @media (max-width:700px){
+  /* Scale practice: two drop-downs (Scale | Note) instead of twelve key buttons */
+  html body #prRoom .p-keybtns{display:none}
+  html body #prRoom .p-sels{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
   /* Class: four compact rows instead of tall cards */
   html body .cl-four{grid-template-columns:1fr;gap:10px}
   html body .cl-box{min-height:0;height:108px;flex-direction:row;border-radius:18px}
@@ -111,3 +121,4 @@
 }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .tx .txempty{bottom:40%!important} }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .e-kb svg{height:78px!important;width:100%} html.ps-rot body .e-kb .e-lbl{margin:0} html.ps-rot body .e-kb{padding-top:2px;padding-bottom:2px} }
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom .p-sels{grid-template-columns:2fr 1fr} }

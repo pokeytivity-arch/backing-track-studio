@@ -8,7 +8,7 @@ const LH='#1c7ed6', RH='#f76707';
 const DIRS=[['up','Up'],['down','Down'],['updown','Up and down']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
+let st={type:'major',key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
@@ -110,14 +110,18 @@ function transport(ctl){
 function seg(parent,list,val,fn,small){ parent.textContent=''; if(small) parent.classList.add('sm'); list.forEach(([k,t])=>{ const b=el('button',null,t); b.type='button'; b.dataset.k=k; b.setAttribute('aria-pressed',String(k===val)); b.onclick=()=>fn(k); parent.appendChild(b); }); }
 
 function render(){
-  clr(); const SC=window.SCALES, hand=$('#prHand'), cats=$('#prCats'), ctl=$('#prCtl'); ctl.textContent=''; cats.textContent=''; $('#prMsg').textContent='';
+  clr(); const SC=window.SCALES, hand=$('#prHand'), cats=$('#prCats'), ctl=$('#prCtl'); ctl.textContent=''; cats.textContent=''; document.querySelectorAll('#prRoom .p-sels').forEach(n=>n.remove()); $('#prMsg').textContent='';
   $('#prH').textContent=kind==='scales'?'Scale practice':'Chord practice'; ov.setAttribute('aria-label',$('#prH').textContent);
   if(kind==='scales'){
     hand.hidden=false; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); loadScale(); });
-    (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',k+' major'); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
+    const types=(SC&&SC.types)||[], tl=id=>(types.find(t=>t.id===id)||{l:'Major'}).l, isMaj=st.type==='major';
+    (SC&&SC.keys||[]).forEach(k=>{ const b=el('button','e-cat',k+(isMaj?' major':'')); b.type='button'; b.setAttribute('aria-pressed',String(k===st.key)); b.onclick=()=>{ st.key=k; save(); loadScale(); render(); }; cats.appendChild(b); });
+    const sel=(lab,opts,val,fn)=>{ const w=el('label','p-sel'); w.appendChild(el('span',null,lab)); const s2=document.createElement('select'); s2.setAttribute('aria-label',lab); let og=null,gl=''; opts.forEach(o=>{ if(o.g!==undefined&&o.g!==gl){ gl=o.g; og=document.createElement('optgroup'); og.label=gl; s2.appendChild(og); } const op=document.createElement('option'); op.value=o.v; op.textContent=o.t; if(o.v===val) op.selected=true; (og&&o.g!==undefined?og:s2).appendChild(op); }); s2.onchange=()=>fn(s2.value); w.appendChild(s2); return w; };
+    const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',(SC&&SC.keys||[]).map(k=>({v:k,t:k})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
+    cats.classList.add('p-keybtns');
     const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,DIRS,st.dir,k=>{ st.dir=k; save(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
     transport(ctl); ctl.appendChild(d);
-    const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
+    const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
     loadScale();
   } else {
     hand.hidden=true;
@@ -144,11 +148,11 @@ function showPicked(ch,K){
   steps=[step]; cur=0; chips(); $('#prBig').textContent=step.name[0].toUpperCase()+step.name.slice(1); $('#prBig').style.fontSize=step.name.length>12?'clamp(30px,4.6vw,64px)':''; $('#prSub').textContent=names.join('  ')+'  ·  root also in the left hand'; $('#prMsg').textContent='Tap Play chords to hear it '+(st.vh==='h'?'one note at a time.':'together.'); drawKb(); play1(step);
 }
 function loadScale(){
-  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand); cur=-1; chips();
-  const g=steps.map(s=>s.name); $('#prLbl').textContent='Scale practice · 3+4 method'; $('#prBig').textContent=st.key+' major'; $('#prSub').textContent=g.slice(0,3).join(' ')+'  |  '+g.slice(3,7).join(' ')+'  |  '+g[7];
+  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type); cur=-1; chips();
+  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=st.key+' '+(maj?'major':TL); $('#prSub').textContent=maj?(g.slice(0,3).join(' ')+'  |  '+g.slice(3,7).join(' ')+'  |  '+g[7]):g.join(' ');
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
-  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+st.key+' major is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
+  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+st.key+(st.type==='major'?' major':' '+TL)+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
   drawKb();
 }
 function loadChords(text,quiet){

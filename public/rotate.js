@@ -17,4 +17,6 @@ function check(){ const hub=document.getElementById('suiteHub'); root.classList.
 mq.addEventListener?mq.addEventListener('change',check):mq.addListener(check);
 window.addEventListener('orientationchange',()=>setTimeout(check,250));
 setInterval(check,500);
+/* A redrawn keyboard gets its stretch right away (before paint), so it never flashes at the wrong size while a scale plays */
+try{ new MutationObserver(stretch).observe(document.body,{childList:true,subtree:true}); }catch(_){}
 })();
