@@ -140,7 +140,10 @@ function playAll(){
   playing=true; $('#prPlay').textContent='■ Stop'; let p=0, t0=0, rem=0; paused=false; waitL=false;
   const adv=()=>{ if(!playing||paused) return; p++; if(p>=order.length){ if(st.loop) p=0; else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); };
   const sched=ms=>{ rem=ms; t0=Date.now(); timers.push(setTimeout(adv,ms)); };
-  const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); play1(curS(),gap/1000*(kind==='scales'?1.6:1.05)); sched(gap); };
+  const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); play1(curS(),gap/1000*(kind==='scales'?1.6:1.05)); sched(gap);
+    /* a finger that crosses over the thumb starts moving half way through the thumb's note, so you can see it travel before the next note sounds */
+    if(kind==='scales'&&window.PSHANDS&&PSHANDS.lead&&order[p+1]!=null){ const c=curS(), ni=order[p+1], nx0=steps[ni], nx=(ni<order[p]&&nx0.alt)?nx0.alt:nx0;
+      if(c&&nx&&((c.lfing==='1'&&nx.lfing&&nx.lfing!=='1')||(c.fing==='1'&&nx.fing&&nx.fing!=='1')&&+nx.fing>=2)) timers.push(setTimeout(()=>{ if(playing&&!paused&&!waitL) PSHANDS.lead(nx); },gap*.45)); } };
   const tick=()=>{ if(!playing) return;
     if(kind==='scales'&&st.mode==='learn'&&p>0&&order[p]===order[p-1]+1){ const ln=learnLines(steps[order[p-1]],steps[order[p]]); if(ln.length){ waitL=true; updPause(); showLearn(ln,go); return; } }
     go(); };

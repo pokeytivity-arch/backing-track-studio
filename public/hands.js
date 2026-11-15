@@ -22,7 +22,7 @@ const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
 
 function makeHand(side){
-  const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,
+  const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
   h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'});
@@ -74,6 +74,7 @@ function target(h,m,f){
   if(h.init&&h.pm!=null&&m!==h.pm&&Math.abs(m-h.pm)<=3){ const d=Math.sign(m-h.pm)*dir;
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
+  const over=!!k&&h.init&&h.pm!=null&&h.pf===1&&f>=2&&k===f; h.over=over?fi:-1;   /* the thumb stays on its key while this finger passes over it */
   if(k) h.k=k; h.cT=k?1:0;
   h.fast=h.side==='rh'&&!!k;   /* right hand crossing: the thumb goes under and the fingers move over as fast as they can */
   const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-1.95*lk*.94+kw*.15;
@@ -84,7 +85,7 @@ function target(h,m,f){
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init; if(h.side==='rh'&&phase2) h.fast=true;
   for(let i=0;i<5;i++){
     if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?yOf(m)-lk*1.1:yOf(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
-    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; }
+    else if(i===0){ if(!over||!h.init){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; } }
     else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.8*LMAX[i]*lk-kw*.1; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
@@ -102,6 +103,7 @@ function sync(kb,avail,s,cb){
   ['rh','lh'].forEach(k=>{ if(!H[k].on) set(H[k].g,{display:'none'}); });
   if(!raf&&!paused){ last=0; raf=requestAnimationFrame(tick); }
 }
+function lead(s){ if(lastA&&!paused) sync(lastA[0],lastA[1],s,lastA[3]); }   /* the hands get ready for the next note a little early */
 function pause(b){ paused=!!b; if(paused){ if(raf){ cancelAnimationFrame(raf); raf=0; } } else if(!raf){ last=0; raf=requestAnimationFrame(tick); } }
 function tick(t){
   raf=0; if(!svg||!host||!host.isConnected) return; const dt=Math.min(.05,last?(t-last)/1000:.016); last=t;
@@ -110,7 +112,7 @@ function tick(t){
     const sp=h.fast?5:1, k1=1-Math.exp(-dt*13*sp), k2=1-Math.exp(-dt*22*sp);
     h.x+=(h.tx-h.x)*k1*.8; h.py+=(h.ty-h.py)*k1*.8; h.c+=(h.cT-h.c)*k1;
     let mv=Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01;
-    for(let i=0;i<5;i++){ const kk=i===0?k1:k2, far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
+    for(let i=0;i<5;i++){ const ov=i===h.over, kk=i===0?k1:(ov?1-Math.exp(-dt*8):k2), far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=ov&&Math.abs(h.ftx[i]-h.fx[i])>geo.kw*.5?h.fty[i]-geo.kw*.9:far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
       h.fx[i]+=(h.ftx[i]-h.fx[i])*kk; h.fy[i]+=(ty-h.fy[i])*kk; if(Math.abs(h.ftx[i]-h.fx[i])>.3||Math.abs(ty-h.fy[i])>.3) mv=true; }
     if(mv) moving=true; draw(h); });
   if(moving) raf=requestAnimationFrame(tick);
@@ -195,5 +197,5 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
 }
-window.PSHANDS={pause,sync,tones:TONES,isOn:()=>on};
+window.PSHANDS={lead,pause,sync,tones:TONES,isOn:()=>on};
 })();
