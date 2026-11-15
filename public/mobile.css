@@ -196,3 +196,4 @@
   html body #prRoom .p-r1 .p-rng input[type=range]{width:64px}
   html body #prRoom .p-r1 .p-rng{font-size:11px;letter-spacing:.06em}
 }
+@media (max-width:700px){ html body #prRoom .p-r2{flex-wrap:wrap} }

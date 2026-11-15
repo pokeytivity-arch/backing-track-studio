@@ -42,5 +42,16 @@ add('exotic','Symmetrical scales','sc.oct1','oct1','Octatonic whole-half','1 2 b
 add('exotic','Symmetrical scales','sc.oct2','oct2','Octatonic half-whole','1 b2 b3 3 #4 5 6 b7',['C','Db','D']);
 add('exotic','Symmetrical scales','sc.aug13','aug13','Augmented scale 1+3','1 b2 3 4 #5 6',['C','Db','D','Eb']);
 add('exotic','Symmetrical scales','sc.aug31','aug31','Augmented scale 3+1','1 b3 3 5 b6 7',['C','Db','D','Eb']);
-window.SCALELIB={list:L,byId:id=>L.find(x=>x.id===id)||null,families:['regular','exotic']};
+/* Solfa (movable do) for the scales that have it. up = names in order from the first note; down = names by ascending degree, used when the scale is played down (chromatic only). Scales not listed have no solfa yet. */
+const sf=t=>t.split(' ');
+const SOLFA={
+ major:{up:sf('do re mi fa sol la ti')}, nat:{up:sf('la ti do re mi fa sol')}, harm:{up:sf('la ti do re mi fa si')}, mel:{up:sf('la ti do re mi fi si'),down:sf('la ti do re mi fa sol')},
+ ion:{up:sf('do re mi fa sol la ti')}, dor:{up:sf('re mi fa sol la ti do')}, phr:{up:sf('mi fa sol la ti do re')},
+ chr:{up:sf('do di re ri mi fa fi sol si la li ti'),down:sf('do ra re me mi fa se sol le la te ti')},
+ hexn7:{up:sf('do re mi fa sol la')}, hexn4:{up:sf('do re mi sol la ti')},
+ pmaj:{up:sf('do re mi sol la')}, pmin:{up:sf('la do re mi sol')}, pmajb:{up:sf('do re me mi sol la')}, pminb:{up:sf('la do re me mi sol')}
+};
+/* numbers come from the solfa syllables */
+const SOLNUM={do:'1',di:'♯1',ra:'♭2',re:'2',ri:'♯2',me:'♭3',mi:'3',fa:'4',fi:'♯4',se:'♭5',sol:'5',si:'♯5',le:'♭6',la:'6',li:'♯6',te:'♭7',ti:'7'};
+window.SCALELIB={solfa:SOLFA,solnum:SOLNUM,list:L,byId:id=>L.find(x=>x.id===id)||null,families:['regular','exotic']};
 })();

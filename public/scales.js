@@ -66,9 +66,12 @@ function build(key,hand,type,oct,motion){
     if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
     if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
     if(hand!=='rh'&&isMaj&&d.lh){ if(oct===1) st.lfing=lhF[i]||''; else if(d.lhm){ const M=d.lhm; st.lfing=top?M.l:(i<7?M.f.split(' ')[i]:M.r.split(' ')[(i-7)%7]); } }
+    const SF=SCALELIB.solfa[T.id]; if(SF){ st.sol=top?SF.up[0]:SF.up[deg]; if(SF.down) st.solD=top?SF.down[0]:SF.down[deg]; }
     steps.push(st); }
+  if(T.id==='mel'&&!NOALT){ NOALT=true; try{ const nt=build(key,hand,'nat',oct,'similar'); steps.forEach((x,i)=>{ x.alt=nt[i]; }); } finally{ NOALT=false; } } /* melodic minor comes down as natural minor */
   return steps;
 }
+let NOALT=false;
 function acc(key){ const n=spellDeg(key,TYPES[0].d).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
 let ov=null;
 function open(){

@@ -10,11 +10,12 @@ const CDIRS=[['up','Open'],['down','Close'],['updown','Open and close']];
 const MOTIONS=[['similar','Similar'],['contrary','Contrary']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={family:'regular',motion:'similar',mode:'learn',oct:1,type:'major',key:'C',hand:'rh',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
-try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; }catch(_){}
+let st={sys:'letter',family:'regular',motion:'similar',mode:'learn',oct:1,type:'major',key:'C',hand:'rh',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
+try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
-const clr=()=>{ timers.forEach(clearTimeout); timers=[]; playing=false; const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
+let curDesc=false;
+const clr=()=>{ curDesc=false; timers.forEach(clearTimeout); timers=[]; playing=false; const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
 
 const css=document.createElement('style'); css.textContent=`
 #prRoom .p-leg{display:flex;gap:18px;align-items:center;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
@@ -70,10 +71,15 @@ function normChords(text){
 }
 
 /* ---------- keyboard ---------- */
+/* Letters, Solfa or Numbers. Solfa and numbers only exist for the scales Pokey has given syllables for; the numbers come from the syllables. */
+const hasSol=()=>!!(window.SCALELIB&&SCALELIB.solfa[st.type]);
+const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
+const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
+function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') return DSP(s.name); const sy=(desc&&s.solD)||s.sol; if(!sy) return DSP(s.name); return y==='solfa'?sy:(SCALELIB.solnum[sy]||sy); }
 function drawKb(){
-  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=steps[cur];
+  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:s&&s.spell||null});
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg);
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
@@ -83,9 +89,9 @@ function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLA
 /* ---------- steps ---------- */
 function chips(){
   const box=$('#prChips'); box.textContent='';
-  const mk=(s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,DSP(s.name)));
+  const mk=(s,i)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,lab(s,false)));
     if(kind==='scales'){ const f=el('small'); if(s.lfing){ f.appendChild(el('b','l','L '+s.lfing)); } if(s.fing){ f.appendChild(el('b','r','R '+s.fing)); } if(s.lname&&!s.lfing) f.appendChild(el('b','l','L '+DSP(s.lname))); if(!s.lfing&&!s.fing&&!s.lname) f.textContent='–'; b.appendChild(f); }
-    b.onclick=()=>{ clr(); cur=i; show(); play1(s); }; return b; };
+    b.onclick=()=>{ clr(); cur=i; curDesc=false; show(); play1(s); }; return b; };
   const per=(kind==='scales'&&st.oct>0)?(steps.length-1)/((st.motion==='contrary'?Math.min(st.oct,2):st.oct)||1):0;
   if(kind==='scales'&&steps.length>1&&Number.isInteger(per)&&per>=4){ /* one octave per line: C D E F G A B / C D E F G A B (the top note ends the last line) */
     const rows=(steps.length-1)/per; for(let r=0;r<rows;r++){ const row=el('div','p-orow'); for(let i=r*per;i<r*per+per;i++) row.appendChild(mk(steps[i],i)); if(r===rows-1) row.appendChild(mk(steps[steps.length-1],steps.length-1)); box.appendChild(row); }
@@ -116,7 +122,7 @@ function playAll(){
   if(playing){ clr(); return; } if(!steps.length) return;
   const order=kind==='scales'?seq():[...Array(steps.length).keys()], gap=(60/st.bpm)*(kind==='scales'?1:(steps.length>1?2:4))*1000;
   playing=true; $('#prPlay').textContent='■ Stop'; let p=0;
-  const go=()=>{ if(!playing) return; cur=order[p]; show(); play1(steps[cur],gap/1000*(kind==='scales'?1.6:1.05));
+  const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); play1(curS(),gap/1000*(kind==='scales'?1.6:1.05));
     timers.push(setTimeout(()=>{ if(!playing) return; p++; if(p>=order.length){ if(st.loop) p=0; else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); },gap)); };
   const tick=()=>{ if(!playing) return;
     if(kind==='scales'&&st.mode==='learn'&&p>0&&order[p]===order[p-1]+1){ const ln=learnLines(steps[order[p-1]],steps[order[p]]); if(ln.length){ showLearn(ln,go); return; } }
@@ -150,6 +156,8 @@ function render(){
     const fm=el('div','e-seg sm'); fm.setAttribute('role','group'); fm.setAttribute('aria-label','Scale family'); seg(fm,[['regular','Regular'],['exotic','Exotic']],st.family,k=>{ st.family=k; save(); clr(); render(); },true); ctl.appendChild(fm);
     const mo=el('div','e-seg sm'); mo.setAttribute('role','group'); mo.setAttribute('aria-label','Motion'); seg(mo,MOTIONS,st.motion,k=>{ st.motion=k; if(k==='contrary'&&st.oct>2) st.oct=2; save(); clr(); render(); },true); if(!isDia){ const cb=mo.querySelector('[data-k=contrary]'); if(cb){ cb.disabled=true; cb.title='Contrary motion is for the diatonic scales'; } } ctl.appendChild(mo);
     const md=el('div','e-seg sm'); md.setAttribute('role','group'); md.setAttribute('aria-label','Mode'); seg(md,[['learn','Learning'],['practice','Practice']],st.mode,k=>{ st.mode=k; save(); clr(); md.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); ctl.appendChild(md);
+    const sy=el('div','e-seg sm'); sy.setAttribute('role','group'); sy.setAttribute('aria-label','Note names'); seg(sy,[['letter','Letters'],['solfa','Solfa'],['number','Numbers']],st.sys,k=>{ st.sys=k; save(); clr(); render(); },true);
+    if(!hasSol()) sy.querySelectorAll('[data-k=solfa],[data-k=number]').forEach(b=>{ b.disabled=true; b.title='Solfa is not added for this scale yet'; }); ctl.appendChild(sy);
     ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion==='contrary'?[]:[{v:'3',t:'Three octaves'}]),String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
     ctl.lastChild.classList.add('p-octs');
     transport(ctl); ctl.appendChild(d);
@@ -157,7 +165,7 @@ function render(){
     if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
-      r1.append(oc,rg[1],rg[0],ask); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,hand,d,pl); ctl.append(r1,r2); hand.classList.add('sm');
+      r1.append(oc,rg[1],rg[0],ask); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d,pl); ctl.append(r1,r2); hand.classList.add('sm');
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); }
     loadScale();
   } else {
@@ -219,7 +227,7 @@ function keyTip(){
 }
 function loadScale(){
   clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type,st.oct,st.motion); cur=-1; chips();
-  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':'')+(st.motion==='contrary'?' · contrary motion':''); $('#prSub').textContent=(maj&&st.oct===1)?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
+  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':'')+(st.motion==='contrary'?' · contrary motion':''); { const L=steps.map(x=>lab(x,false)); let sub=(maj&&st.oct===1)?(L.slice(0,3).join(' ')+'  |  '+L.slice(3,7).join(' ')+'  |  '+L[7]):L.join(' '); const dn=steps.map(x=>lab(x.alt||x,true)); if(st.motion!=='contrary'&&dn.join(' ')!==L.join(' ')&&(steps.some(x=>x.alt)||(sysNow()!=='letter'&&steps.some(x=>x.solD)))) sub+='   ·   coming down: '+dn.slice().reverse().join(' '); $('#prSub').textContent=sub; }
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start together on the '+SYMK(st.key)+'. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
