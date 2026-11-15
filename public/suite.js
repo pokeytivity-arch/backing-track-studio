@@ -200,13 +200,13 @@ function hideHub(){ hub.classList.remove('on'); document.body.style.overflow='';
 
 /* ---------- moving between destinations ---------- */
 function stopEverything(){ try{ if(typeof playing!=='undefined'&&(playing||paused)&&typeof stop==='function') stop(); }catch(_){} try{ if(window.TX&&TX.stop) TX.stop(); }catch(_){} }
-const HIST=[]; let navBack=false;
+const HIST=[]; let navBack=false, RET=null; /* RET: where Back should reopen to, set when one room hands work to another (Scale room to Studio) */
 let popping=false;
 function hpush(){ if(popping) return; const p=place(); try{ if(!history.state){ history.replaceState({ps:p},''); return; } if(history.state.ps===p) return; history.pushState({ps:p},''); }catch(_){} }
 window.addEventListener('popstate',e=>{ const t=e.state&&e.state.ps; if(!t) return; popping=true; navBack=true; try{ if(t==='hub'){ if(!hub.classList.contains('on')) showHub(); } else if(DEST[t]) go(t); } finally{ popping=false; navBack=false; } });
 const place=()=>hub.classList.contains('on')?'hub':cur;
 function go(k){
-  if(!DEST[k]) return; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
+  if(!DEST[k]) return; if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
   cur=k; if(k!=='account') put(k); document.body.dataset.dest=k;
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
@@ -252,6 +252,7 @@ function heads(){
     const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });
 }
 function back(){
+  if(RET&&!hub.classList.contains('on')&&cur===RET.from){ const f=RET.fn; RET=null; navBack=true; try{ f(); } finally{ navBack=false; } return; }
   if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back(),plus:()=>window.TXMENU&&TXMENU.close()}[cur]; try{ if(h&&h()) return; }catch(_){} }
   let t=HIST.pop(); if(t===place()) t=HIST.pop();
   navBack=true; try{ if(t==='hub'||!t) { if(!hub.classList.contains('on')) showHub(); } else go(t); } finally{ navBack=false; }
@@ -260,7 +261,7 @@ function addBackBtn(){
   const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psBackBtn')) return;
   const b=document.createElement('button'); b.id='psBackBtn'; b.type='button'; b.className='menu-btn'; b.textContent='←'; b.title='Back'; b.setAttribute('aria-label','Back'); b.style.cssText='font-size:18px;padding:0 10px'; b.onclick=back; mb.insertBefore(b,mb.firstChild);
 }
-window.SUITE={clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back};
+window.SUITE={returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back};
 
 
 /* ---------- clear buttons + clear after an hour away ---------- */

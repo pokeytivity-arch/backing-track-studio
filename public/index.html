@@ -691,7 +691,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-u (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-v (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -2761,7 +2761,7 @@ window.STUDIO_SCALE=function(p){
   if(playing) stop(); if(S.sm==='chord'){ S.chordBak={title:S.title,chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,form:S.form,bassLine:S.bassLine,useHum:S.useHum}; S.sm='scale'; }
   S.scale=p; S.title=p.title; S.transpose=0; S.bassLine=null; S.useHum=false; $('title').value=S.title; if(typeof humSync==='function') humSync();
   const kb=$('kbdBtn'); if(kb&&kb.getAttribute('aria-pressed')!=='true') kb.click();
-  syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio');
+  syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio'); if(window.__psRet){ window.__psRet(); window.__psRet=null; }
   toast('Scale loaded. Pick a backing track (style), then press Play. Only the drums play in scale mode.');
 };
 function loadTrack(t){

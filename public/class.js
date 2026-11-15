@@ -277,7 +277,7 @@ function setView(v){ view=v; if(v==='home') setTimeout(welcome,0); const h=$('cl
 let pane='board';
 function setPane(p){ pane=p==='keys'?'keys':'board'; const el=$('clSlide'); if(el) el.dataset.pane=pane; document.querySelectorAll('#clPane button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===pane))); }
 function slide(open){ const el=$('clSlide'); if(!el) return; el.classList.toggle('on',!!open); el.setAttribute('aria-hidden',open?'false':'true'); const d=$('clDots'); d.setAttribute('aria-expanded',open?'true':'false'); if(open) d.classList.remove('new'); }
-function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(practice){ practice=false; syncBar(); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
+function back(){ const el=$('clSlide'); if(el&&el.classList.contains('on')){ slide(false); return true; } if($('clDrawer')&&!$('clDrawer').hidden){ drawer(false); return true; } if(practice){ practice=false; syncBar(); if(window.PRACTICE) PRACTICE.close(); return true; } if(view==='chat'){ setView('home'); return true; } return false; }
 function rowMenu(btn,c){
   const old=document.getElementById('clPop'); if(old){ const same=old._for===btn; old.remove(); if(same) return; }
   const pop=document.createElement('div'); pop.id='clPop'; pop.className='cl-pop'; pop.setAttribute('role','menu'); pop._for=btn;
@@ -620,6 +620,7 @@ window.CLASS={
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
   stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },
+  reopenPractice(k){ practice=k; syncBar(); if(window.PRACTICE) PRACTICE.open(k); },
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }
 };
 build();
