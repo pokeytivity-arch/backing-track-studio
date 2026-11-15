@@ -127,3 +127,27 @@
 
 .p-octs{min-width:170px}.p-octs select{min-height:40px}
 .p-learn{margin:10px 0;padding:12px 14px;border:2px solid #ffd43b;border-radius:14px;background:#17213d;color:#fff;font-size:15px;line-height:1.45;display:grid;gap:8px;justify-items:start}.p-learn p{margin:0}.p-learn b{color:#ffd43b;letter-spacing:.04em}.p-learn[hidden]{display:none}
+
+/* Scale/Chord room on phones: controls and the whole keyboard first; the note chips (with fingering) sit below the keyboard */
+@media (max-width:700px){
+  html body #prRoom .e-kb{order:10;position:static;margin-top:0}
+  html body #prRoom .p-learn{order:11}
+  html body #prRoom .p-tip{order:11}
+  html body #prRoom #prMsg{order:12}
+  html body #prRoom .p-chips{order:13}
+  html body #prRoom #prPick{order:14}
+}
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){
+  html.ps-rot body #prRoom{gap:6px;padding:6px 14px 14px}
+  html.ps-rot body #prRoom .e-top{gap:8px;flex-wrap:nowrap}
+  html.ps-rot body #prRoom .e-now{grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:center}
+  html.ps-rot body #prRoom #prLbl,html.ps-rot body #prRoom #prSub{display:none}
+  html.ps-rot body #prRoom .e-big{font-size:clamp(24px,9vh,34px)!important}
+  html.ps-rot body #prRoom .p-sels{gap:8px}
+  html.ps-rot body #prRoom .p-sel span{display:none}
+  html.ps-rot body #prRoom .p-sel select{min-height:38px}
+  html.ps-rot body #prRoom .e-ctl{gap:6px 10px}
+  html.ps-rot body #prRoom .e-kb .e-lbl{display:none}
+  html.ps-rot body #prRoom .e-kb svg{height:88px!important}
+}
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom[data-kind=scales] .e-now{grid-template-columns:1fr} html.ps-rot body #prRoom[data-kind=scales] .e-now>div:first-child{display:none} }
