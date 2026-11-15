@@ -425,6 +425,7 @@ audio{width:100%}
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
       </div>
     </div>
+    <div class="seg dark" id="smSeg" role="group" aria-label="Studio mode"><button type="button" data-k="chord" aria-pressed="true">Chord mode</button><button type="button" data-k="scale" aria-pressed="false">Scale mode</button></div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
     <div class="stage-kbd" id="stageKbd" hidden>
@@ -690,7 +691,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-t (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-u (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -953,6 +954,7 @@ class Engine{
     return b;
   }
   applyMix(mix, style){
+    if(typeof S!=='undefined'&&S.sm==='scale'){ mix=Object.assign({},mix); ['bass','keys','extra','lead'].forEach(n=>{ mix[n]=Object.assign({},mix[n],{mute:true,solo:false}); }); }
     const anySolo=CHANNELS.some(n=>n!=='click'&&mix[n].solo);
     CHANNELS.forEach(n=>{ const m=mix[n], off=m.mute||(anySolo&&n!=='click'&&!m.solo);
       this.ch[n].g.gain.value = off?0:m.vol; this.ch[n].s.gain.value = n==='lead'?0.16:((style.sends&&style.sends[n])||0.06); });
@@ -1485,7 +1487,7 @@ const EXAMPLES=[
 ];
 const S={
   sync:500, bassLine:null, useHum:false, title:'', chords:'', style:'eighties', bpm:112, transpose:0, meter:'4/4', mode:'easy', res:'8', form:'free', lead:'none',
-  countIn:true, metronome:false,
+  countIn:true, metronome:false, sm:'chord', scale:null, chordBak:null,
   mix:{drums:{vol:0.9,mute:false,solo:false},bass:{vol:0.9,mute:false,solo:false},keys:{vol:0.8,mute:false,solo:false},extra:{vol:0.7,mute:false,solo:false},lead:{vol:0.85,mute:false,solo:false},click:{vol:0.8,mute:false,solo:false}},
   trainer:{on:false,inc:4,every:2,max:140},
 };
@@ -1674,7 +1676,9 @@ function renderChart(){
     if(!window.__chartAuto&&window.SUITE&&SUITE.current()==='studio'){ window.__chartAuto=true; setTimeout(()=>{ try{ if(!document.querySelector('.card.panel-active')) openPanel('chart'); }catch(_){} },400); } }
 }
 function rebuild(){
-  song=parseChart(S.chords,S.transpose); stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
+  if(S.sm==='scale'&&S.scale){ S.chords=scaleChords(); $('chords').value=S.chords; }
+  song=parseChart(S.chords,S.transpose);
+  if(S.sm==='scale'&&S.scale){ song.errors.length=0; song.events.forEach((e,i)=>{ const st=S.scale.steps[i]; if(st) e.name={root:st.label,q:''}; }); } stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
   if(S.mode==='pro') updateGridMeta();
   const er=$('errs'); er.hidden=!song.errors.length; er.textContent=song.errors.join(' · ');
   renderChart();
@@ -1719,6 +1723,7 @@ function renderMix(){
     if(n==='click'){ sb=document.createElement('span'); }
     else { sb=document.createElement('button'); sb.className='mute solo'; sb.textContent='S'; sb.setAttribute('aria-pressed',!!m.solo); sb.setAttribute('aria-label',`Solo ${names[n][0]}`);
       sb.onclick=()=>{ m.solo=!m.solo; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); }; }
+    if(S.sm==='scale'&&n!=='drums'&&n!=='click'){ row.classList.add('off'); [mb,r].forEach(x=>{ x.disabled=true; }); if(sb.tagName==='BUTTON') sb.disabled=true; nm.appendChild(Object.assign(document.createElement('small'),{textContent:'locked in scale mode'})); }
     row.append(nm,mb,sb,r,val); w.appendChild(row); });
 }
 
@@ -2429,7 +2434,9 @@ let stageVz=null;
 function stageKeys(ei){
   const w=$('stageKbd'); if(!w || w.hidden) return;
   if(!stageVz || stageVz.song!==song) stageVz={song,vz:songVoicings(song)};
-  const v=ei!=null?stageVz.vz[ei]:null, [lo,hi]=KB_SIZES[S.kbdSize]||KB_SIZES[61];
+  const sc=S.sm==='scale'&&S.scale?(ei!=null?S.scale.steps[ei]||null:null):null;
+  const v=sc||(ei!=null?stageVz.vz[ei]:null), [lo,hi]=KB_SIZES[S.kbdSize]||KB_SIZES[61];
+  if(S.sm==='scale'&&S.scale){ const fm={}; if(sc){ (sc.lh||[]).forEach(m=>{ if(sc.lfing) fm[m]=sc.lfing; }); (sc.rh||[]).forEach(m=>{ if(sc.fing) fm[m]=sc.fing; }); } $('kbdWrap').replaceChildren(keyboardSVG(sc?sc.lh:[],sc?sc.rh:[],{lo,hi,height:S.kbdSize==88?58:64,fingers:false,fmap:fm,spell:sc&&sc.spell||null})); const fl=$('kbdFing'); if(fl) fl.textContent=sc?(sc.label+(sc.fing?'   R '+sc.fing:'')+(sc.lfing?'   L '+sc.lfing:'')):''; w.querySelectorAll('.kbd-bar button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===+S.kbdSize))); return; }
   $('kbdWrap').replaceChildren(keyboardSVG(v?v.lh:[],v?v.rh:[],{lo,hi,height:S.kbdSize==88?58:64,fingers:!!S.fingers}));
   const fl=$('kbdFing'); if(fl){ if(S.fingers&&v){ const ft=fingerText(v.lh,v.rh); const ev=song&&song.events[ei]; fl.innerHTML='<b>'+(ev&&ev.name?ev.name.root+ev.name.q:'')+'</b> &nbsp; Right hand fingers <b>'+ft.rh+'</b> &nbsp;·&nbsp; Left hand <b>'+ft.lh+'</b> &nbsp; (1 = thumb, 5 = little finger)'; } else fl.textContent=''; }
   w.querySelectorAll('.kbd-bar button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===+S.kbdSize)));
@@ -2735,8 +2742,30 @@ function buildMenubar(){
    ========================================================= */
 let tab='ex', classTracks=null, classState='loading', canTeach=false, db=null;
 const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,meter:S.meter,form:S.form,lead:S.lead,...(S.bassLine?{bassLine:S.bassLine,useHum:S.useHum}:{})});
+/* Scale mode: a scale from the Scale room is put on the chart, one note a beat, and only the drums play. The other mixer channels are locked until Chord mode is back. */
+const SAFE_PC=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+function scaleChords(){
+  const per=MET().count.length||4, toks=S.scale.steps.map(x=>SAFE_PC[(((x.rh&&x.rh[0]!=null?x.rh[0]:x.lh[0])%12)+12)%12]), bars=[];
+  for(let i=0;i<toks.length;i+=per){ const b=toks.slice(i,i+per); while(b.length<per) b.push('.'); bars.push(b.join(' ')); }
+  return '| '+bars.join(' | ')+' |';
+}
+function setStudioMode(m){
+  if(m===S.sm) return;
+  if(m==='scale'){ if(!S.scale){ toast('Open the Scale room and press Practice in Studio to bring a scale here.'); return; }
+    if(playing) stop(); S.chordBak={title:S.title,chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,form:S.form,bassLine:S.bassLine,useHum:S.useHum}; S.sm='scale'; S.title=S.scale.title; }
+  else { if(playing) stop(); S.sm='chord'; const b=S.chordBak; if(b){ S.title=b.title; S.chords=b.chords; S.transpose=b.transpose; S.form=b.form; S.bassLine=b.bassLine; S.useHum=b.useHum; $('chords').value=S.chords; } S.chordBak=null; }
+  $('title').value=S.title; syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild();
+}
+function syncSm(){ document.querySelectorAll('#smSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===S.sm))); document.body.classList.toggle('scale-mode',S.sm==='scale'); }
+window.STUDIO_SCALE=function(p){
+  if(playing) stop(); if(S.sm==='chord'){ S.chordBak={title:S.title,chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,form:S.form,bassLine:S.bassLine,useHum:S.useHum}; S.sm='scale'; }
+  S.scale=p; S.title=p.title; S.transpose=0; S.bassLine=null; S.useHum=false; $('title').value=S.title; if(typeof humSync==='function') humSync();
+  const kb=$('kbdBtn'); if(kb&&kb.getAttribute('aria-pressed')!=='true') kb.click();
+  syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio');
+  toast('Scale loaded. Pick a backing track (style), then press Play. Only the drums play in scale mode.');
+};
 function loadTrack(t){
-  if(playing) stop();
+  if(playing) stop(); if(S.sm==='scale'){ S.sm='chord'; S.chordBak=null; syncSm(); }
   S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0; S.flatsHint=(typeof t.flats==='boolean')?t.flats:null;
   S.form=FORMS.hasOwnProperty(t.form)?t.form:'free'; $('form').value=S.form; S.lead='none';
   S.bassLine=Array.isArray(t.bassLine)?t.bassLine:null; S.useHum=!!t.useHum&&!!S.bassLine; humSync();
@@ -2875,6 +2904,7 @@ function init(){
   setupDrums();
 
   $('kbdBtn').onclick=()=>{ const on=$('kbdBtn').getAttribute('aria-pressed')!=='true'; $('kbdBtn').setAttribute('aria-pressed',on); $('stageKbd').hidden=!on; store.set('bt-kbd',on); stageKeys(playing&&curEi>=0?curEi:0); };
+  document.querySelectorAll('#smSeg button').forEach(b=>b.onclick=()=>setStudioMode(b.dataset.k));
   if(store.get('bt-kbd',false)){ $('kbdBtn').setAttribute('aria-pressed','true'); $('stageKbd').hidden=false; }
   S.kbdSize=[88,76,61].includes(+store.get('bt-kbd-size',61))?+store.get('bt-kbd-size',61):61;
   document.querySelectorAll('#stageKbd .kbd-bar button').forEach(b=>b.onclick=()=>{ S.kbdSize=+b.dataset.k; store.set('bt-kbd-size',S.kbdSize); stageKeys(playing&&curEi>=0?curEi:0); });

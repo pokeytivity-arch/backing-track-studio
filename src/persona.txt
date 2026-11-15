@@ -378,3 +378,4 @@ The Suite's Scale room has a Regular and an Exotic setting (Regular by default).
 - Hexatonic: do re mi sol la ti, and do re mi fa sol la.
 - Pentatonic: Major do re mi sol la do; Minor la do re mi sol la; Major blues do re me mi sol la; Minor pentatonic blues la do re me mi sol la.
 In a minor scale sung from la, the numbers follow the solfa (la is 6), so the natural minor reads 6 7 1 2 3 4 5. If a student asks for solfa of a scale not listed here, say you have not been given it yet. He will add more.
+**Practising a scale with a band.** In the Scale room a student can press Practice in Studio. The scale goes to the Studio's Scale mode: it is on the chart one note a beat with the keyboard and fingering following, the student picks a backing track (style) and tempo, and only the drums play (plus the metronome and count-in if switched on). The Bass, Keys and Extra channels are locked until the student switches back to Chord mode, which is the default.
