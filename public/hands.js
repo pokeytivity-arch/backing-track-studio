@@ -90,9 +90,9 @@ function target(h,m,f,pos){
   const over=!!k&&h.init&&h.pm!=null&&h.pf===1&&f>=2&&k===f; h.over=over?fi:-1;   /* the thumb stays on its key while this finger passes over it */
   if(k) h.k=k; h.cT=k?1:0;
   h.fast=h.side==='rh'&&!!k;   /* right hand crossing: the thumb goes under and the fingers move over as fast as they can */
-  const slot=k?sx(k,fi):SLOT[fi]; let fullX=xOf(m)-slot*dir*kw; const fullY=yOf(m)-1.95*lk*.94+kw*.15;
+  const slot=k?sx(k,fi):SLOT[fi]; let fullX=xOf(m)-slot*dir*kw; let fullY=yOf(m)-1.95*lk*.94+kw*.15;
   /* in a hand position the hand sits over its keys: placed from where fingers 2 to 5 belong */
-  if(pos&&!k){ let a=0,n=0; for(let q=2;q<=5;q++) if(pos[q]!=null){ a+=xOf(pos[q])-SLOT[q-1]*dir*kw; n++; } if(n) fullX=a/n; }
+  if(pos&&!k){ let a=0,n=0,yy=0; for(let q=2;q<=5;q++) if(pos[q]!=null){ a+=xOf(pos[q])-SLOT[q-1]*dir*kw; yy+=yOf(pos[q]); n++; } if(n){ fullX=a/n; fullY=yy/n-1.95*lk*.94+kw*.15; } }
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
   if(h.init&&Math.abs(fullX-h.tx)>kw*4.2) h.init=false;   /* a big jump (restart, or a far tap) moves the hand straight there instead of dragging it across the keys */
   h.tx=fullX; h.ty=fullY;
@@ -103,7 +103,7 @@ function target(h,m,f,pos){
     else if(i===0){ if(!over||!h.init){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; } }
     else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.8*LMAX[i]*lk-kw*.1; }
     /* in a hand position every other finger waits just above its own key */
-    if(pos&&!k&&i!==fi&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yOf(p)-kw*.45):yOf(p)-kw*.1)-kw*.35; }
+    if(pos&&!k&&i!==fi&&pos[i+1]!=null){ const p=pos[i+1]; h.ftx[i]=xOf(p)+(i===0?dir*kw*.38:0); h.fty[i]=(i===0?Math.max(geo.HP+kw*.3,yOf(p)-kw*.45):yOf(p)-kw*.1)-kw*.12; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
@@ -228,7 +228,7 @@ function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
   const pm=M.palm, P=(px,py)=>Rt([cx+dir*k*(px-pm.ax), ay0+k*(pm.ay-py)]);
   set(h.pi.palm,{width:pm.w,height:pm.h,transform:'rotate('+(th*180/Math.PI).toFixed(2)+' '+cx.toFixed(1)+' '+ay0.toFixed(1)+') '+mat(dir*k,0,0,-k,cx-dir*k*pm.ax,ay0+k*pm.ay)});
   /* one sprite from its base to a target tip. */
-  const place=(img,m,B,tx,ty,smin,smax,wscale)=>{ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len, sy=Math.max(smin,Math.min(smax,L/ln)); const Ax=dx/L, Ay=dy/L, sx=(wscale||1)*Math.pow(sy,.35);
+  const place=(img,m,B,tx,ty,smin,smax,wscale)=>{ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len, sy=Math.max(smin,Math.min(smax,L/ln)); const Ax=dx/L, Ay=dy/L, sx=(wscale||1);
     const a=k*sx*dir*Ay, b=-k*sx*dir*Ax, c=-k*sy*Ax, d=-k*sy*Ay, e=B[0]-a*m.bx-c*m.by, f=B[1]-b*m.bx-d*m.by;
     set(img,{width:m.w,height:m.h,transform:mat(a,b,c,d,e,f)}); return [B[0]+Ax*ln*sy,B[1]+Ay*ln*sy,Ax,Ay]; };
   const names=['index','middle','ring','pinky'], tips=[];
