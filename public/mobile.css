@@ -66,7 +66,7 @@
 /* Upright phone on a keyboard screen: the whole app is turned sideways (see rotate.js) */
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){
   html.ps-rot{overflow:hidden;height:100%}
-  html.ps-rot body{position:fixed;top:0;left:0;margin:0;width:100vh;width:100dvh;height:100vw;height:100dvw;overflow:auto;transform-origin:0 0;transform:translateX(100vw) rotate(90deg)}
+  html.ps-rot body{position:fixed;top:0;left:0;margin:0;max-width:none;max-height:none;width:100vh;width:100dvh;height:100vw;height:100dvw;overflow:auto;transform-origin:0 0;transform:translateX(100vw) rotate(90deg)}
   html.ps-rot body #earRoom,html.ps-rot body #prRoom{padding:8px 16px 10px;gap:8px;top:36px}
   html.ps-rot body #earRoom .e-top h1,html.ps-rot body #prRoom .e-top h1{font-size:20px}
   html.ps-rot body #earRoom .e-big,html.ps-rot body #prRoom .e-big{font-size:clamp(28px,12vw,44px);min-height:0}
@@ -80,3 +80,34 @@
   html.ps-rot body #txCard{left:8px!important;right:8px!important;top:44px!important;bottom:8px!important;width:auto!important;max-width:none!important;height:auto!important;max-height:none!important}
   html.ps-rot body .tx canvas{height:calc(100vw - 130px)!important;min-height:180px!important}
 }
+
+/* Studio on a sideways phone: compact three-column top, hide the extras so the chord, chart and keys fit */
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){
+  html.ps-rot body .stage{padding:10px 14px;gap:8px;border-radius:14px}
+  html.ps-rot body .stage-top{grid-template-columns:auto minmax(0,1fr) auto;gap:6px 18px;align-items:center}
+  html.ps-rot body .stage-top .top-mid{grid-column:auto;grid-row:auto;max-width:none}
+  html.ps-rot body .stage-top .now{font-size:clamp(34px,13vh,56px);line-height:1}
+  html.ps-rot body .stage-top .next{font-size:15px;margin:0}
+  html.ps-rot body .stage-top .lbl{margin:0;font-size:11px}
+  html.ps-rot body .stage-sync,html.ps-rot body .stage-top .pos,html.ps-rot body .stage-top .bpmbig,html.ps-rot body .tip{display:none}
+  html.ps-rot body .stage-tempo{flex-wrap:nowrap;gap:8px}
+  html.ps-rot body .meter{justify-items:end;text-align:right}
+  html.ps-rot body .beats{display:none}
+  html.ps-rot body .transport{position:static;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:0;background:transparent}
+  html.ps-rot body .transport .tog,html.ps-rot body .transport .play{min-height:38px;padding-top:6px;padding-bottom:6px;white-space:nowrap;flex:0 0 auto}
+  html.ps-rot body .transport .stopbtn{flex:0 0 auto;width:42px;height:42px}
+  html.ps-rot body .room-back,html.ps-rot body .stage-top .lbl,html.ps-rot body .stage-kbd .fing-line:empty{display:none}
+  html.ps-rot body .stage-top .now{font-size:clamp(30px,10vh,44px)!important}
+  html.ps-rot body .stage-top{align-items:start}
+  html.ps-rot body #kbdWrap{max-height:84px;overflow:hidden}
+  html.ps-rot body #kbdWrap svg,html.ps-rot body #kbdWrap canvas{height:84px!important;width:100%}
+  html.ps-rot body .stage-kbd{gap:4px}
+  html.ps-rot body .stage-tempo .tapbig{padding:4px 14px;min-height:36px}
+  html.ps-rot body .stage-kbd{padding:6px 10px}
+  html.ps-rot body .stage-kbd .kbd-bar{margin:0;gap:10px}
+  html.ps-rot body .stage-kbd .kbd-bar .seg button{padding:4px 10px;min-height:30px}
+  html.ps-rot body .chart{margin:0}
+  html.ps-rot body .corner-tools{transform:scale(.8);transform-origin:right top}
+}
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .tx .txempty{bottom:40%!important} }
+@media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body .e-kb svg{height:78px!important;width:100%} html.ps-rot body .e-kb .e-lbl{margin:0} html.ps-rot body .e-kb{padding-top:2px;padding-bottom:2px} }
