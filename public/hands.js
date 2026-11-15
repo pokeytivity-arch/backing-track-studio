@@ -11,22 +11,26 @@ const TONES=[
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
 let skin=1; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
-const LMAX=[2.1,2.4,2.6,2.4,2.0];            /* finger lengths in key widths, thumb first */
+const LMAX=[2.1,2.55,2.9,2.55,1.85];
+const KY=[0,-.12,.12,-.12,-.55];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
-const FW=[1.0,0.92,0.94,0.9,0.8];
+const FW=[1.0,0.86,0.88,0.85,0.76];
 const PALMH=3.4;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
 let ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
 
 function makeHand(side){
-  const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,ext:[.75,.72,.72,.72,.72],f:0,tx:0,ty:0,c:0,cT:0,k:3,thx:0,thT:0,pm:null,pf:0,cm:null,cf:0,zf:0};
-  h.fore=el(g,'path',{}); h.thumb=fingerNodes(g); h.fing=[1,2,3,4].map(()=>fingerNodes(g));
-  h.palm=el(g,'path',{}); h.sheen=el(g,'path',{}); h.tend=[0,1,2,3].map(()=>el(g,'path',{fill:'none','stroke-linecap':'round'})); h.kn=[0,1,2,3].map(()=>el(g,'path',{fill:'none','stroke-linecap':'round'}));
+  const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,
+    fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
+  h.fore=el(g,'path',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'});
   H[side]=h; return h;
 }
-function fingerNodes(g){ const gg=el(g,'g',{}); return {g:gg,b:el(gg,'path',{'stroke-linejoin':'round'}),hl:el(gg,'path',{fill:'none','stroke-linecap':'round'}),sh:el(gg,'path',{fill:'none','stroke-linecap':'round'}),c1:el(gg,'path',{fill:'none','stroke-linecap':'round'}),c2:el(gg,'path',{fill:'none','stroke-linecap':'round'}),n:el(gg,'ellipse',{}),ns:el(gg,'ellipse',{}),t:el(gg,'text',{'text-anchor':'middle','font-family':'Arial','font-weight':800})}; }
+function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
+  for(let i=0;i<ns;i++) o.seg.push(el(gg,'path',{'stroke-linejoin':'round'}));
+  o.hl=el(gg,'path',{fill:'none','stroke-linecap':'round'}); o.n=el(gg,'ellipse',{}); o.t=el(gg,'text',{'text-anchor':'middle','font-family':'Arial','font-weight':800}); return o; }
 
 let on=true; try{ on=localStorage.getItem('ps-hands')!=='0'; }catch(_){}
 let onChange=null, ctrl=null, btn=null, sw=null;
@@ -59,15 +63,24 @@ const sx=(k,i)=>{ if(i===0) return 0; const j=i+1; return j<=k?-(k-j+1):(j-k); }
 function target(h,m,f){
   if(m==null||!f){ h.on=false; h.init=false; h.cm=null; h.cf=0; h.pm=null; h.pf=0; return; }
   const {kw,xOf,yOf}=geo, dir=h.side==='rh'?1:-1, fi=f-1;
-  if(h.cm!==m||h.cf!==f){ h.pm=h.cm; h.pf=h.cf; h.cm=m; h.cf=f; }
+  const chg=(h.cm!==m||h.cf!==f);
+  if(chg){ h.pm=h.cm; h.pf=h.cf; h.cm=m; h.cf=f; }
   let k=0;
   if(h.init&&h.pm!=null&&m!==h.pm&&Math.abs(m-h.pm)<=3){ const d=Math.sign(m-h.pm)*dir;
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   if(k) h.k=k; h.cT=k?1:0;
-  const slot=k?sx(k,fi):SLOT[fi];
-  h.on=true; h.f=f; h.tx=xOf(m)-slot*dir*kw; h.ty=yOf(m)-LMAX[fi]*kw; h.thT=h.tx+(k?0:SLOT[0])*dir*kw;
-  if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; h.thx=h.thT; h.ext=LMAX.map((_,i)=>i===fi?1:.72); }
+  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-LMAX[fi]*kw*.94+kw*.15-(fi?KY[fi]*kw:0);
+  /* the back of the hand is the steady part: it only follows part of the way (the fingers do the reaching), except when the thumb crosses */
+  if(!h.init||k){ h.tx=fullX; h.ty=fullY; } else if(chg){ h.tx+=(fullX-h.tx)*.5; h.ty+=(fullY-h.ty)*.5; }
+  h.on=true; h.f=f;
+  const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
+  for(let i=0;i<5;i++){
+    if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=yOf(m)-(i===0?kw*.3:kw*.1); }   /* thumb plays on its side, fingers on their tips */
+    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?0:SLOT[0])*dir*kw; h.fty[0]=h.ty+.8*LMAX[0]*kw-kw*.2; }
+    else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*kw+.9*LMAX[i]*kw-kw*.1; }
+  }
+  if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
 /* avail: this scale has a fingering to show. s: the step being shown (or none). Hands are only ever drawn in the Scale room. */
 function sync(kb,avail,s,cb){
@@ -82,54 +95,61 @@ function sync(kb,avail,s,cb){
   ['rh','lh'].forEach(k=>{ if(!H[k].on) set(H[k].g,{display:'none'}); });
   if(!raf){ last=0; raf=requestAnimationFrame(tick); }
 }
-function wantExt(h,i){ if(i===0){ if(Math.abs(h.thx-h.thT)>geo.kw*.6) return .42; return h.f===1?1:.8; } return i===h.f-1?1:.86; }
 function tick(t){
   raf=0; if(!svg||!host||!host.isConnected) return; const dt=Math.min(.05,last?(t-last)/1000:.016); last=t;
   const k1=1-Math.exp(-dt*13), k2=1-Math.exp(-dt*22); let moving=false;
   ['lh','rh'].forEach(k=>{ const h=H[k]; if(!h.on){ set(h.g,{display:'none'}); return; }
-    h.x+=(h.tx-h.x)*k1; h.py+=(h.ty-h.py)*k1; h.c+=(h.cT-h.c)*k1; h.thx+=(h.thT-h.thx)*k1;
-    let ex=false; LMAX.forEach((_,i)=>{ const w=wantExt(h,i); h.ext[i]+=(w-h.ext[i])*k2; if(Math.abs(w-h.ext[i])>.01) ex=true; });
-    if(ex||Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01||Math.abs(h.thT-h.thx)>.3) moving=true; draw(h); });
+    h.x+=(h.tx-h.x)*k1*.8; h.py+=(h.ty-h.py)*k1*.8; h.c+=(h.cT-h.c)*k1;
+    let mv=Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01;
+    for(let i=0;i<5;i++){ const kk=i===0?k1:k2, far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
+      h.fx[i]+=(h.ftx[i]-h.fx[i])*kk; h.fy[i]+=(ty-h.fy[i])*kk; if(Math.abs(h.ftx[i]-h.fx[i])>.3||Math.abs(ty-h.fy[i])>.3) mv=true; }
+    if(mv) moving=true; draw(h); });
   if(moving) raf=requestAnimationFrame(tick);
 }
 
 const mix=(a,b,t)=>{ const f=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)), A=f(a),B=f(b); return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')+')'; };
-/* a tapered finger from base (bx,by) to tip (tx,ty), with a soft highlight, a shaded side and two joint creases */
-function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp){
-  const dx=tx-bx, dy=ty-by, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux, wt=wb*(tp||.8), r=wt/2, ex=tx-ux*r, ey=ty-uy*r, mx=bx+(ex-bx)*.5, my=by+(ey-by)*.5, wm=wb*.88;
+/* a finger is built from segments (three for a finger, two for the thumb), each a tapered piece with its own outline so the joints show */
+function segP(ax,ay,bx,by,wa,wb,cap){
+  const dx=bx-ax, dy=by-ay, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux, r=wb/2, ex=cap?bx-ux*r:bx, ey=cap?by-uy*r:by;
   const P=(x,y,w,sd)=>(x+px*w/2*sd).toFixed(1)+' '+(y+py*w/2*sd).toFixed(1);
-  set(n.b,{d:'M'+P(bx,by,wb,1)+'L'+P(mx,my,wm,1)+'L'+P(ex,ey,wt,1)+'A'+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 0 '+P(ex,ey,wt,-1)+'L'+P(mx,my,wm,-1)+'L'+P(bx,by,wb,-1)+'Z',fill:T.s,stroke:T.e,'stroke-width':1});
-  set(n.hl,{d:'M'+P(bx+ux*kw*.3,by+uy*kw*.3,wb,-.38)+'L'+P(ex-ux*kw*.1,ey-uy*kw*.1,wt,-.3),stroke:mix('#ffffff',T.s,.55),'stroke-width':wb*.2,opacity:.55});
-  set(n.sh,{d:'M'+P(bx+ux*kw*.3,by+uy*kw*.3,wb,.5)+'L'+P(ex-ux*kw*.2,ey-uy*kw*.2,wt,.45),stroke:T.d,'stroke-width':wb*.16,opacity:.5});
-  set(n.c1,{d:'M0 0'}); set(n.c2,{d:'M0 0'});
+  return 'M'+P(ax,ay,wa,1)+'L'+P(ex,ey,wb,1)+(cap?'A'+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 0 '+P(ex,ey,wb,-1):'L'+P(ex,ey,wb,-1))+'L'+P(ax,ay,wa,-1)+'Z';
+}
+function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp,fr){
+  const ns=n.seg.length, F=fr||(ns===3?[.46,.76,1]:[.55,1]), dx=tx-bx, dy=ty-by, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux;
+  const wt=wb*(tp||.8), W=[wb]; for(let i=1;i<=ns;i++) W.push(wb+(wt-wb)*(i/ns));
+  let ax=bx, ay=by;
+  for(let i=0;i<ns;i++){ const q=F[i], qx=bx+dx*q, qy=by+dy*q, last=i===ns-1;
+    set(n.seg[i],{d:segP(ax,ay,qx,qy,W[i],W[i+1],last),fill:T.s,stroke:T.e,'stroke-width':1}); ax=qx-ux*kw*.05; ay=qy-uy*kw*.05; }
+  const o=wb*.22; set(n.hl,{d:'M'+(bx+ux*kw*.3-px*o).toFixed(1)+' '+(by+uy*kw*.3-py*o).toFixed(1)+'L'+(tx-ux*kw*.35-px*o*.8).toFixed(1)+' '+(ty-uy*kw*.35-py*o*.8).toFixed(1),stroke:mix('#ffffff',T.s,.5),'stroke-width':wb*.18,opacity:.45});
   nail(n,tx,ty,kw,num,act,T,ux,uy,wt);
 }
 function draw(h){
   const T=TONES[skin], {kw}=geo, dir=h.side==='rh'?1:-1, g=h.g, c=h.c, lerp=(a,b)=>a+(b-a)*c; set(g,{display:'',transform:'translate(0 '+(geo.HP+geo.kbH)+') scale(1 -1)'});
   const palmH=kw*PALMH, pb=h.py, pt=pb-palmH, cx=h.x;
   [[0,T.d],[.3,T.s],[.62,mix(T.s,'#ffffff',.14)],[1,T.d]].forEach(([o,col],i)=>set(gs[i],{offset:o,'stop-color':col}));
-  /* forearm and wrist, tapering into the back of the hand */
   set(h.fore,{d:'M'+(cx-kw*1.25)+' '+(pt+kw*.1)+'L'+(cx-kw*1.45)+' -6L'+(cx+kw*1.45)+' -6L'+(cx+kw*1.25)+' '+(pt+kw*.1)+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1});
-  /* thumb first, so it passes under the palm and the fingers; its tip is its own point so it can stay put while the palm slides over it */
-  const baseX=cx+lerp(-1.25,-.1)*dir*kw, baseY=pb-kw*1.9, tipX=h.thx, tipY=pb+h.ext[0]*LMAX[0]*kw-kw*.2;
-  const midX=baseX+(tipX-baseX)*.5-dir*kw*.12*(1-c), midY=baseY+(tipY-baseY)*.5;
-  finger(h.thumb,baseX,baseY,tipX,tipY,kw*1.3,T,h.f===1,1,kw,.66);
-  /* fingers 2 to 5 (the one that is playing goes on top) */
+  /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
+  const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-kw*2.0, ty0=Math.min(h.fy[0],baseY+kw*3.6);
+  const X=d=>(cx+dir*d*kw).toFixed(1), Y=d=>(pb-d*kw).toFixed(1);
+  const mound='M'+X(-1.2)+' '+Y(-.2)+'C'+X(-2.2)+' '+Y(-.2)+' '+X(-2.55)+' '+Y(1.5)+' '+X(-1.85)+' '+Y(2.7)+'Q'+X(-1.5)+' '+Y(3.3)+' '+X(-1.0)+' '+Y(3.2)+'Z';
+  set(h.m1,{d:mound,fill:T.s,stroke:T.e,'stroke-width':1,'stroke-linejoin':'round'});
+  finger(h.thumb,baseX,baseY,h.fx[0],ty0,kw*1.4,T,h.f===1,1,kw,.6,[.55,1]);
+  set(h.m2,{d:mound,fill:T.s,stroke:'none'});
+  /* fingers 2 to 5: each reaches from its knuckle to its own tip position; the one playing goes on top */
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
   if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ g.insertBefore(h.fing[i-1].g,h.palm); }); }
-  order.forEach(i=>{ const slot=lerp(SLOT[i],sx(h.k,i)), bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15, tx=cx+slot*dir*kw, ty=by+h.ext[i]*LMAX[i]*kw-kw*.1;
-    finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw); });
-  /* back of the hand: wrist narrows, knuckle line curves over the finger roots */
-  const w1=kw*1.3, w2=kw*1.9, kl=[-1.78,-1.35,-.45,.45,1.35,1.78];
-  set(h.palm,{d:'M'+(cx-w1)+' '+pt+'C'+(cx-w1*1.25)+' '+(pt+palmH*.35)+' '+(cx-w2)+' '+(pt+palmH*.4)+' '+(cx-w2)+' '+(pb-kw*.55)+'Q'+(cx-w2)+' '+(pb+kw*.1)+' '+(cx-kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx-kw*.45)+' '+(pb+kw*.22)+' '+cx+' '+(pb+kw*.2)+'Q'+(cx+kw*.45)+' '+(pb+kw*.22)+' '+(cx+kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx+w2)+' '+(pb+kw*.1)+' '+(cx+w2)+' '+(pb-kw*.55)+'C'+(cx+w2)+' '+(pt+palmH*.4)+' '+(cx+w1*1.25)+' '+(pt+palmH*.35)+' '+(cx+w1)+' '+pt+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1,'stroke-linejoin':'round'});
-  set(h.sheen,{d:'M0 0',stroke:'none'});
-  h.tend.forEach(e=>set(e,{d:'M0 0'})); h.kn.forEach(e=>set(e,{d:'M0 0'}));
+  order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*kw; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*kw*1.04; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
+    finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw,.8); });
+  /* back of the hand */
+  const w1=kw*1.3, w2=kw*1.9;
+  set(h.palm,{d:'M'+(cx-w1)+' '+pt+'C'+(cx-w1*1.25)+' '+(pt+palmH*.35)+' '+(cx-w2)+' '+(pt+palmH*.4)+' '+(cx-w2)+' '+(pb-kw*.55)+'Q'+(cx-w2)+' '+(pb+kw*.1)+' '+(cx-kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx-kw*.45)+' '+(pb+kw*.22)+' '+cx+' '+(pb+kw*.2)+'Q'+(cx+kw*.45)+' '+(pb+kw*.22)+' '+(cx+kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx+w2)+' '+(pb+kw*.1)+' '+(cx+w2)+' '+(pb-kw*.55)+'C'+(cx+w2)+' '+(pt+palmH*.4)+' '+(cx+w1*1.25)+' '+(pt+palmH*.35)+' '+(cx+w1)+' '+pt+'Z',fill:'url(#psgp)',stroke:'none'});
+  const Z=d=>(cx+dir*d*kw).toFixed(1), pH=palmH/kw;
+  set(h.pout,{d:'M'+Z(-1.35)+' '+(pb+kw*.05).toFixed(1)+'Q'+Z(-.45)+' '+(pb+kw*.22).toFixed(1)+' '+Z(0)+' '+(pb+kw*.2).toFixed(1)+'Q'+Z(.45)+' '+(pb+kw*.22).toFixed(1)+' '+Z(1.35)+' '+(pb+kw*.05).toFixed(1)+'Q'+Z(1.9)+' '+(pb+kw*.1).toFixed(1)+' '+Z(1.9)+' '+(pb-kw*.55).toFixed(1)+'C'+Z(1.9)+' '+(pt+palmH*.4).toFixed(1)+' '+Z(1.3*1.25)+' '+(pt+palmH*.35).toFixed(1)+' '+Z(1.3)+' '+pt.toFixed(1)+'M'+Z(-1.3)+' '+pt.toFixed(1)+'C'+Z(-1.3*1.25)+' '+(pt+palmH*.35).toFixed(1)+' '+Z(-1.9)+' '+(pt+palmH*.4).toFixed(1)+' '+Z(-1.9)+' '+(pt+palmH*.62).toFixed(1),stroke:T.e,'stroke-width':1});
 }
 function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   /* a small numbered badge on the fingertip (yellow on the finger that is playing) */
   const bx=tx-ux*kw*.28, by=ty-uy*kw*.28, r=kw*.33;
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
-  set(n.ns,{rx:0,ry:0});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num);
 }
 window.PSHANDS={sync,tones:TONES,isOn:()=>on};
