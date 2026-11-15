@@ -11,12 +11,12 @@ const TONES=[
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
 let skin=1; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
-const LMAX=[2.0,2.35,2.6,2.35,1.85];
-const KY=[0,-.12,.12,-.12,-.55];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
+const LMAX=[2.1,2.5,2.75,2.5,1.95];
+const KY=[0,-.1,.1,-.1,-.45];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
-const PALMH=3.4;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
+const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
 let ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
@@ -48,11 +48,11 @@ function mount(h0){
 }
 function layout(kb){
   const sv=kb&&kb.firstElementChild, W=(sv&&sv.clientWidth)||kb.offsetWidth, KH=(sv&&sv.clientHeight)||kb.offsetHeight; if(!W||!KH) return false;
-  const kw=W*14/(36*14+2), HP=24, lk=kw*Math.min(1,KH*.6/(Math.max(...LMAX)*kw)), wh=[0,2,4,5,7,9,11];
+  const kw=W*14/(36*14+2), HP=24, lk=kw*Math.min(1,KH/(4.25*kw)), wh=[0,2,4,5,7,9,11];
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; for(let q=36;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; const u=white?1+(n+.5)*14:1+n*14; return u/(36*14+2)*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.58:HP+KH*0.73};
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.92:HP+KH*0.99};
   host.style.paddingTop=''; host.style.paddingBottom=HP+'px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
@@ -71,15 +71,15 @@ function target(h,m,f){
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   if(k) h.k=k; h.cT=k?1:0;
-  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-2.3*lk*.94+kw*.15;
+  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-2.6*lk*.94+kw*.15;
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
   h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
   for(let i=0;i<5;i++){
-    if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=yOf(m)-(i===0?kw*.3:kw*.1); }   /* thumb plays on its side, fingers on their tips */
-    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.8*LMAX[0]*lk-kw*.2; }
-    else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*kw+.88*LMAX[i]*lk-kw*.1; }
+    if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?yOf(m)-lk*1.1:yOf(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
+    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+1.4*lk; }
+    else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.88*LMAX[i]*lk-kw*.1; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
@@ -126,11 +126,11 @@ function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp,fr){
 }
 function draw(h){
   const T=TONES[skin], {kw,lk}=geo, dir=h.side==='rh'?1:-1, g=h.g, c=h.c, lerp=(a,b)=>a+(b-a)*c; set(g,{display:'',transform:'translate(0 '+(geo.HP+geo.kbH)+') scale(1 -1)'});
-  const palmH=kw*PALMH, pb=h.py, pt=pb-palmH, cx=h.x;
+  const palmH=lk*PALMH, pb=h.py, pt=pb-palmH, cx=h.x;
   [[0,T.d],[.3,T.s],[.62,mix(T.s,'#ffffff',.14)],[1,T.d]].forEach(([o,col],i)=>set(gs[i],{offset:o,'stop-color':col}));
   set(h.fore,{d:'M'+(cx-kw*1.1)+' '+(pt+kw*.1)+'L'+(cx-kw*1.3)+' -6L'+(cx+kw*1.3)+' -6L'+(cx+kw*1.1)+' '+(pt+kw*.1)+'Z',fill:'url(#psgp)',stroke:T.e,'stroke-width':1});
   /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
-  const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.8, ty0=Math.min(h.fy[0],baseY+lk*3.4);
+  const baseX=cx+lerp(-1.45,-.1)*dir*kw, baseY=pb-lk*1.2, ty0=Math.min(h.fy[0],baseY+lk*3.4);
   const X=d=>(cx+dir*d*kw).toFixed(1), Y=d=>(pb-d*kw).toFixed(1);
   const mound='M'+X(-1.2)+' '+Y(-.2)+'C'+X(-2.1)+' '+Y(-.2)+' '+X(-2.4)+' '+Y(1.5)+' '+X(-1.85)+' '+Y(2.7)+'Q'+X(-1.5)+' '+Y(3.3)+' '+X(-1.0)+' '+Y(3.2)+'Z';
   set(h.m1,{d:mound,fill:T.s,stroke:T.e,'stroke-width':1,'stroke-linejoin':'round'});
@@ -139,7 +139,7 @@ function draw(h){
   /* fingers 2 to 5: each reaches from its knuckle to its own tip position; the one playing goes on top */
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
   if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ g.insertBefore(h.fing[i-1].g,h.palm); }); }
-  order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*kw; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*lk*1.2; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
+  order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*lk; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*lk*1.2; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
     finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw,.8); });
   /* back of the hand */
   const w1=kw*1.1, w2=kw*1.7;
