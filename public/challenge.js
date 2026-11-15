@@ -18,15 +18,11 @@ const notesOf=(root,f)=>f.split(' ').map(t=>spellTok(root,t));
 /* ---------- the catalogue of practice items ---------- */
 const S=(id,name,f)=>({id,name,kind:'scale',f}), C=(id,name,f,sfx)=>({id,name,kind:'chord',f,sfx}), A=(id,name,q)=>({id,name,kind:'ask',q});
 const P=(id,name,list,minor)=>({id,name,kind:'prog',list,minor:!!minor});
+const LIBSUBS=()=>{ const out=[],seen={}; ((window.SCALELIB&&SCALELIB.list)||[]).forEach(x=>{ const nm=(x.fam==='regular'?'Regular: ':'Exotic: ')+x.grp; let g=seen[nm]; if(!g){ g=seen[nm]={name:nm,items:[]}; out.push(g); } g.items.push(S(x.id,x.name,x.deg,x.keys)); }); return out; };
 const CAT=[
  {name:'Warm-Up',groups:[
   {name:'Scales',subs:[
-   {name:'Traditional scales',items:[S('sc.major','Natural major scale','1 2 3 4 5 6 7'),S('sc.nminor','Natural minor scale','1 2 b3 4 5 b6 b7'),S('sc.mmin','Melodic minor scale','1 2 b3 4 5 6 7'),S('sc.hmin','Harmonic minor scale','1 2 b3 4 5 b6 7')]},
-   {name:'Pentatonic scales',items:[S('sc.pmaj','Major pentatonic','1 2 3 5 6'),S('sc.pmin','Minor pentatonic','1 b3 4 5 b7'),S('sc.pmajb','Major pentatonic blues','1 2 b3 3 5 6'),S('sc.pminb','Minor pentatonic blues','1 b3 4 b5 5 b7')]},
-   {name:'Hexatonic scales',items:[A('sc.hex1','Hexatonic scale (first version)','Teach me the hexatonic scale, first version.'),A('sc.hex2','Hexatonic scale (second version)','Teach me the hexatonic scale, second version.')]},
-   {name:'Octatonic scale',items:[S('sc.oct1','Octatonic whole-half','1 2 b3 4 b5 b6 6 7'),S('sc.oct2','Octatonic half-whole','1 b2 b3 3 #4 5 6 b7')]},
-   {name:'Authentic modes',items:[S('sc.ion','Ionian','1 2 3 4 5 6 7'),S('sc.dor','Dorian','1 2 b3 4 5 6 b7'),S('sc.phr','Phrygian','1 b2 b3 4 5 b6 b7'),S('sc.lyd','Lydian','1 2 3 #4 5 6 7'),S('sc.mix','Mixolydian','1 2 3 4 5 6 b7'),S('sc.aeo','Aeolian','1 2 b3 4 5 b6 b7'),S('sc.loc','Locrian','1 b2 b3 4 b5 b6 b7')]},
-   {name:'Synthetic modes',items:[S('sc.ukd','Ukrainian Dorian','1 2 b3 #4 5 6 b7'),S('sc.sph','Spanish Phrygian','1 b2 3 4 5 b6 b7'),S('sc.lyd7','Lydian dominant','1 2 3 #4 5 6 b7'),S('sc.mixb6','Mixolydian ♭6','1 2 3 4 5 b6 b7'),S('sc.sloc','Super Locrian','1 b2 b3 b4 b5 b6 b7')]},
+   ...LIBSUBS(),
    {name:'Bebop scales',items:[S('sc.bbmaj','Major bebop','1 2 3 4 5 #5 6 7'),S('sc.bbdor','Dorian bebop','1 2 b3 3 4 5 6 b7'),S('sc.bbmix','Mixolydian bebop','1 2 3 4 5 6 b7 7')]}]},
   {name:'Chords',subs:[
    {name:'Triads',items:[C('ch.maj','Major triad','1 3 5',''),C('ch.min','Minor triad','1 b3 5','m'),C('ch.dim','Diminished triad','1 b3 b5','dim'),C('ch.aug','Augmented triad','1 3 #5','aug'),C('ch.sus2','Sus2 chord','1 2 5','sus2'),C('ch.sus4','Sus4 chord','1 4 5','sus4')]},
@@ -319,7 +315,7 @@ function sheet(it){
   const draw=()=>{
     m.innerHTML='<div style="display:flex;justify-content:space-between;align-items:start"><div><div style="font:800 22px var(--display,var(--body))">'+esc(it.name)+'</div><div style="color:var(--muted);font-size:13px">'+esc(it.grp||'')+'</div></div><button id="x">Close</button></div>';
     const kind=it.kind; let list=null, mode='note';
-    if(kind!=='ask'){ const row=el('div','',''); row.style.margin='12px 0'; row.innerHTML='Key: <select id="k">'+KEYS.map(k=>'<option value="'+k+'"'+(k===keyPick?' selected':'')+'>'+prettyKey(k)+(it.minor?' minor':'')+'</option>').join('')+'</select>'; m.appendChild(row); row.querySelector('#k').onchange=e=>{ keyPick=e.target.value; draw(); }; }
+    if(kind!=='ask'){ const row=el('div','',''); row.style.margin='12px 0'; const KS=it.keys?KEYS.filter(k=>it.keys.includes(k)):KEYS; if(!KS.includes(keyPick)) keyPick=KS[0]; row.innerHTML='Key: <select id="k">'+KS.map(k=>'<option value="'+k+'"'+(k===keyPick?' selected':'')+'>'+prettyKey(k)+(it.minor?' minor':'')+'</option>').join('')+'</select>'; m.appendChild(row); row.querySelector('#k').onchange=e=>{ keyPick=e.target.value; draw(); }; }
     const out=el('div'); m.appendChild(out);
     if(kind==='scale'){ const ns=notesOf(keyPick,it.f); out.innerHTML=ns.concat([ns[0]]).map(n=>'<span class="chip">'+n+'</span>').join('')+'<p style="color:var(--muted);font-size:13px">Formula: '+esc(it.f.replace(/b/g,'♭').replace(/#/g,'♯'))+'</p>'; list=ns.concat([ns[0]]).map(n=>({name:n,notes:[n]})); mode='note'; }
     else if(kind==='chord'){ const ns=notesOf(keyPick,it.f); out.innerHTML='<div style="font:700 20px var(--body);margin-bottom:6px">'+prettyKey(keyPick)+esc(it.sfx)+'</div>'+ns.map(n=>'<span class="chip">'+n+'</span>').join(''); list=[{name:prettyKey(keyPick)+it.sfx,notes:ns}]; mode='chord'; }

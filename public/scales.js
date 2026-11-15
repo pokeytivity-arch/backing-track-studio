@@ -17,25 +17,10 @@ const SC={ // notes, first midi note (right hand, octave 4), right-hand fingers,
  'C#':{n:'',m:61,rh:'',lh:''}, 'D#':{n:'',m:63,rh:'',lh:''}, 'F#':{n:'',m:66,rh:'',lh:''}, 'G#':{n:'',m:68,rh:'',lh:''}, 'A#':{n:'',m:70,rh:'',lh:''}
 };
 const ORDER=['C','G','D','A','E','B','F#','C#','G#','D#','A#','F','Bb','Eb','Ab','Db','Gb'];
-/* Scale types: seven-note formulas (semitones above the tonic). Only major carries the lessons' fingering for now. */
-const TYPES=[
- {id:'major',g:'Major',l:'Major',f:[0,2,4,5,7,9,11,12]},
- {id:'nat',g:'Minor',l:'Natural minor',f:[0,2,3,5,7,8,10,12]},
- {id:'harm',g:'Minor',l:'Harmonic minor',f:[0,2,3,5,7,8,11,12]},
- {id:'mel',g:'Minor',l:'Melodic minor',f:[0,2,3,5,7,9,11,12]},
- {id:'ion',g:'Modes of the major scale',l:'Ionian',f:[0,2,4,5,7,9,11,12]},
- {id:'dor',g:'Modes of the major scale',l:'Dorian',f:[0,2,3,5,7,9,10,12]},
- {id:'phr',g:'Modes of the major scale',l:'Phrygian',f:[0,1,3,5,7,8,10,12]},
- {id:'lyd',g:'Modes of the major scale',l:'Lydian',f:[0,2,4,6,7,9,11,12]},
- {id:'mix',g:'Modes of the major scale',l:'Mixolydian',f:[0,2,4,5,7,9,10,12]},
- {id:'aeo',g:'Modes of the major scale',l:'Aeolian',f:[0,2,3,5,7,8,10,12]},
- {id:'loc',g:'Modes of the major scale',l:'Locrian',f:[0,1,3,5,6,8,10,12]},
- {id:'dorb2',g:'Modes of the melodic minor',l:'Dorian ♭2',f:[0,1,3,5,7,9,10,12]},
- {id:'lydaug',g:'Modes of the melodic minor',l:'Lydian augmented',f:[0,2,4,6,8,9,11,12]},
- {id:'lyddom',g:'Modes of the melodic minor',l:'Lydian dominant',f:[0,2,4,6,7,9,10,12]},
- {id:'mixb6',g:'Modes of the melodic minor',l:'Mixolydian ♭6',f:[0,2,4,5,7,8,10,12]},
- {id:'super',g:'Modes of the melodic minor',l:'Super Locrian',f:[0,1,3,4,6,8,10,12]}
-];
+/* Scale types come from the library (scale-library.js): degrees against the major scale. Only Natural major carries the lessons' fingering for now. */
+const MAJS={1:0,2:2,3:4,4:5,5:7,6:9,7:11};
+const LIB=(window.SCALELIB&&SCALELIB.list)||[];
+const TYPES=LIB.map(x=>({id:x.rid,lid:x.id,g:x.grp,l:x.name,fam:x.fam,d:x.deg.split(' '),keys:x.keys,s:x.deg.split(' ').map(t=>{ const m=/^(bb|b|#)?(\d)$/.exec(t); return MAJS[+m[2]]+(!m[1]?0:m[1]==='#'?1:m[1]==='b'?-1:-2); })}));
 /* Enharmonic keys sound the same, so they share the fingering of their twin */
 /* Fingering families from the lessons. lhm = left hand over several octaves: first octave, repeated octave, last note */
 ['C','G','D','A','E','B'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
@@ -44,36 +29,36 @@ SC.Gb.lhm={f:'4 3 2 1 3 2 1',r:'4 3 2 1 3 2 1',l:'4'};
 const TWIN={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
 Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; SC[k].lhm=SC[TWIN[k]].lhm; });
 const LET='CDEFGAB', NAT={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-function spellScale(key,f){ // letters in order from the tonic, accidentals from the formula
+function spellDeg(key,degs){ // letters follow the scale degree; accidentals follow the formula
   const r=key[0], i0=LET.indexOf(r), base=NAT[r]+(key[1]==='b'?-1:key[1]==='#'?1:0);
-  return f.map((semi,i)=>{ const L=LET[(i0+i)%7]; let d=((base+semi)-NAT[L])%12; if(d>6) d-=12; if(d<-6) d+=12; return L+(d>0?'#'.repeat(d):d<0?'b'.repeat(-d):''); });
+  return degs.map(t=>{ const m=/^(bb|b|#)?(\d)$/.exec(t), semi=MAJS[+m[2]]+(!m[1]?0:m[1]==='#'?1:m[1]==='b'?-1:-2), L=LET[(i0+(+m[2])-1)%7]; let d=((base+semi)-NAT[L])%12; if(d>6) d-=12; if(d<-6) d+=12; return L+(d>0?'#'.repeat(d):d<0?'b'.repeat(-d):''); });
 }
+const typeOf=id=>TYPES.find(t=>t.id===id)||TYPES[0];
+const dispName=nm=>nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
+function allowedKeys(type){ const T=typeOf(type); return T.keys?ORDER.filter(k=>T.keys.includes(k)):ORDER; }
 function buildContrary(key,type,oct){
   oct=Math.max(1,Math.min(2,Math.round(+oct)||1));
-  const T=TYPES.find(t=>t.id===type)||TYPES[0], d=SC[key], names=spellScale(key,T.f), f7=T.f.slice(0,7), N=7*oct;
-  const dsp=nm=>nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
+  const T=typeOf(type), d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct;
   const T0=60+d.m%12; /* hands meet on the tonic; two octaves open and close always fit between C2 and C7 */
   const steps=[];
-  for(let n=0;n<=N;n++){
-    const q=Math.floor(n/7), r=n%7, top=n===N;
-    const up=top?12*oct:f7[r]+12*q, down=top?12*oct:(r===0?12*q:12*q+(12-f7[7-r]));
-    const rn=top?names[0]:names[r], ln=top?names[0]:names[(7-r)%7];
+  for(let i=0;i<=N;i++){
+    const q=Math.floor(i/n), r=i%n, top=i===N;
+    const up=top?12*oct:f[r]+12*q, down=top?12*oct:(r===0?12*q:12*q+(12-f[n-r]));
+    const rn=top?names[0]:names[r], ln=top?names[0]:names[(n-r)%n];
     const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:'',lfing:'',spell:{}};
-    st.spell[rm]=dsp(rn); st.spell[lm]=dsp(ln); steps.push(st); }
+    st.spell[rm]=dispName(rn); st.spell[lm]=dispName(ln); steps.push(st); }
   return steps;
 }
 function build(key,hand,type,oct,motion){
   if(motion==='contrary') return buildContrary(key,type,oct);
   oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
-  const T=TYPES.find(t=>t.id===type)||TYPES[0], isMaj=T.id==='major', d=SC[key], names=spellScale(key,T.f);
-  const f7=T.f.slice(0,7), N=7*oct, p=d.m%12;
+  const T=typeOf(type), isMaj=T.id==='major', d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct, p=d.m%12;
   const rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null;
   /* start notes keep every hand inside the keyboard (C2 to C7) */
   const r0=(60+p+12*oct<=96)?60+p:48+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=48+p;
   const steps=[];
   for(let i=0;i<=N;i++){
-    const top=i===N, deg=i%7, semi=top?12*oct:f7[deg]+12*Math.floor(i/7), nm=top?names[0]:names[deg];
-    const dsp=nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
+    const top=i===N, deg=i%n, semi=top?12*oct:f[deg]+12*Math.floor(i/n), nm=top?names[0]:names[deg], dsp=dispName(nm);
     const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:'',spell:{}};
     if(hand==='lh'||hand==='both'){ const m=(hand==='both'?lBoth:lOnly)+semi; st.lh=[m]; st.spell[m]=dsp; }
     if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
@@ -82,6 +67,7 @@ function build(key,hand,type,oct,motion){
     steps.push(st); }
   return steps;
 }
+function acc(key){ const n=spellDeg(key,TYPES[0].d).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
 let ov=null;
 function open(){
   if(!ov){
@@ -106,6 +92,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-function acc(key){ const n=spellScale(key,TYPES[0].f).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
-window.SCALES={open,build,buildContrary,acc,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,buildContrary,allowedKeys,acc,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();
