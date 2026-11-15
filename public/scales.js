@@ -34,6 +34,9 @@ const TYPES=[
  {id:'mixb6',g:'Modes of the melodic minor',l:'Mixolydian ♭6',f:[0,2,4,5,7,8,10,12]},
  {id:'super',g:'Modes of the melodic minor',l:'Super Locrian',f:[0,1,3,4,6,8,10,12]}
 ];
+/* Enharmonic keys sound the same, so they share the fingering of their twin */
+const TWIN={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
+Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; });
 const LET='CDEFGAB', NAT={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function spellScale(key,f){ // letters in order from the tonic, accidentals from the formula
   const r=key[0], i0=LET.indexOf(r), base=NAT[r]+(key[1]==='b'?-1:key[1]==='#'?1:0);
