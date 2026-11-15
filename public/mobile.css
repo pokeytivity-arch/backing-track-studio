@@ -151,7 +151,8 @@
   html.ps-rot body #prRoom .p-sel select{min-height:38px}
   html.ps-rot body #prRoom .e-ctl{gap:6px 10px}
   html.ps-rot body #prRoom .e-kb .e-lbl{display:none}
-  html.ps-rot body #prRoom .e-kb #prKb svg{height:88px!important}
+  html.ps-rot body #prRoom .e-kb #prKb svg{height:72px!important}
+  html.ps-rot body #prRoom .p-tab{height:16px;margin:0 0 2px} html.ps-rot body #prRoom .p-tab span{font-size:9px;border-radius:4px}
 }
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom[data-kind=scales] .e-now{grid-template-columns:1fr} html.ps-rot body #prRoom[data-kind=scales] .e-now>div:first-child{display:none} }
 

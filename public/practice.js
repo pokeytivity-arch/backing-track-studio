@@ -35,7 +35,7 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-rng{display:inline-flex;align-items:center;gap:8px;font:700 13px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
 #prRoom .p-rng input[type=range]{width:130px;accent-color:var(--hi,#ffd43b)}
 #prRoom .p-rng input[type=checkbox]{width:18px;height:18px;accent-color:var(--hi,#ffd43b)}
-#prRoom .e-kb .e-lbl{gap:12px;flex-wrap:wrap}
+#prRoom .e-kb .e-lbl{gap:12px;flex-wrap:wrap} #prRoom .p-tab{position:relative;height:22px;margin:0 0 3px} #prRoom .p-tab span{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;border-radius:5px;background:#1a2340;color:#7d8bb0;font:700 11px/1 system-ui,sans-serif;letter-spacing:-.3px;white-space:nowrap;overflow:visible;transition:background .12s,color .12s} #prRoom .p-tab span.on{color:#fff;box-shadow:0 0 10px currentColor} #prRoom .p-tab span.on.l{background:${LH};color:#fff;box-shadow:0 0 12px ${LH}} #prRoom .p-tab span.on.r{background:${RH};color:#fff;box-shadow:0 0 12px ${RH}}
 `; document.head.appendChild(css);
 
 function build(){
@@ -94,11 +94,24 @@ function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') retur
 function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
-  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:36,hi:96,height:64,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
-  wrap.replaceChildren(svg);
+  wrap.replaceChildren(svg); tab(svg,s);
   if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
+}
+/* the name tab above the keys: every note of the scale has a cell over its key showing its letter, solfa or number; the note being played lights up in its hand's colour */
+function tab(svg,s){
+  const kbw=$('#prRoom .p-kbw'); if(!kbw) return; let bar=kbw.querySelector('.p-tab');
+  if(kind!=='scales'||!steps.length){ if(bar) bar.remove(); return; }
+  if(!bar){ bar=el('div','p-tab'); bar.setAttribute('aria-hidden','true'); kbw.insertBefore(bar,kbw.firstChild); }
+  const vb=svg.viewBox.baseVal, Wv=vb&&vb.width||1, pos={}; svg.querySelectorAll('rect[data-m]').forEach(r=>{ pos[r.dataset.m]=(+r.getAttribute('x')+ +r.getAttribute('width')/2)/Wv*100; });
+  const cell={}; steps.forEach(x=>{ [...(x.lh||[]).map(m=>[m,'l']),...(x.rh||[]).map(m=>[m,'r'])].forEach(([m,hd])=>{ if(!(m in cell)) cell[m]={t:lab(x,false),hd}; }); });
+  const on={}; if(s){ (s.lh||[]).forEach(m=>{ on[m]='l'; cell[m]=Object.assign(cell[m]||{},{t:lab(s,curDesc)}); }); (s.rh||[]).forEach(m=>{ on[m]='r'; cell[m]=Object.assign(cell[m]||{},{t:lab(s,curDesc)}); }); }
+  bar.replaceChildren(); const cw=6.8/Wv*100;
+  const blk=m=>[1,3,6,8,10].includes(((m%12)+12)%12), u=1/Wv*100;
+  Object.keys(cell).forEach(m=>{ if(pos[m]==null) return; m=+m; let x=pos[m]; if(!blk(m)){ if(blk(m-1)&&(m-1) in cell) x+=1.9*u; if(blk(m+1)&&(m+1) in cell) x-=1.9*u; }
+    const c=el('span',on[m]?'on '+on[m]:'',cell[m].t); c.style.left=(x-cw/2)+'%'; c.style.width=cw+'%'; bar.appendChild(c); });
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 
