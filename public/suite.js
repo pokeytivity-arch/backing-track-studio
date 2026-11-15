@@ -195,7 +195,7 @@ function renderHub(){
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
 }
-function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
+function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.documentElement.classList.remove('ps-boot'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }
 
 /* ---------- moving between destinations ---------- */
