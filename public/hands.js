@@ -82,8 +82,8 @@ function target(h,m,f){
   const {kw,lk,xOf,yOf}=geo, dir=h.side==='rh'?1:-1, fi=f-1;
   const chg=(h.cm!==m||h.cf!==f);
   if(chg){ h.pm=h.cm; h.pf=h.cf; h.cm=m; h.cf=f; }
-  let k=0;
-  if(h.init&&h.pm!=null&&m!==h.pm&&Math.abs(m-h.pm)<=3){ const d=Math.sign(m-h.pm)*dir;
+  let k=0; if(chg) h.rel=false;
+  if(!h.rel&&h.init&&h.pm!=null&&m!==h.pm&&Math.abs(m-h.pm)<=3){ const d=Math.sign(m-h.pm)*dir;
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   const over=!!k&&h.init&&h.pm!=null&&h.pf===1&&f>=2&&k===f; h.over=over?fi:-1;   /* the thumb stays on its key while this finger passes over it */
@@ -126,6 +126,7 @@ function tick(t){
     let mv=Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01;
     for(let i=0;i<5;i++){ const ov=i===h.over, kk=i===0?k1:(ov?1-Math.exp(-dt*8):k2), far=i===0&&Math.abs(h.ftx[0]-h.fx[0])>geo.kw*.6, ty=ov&&Math.abs(h.ftx[i]-h.fx[i])>geo.kw*.5?h.fty[i]-geo.kw*.9:far&&h.f!==1?h.fty[0]-geo.kw*.7:(far?h.fty[0]-geo.kw*.9:h.fty[i]);
       h.fx[i]+=(h.ftx[i]-h.fx[i])*kk; h.fy[i]+=(ty-h.fy[i])*kk; if(Math.abs(h.ftx[i]-h.fx[i])>.3||Math.abs(ty-h.fy[i])>.3) mv=true; }
+    if(h.cT===1&&!h.rel&&h.f){ const i=h.f-1; if(Math.abs(h.ftx[i]-h.fx[i])<geo.kw*.12&&Math.abs(h.fty[i]-h.fy[i])<geo.kw*.3){ h.rel=true; target(h,h.cm,h.cf); mv=true; } }
     if(mv) moving=true; draw(h); });
   if(moving) raf=requestAnimationFrame(tick);
 }
