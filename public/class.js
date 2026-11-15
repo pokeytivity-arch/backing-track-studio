@@ -620,7 +620,7 @@ window.CLASS={
   askAbout(q,opts){ if(window.SUITE) SUITE.go('class'); setTimeout(()=>ask(q,opts),120); },
   clearAll,clearBoard,clearKeys,clearChat,
   stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },
-  reopenPractice(k){ practice=k; syncBar(); if(window.PRACTICE) PRACTICE.open(k); },
+  reopenPractice(k){ practice=k; syncBar(); if(window.PRACTICE) PRACTICE.open(k,{resume:true}); },
   showChords(title,list){ const st=stepsFrom(list); if(st.length) setSteps(title,st,{}); }
 };
 build();

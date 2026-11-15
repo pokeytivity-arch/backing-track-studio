@@ -49,7 +49,19 @@ function build(){
   document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape'&&!/INPUT|SELECT/.test((e.target||{}).tagName||'')) close(); });
 }
 let from=null;
-function open(k){ if(!ov) build(); try{ from=(window.SUITE&&SUITE.current())||from; }catch(_){} kind=k==='chords'?'chords':'scales'; ov.dataset.kind=kind; ov.hidden=false; clr(); steps=[]; cur=-1; render(); }
+const DEF={family:'regular',type:'major',key:'C',motion:'similar',mode:'learn',oct:1,hand:'rh',dir:'up',sys:'letter',bpm:80,loop:false};
+const isDef=()=>Object.keys(DEF).every(k=>st[k]===DEF[k]);
+function resumeAsk(){
+  const SCN=window.SCALES, TL=((SCN&&SCN.types||[]).find(t=>t.id===st.type)||{l:'Major'}).l, what=SYMK(st.key)+' '+(st.type==='major'?'major':TL)+(st.oct>1?', '+st.oct+' octaves':'');
+  const m=el('div','ps-menu'), sh=el('div','ps-sheet'), t=el('div','ps-t','Welcome back'), body=el('div','ps-l'); body.style.padding='14px 16px';
+  body.appendChild(el('p',null,'You left the scale room on '+what+'. Continue from where you left off, or reset to the default settings?')); body.lastChild.style.margin='0 0 12px';
+  const row=el('div'); row.style.cssText='display:flex;gap:10px;flex-wrap:wrap'; const go=el('button','e-btn pri','Continue where I left off'), rs=el('button','e-btn','Reset to default');
+  [go,rs].forEach(b=>{ b.type='button'; b.style.cssText='flex:1 1 150px;justify-content:center;text-align:center;border:1.5px solid #3a4a74;border-radius:999px'; row.appendChild(b); });
+  go.style.background='#ffd24d'; go.style.color='#151b28'; go.style.fontWeight='800'; rs.style.border='1.5px solid #3a4a74';
+  go.onclick=()=>m.remove(); rs.onclick=()=>{ Object.assign(st,DEF); save(); m.remove(); loadScale(); render(); };
+  body.appendChild(row); sh.append(t,body); m.appendChild(sh); document.body.appendChild(m); go.focus();
+}
+function open(k,o){ if(!ov) build(); try{ from=(window.SUITE&&SUITE.current())||from; }catch(_){} kind=k==='chords'?'chords':'scales'; ov.dataset.kind=kind; ov.hidden=false; clr(); steps=[]; cur=-1; render(); if(kind==='scales'&&!(o&&o.resume)&&!isDef()) resumeAsk(); }
 function close(){ clr(); if(ov) ov.hidden=true; try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
 
 /* ---------- typed chord names: "D minor 9", "C major seventh", "Dm7 G7 Cmaj7" ---------- */
@@ -139,7 +151,7 @@ function toStudio(){
   const list=order.map((i,p)=>{ const desc=p>0&&order[p]<order[p-1], s=desc&&steps[i].alt?steps[i].alt:steps[i], o={label:lab(s,desc),lh:(s.lh||[]).slice(),rh:(s.rh||[]).slice(),fing:s.fing||'',lfing:s.lfing||'',spell:null};
     if(sysNow()!=='letter'&&s.sol){ o.spell={}; [...o.lh,...o.rh].forEach(m=>{ o.spell[m]=o.label; }); } else o.spell=Object.assign({},s.spell||{}); return o; });
   const title=SYMK(st.key)+' '+(st.type==='major'?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':'')+(st.motion==='contrary'?' · contrary':'')+' scale';
-  const back=from||'class'; close(); if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if(back==='class'&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('scales'); else open('scales'); },260); }); };
+  const back=from||'class'; close(); if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if(back==='class'&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('scales'); else open('scales',{resume:true}); },260); }); };
   window.STUDIO_SCALE({title,steps:list,hand:st.hand,key:st.key,type:st.type});
 }
 function transport(ctl){
@@ -176,7 +188,7 @@ function render(){
     if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
-      r1.append(oc,rg[1],rg[0],ask); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d,pl,$('prStudio')); ctl.append(r1,r2); hand.classList.add('sm');
+      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d); r3.append(ask,$('#prStudio'),pl); ctl.append(r1,r2,r3); hand.classList.add('sm');
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); }
     loadScale();
   } else {
