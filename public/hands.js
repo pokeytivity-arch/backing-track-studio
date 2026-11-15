@@ -10,15 +10,15 @@ const TONES=[
   {n:'Tan',s:'#c98f5f',d:'#a66d42',e:'#8a5733'},
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
-const SKINM=[ '1.2 0 0 0 .03  0 1.4 0 0 .04  0 0 1.5 0 .05  0 0 0 1 0', '1.1 0 0 0 .01  0 1.2 0 0 .015  0 0 1.25 0 .015  0 0 0 1 0', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0', '.78 0 0 0 0  0 .68 0 0 0  0 0 .62 0 0  0 0 0 1 0', '.52 0 0 0 0  0 .42 0 0 0  0 0 .36 0 0  0 0 0 1 0' ]; let skinM=null;
-let skin=2; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
+const SKINM=[ '1.75 0 0 0 .1  0 1.95 0 0 .1  0 0 2.05 0 .1  0 0 0 1 0', '1.5 0 0 0 .05  0 1.6 0 0 .05  0 0 1.62 0 .04  0 0 0 1 0', '1.25 0 0 0 .02  0 1.27 0 0 .015  0 0 1.25 0 .01  0 0 0 1 0', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0', '.8 0 0 0 0  0 .74 0 0 0  0 0 .7 0 0  0 0 0 1 0' ]; let skinM=null;
+let skin=3; try{ const r=localStorage.getItem('ps-skin'), v=r===null?-1:+r; if(v>=0&&v<TONES.length) skin=v; }catch(_){}
 const LMAX=[1.6,2.0,2.2,2.0,1.55];       /* reach from the knuckle to the fingertip, in key widths, when the finger is playing (a resting finger is curled, so it looks shorter from above) */
 const KY=[0,-.08,.08,-.08,-.3];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
 const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
-let PH={ready:false,meta:null}; try{ fetch('hands/meta.json').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } }).catch(()=>{}); }catch(_){}
+let PH={ready:false,meta:null}; try{ fetch('hands/meta.json?v=2').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } }).catch(()=>{}); }catch(_){}
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
 const set=(e,a)=>{ for(const k in a) e.setAttribute(k,a[k]); };
@@ -27,7 +27,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:'hands/'+n+'.webp',preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:'hands/'+n+'.webp?v=2',preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
@@ -205,7 +205,7 @@ function draw(h){
 
 /* The hands are cut from a real photo: a back-of-hand piece, a thumb and four fingers. Each finger is turned and stretched from its own base so its tip lands where the lessons say. */
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
-  const M=PH.meta, SCp=M.scale, k=kw/(155*SCp), ay0=pb-kw*.15, set2=set;
+  const M=PH.meta, SCp=M.scale, k=kw/((M.unit||155)*SCp), ay0=pb-kw*.15, set2=set;
   if(skinM) skinM.setAttribute('values',SKINM[skin]);
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
