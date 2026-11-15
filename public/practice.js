@@ -130,14 +130,14 @@ function handPos(){
       grp.push(i); });
     flush(); });
 }
-/* on a phone the keyboard shows only the octaves the scale uses (at least three), so the keys are bigger */
+/* on a phone the keyboard shows three octaves, placed over the notes the scale uses */
 function kbRange(){
   const ph=document.documentElement.classList.contains('ps-rot')||matchMedia('(max-height:500px) and (pointer:coarse)').matches;
   if(!ph||kind!=='scales'||!steps.length) return [36,96];
   const ms=steps.flatMap(x=>[...(x.lh||[]),...(x.rh||[]),...Object.values(x.rpos||{}),...Object.values(x.lpos||{})]); if(!ms.length) return [36,96];
-  let lo=Math.floor(Math.min(...ms)/12)*12, hi=Math.ceil((Math.max(...ms)+1)/12)*12;
-  while(hi-lo<36){ if(lo>24) lo-=12; if(hi-lo<36&&hi<108) hi+=12; if(lo<=24&&hi>=108) break; }
-  return [Math.max(24,lo),Math.min(108,hi)];
+  /* always three octaves, placed over the notes in use */
+  const mid=(Math.min(...ms)+Math.max(...ms))/2; let lo=Math.round((mid-18)/12)*12; lo=Math.max(24,Math.min(72,lo));
+  return [lo,lo+36];
 }
 function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 
