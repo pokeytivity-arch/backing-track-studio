@@ -47,6 +47,7 @@ const sf=t=>t.split(' ');
 const SOLFA={
  major:{up:sf('do re mi fa sol la ti')}, nat:{up:sf('la ti do re mi fa sol')}, harm:{up:sf('la ti do re mi fa si')}, mel:{up:sf('la ti do re mi fi si'),down:sf('la ti do re mi fa sol')},
  ion:{up:sf('do re mi fa sol la ti')}, dor:{up:sf('re mi fa sol la ti do')}, phr:{up:sf('mi fa sol la ti do re')},
+ lyd:{up:sf('fa sol la ti do re mi')}, mix:{up:sf('sol la ti do re mi fa')}, aeo:{up:sf('la ti do re mi fa sol')}, loc:{up:sf('ti do re mi fa sol la')},
  chr:{up:sf('do di re ri mi fa fi sol si la li ti'),down:sf('do ra re me mi fa se sol le la te ti')},
  hexn7:{up:sf('do re mi fa sol la')}, hexn4:{up:sf('do re mi sol la ti')},
  pmaj:{up:sf('do re mi sol la')}, pmin:{up:sf('la do re mi sol')}, pmajb:{up:sf('do re me mi sol la')}, pminb:{up:sf('la do re me mi sol')}

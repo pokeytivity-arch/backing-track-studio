@@ -49,6 +49,7 @@ function buildContrary(key,type,oct){
     const rn=top?names[0]:names[r], ln=top?names[0]:names[(n-r)%n];
     const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:RF?(RF[i]||''):'',lfing:LF?(LF[N-i]||''):'',spell:{}};
     st.spell[rm]=dispName(rn); st.spell[lm]=dispName(ln); steps.push(st); }
+  if(T.id==='mel'&&!NOALT){ NOALT=true; try{ const nt=buildContrary(key,'nat',oct); steps.forEach((x,i)=>{ x.alt=nt[i]; }); } finally{ NOALT=false; } } /* open with melodic minor, close with natural minor */
   return steps;
 }
 function build(key,hand,type,oct,motion){
