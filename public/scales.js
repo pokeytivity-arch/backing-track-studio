@@ -8,7 +8,7 @@ const SC={ // notes, first midi note (right hand, octave 4), right-hand fingers,
  A:{n:'A B C# D E F# G# A',m:69,rh:'1 2 3 1 2 3 4 5',lh:'5 4 3 2 1 3 2 1'},
  E:{n:'E F# G# A B C# D# E',m:64,rh:'1 2 3 1 2 3 4 5',lh:'5 4 3 2 1 3 2 1'},
  B:{n:'B C# D# E F# G# A# B',m:71,rh:'1 2 3 1 2 3 4 5',lh:'4 3 2 1 4 3 2 1'},
- F:{n:'F G A Bb C D E F',m:65,rh:'',lh:''},
+ F:{n:'F G A Bb C D E F',m:65,rh:'1 2 3 4 1 2 3',lh:'5 4 3 2 1 3 2 1'},
  Bb:{n:'Bb C D Eb F G A Bb',m:70,rh:'4 1 2 3 1 2 3 4',lh:'3 2 1 4 3 2 1 3'},
  Eb:{n:'Eb F G Ab Bb C D Eb',m:63,rh:'3 1 2 3 4 1 2 3',lh:'3 2 1 4 3 2 1 3'},
  Ab:{n:'Ab Bb C Db Eb F G Ab',m:68,rh:'2 3 1 2 3 1 2 3',lh:'3 2 1 4 3 2 1 3'},
@@ -42,16 +42,23 @@ function spellScale(key,f){ // letters in order from the tonic, accidentals from
   const r=key[0], i0=LET.indexOf(r), base=NAT[r]+(key[1]==='b'?-1:key[1]==='#'?1:0);
   return f.map((semi,i)=>{ const L=LET[(i0+i)%7]; let d=((base+semi)-NAT[L])%12; if(d>6) d-=12; if(d<-6) d+=12; return L+(d>0?'#'.repeat(d):d<0?'b'.repeat(-d):''); });
 }
-function build(key,hand,type){
-  const T=TYPES.find(t=>t.id===type)||TYPES[0], isMaj=T.id==='major';
-  const d=SC[key], names=spellScale(key,T.f), rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null, UP=T.f;
-  const steps=names.map((nm,i)=>{
-    const mid=d.m+UP[i]; const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:''}; const dsp=nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭'); st.spell={}; if(hand==='lh'||hand==='both') st.spell[mid-(hand==='both'?24:12)]=dsp; if(hand==='rh'||hand==='both') st.spell[mid]=dsp;
-    if(hand==='lh'||hand==='both') st.lh=[mid-(hand==='both'?24:12)];
-    if(hand==='rh'||hand==='both') st.rh=[mid];
-    if(hand!=='lh'){ if(rhF) st.fing=rhF[i]; else if(isMaj&&/^(C|F)$/.test(nm)&&!(i===7)) st.fing='1'; }
-    if(hand!=='rh'&&lhF) st.lfing=lhF[i];
-    return st; });
+function build(key,hand,type,oct){
+  oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
+  const T=TYPES.find(t=>t.id===type)||TYPES[0], isMaj=T.id==='major', d=SC[key], names=spellScale(key,T.f);
+  const f7=T.f.slice(0,7), N=7*oct, p=d.m%12;
+  const rhF=isMaj&&d.rh?d.rh.split(' '):null, lhF=isMaj&&d.lh?d.lh.split(' '):null;
+  /* start notes keep every hand inside the keyboard (C2 to C7) */
+  const r0=(60+p+12*oct<=96)?60+p:48+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=48+p;
+  const steps=[];
+  for(let i=0;i<=N;i++){
+    const top=i===N, deg=i%7, semi=top?12*oct:f7[deg]+12*Math.floor(i/7), nm=top?names[0]:names[deg];
+    const dsp=nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
+    const st={src:key,name:nm,lh:[],rh:[],fing:'',lfing:'',spell:{}};
+    if(hand==='lh'||hand==='both'){ const m=(hand==='both'?lBoth:lOnly)+semi; st.lh=[m]; st.spell[m]=dsp; }
+    if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
+    if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
+    if(hand!=='rh'&&lhF&&oct===1) st.lfing=lhF[i]||'';
+    steps.push(st); }
   return steps;
 }
 let ov=null;

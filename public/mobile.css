@@ -124,3 +124,6 @@
 @media (max-width:700px) and (orientation:portrait) and (pointer:coarse){ html.ps-rot body #prRoom .p-sels{grid-template-columns:2fr 1fr} }
 
 .p-tip{margin:10px 0;padding:12px 14px;border:1.5px solid #3a4a74;border-radius:14px;background:#0c1426;color:#dfe7ff;font-size:14px;line-height:1.45;display:grid;gap:10px;justify-items:start}.p-tip p{margin:0}.p-tip[hidden]{display:none}
+
+.p-octs{min-width:170px}.p-octs select{min-height:40px}
+.p-learn{margin:10px 0;padding:12px 14px;border:2px solid #ffd43b;border-radius:14px;background:#17213d;color:#fff;font-size:15px;line-height:1.45;display:grid;gap:8px;justify-items:start}.p-learn p{margin:0}.p-learn b{color:#ffd43b;letter-spacing:.04em}.p-learn[hidden]{display:none}

@@ -8,11 +8,11 @@ const LH='#1c7ed6', RH='#f76707';
 const DIRS=[['up','Up'],['down','Down'],['updown','Up and down']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={type:'major',key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
+let st={mode:'learn',oct:1,type:'major',key:'C',hand:'both',dir:'up',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); }catch(_){}
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
-const clr=()=>{ timers.forEach(clearTimeout); timers=[]; playing=false; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
+const clr=()=>{ timers.forEach(clearTimeout); timers=[]; playing=false; const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent=kind==='scales'?'▶ Play scale':'▶ Play chords'; };
 
 const css=document.createElement('style'); css.textContent=`
 #prRoom .p-leg{display:flex;gap:18px;align-items:center;font:700 13px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--stage-muted,#9aa6c0)}
@@ -92,12 +92,28 @@ function show(){
   drawKb();
 }
 function seq(){ const n=steps.length, up=[...Array(n).keys()]; return st.dir==='down'?up.slice().reverse():st.dir==='updown'?up.concat(up.slice(0,-1).reverse()):up; }
+/* Learning mode: playback stops where a hand crosses (thumb over / under) and explains it */
+const FN={2:'index finger',3:'middle finger',4:'ring finger',5:'little finger'};
+function learnLines(a,b){
+  const out=[], nm=DSP(b.name);
+  if(a.lfing&&b.lfing&&a.lfing==='1'&&+b.lfing>=3&&b.lh.length) out.push('Left hand · '+a.lfing+' → '+b.lfing+': move your fingers over your thumb, with the intention of reaching the next note ('+nm+') with your '+FN[b.lfing]+'.');
+  if(a.fing&&b.fing&&b.fing==='1'&&+a.fing>=3&&b.rh.length) out.push('Right hand · '+a.fing+' → 1: your thumb goes under the fingers, crossing '+(a.fing==='3'?'to the space between the middle finger and the ring finger, ':'')+'to the '+nm+'.');
+  return out;
+}
+function showLearn(lines,go){
+  let t=document.getElementById('prLearn'); if(!t){ t=el('div','p-learn'); t.id='prLearn'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
+  t.textContent=''; const h=el('b',null,'Pause: thumb crossing'); t.appendChild(h); lines.forEach(x=>t.appendChild(el('p',null,x)));
+  const b=el('button','e-btn pri','Continue'); b.type='button'; b.onclick=()=>{ t.hidden=true; go(); }; t.appendChild(b); t.hidden=false;
+}
 function playAll(){
   if(playing){ clr(); return; } if(!steps.length) return;
   const order=kind==='scales'?seq():[...Array(steps.length).keys()], gap=(60/st.bpm)*(kind==='scales'?1:(steps.length>1?2:4))*1000;
   playing=true; $('#prPlay').textContent='■ Stop'; let p=0;
-  const tick=()=>{ if(!playing) return; cur=order[p]; show(); play1(steps[cur],gap/1000*(kind==='scales'?1.6:1.05));
+  const go=()=>{ if(!playing) return; cur=order[p]; show(); play1(steps[cur],gap/1000*(kind==='scales'?1.6:1.05));
     timers.push(setTimeout(()=>{ if(!playing) return; p++; if(p>=order.length){ if(st.loop) p=0; else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); },gap)); };
+  const tick=()=>{ if(!playing) return;
+    if(kind==='scales'&&st.mode==='learn'&&p>0&&order[p]===order[p-1]+1){ const ln=learnLines(steps[order[p-1]],steps[order[p]]); if(ln.length){ showLearn(ln,go); return; } }
+    go(); };
   tick();
 }
 
@@ -120,6 +136,9 @@ function render(){
     const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',(SC&&SC.keys||[]).map(k=>({v:k,t:SYMK(k)})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
     cats.classList.add('p-keybtns');
     const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,DIRS,st.dir,k=>{ st.dir=k; save(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
+    const md=el('div','e-seg sm'); md.setAttribute('role','group'); md.setAttribute('aria-label','Mode'); seg(md,[['learn','Learning'],['practice','Practice']],st.mode,k=>{ st.mode=k; save(); clr(); md.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); ctl.appendChild(md);
+    ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'},{v:'3',t:'Three octaves'}],String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
+    ctl.lastChild.classList.add('p-octs');
     transport(ctl); ctl.appendChild(d);
     const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
     loadScale();
@@ -181,11 +200,11 @@ function keyTip(){
   p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
 }
 function loadScale(){
-  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type); cur=-1; chips();
-  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL); $('#prSub').textContent=maj?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
+  clr(); const SC=window.SCALES; if(!SC||!SC.build) return; steps=SC.build(st.key,st.hand,st.type,st.oct); cur=-1; chips();
+  const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent=maj?'Scale practice · 3+4 method':'Scale practice'; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':''); $('#prSub').textContent=(maj&&st.oct===1)?(g.slice(0,3).map(DSP).join(' ')+'  |  '+g.slice(3,7).map(DSP).join(' ')+'  |  '+DSP(g[7])):g.map(DSP).join(' ');
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
-  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+st.key+(st.type==='major'?' major':' '+TL)+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
+  $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
   drawKb(); keyTip();
 }
 function chordTip(list){
