@@ -19,9 +19,9 @@ const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
 const PALMH=1.8;                                /* the back of the hand is as long as it is wide; the arm runs off the bottom edge */                /* finger widths in key widths */
 let PH={ready:false,meta:null,lmeta:null}; const kick=()=>{ if(!raf&&svg){ last=0; raf=requestAnimationFrame(tick); } };
-try{ fetch('hands/meta.json?v=3').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
+try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.ready=true; kick(); }).catch(()=>{});
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
-  fetch('hands/lh/meta.json?v=3').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=3')); kick(); }).catch(()=>{}); }catch(_){}
+  fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; const h=H.lh; if(h&&h.pi) Object.keys(h.pi).forEach(n=>h.pi[n].setAttribute('href','hands/lh/'+n+'.webp?v=4')); kick(); }).catch(()=>{}); }catch(_){}
 let real=true; try{ if(localStorage.getItem('ps-hreal')==='0') real=false; }catch(_){}
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
@@ -31,7 +31,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; const pre=(side==='lh'&&PH.lmeta)?'hands/lh/':'hands/', vq='?v=3'; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:pre+n+'.webp'+vq,preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; const pre=(side==='lh'&&PH.lmeta)?'hands/lh/':'hands/', vq='?v=4'; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:pre+n+'.webp'+vq,preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
@@ -217,15 +217,17 @@ function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
   set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
   const mat=(a,b,c,d,e,f)=>'matrix('+[a,b,c,d,e,f].map(v=>v.toFixed(3)).join(' ')+')';
-  const pm=M.palm, P=(px,py)=>[cx+dir*k*(px-pm.ax), ay0+k*(pm.ay-py)];
-  set(h.pi.palm,{width:pm.w,height:pm.h,transform:mat(dir*k,0,0,-k,cx-dir*k*pm.ax,ay0+k*pm.ay)});
+  /* while the thumb passes under (or a finger crosses over it) the hand turns at the wrist: the right wrist swings right, the left wrist swings left */
+  const th=dir*.3*Math.max(0,Math.min(1,h.c)), cs=Math.cos(th), sn=Math.sin(th), Rt=p=>[cx+(p[0]-cx)*cs-(p[1]-ay0)*sn, ay0+(p[0]-cx)*sn+(p[1]-ay0)*cs];
+  const pm=M.palm, P=(px,py)=>Rt([cx+dir*k*(px-pm.ax), ay0+k*(pm.ay-py)]);
+  set(h.pi.palm,{width:pm.w,height:pm.h,transform:'rotate('+(th*180/Math.PI).toFixed(2)+' '+cx.toFixed(1)+' '+ay0.toFixed(1)+') '+mat(dir*k,0,0,-k,cx-dir*k*pm.ax,ay0+k*pm.ay)});
   /* one sprite from its base to a target tip. */
   const place=(img,m,B,tx,ty,smin,smax,wscale)=>{ let dx=tx-B[0], dy=ty-B[1], L=Math.hypot(dx,dy)||1, ln=k*m.len, sy=Math.max(smin,Math.min(smax,L/ln)); const Ax=dx/L, Ay=dy/L, sx=(wscale||1)*Math.pow(sy,.35);
     const a=k*sx*dir*Ay, b=-k*sx*dir*Ax, c=-k*sy*Ax, d=-k*sy*Ay, e=B[0]-a*m.bx-c*m.by, f=B[1]-b*m.bx-d*m.by;
     set(img,{width:m.w,height:m.h,transform:mat(a,b,c,d,e,f)}); return [B[0]+Ax*ln*sy,B[1]+Ay*ln*sy,Ax,Ay]; };
   const names=['index','middle','ring','pinky'], tips=[];
   /* thumb: its base glides from the side of the hand to under the palm while it crosses */
-  { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=[cx+(-1.45+1.35*h.c)*dir*kw,pb-lk*1.2], B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
+  { const m=M.thumb, bs=P(pm.ax+m.base[0],pm.ay+m.base[1]), mb=Rt([cx+(-1.45+1.35*h.c)*dir*kw,pb-lk*1.2]), B=[bs[0]+(mb[0]-bs[0])*h.c*.6, bs[1]+(mb[1]-bs[1])*h.c*.6];
     let tx=h.fx[0], ty=h.fy[0]; if(h.f!==1){ const ln=k*m.len, nx=B[0]-dir*.5*ln*.9, ny=B[1]+.866*ln*.9, c=h.c; tx=nx+(tx-nx)*c; ty=ny+(ty-ny)*c; }
     const t=place(h.pi.thumb,m,B,tx,ty,.7,1.9,1); tips[0]=t;
     const under=h.c>.35&&!(h.f===1&&Math.hypot(h.fx[0]-h.ftx[0],h.fy[0]-h.fty[0])<kw*.6); if(under!==h.tu||h.pi.thumb.parentNode!==h.pg){ h.tu=under; if(under) h.pg.insertBefore(h.pi.thumb,h.pg.firstChild); else h.pg.appendChild(h.pi.thumb); } }
