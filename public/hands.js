@@ -27,7 +27,7 @@ function makeHand(side){
   const g=el(svg,'g',{}), h={side,g,on:false,init:false,x:0,py:0,f:0,tx:0,ty:0,c:0,cT:0,k:3,pm:null,pf:0,cm:null,cf:0,zf:0,over:-1,
     fx:[0,0,0,0,0],fy:[0,0,0,0,0],ftx:[0,0,0,0,0],fty:[0,0,0,0,0]};
   h.fore=el(g,'path',{}); h.sl=el(g,'path',{}); h.cu=el(g,'path',{}); h.cb=el(g,'circle',{}); h.ac=el(g,'g',{}); h.m1=el(g,'path',{}); h.thumb=fingerNodes(g,2); h.m2=el(g,'path',{}); h.fing=[1,2,3,4].map(()=>fingerNodes(g,3));
-  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',{href:'hands/'+n+'.webp',preserveAspectRatio:'none'}); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
+  h.palm=el(g,'path',{}); h.pout=el(g,'path',{fill:'none','stroke-linejoin':'round'}); h.pl=el(g,'ellipse',{}); h.td=el(g,'path',{fill:'none','stroke-linecap':'round'}); h.top=el(g,'g',{}); h.pg=el(g,'g',{filter:'url(#psskin)',display:'none'}); h.pi={}; ['thumb','index','middle','ring','pinky','palm'].forEach(n=>{ h.pi[n]=el(h.pg,'image',Object.assign({href:'hands/'+n+'.webp',preserveAspectRatio:'none'},n==='palm'?{mask:'url(#pswm)'}:{})); }); g.insertBefore(h.pg,h.sl); [h.sl,h.cu,h.cb,h.ac].forEach(x=>g.insertBefore(x,h.top));
   H[side]=h; return h;
 }
 function fingerNodes(g,ns){ const gg=el(g,'g',{}); const o={g:gg,seg:[],hl:null};
@@ -43,6 +43,8 @@ function mount(h0){
   defs=el(svg,'defs',{}); gp=el(defs,'linearGradient',{id:'psgp',x1:0,x2:1,y1:0,y2:0}); gs=[0,1,2,3].map(()=>el(gp,'stop',{})); { const lg=(id,st)=>{ const g=el(defs,'linearGradient',{id,x1:0,x2:1,y1:0,y2:0}); st.forEach(([o,c])=>el(g,'stop',{offset:o,'stop-color':c})); };
     lg('pssl',[[0,'#13151b'],[.5,'#32353f'],[1,'#13151b']]); lg('pscu',[[0,'#dedfd7'],[.5,'#ffffff'],[1,'#dedfd7']]);
     const fg=el(defs,'linearGradient',{id:'psfd',x1:0,x2:0,y1:0,y2:1}); el(fg,'stop',{offset:0,'stop-color':'#000'}); el(fg,'stop',{offset:.65,'stop-color':'#fff'});
+    { const lg=el(defs,'linearGradient',{id:'pswg',x1:0,y1:0,x2:0,y2:1}); [[0,'#fff'],[.72,'#fff'],[1,'#000']].forEach(([o,c])=>el(lg,'stop',{offset:o,'stop-color':c}));
+      const mw=el(defs,'mask',{id:'pswm',maskContentUnits:'objectBoundingBox',x:0,y:0,width:1,height:1}); el(mw,'rect',{x:0,y:0,width:1,height:1,fill:'url(#pswg)'}); }
     const mk=el(defs,'mask',{id:'psmk',maskContentUnits:'objectBoundingBox',x:-.1,y:0,width:1.2,height:1}); el(mk,'rect',{x:-.1,y:0,width:1.2,height:1,fill:'url(#psfd)'}); }
   { const f=el(defs,'filter',{id:'psskin',x:'-5%',y:'-5%',width:'110%',height:'110%','color-interpolation-filters':'sRGB'}); skinM=el(f,'feColorMatrix',{type:'matrix',values:SKINM[skin]}); }
   makeHand('lh'); makeHand('rh');
@@ -205,7 +207,7 @@ function draw(h){
 function drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH){
   const M=PH.meta, SCp=M.scale, k=kw/(155*SCp), ay0=pb-kw*.15, set2=set;
   if(skinM) skinM.setAttribute('values',SKINM[skin]);
-  set(h.pg,{display:''}); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
+  set(h.pg,{display:''}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:'none'}));
   h.thumb.seg.concat(h.fing.flatMap(f=>f.seg)).concat([h.thumb.hl]).concat(h.fing.map(f=>f.hl)).forEach(e=>e.setAttribute('d',''));
   const mat=(a,b,c,d,e,f)=>'matrix('+[a,b,c,d,e,f].map(v=>v.toFixed(3)).join(' ')+')';
   const pm=M.palm, P=(px,py)=>[cx+dir*k*(px-pm.ax), ay0+k*(pm.ay-py)];
