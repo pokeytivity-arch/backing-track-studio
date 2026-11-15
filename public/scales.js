@@ -19,14 +19,16 @@ const SC={ // notes, first midi note (right hand, octave 4), right-hand fingers,
 const ORDER=['C','G','D','A','E','B','F#','C#','G#','D#','A#','F','Bb','Eb','Ab','Db','Gb'];
 /* Scale types: seven-note formulas (semitones above the tonic). Only major carries the lessons' fingering for now. */
 const TYPES=[
- {id:'major',g:'Major',l:'Major (Ionian)',f:[0,2,4,5,7,9,11,12]},
- {id:'nat',g:'Minor',l:'Natural minor (Aeolian)',f:[0,2,3,5,7,8,10,12]},
+ {id:'major',g:'Major',l:'Major',f:[0,2,4,5,7,9,11,12]},
+ {id:'nat',g:'Minor',l:'Natural minor',f:[0,2,3,5,7,8,10,12]},
  {id:'harm',g:'Minor',l:'Harmonic minor',f:[0,2,3,5,7,8,11,12]},
  {id:'mel',g:'Minor',l:'Melodic minor',f:[0,2,3,5,7,9,11,12]},
+ {id:'ion',g:'Modes of the major scale',l:'Ionian',f:[0,2,4,5,7,9,11,12]},
  {id:'dor',g:'Modes of the major scale',l:'Dorian',f:[0,2,3,5,7,9,10,12]},
  {id:'phr',g:'Modes of the major scale',l:'Phrygian',f:[0,1,3,5,7,8,10,12]},
  {id:'lyd',g:'Modes of the major scale',l:'Lydian',f:[0,2,4,6,7,9,11,12]},
  {id:'mix',g:'Modes of the major scale',l:'Mixolydian',f:[0,2,4,5,7,9,10,12]},
+ {id:'aeo',g:'Modes of the major scale',l:'Aeolian',f:[0,2,3,5,7,8,10,12]},
  {id:'loc',g:'Modes of the major scale',l:'Locrian',f:[0,1,3,5,6,8,10,12]},
  {id:'dorb2',g:'Modes of the melodic minor',l:'Dorian ♭2',f:[0,1,3,5,7,9,10,12]},
  {id:'lydaug',g:'Modes of the melodic minor',l:'Lydian augmented',f:[0,2,4,6,8,9,11,12]},
