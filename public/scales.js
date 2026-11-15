@@ -41,6 +41,14 @@ Object.assign(MIN['G#'],{lh:'3 2 1 3 2 1 3 2',lhm:{f:'3 2 1 3 2 1 4',r:'3 2 1 3 
 Object.assign(MIN.Eb,{lh:'2 1 4 3 2 1 3 2',lhm:{f:'2 1 4 3 2 1 3',r:'2 1 4 3 2 1 3',l:'2'}});
 Object.assign(MIN.Bb,{lh:'2 1 3 2 1 4 3 2',lhm:{f:'2 1 3 2 1 4 3',r:'2 1 3 2 1 4 3',l:'2'}});
 Object.entries({'D#':'Eb','A#':'Bb','Db':'C#','Gb':'F#','Ab':'G#'}).forEach(([k,v])=>{ MIN[k]=MIN[v]; });
+/* Authentic modes on the white-note tonics (his batches: C, D, E, F, G, A, B). Each key has one fingering for all seven modes, with exceptions. Three octaves are not given: the several-octave patterns repeat. */
+const MODEID=['ion','dor','phr','lyd','mix','aeo','loc'];
+const L5={lh:'5 4 3 2 1 3 2 1',lhm:{f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}}, L4={lh:'4 3 2 1 4 3 2 1',lhm:{f:'4 3 2 1 4 3 2',r:'1 3 2 1 4 3 2',l:'1'}};
+const RC={rh:'1 2 3 1 2 3 4 5'}, RF={rh:'1 2 3 4 1 2 3 4'};
+const MODEF={}, ALTX={};
+['C','D','E','G','A'].forEach(k=>{ MODEF[k]={}; MODEID.forEach(m=>{ MODEF[k][m]=Object.assign({},m==='loc'?L4:L5,m==='lyd'?RF:RC); }); });
+MODEF.F={}; MODEID.forEach(m=>{ MODEF.F[m]=Object.assign({},L5,m==='lyd'?RC:RF); }); ALTX['F:lyd']={rh:RF.rh};
+MODEF.B={}; MODEID.forEach(m=>{ MODEF.B[m]=Object.assign({},m==='loc'?L5:L4,RC); });
 const TWIN={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
 Object.keys(TWIN).forEach(k=>{ SC[k].rh=SC[TWIN[k]].rh; SC[k].lh=SC[TWIN[k]].lh; SC[k].lhm=SC[TWIN[k]].lhm; });
 /* Alternate fingerings (from his book). The main fingering is the one he gave in the lessons. Ab major right hand: the book starts on 3 4; Bb, Eb, Ab and Db major left hand, one octave: the book ends on 3. */
@@ -74,8 +82,10 @@ function build(key,hand,type,oct,motion,alt){
   if(motion==='contrary') return buildContrary(key,type,oct,alt);
   oct=Math.max(1,Math.min(3,Math.round(+oct)||1));
   const T=typeOf(type), isMaj=T.id==='major', d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct, p=d.m%12;
-  const fam=isMaj?(d.rh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?((key==='F#'||key==='Gb')?MIN[key]:(d.rh?d:null)):null;
-  const lfam=isMaj?(d.lh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?(['Eb','D#','Bb','A#'].includes(key)?MIN[key]:(d.lh?d:null)):null, AL=alt&&isMaj?ALTM[key]:null;
+  const mf=MODEID.includes(T.id)?(MODEF[key]&&MODEF[key][T.id]):null;
+  const fam=mf||(isMaj?(d.rh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?((key==='F#'||key==='Gb')?MIN[key]:(d.rh?d:null)):null);
+  const lfam=mf||(isMaj?(d.lh?d:null):(T.id==='nat'||T.id==='harm')?(MIN[key]||null):T.id==='mel'?(['Eb','D#','Bb','A#'].includes(key)?MIN[key]:(d.lh?d:null)):null);
+  const AL=alt?(isMaj?ALTM[key]:ALTX[key+':'+T.id]):null;
   const rhF=AL&&AL.rh?AL.rh.split(' '):fam&&fam.rh?fam.rh.split(' '):null, lhF=AL&&AL.lh?AL.lh.split(' '):lfam&&lfam.lh?lfam.lh.split(' '):null;
   /* start notes keep every hand inside the keyboard (C2 to C7) */
   const r0=(60+p+12*oct<=96)?60+p:48+p, lBoth=(r0-24>=36)?r0-24:r0-12, lOnly=48+p;
@@ -118,5 +128,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build,buildContrary,allowedKeys,acc,alts:(k,t)=>(t==='major'&&ALTM[k])?{rh:!!ALTM[k].rh,lh:!!ALTM[k].lh}:null,types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();
