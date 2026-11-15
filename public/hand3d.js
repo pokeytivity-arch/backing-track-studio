@@ -223,3 +223,4 @@ export function pose(d) {
 export function dbg() { return { rh: hands.rh && hands.rh.dbg, d: hands.rh && hands.rh.lastD, frames: nR }; }
 let nR = 0;
 export function render() { nR++; if (ready && canvas.style.display !== 'none') renderer.render(scene, cam); }
+export function _plain() { Object.values(hands).forEach(h => { h.mat.map = null; h.mat.color.set('#d09070'); h.mat.needsUpdate = true; }); }
