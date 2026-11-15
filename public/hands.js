@@ -25,9 +25,9 @@ try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.read
 /* three looks: 'real' (stock photo, both hands), 'me' (Pokey's own right hand, mirrored for the left), 'drawn' (vector) */
 let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn'||v==='curve') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
 let real=mode!=='drawn';
-fetch('hands/curve/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.cmeta=m; if(mode==='curve'){ setSrc(); kick(); } } }).catch(()=>{});
+fetch('hands/curve/meta.json?v=2').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.cmeta=m; if(mode==='curve'){ setSrc(); kick(); } } }).catch(()=>{});
 fetch('hands/me/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.mmeta=m; if(mode==='me'){ setSrc(); kick(); } } }).catch(()=>{});
-function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='curve'&&PH.cmeta?'hands/curve/':mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/me/'||pre==='hands/curve/'?'?v=1':'?v=4';
+function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='curve'&&PH.cmeta?'hands/curve/':mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/curve/'?'?v=2':pre==='hands/me/'?'?v=1':'?v=4';
   Object.keys(h.pi).forEach(n=>{ const u=pre+n+'.webp'+q; if(h.pi[n].getAttribute('href')!==u) h.pi[n].setAttribute('href',u); }); }); }
 let paused=false, ro=null, lastA=null, defs=null, gp=null, gs=[], host=null, svg=null, skinBox=null, raf=0, last=0, geo={kw:20,HP:56,kbH:80,W:600,xOf:()=>0,yOf:()=>0}; const H={};
 const el=(p,tag,a)=>{ const e=document.createElementNS(NS,tag); for(const k in a) e.setAttribute(k,a[k]); p.appendChild(e); return e; };
