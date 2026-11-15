@@ -132,7 +132,7 @@ function render(){
     pick();
     const ask=el('button','e-btn','Ask Pokey about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
     const vb=el('button','e-btn','Voicings'); vb.type='button'; vb.onclick=()=>{ if(window.VOICE) VOICE.open(); }; r2.appendChild(vb);
-    $('#prLbl').textContent='Chord practice'; if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); }
+    $('#prLbl').textContent='Chord practice'; if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); chordTip([]); }
   }
 }
 function pick(){
@@ -148,11 +148,33 @@ function showPicked(ch,K){
   steps=[step]; cur=0; chips(); $('#prBig').textContent=step.name[0].toUpperCase()+step.name.slice(1); $('#prBig').style.fontSize=step.name.length>12?'clamp(30px,4.6vw,64px)':''; $('#prSub').textContent=names.join('  ')+'  ·  root also in the left hand'; $('#prMsg').textContent='Tap Play chords to hear it '+(st.vh==='h'?'one note at a time.':'together.'); drawKb(); play1(step);
 }
 const DSP=n=>String(n).replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace(/^([A-G])b/,'$1♭');
+const MINS={ // minor key: [text, switch-to or '']
+ 'C#':['C♯ minor is the 6th of E major ✅',''],
+ 'Db':['D♭ minor would be the 6th of F♭ major ❌. C♯ minor is the 6th of E major ✅. We recommend C♯ minor.','C#'],
+ 'D#':['D♯ minor is the 6th of F♯ major. D♯ and E♭ minor are both permissible (E♭ is the 6th of G♭ major).','Eb'],
+ 'Eb':['E♭ minor is the 6th of G♭ major. D♯ and E♭ minor are both permissible (D♯ is the 6th of F♯ major).','D#'],
+ 'F#':['F♯ minor is the 6th of A major ✅',''],
+ 'Gb':['G♭ minor would be the 6th of B𝄫 major ❌. F♯ minor is the 6th of A major ✅. We recommend F♯ minor.','F#'],
+ 'G#':['G♯ minor is the 6th of B major ✅',''],
+ 'Ab':['A♭ minor would be the 6th of C♭ major ❌. G♯ minor is the 6th of B major ✅. We recommend G♯ minor.','G#'],
+ 'A#':['A♯ minor would be the 6th of C♯ major ❌. B♭ minor is the 6th of D♭ major ✅. We recommend B♭ minor.','Bb'],
+ 'Bb':['B♭ minor is the 6th of D♭ major ✅','']
+};
+const MCH={ // the minor chord: where it lives
+ 'C#':'C♯ minor chord: 2 in B, 3 in A, 6 in E.',
+ 'D#':'D♯ minor chord (3 in B, 6 in F♯) and E♭ minor chord (2 in D♭, 6 in G♭) are both allowed but limited. If you want to use the same chord as the 2, switch to E♭ minor in D♭ major (instead of D♯ minor in C♯ major). If you want to use it as the 3 chord, switch to D♯ minor in B major (instead of E♭ minor in C♭ major).',
+ 'F#':'F♯ minor chord: 2 in E, 3 in D, 6 in A.',
+ 'G#':'G♯ minor chord: 2 in F♯, 3 in E, 6 in B.',
+ 'Bb':'B♭ minor chord: 2 in A♭, 3 in G♭, 6 in D♭.'
+};
+MCH.Eb=MCH['D#'];
 const OPP={'C#':'Db','D#':'Eb','G#':'Ab','A#':'Bb','F#':'Gb','Gb':'F#'};
 const SYMK=k=>k.replace('#','♯').replace(/b$/,'♭');
 function keyTip(){
   let t=document.getElementById('prTip'); if(!t){ t=el('div','p-tip'); t.id='prTip'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
-  t.textContent=''; t.hidden=true; const SC=window.SCALES; if(kind!=='scales'||st.type!=='major'||!OPP[st.key]||!SC||!SC.acc) return;
+  t.textContent=''; t.hidden=true; const SC=window.SCALES;
+  if(kind==='scales'&&['nat','harm','mel'].includes(st.type)&&MINS[st.key]){ const m=MINS[st.key]; const p1=el('p',null,m[0]); t.appendChild(p1); if(MCH[st.key]) t.appendChild(el('p',null,MCH[st.key])); if(m[1]){ const bb=el('button','e-btn','Switch to '+SYMK(m[1])+' minor'); bb.type='button'; bb.onclick=()=>{ st.key=m[1]; save(); loadScale(); render(); }; t.appendChild(bb); } t.hidden=false; return; }
+  if(kind!=='scales'||st.type!=='major'||!OPP[st.key]||!SC||!SC.acc) return;
   const k=st.key, o=OPP[k], a=SC.acc(k), b=SC.acc(o), p=el('p',null,''); let msg;
   if(k==='F#'||k==='Gb') msg='F♯ and G♭ major are both allowed in music: either way it is 6 (6 sharps or 6 flats). Use F♯ when G♭ is inconvenient: the 4th tone of G♭ is C♭, so switch to F♯ if you want a B. Use G♭ when the 7th tone of F♯, E♯, is inconvenient: G♭ has F as its 7th tone.';
   else msg=SYMK(k)+' major has '+a.sharps+' sharps. '+SYMK(o)+' major has '+b.flats+' flats. The number of sharps in a key and the number of flats in the opposing key always add up to 12 ('+a.sharps+' + '+b.flats+' = 12). Switching to '+SYMK(o)+' takes you from '+a.sharps+' sharps to '+b.flats+' flats.';
@@ -166,11 +188,17 @@ function loadScale(){
   $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+st.key+(st.type==='major'?' major':' '+TL)+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Tap a note to hear it, or press Play scale.';
   drawKb(); keyTip();
 }
+function chordTip(list){
+  let t=document.getElementById('prTip'); if(!t){ t=el('div','p-tip'); t.id='prTip'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
+  t.textContent=''; t.hidden=true; const seen={};
+  (list||[]).forEach(n=>{ const m=String(n).match(/^([A-G])(#|b)?(m|min|-)(?!aj|a)/); if(!m) return; let k=m[1]+(m[2]||''); if(k==='A#') k='Bb'; if(k==='Db'||k==='Gb'||k==='Ab') return; if(MCH[k]&&!seen[k==='Eb'?'D#':k]){ seen[k==='Eb'?'D#':k]=1; t.appendChild(el('p',null,MCH[k])); } });
+  t.hidden=!t.children.length;
+}
 function loadChords(text,quiet){
   clr(); st.chords=String(text||'').trim(); save();
   const list=normChords(st.chords).slice(0,16); const out=(window.CLASS&&CLASS.stepsFrom)?CLASS.stepsFrom(list):[];
-  if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; return; }
-  steps=out; cur=0; chips(); show(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]);
+  if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; chordTip([]); return; }
+  steps=out; cur=0; chips(); show(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play chords.'; if(!quiet) play1(steps[0]); chordTip(list);
 }
 window.PRACTICE={open,close};
 })();
