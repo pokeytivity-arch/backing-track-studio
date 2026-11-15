@@ -11,8 +11,8 @@ const TONES=[
   {n:'Brown',s:'#8d5a38',d:'#6c3f22',e:'#55301a'},
   {n:'Deep brown',s:'#5b3822',d:'#41240f',e:'#2e1809'}];
 let skin=1; try{ const v=+localStorage.getItem('ps-skin'); if(v>=0&&v<TONES.length) skin=v; }catch(_){}
-const LMAX=[2.1,2.5,2.75,2.5,1.95];
-const KY=[0,-.1,.1,-.1,-.45];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
+const LMAX=[1.6,2.0,2.2,2.0,1.55];       /* reach from the knuckle to the fingertip, in key widths, when the finger is playing (a resting finger is curled, so it looks shorter from above) */
+const KY=[0,-.08,.08,-.08,-.3];                 /* knuckle arch: the middle knuckle sits furthest forward, the little finger's furthest back */            /* finger lengths in key widths, thumb first */
 const SLOT=[-2.5,-1.5,-0.5,0.5,1.5];           /* where each finger sits over the keys (right hand; the left hand is mirrored) */
 const KNUCK=[-1.7,-1.4,-0.47,0.47,1.4];   /* where each finger joins the palm */
 const FW=[0.95,0.78,0.8,0.77,0.68];
@@ -36,7 +36,7 @@ let on=true; try{ on=localStorage.getItem('ps-hands')!=='0'; }catch(_){}
 let onChange=null, ctrl=null, btn=null, sw=null;
 function mount(h0){
   if(svg) return; host=h0; host.style.position='relative';
-  const wrap=document.createElement('div'); wrap.className='p-hands'; wrap.style.cssText='position:absolute;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;z-index:3';
+  const wrap=document.createElement('div'); wrap.className='p-hands'; wrap.style.cssText='position:absolute;left:0;right:0;bottom:-12px;pointer-events:none;overflow:hidden;z-index:3';
   svg=document.createElementNS(NS,'svg'); svg.setAttribute('aria-hidden','true'); svg.style.cssText='display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))'; wrap.appendChild(svg); host.insertBefore(wrap,host.firstChild); host._hw=wrap;
   defs=el(svg,'defs',{}); gp=el(defs,'linearGradient',{id:'psgp',x1:0,x2:1,y1:0,y2:0}); gs=[0,1,2,3].map(()=>el(gp,'stop',{})); makeHand('lh'); makeHand('rh');
   ctrl=document.createElement('div'); ctrl.className='p-hctl'; ctrl.style.cssText='position:absolute;right:4px;bottom:2px;display:flex;gap:6px;align-items:center;z-index:4;pointer-events:auto';
@@ -48,12 +48,12 @@ function mount(h0){
 }
 function layout(kb){
   const sv=kb&&kb.firstElementChild, W=(sv&&sv.clientWidth)||kb.offsetWidth, KH=(sv&&sv.clientHeight)||kb.offsetHeight; if(!W||!KH) return false;
-  const kw=W*14/(36*14+2), HP=24, lk=kw*Math.min(1,KH/(4.25*kw)), wh=[0,2,4,5,7,9,11];
+  const kw=W*14/(36*14+2), HP=36, lk=kw*Math.min(1,KH/(4.25*kw)), wh=[0,2,4,5,7,9,11];
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; for(let q=36;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; const u=white?1+(n+.5)*14:1+n*14; return u/(36*14+2)*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.92:HP+KH*0.99};
-  host.style.paddingTop=''; host.style.paddingBottom=HP+'px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.34:HP+KH*0.48};
+  host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
 }
 /* Crossing pose. Phase one (thumb under): after finger k (2 to 4) the thumb travels under the palm and lands between finger k and the next one
@@ -71,15 +71,15 @@ function target(h,m,f){
     if(d>0&&f===1&&h.pf>=2&&h.pf<=4) k=h.pf;            /* thumb goes under */
     else if(d<0&&h.pf===1&&f>=2&&f<=4) k=f; }            /* finger goes over the thumb */
   if(k) h.k=k; h.cT=k?1:0;
-  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-2.6*lk*.94+kw*.15;
+  const slot=k?sx(k,fi):SLOT[fi], fullX=xOf(m)-slot*dir*kw, fullY=yOf(m)-1.95*lk*.94+kw*.15;
   /* the hand keeps its shape: the back of the hand carries every finger over its own key and moves as one piece */
   h.tx=fullX; h.ty=fullY;
   h.on=true; h.f=f;
   const by=h.ty-kw*.15, phase2=h.pf===1&&f!==1&&!k&&h.init;
   for(let i=0;i<5;i++){
     if(i===fi){ h.ftx[i]=xOf(m)+(i===0?dir*kw*.38:0); h.fty[i]=i===0?yOf(m)-lk*1.1:yOf(m)-kw*.1; }   /* thumb plays on its side, fingers on their tips */
-    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+1.4*lk; }
-    else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.88*LMAX[i]*lk-kw*.1; }
+    else if(i===0){ if(!phase2||!h.init) h.ftx[0]=h.tx+(k?sx(h.k,0):SLOT[0])*dir*kw; h.fty[0]=h.ty+.3*lk; }
+    else { h.ftx[i]=h.tx+(SLOT[i]+(sx(h.k,i)-SLOT[i])*h.cT)*dir*kw; h.fty[i]=by+KY[i]*lk+.8*LMAX[i]*lk-kw*.1; }
   }
   if(!h.init){ h.init=true; h.x=h.tx; h.py=h.ty; h.c=h.cT; for(let i=0;i<5;i++){ h.fx[i]=h.ftx[i]; h.fy[i]=h.fty[i]; } }
 }
@@ -115,12 +115,12 @@ function segP(ax,ay,bx,by,wa,wb,cap){
   const P=(x,y,w,sd)=>(x+px*w/2*sd).toFixed(1)+' '+(y+py*w/2*sd).toFixed(1);
   return 'M'+P(ax,ay,wa,1)+'L'+P(ex,ey,wb,1)+(cap?'A'+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 0 '+P(ex,ey,wb,-1):'L'+P(ex,ey,wb,-1))+'L'+P(ax,ay,wa,-1)+'Z';
 }
-function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp,fr){
-  const ns=n.seg.length, F=fr||(ns===3?[.46,.76,1]:[.55,1]), dx=tx-bx, dy=ty-by, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux;
+function finger(n,bx,by,tx,ty,wb,T,act,num,kw,tp,fr,curl){
+  curl=curl||0; const ns=n.seg.length, F=fr||(ns===3?[.46+.07*curl,.76+.06*curl,1]:[.55,1]), dx=tx-bx, dy=ty-by, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux;
   const wt=wb*(tp||.8), W=[wb]; for(let i=1;i<=ns;i++) W.push(wb+(wt-wb)*(i/ns));
   let ax=bx, ay=by;
   for(let i=0;i<ns;i++){ const q=F[i], qx=bx+dx*q, qy=by+dy*q, last=i===ns-1;
-    set(n.seg[i],{d:segP(ax,ay,qx,qy,W[i],W[i+1],last),fill:T.s,stroke:T.e,'stroke-width':1}); ax=qx-ux*kw*.05; ay=qy-uy*kw*.05; }
+    set(n.seg[i],{d:segP(ax,ay,qx,qy,W[i],W[i+1],last),fill:(last&&ns===3)?mix(T.s,T.d,.45*curl):T.s,stroke:T.e,'stroke-width':1}); ax=qx-ux*kw*.05; ay=qy-uy*kw*.05; }
   const o=wb*.22; set(n.hl,{d:'M'+(bx+ux*kw*.3-px*o).toFixed(1)+' '+(by+uy*kw*.3-py*o).toFixed(1)+'L'+(tx-ux*kw*.35-px*o*.8).toFixed(1)+' '+(ty-uy*kw*.35-py*o*.8).toFixed(1),stroke:mix('#ffffff',T.s,.5),'stroke-width':wb*.18,opacity:.45});
   nail(n,tx,ty,kw,num,act,T,ux,uy,wt);
 }
@@ -140,7 +140,7 @@ function draw(h){
   const order=[1,2,3,4].filter(i=>i!==h.f-1).concat([1,2,3,4].filter(i=>i===h.f-1));
   if(h.zf!==h.f){ h.zf=h.f; order.forEach(i=>{ g.insertBefore(h.fing[i-1].g,h.palm); }); }
   order.forEach(i=>{ const bx=cx+KNUCK[i]*dir*kw, by=pb-kw*.15+KY[i]*lk; let tx=h.fx[i], ty=h.fy[i]; const L=Math.hypot(tx-bx,ty-by), mx=LMAX[i]*lk*1.2; if(L>mx){ tx=bx+(tx-bx)*mx/L; ty=by+(ty-by)*mx/L; }
-    finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw,.8); });
+    finger(h.fing[i-1],bx,by,tx,ty,kw*FW[i],T,h.f===i+1,i+1,kw,.84,null,Math.max(0,Math.min(1,(1-Math.hypot(tx-bx,ty-by)/(LMAX[i]*lk*1.05))*3))); });
   /* back of the hand */
   const w1=kw*1.1, w2=kw*1.7;
   set(h.palm,{d:'M'+(cx-w1)+' '+pt+'C'+(cx-w1*1.25)+' '+(pt+palmH*.35)+' '+(cx-w2)+' '+(pt+palmH*.4)+' '+(cx-w2)+' '+(pb-kw*.55)+'Q'+(cx-w2)+' '+(pb+kw*.1)+' '+(cx-kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx-kw*.45)+' '+(pb+kw*.22)+' '+cx+' '+(pb+kw*.2)+'Q'+(cx+kw*.45)+' '+(pb+kw*.22)+' '+(cx+kw*1.35)+' '+(pb+kw*.05)+'Q'+(cx+w2)+' '+(pb+kw*.1)+' '+(cx+w2)+' '+(pb-kw*.55)+'C'+(cx+w2)+' '+(pt+palmH*.4)+' '+(cx+w1*1.25)+' '+(pt+palmH*.35)+' '+(cx+w1)+' '+pt+'Z',fill:'url(#psgp)',stroke:'none'});
