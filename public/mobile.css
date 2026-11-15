@@ -201,5 +201,3 @@
   html body #prRoom .p-r3{display:flex;flex-wrap:nowrap;gap:8px;width:100%;max-width:100%}
   html body #prRoom .p-r3 .e-btn{flex:1 1 0;min-width:0;margin:0;padding:6px 8px;min-height:40px;font-size:13px;white-space:nowrap;justify-content:center}
 }
-/* Scale room with the hands on: a slightly shorter keyboard on the sideways phone layout so the hands fit */
-html.ps-rot.ps-hon body #prRoom .e-kb #prKb svg.kbd{height:62px!important}
