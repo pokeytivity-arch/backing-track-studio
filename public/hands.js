@@ -23,8 +23,22 @@ try{ fetch('hands/meta.json?v=4').then(r=>r.json()).then(m=>{ PH.meta=m; PH.read
   /* a separate photo of the left hand, when there is one (built flipped, so it is placed like the right hand and mirrored back) */
   fetch('hands/lh/meta.json?v=4').then(r=>r.ok?r.json():null).then(m=>{ if(!m) return; PH.lmeta=m; setSrc(); kick(); }).catch(()=>{}); }catch(_){}
 /* three looks: 'real' (stock photo, both hands), 'me' (Pokey's own right hand, mirrored for the left), 'drawn' (vector) */
-let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn'||v==='curve') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
+let mode='real'; try{ const v=localStorage.getItem('ps-hmode'); if(v==='real'||v==='me'||v==='drawn'||v==='curve'||v==='3d') mode=v; else if(localStorage.getItem('ps-hreal')==='0') mode='drawn'; }catch(_){}
 let real=mode!=='drawn';
+/* 3D hands: loaded only when chosen */
+let P3=null, p3skin=null;
+function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=6').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); ['lh','rh'].forEach(k=>{ if(H[k]) H[k].p3=true; }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function pose3(h){
+  const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y;
+  if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
+  const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=i===h.f-1, blk=sy<kbH*.6;
+    let ht=(blk?.011*s:0)+(play?0:.008*s); if(i===0&&!play) ht=h.c>.3?.006*s:.014*s; tips.push([h.fx[i],sy,ht]); }
+  let az=0; for(let i=1;i<5;i++) az+=tips[i][1]; az/=4; tips[0][1]=Math.min(kbH-kw*.2,tips[0][1]); az+=.062*s;
+  /* the thumb is shorter than the fingers: when it plays the whole hand leans in so it can reach its key, then eases back */
+  const want=h.f===1?Math.min(az,tips[0][1]+.03*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
+  P3.pose({side:h.side,on:true,f:h.f,az3:h.az3,ax:h.x,ay:.03*s,az,th:-dir*.25*h.c,tips});
+}
 fetch('hands/curve/meta.json?v=2').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.cmeta=m; if(mode==='curve'){ setSrc(); kick(); } } }).catch(()=>{});
 fetch('hands/me/meta.json?v=1').then(r=>r.ok?r.json():null).then(m=>{ if(m){ PH.mmeta=m; if(mode==='me'){ setSrc(); kick(); } } }).catch(()=>{});
 function setSrc(){ ['rh','lh'].forEach(sd=>{ const h=H[sd]; if(!h||!h.pi) return; const pre=mode==='curve'&&PH.cmeta?'hands/curve/':mode==='me'&&PH.mmeta?'hands/me/':(sd==='lh'&&PH.lmeta?'hands/lh/':'hands/'), q=pre==='hands/curve/'?'?v=2':pre==='hands/me/'?'?v=1':'?v=4';
@@ -64,8 +78,8 @@ function mount(h0){
   btn.onclick=()=>{ on=!on; try{ localStorage.setItem('ps-hands',on?'1':'0'); }catch(_){} if(onChange) onChange(); };
   sw=document.createElement('span'); sw.setAttribute('role','group'); sw.setAttribute('aria-label','Skin tone'); sw.style.cssText='display:flex;gap:5px';
   TONES.forEach((t,i)=>{ const b=document.createElement('button'); b.type='button'; b.title=t.n+' skin'; b.setAttribute('aria-label',t.n+' skin tone'); b.style.cssText='width:18px;height:18px;min-height:18px;padding:0;border-radius:50%;border:2px solid '+(i===skin?'#fff':'rgba(255,255,255,.25)')+';background:'+t.s+';cursor:pointer'; b.onclick=()=>{ skin=i; try{ localStorage.setItem('ps-skin',String(i)); }catch(_){} [...sw.children].forEach((x,j)=>{ x.style.borderColor=j===i?'#fff':'rgba(255,255,255,.25)'; }); if(!raf){ last=0; raf=requestAnimationFrame(tick); } }; sw.appendChild(b); });
-  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic',curve:'Curved',me:'Personal',drawn:'Drawn'}, NX={real:'curve',curve:'me',me:'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]].toLowerCase()+' hands'; }; rl();
-  rb.onclick=()=>{ mode=NX[mode]; if(mode==='curve'&&!PH.cmeta) mode=NX[mode]; if(mode==='me'&&!PH.mmeta) mode=NX[mode]; real=mode!=='drawn'; try{ localStorage.setItem('ps-hmode',mode); }catch(_){} setSrc(); rl(); sw.style.display=on&&mode!=='me'?'flex':'none'; kick(); };
+  const rb=document.createElement('button'); rb.type='button'; rb.style.cssText=btn.style.cssText; const LBL={real:'Realistic','3d':'3D',curve:'Curved',me:'Personal',drawn:'Drawn'}, NX={real:'3d','3d':'me',curve:'me',me:'drawn',drawn:'real'}; const rl=()=>{ rb.textContent=LBL[mode]; rb.title='Switch to '+LBL[NX[mode]].toLowerCase()+' hands'; }; rl();
+  rb.onclick=()=>{ mode=NX[mode]; if(mode==='3d') load3d(); if(mode==='curve'&&!PH.cmeta) mode=NX[mode]; if(mode==='me'&&!PH.mmeta) mode=NX[mode]; real=mode!=='drawn'; try{ localStorage.setItem('ps-hmode',mode); }catch(_){} setSrc(); rl(); sw.style.display=on&&mode!=='me'?'flex':'none'; kick(); };
   ctrl.append(sw,rb,btn); host.appendChild(ctrl);
 }
 function layout(kb){
@@ -78,7 +92,7 @@ function layout(kb){
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
         yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.5};  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
-  sw.style.display=on&&mode!=='me'?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; return true;
+  sw.style.display=on&&mode!=='me'?'flex':'none'; btn.textContent=on?'Hands: on':'Hands: off'; btn.setAttribute('aria-pressed',String(on)); ctrl.hidden=false; if(P3) P3.resize(g3()); return true;
 }
 /* Crossing pose. Phase one (thumb under): after finger k (2 to 4) the thumb travels under the palm and lands between finger k and the next one
    (for 3 that is between the middle and ring fingers) while finger k stays where it is. Phase two (fingers over the thumb or the hand moving on):
@@ -134,7 +148,7 @@ function pause(b){ paused=!!b; if(paused){ if(raf){ cancelAnimationFrame(raf); r
 function tick(t){
   raf=0; if(!svg||!host||!host.isConnected) return; const dt=Math.min(.05,last?(t-last)/1000:.016); last=t;
   let moving=false;
-  ['lh','rh'].forEach(k=>{ const h=H[k]; if(!h.on){ set(h.g,{display:'none'}); return; }
+  ['lh','rh'].forEach(k=>{ const h=H[k]; if(!h.on){ set(h.g,{display:'none'}); if(P3) P3.pose({side:k,on:false}); return; }
     const sp=h.fast?5:1, k1=1-Math.exp(-dt*13*sp), k2=1-Math.exp(-dt*22*sp);
     h.x+=(h.tx-h.x)*k1*.8; h.py+=(h.ty-h.py)*k1*.8; h.c+=(h.cT-h.c)*k1;
     let mv=Math.abs(h.tx-h.x)>.3||Math.abs(h.ty-h.py)>.3||Math.abs(h.cT-h.c)>.01;
@@ -142,6 +156,7 @@ function tick(t){
       h.fx[i]+=(h.ftx[i]-h.fx[i])*kk; h.fy[i]+=(ty-h.fy[i])*kk; if(Math.abs(h.ftx[i]-h.fx[i])>.3||Math.abs(ty-h.fy[i])>.3) mv=true; }
     if(h.cT===1&&!h.rel&&h.f){ const i=h.f-1; if(Math.abs(h.ftx[i]-h.fx[i])<geo.kw*.12&&Math.abs(h.fty[i]-h.fy[i])<geo.kw*.3){ h.rel=true; target(h,h.cm,h.cf); mv=true; } }
     if(mv) moving=true; draw(h); });
+  if(P3&&mode==='3d'){ P3.show(true); P3.render(); }
   if(moving) raf=requestAnimationFrame(tick);
 }
 
@@ -196,6 +211,8 @@ function draw(h){
       for(let i=-9;i<=9;i++) if(i*.27>-WL+.12&&i*.27<WR-.12) el(A,'circle',{cx:Wx(i*.27),cy:Wy(.37),r:(kw*.1).toFixed(1),fill:'#f6e3a2',stroke:'#8a6a1f','stroke-width':.6});
       el(A,'path',{d:'M'+Wx(-WL)+' '+Wy(.64)+'L'+Wx(WR)+' '+Wy(.64)+'L'+Wx(WR)+' '+Wy(.78)+'L'+Wx(-WL)+' '+Wy(.78)+'Z',fill:'#c9a24a',stroke:'#8a6a1f','stroke-width':.8});
     } }
+  if(mode==='3d'){ if(P3){ set(g,{display:'none'}); pose3(h); return; } load3d(); }
+  if(P3&&mode!=='3d') P3.show(false);
   if(real&&PH.ready&&h.pg){ drawPhoto(h,T,kw,lk,dir,pb,pt,cx,palmH); return; }
   if(h.pg) set(h.pg,{display:'none'}); [h.sl,h.cu,h.cb,h.ac].forEach(x=>set(x,{display:'none'})); ['fore','m1','m2','palm','pout','pl','td'].forEach(n=>set(h[n],{display:''}));
   /* thumb (two segments) is behind the palm so it passes under it; it plays on its side, so the contact edge is the outer one */
