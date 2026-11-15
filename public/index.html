@@ -425,7 +425,7 @@ audio{width:100%}
         <div class="bpmbig" id="bpmBig">96<span>BPM</span></div>
       </div>
     </div>
-    <div class="seg dark" id="smSeg" role="group" aria-label="Studio mode"><button type="button" data-k="chord" aria-pressed="true">Chord mode</button><button type="button" data-k="scale" aria-pressed="false">Scale mode</button></div>
+    <div class="seg dark" id="smSeg" role="group" aria-label="Studio mode"><button type="button" data-k="chord" aria-pressed="true">Chord mode</button><button type="button" data-k="scale" aria-pressed="false">Scale mode</button></div><div class="lbl" id="smInfo" hidden></div>
     <div class="beats" id="beats" aria-hidden="true"></div>
     <div class="chart" id="chart" aria-label="Chord chart"></div>
     <div class="stage-kbd" id="stageKbd" hidden>
@@ -691,7 +691,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-x (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.15-y (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1678,7 +1678,7 @@ function renderChart(){
 function rebuild(){
   if(S.sm==='scale'&&S.scale){ S.chords=scaleChords(); $('chords').value=S.chords; }
   song=parseChart(S.chords,S.transpose);
-  if(S.sm==='scale'&&S.scale){ song.errors.length=0; song.events.forEach((e,i)=>{ const st=S.scale.steps[i]; if(st) e.name={root:st.label,q:''}; }); } stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
+  if(S.sm==='scale'&&S.scale){ song.errors.length=0; song.events.forEach((e,i)=>{ const st=S.scale.steps[i]; e.name={root:st?st.label:'–',q:''}; }); } stageVz=null; if(!playing) setTimeout(()=>stageKeys(0),0);
   if(S.mode==='pro') updateGridMeta();
   const er=$('errs'); er.hidden=!song.errors.length; er.textContent=song.errors.join(' · ');
   renderChart();
@@ -2745,8 +2745,11 @@ const current=()=>({title:S.title||'Untitled track',chords:S.chords,style:S.styl
 /* Scale mode: a scale from the Scale room is put on the chart, one note a beat, and only the drums play. The other mixer channels are locked until Chord mode is back. */
 const SAFE_PC=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
 function scaleChords(){
-  const per=MET().count.length||4, toks=S.scale.steps.map(x=>SAFE_PC[(((x.rh&&x.rh[0]!=null?x.rh[0]:x.lh[0])%12)+12)%12]), bars=[];
-  for(let i=0;i<toks.length;i+=per){ const b=toks.slice(i,i+per); while(b.length<per) b.push('.'); bars.push(b.join(' ')); }
+  const per=MET().count.length||4, toks=[];
+  S.scale.steps.forEach(x=>{ toks.push(SAFE_PC[(((x.rh&&x.rh[0]!=null?x.rh[0]:x.lh[0])%12)+12)%12]); for(let k=1;k<(x.beats||1);k++) toks.push('.'); });
+  for(let k=0;k<(S.scale.rests||0);k++) toks.push('x');
+  while(toks.length%per) toks.push('x');
+  const bars=[]; for(let i=0;i<toks.length;i+=per) bars.push(toks.slice(i,i+per).join(' '));
   return '| '+bars.join(' | ')+' |';
 }
 function setStudioMode(m){
@@ -2756,12 +2759,12 @@ function setStudioMode(m){
   else { if(playing) stop(); S.sm='chord'; const b=S.chordBak; if(b){ S.title=b.title; S.chords=b.chords; S.transpose=b.transpose; S.form=b.form; S.bassLine=b.bassLine; S.useHum=b.useHum; $('chords').value=S.chords; } S.chordBak=null; }
   $('title').value=S.title; syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild();
 }
-function syncSm(){ document.querySelectorAll('#smSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===S.sm))); document.body.classList.toggle('scale-mode',S.sm==='scale'); }
+function syncSm(){ const si=$('smInfo'); if(si){ si.hidden=!(S.sm==='scale'&&S.scale); si.textContent=S.scale?S.scale.info||'':''; } document.querySelectorAll('#smSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===S.sm))); document.body.classList.toggle('scale-mode',S.sm==='scale'); }
 window.STUDIO_SCALE=function(p){
   if(playing) stop(); if(S.sm==='chord'){ S.chordBak={title:S.title,chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,form:S.form,bassLine:S.bassLine,useHum:S.useHum}; S.sm='scale'; }
   S.scale=p; S.title=p.title; S.transpose=0; S.bassLine=null; S.useHum=false; $('title').value=S.title; if(typeof humSync==='function') humSync();
   const kb=$('kbdBtn'); if(kb&&kb.getAttribute('aria-pressed')!=='true') kb.click();
-  syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio'); if(window.__psRet){ window.__psRet(); window.__psRet=null; }
+  if(typeof setMeter==='function') setMeter('4/4',{snap:false,convert:false}); syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio'); if(window.__psRet){ window.__psRet(); window.__psRet=null; }
   toast('Scale loaded. Pick a backing track (style), then press Play. Only the drums play in scale mode.');
 };
 function loadTrack(t){
