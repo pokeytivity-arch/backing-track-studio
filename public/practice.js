@@ -1021,10 +1021,11 @@ function progKey(list){ const w=new Array(12).fill(0); list.forEach(s=>[...(s.lh
   for(let k=0;k<12;k++){ const sc=D.reduce((a,d)=>a+w[(k+d)%12],0)+(k===lastB?.5:0); if(sc>bs){ bs=sc; best=k; } } return best; }
 const DIA=[0,2,4,5,7,9,11], degOf=(m,k)=>((m-k)%12+12)%12;
 /* grace notes: only with three notes in the right hand (never four); a grace note goes on a scale tone, never the 1st or 4th of the key.
+   It goes on the middle or the bottom note, on beat one, and nothing more for the rest of the chord.
    B / A D F in C: on the D, from C# or from C (a half step below, or the scale tone below). */
 let graceN=0;
 function graceFor(s,key){ const rh=[...(s.rh||[])].sort((a,b)=>a-b); if(rh.length!==3) return null;
-  for(const m of [rh[1],rh[2],rh[0]]){ const d=degOf(m,key); if(!DIA.includes(d)||d===0||d===5) continue;
+  for(const m of [rh[1],rh[0]]){   /* the middle note, or else the bottom note */ const d=degOf(m,key); if(!DIA.includes(d)||d===0||d===5) continue;
     const half=m-1; let sc=m-1; while(!DIA.includes(degOf(sc,key))) sc--; const g=(graceN++%2===0)?half:sc; if(rh.includes(g)||(s.lh||[]).includes(g)) continue; return {tgt:m,g}; }
   return null; }
 /* the bass line: two sixteenths at the end of the chord before lead into the next bass note, from below (F F# G) or from above (A A♭ G).
@@ -1035,7 +1036,8 @@ function bassRun(s,nx,key){ if(!nx) return null; const lo=a=>a&&a.length?Math.mi
   const up=(d===4||d===11)?true:Math.random()<.5; return up?[T-2,T-1]:[T+2,T+1]; }
 /* arpeggio rhythm (sixteenths). Four notes in all: one by one from the left hand up. Five: the left hand's note together with one right-hand note,
    then the other three up or down. Two notes in the left hand share the bass note's sixteenth as two thirty-seconds.
-   More than two notes in the left hand, or more than six in all: not arpeggiated. A chord longer than one beat is arpeggiated once, on one of its beats. */
+   More than two notes in the left hand, or more than six in all: not arpeggiated. A bass with a two-note harmony is not arpeggiated either:
+   two-note harmonies are intervallic, not chordal. A chord longer than one beat is arpeggiated once, on one of its beats. */
 function arpPlan(s,t,bt){ const L=[...(s.lh||[])].sort((a,b)=>a-b), R=[...(s.rh||[])].sort((a,b)=>a-b); if(!L.length||L.length>2||L.length+R.length>6) return null;
   const s16=bt/4, s32=bt/8, ev=[]; const bass=(extra)=>{ ev.push([L[0],t]); if(L.length===2) ev.push([L[1],t+s32]); if(extra!=null) ev.push([extra,t]); };
   if(R.length===3){ bass(); R.forEach((m,i)=>ev.push([m,t+s16*(i+1)])); return ev; }
@@ -1045,7 +1047,8 @@ function arpBeat(beats){ const n=Math.max(1,Math.round(beats)); return n<=1?0:n=
 function playChord(s,len,nx){ const C=CLASS.clock; C.ready().then(()=>{ if(!ov||ov.hidden) return;
   const b=C.bus(); if(b) chBus.push(b); const bt=60/st.bpm, beats=s.beats||(len?Math.max(1,Math.round(len/bt)):2), dur=len||Math.max(1.6,beats*bt), t0=C.now()+0.05, end=t0+dur;
   const key=steps.key!=null?steps.key:0, gr=st.grace?graceFor(s,key):null, run=st.bline&&nx&&dur>=bt*.99?bassRun(s,nx,key):null, lhEnd=run?end-bt/2:end;
-  const N=(m,t,e,v)=>{ if(e-t<.03) return; if(gr&&m===gr.tgt){ const gd=Math.min(.07,bt/8); C.note(gr.g,t,gd+.02,(v||.72)*.8,b); C.note(m,t+gd,e-t-gd,v,b); } else C.note(m,t,e-t,v,b); };
+  let gDone=false; /* the grace note comes once, on beat one, then nothing more for the rest of the chord */
+  const N=(m,t,e,v)=>{ if(e-t<.03) return; if(gr&&m===gr.tgt&&!gDone){ gDone=true; const gd=Math.min(.07,bt/8); C.note(gr.g,t,gd+.02,(v||.72)*.8,b); C.note(m,t+gd,e-t-gd,v,b); } else C.note(m,t,e-t,v,b); };
   const isL=m=>(s.lh||[]).includes(m), endOf=m=>isL(m)?lhEnd:end;
   if(st.vh==='a'){ const k=arpBeat(beats), ta=t0+k*bt, plan=arpPlan(s,ta,bt);
     if(plan){ arpN=null; drawKb(); if(k>0) [...s.lh,...s.rh].forEach(m=>N(m,t0,ta-.01,isL(m)?.75:.7));   /* the arpeggio comes on a later beat: the chord is held until then */
