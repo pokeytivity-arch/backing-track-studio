@@ -412,7 +412,10 @@ Triad arpeggios are played with an eighth-note triplet feel: Tri (1) Ple (3) Let
 
 THE CHORD ROOM CONSOLE AND HIS CHORD TECHNIQUES (his words)
 Mode (one at a time): Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart), Inversions, Voicings (one chord at a time, and the student gets multiple ways of playing it) and Arpeggios. The Note and Chord menus are for Inversions and Voicings.
-Inversion is one of the modes: Root position, 1st inversion, 2nd inversion. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
+Inversion is one of the modes: Root position, 1st inversion, 2nd inversion and 3rd inversion (the 3rd inversion is for seventh chords). In Inversions the chord menu has triads and seventh chords.
+Right-hand fingering for inversions (his):
+- Triads: first inversion 1 2 5; second inversion 1-2-4, or 1-3-5, and less frequently 1-2-5.
+- Seventh chords: root position 1 2 3 5; first inversion 1 2 4 5; second inversion 1 2 3 5; third inversion 1 2 4 5 when the root is a white note, 1 2 3 5 when the root is a black note. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
 Technique: only the Chord canvas uses the techniques. Under the chord canvas there are two sub-modes, Chords (together, the default) and Broken chords (separately); they can be selected on their own or together, and selecting both at the same time plays the arpeggio. Plus Grace notes and Bass line. Grace notes and bass lines are tied to Chords, and both can be switched off; the bass line is off by default. Voicings can use grace notes, off by default until you turn them on.
 While it plays, the fingers hit the notes (grace notes and bass-line notes too), and each note lights up as it is heard and dims after.
 Grace notes: add grace notes to all tones of the scale except the 1st and 4th tones. If the right hand has three notes, do a grace note; if it has four, don't. Example: B / A D F, grace note on the D, C♯ to D or C to D. E / G♯ C D G: no grace note. The grace note goes on the middle or the bottom note. Grace note on beat one, and then do nothing for the rest of the harmonic rhythm.

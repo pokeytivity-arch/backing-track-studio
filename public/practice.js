@@ -846,7 +846,8 @@ function render(){
     if(st.cmode==='voice'||st.cmode==='canvas'||st.cmode==='inv'){ const r1=el('div','e-ctl p-cdd'+(st.cmode==='canvas'?' p-dis':'')); area.appendChild(r1);
       if(K){ if(!st.cpick) st.cpick=K.CHK[0]+':0';
         r1.appendChild(selBox('Note',K.KEYS.map(k=>({v:k,t:DSP(k)})),st.ckey,v=>{ st.ckey=v; save(); if(st.cmode==='inv') loadInv(); else loadVoicings(); }));
-        const opts=[]; K.CHK.forEach(c=>K.CH[c][1].forEach((ch,i)=>opts.push({g:K.CH[c][0],v:c+':'+i,t:ch[0]})));
+        const opts=[]; K.CHK.forEach(c=>{ if(st.cmode==='inv'&&c==='nin') return; K.CH[c][1].forEach((ch,i)=>opts.push({g:K.CH[c][0],v:c+':'+i,t:ch[0]})); });
+        if(st.cmode==='inv'&&/^nin:/.test(st.cpick||'')) st.cpick='tri:0';
         r1.appendChild(selBox('Chord',opts,st.cpick||'',v=>{ st.cpick=v; save(); if(st.cmode==='inv') loadInv(); else loadVoicings(); }, 'prChord')); }
       if(st.cmode==='canvas'){ r1.querySelectorAll('select').forEach(x=>{ x.disabled=true; }); r1.title='Note and Chord are for Voicings'; canvasUI(area); }
       else area.appendChild(el('p','p-cvhelp',st.cmode==='inv'?'One chord at a time, in every inversion that is on: tap one in the Display to hear it.':'One chord at a time: tap a voicing in the Display to hear it and see it on the keys.')); }
@@ -917,7 +918,7 @@ function chordTip(list){
   (list||[]).forEach(n=>{ const m=String(n).match(/^([A-G])(#|b)?(m|min|-)(?!aj|a)/); if(!m) return; let k=m[1]+(m[2]||''); if(k==='A#') k='Bb'; if(k==='Db'||k==='Gb'||k==='Ab') return; if(MCH[k]&&!seen[k==='Eb'?'D#':k]){ seen[k==='Eb'?'D#':k]=1; t.appendChild(el('p',null,MCH[k])); } });
   t.hidden=!t.children.length;
 }
-const INV=['Root','1st','2nd'];
+const INV=['Root','1st','2nd','3rd'];
 function selBox(lab,opts,val,fn,id){ const w=el('label','p-sel'); if(id) w.id=id; w.appendChild(el('span',null,lab)); const s2=document.createElement('select'); s2.setAttribute('aria-label',lab); let og=null,gl=null;
   opts.forEach(o=>{ if(o.g&&o.g!==gl){ gl=o.g; og=document.createElement('optgroup'); og.label=gl; s2.appendChild(og); } const op=document.createElement('option'); op.value=o.v; op.textContent=o.t; if(o.v===val) op.selected=true; (o.g&&og?og:s2).appendChild(op); });
   s2.onchange=()=>fn(s2.value); w.appendChild(s2); return w; }
@@ -1107,13 +1108,20 @@ function staff(s){ const scr=document.querySelector('#prDisp .pd-screen'); if(!s
       const tn=mk(s.rh||[],'treble'), bn=mk(s.lh||[],'bass'), tv=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false).addTickables([tn]), bv=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false).addTickables([bn]);
       VF.Accidental.applyAccidentals([tv],'C'); VF.Accidental.applyAccidentals([bv],'C'); new VF.Formatter().joinVoices([tv]).format([tv],120); new VF.Formatter().joinVoices([bv]).format([bv],120); tv.draw(c,tr); bv.draw(c,bs); }catch(e){ console.log(e); } };
   if(window.Vex) go(); else if(typeof loadVex==='function') loadVex().then(go).catch(()=>{}); }
-/* Inversions mode: the chord picked by Note and Chord, in every inversion that is on (triads) */
-function loadInv(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit; if(!K) return; let ch=chordPick(); if(!ch){ st.cpick=K.CHK[0]+':0'; save(); ch=chordPick(); }
-  const root=K.pickRoot(ch[1],tKey(st.ckey,K.KEYS)), pc=root[2], rootN=K.spellAt(root,1,0), names=ch[1].map(([g,sm])=>K.spellAt(root,g,sm));
-  const rh=ch[1].map(([g,sm])=>60+pc+sm), lh=[36+pc], nm=rootN+' '+ch[0].toLowerCase(), base={name:nm[0].toUpperCase()+nm.slice(1),src:rootN+' '+ch[0],lh,rh,fing:'',lfing:'',spell:K.labelMap([[lh[0],rootN],...ch[1].map(([g,sm],i)=>[rh[i],names[i]])]),beats:2};
-  if(!triad(base)){ steps=octShift([handFit(base)]); steps.multi=false; steps.key=((pc%12)+12)%12; cur=0; chips(); show(); $('#prMsg').textContent='Inversions are for triads (three-note chords) for now. Pick Major, Minor, Diminished, Augmented or a sus chord.'; if(!quiet) play1(steps[0]); return; }
-  const iv=(st.invs||[0]).slice().sort(); steps=octShift(iv.map(k=>Object.assign(handFit(invert(Object.assign({},base),k)),{chip:k?INV[k]+' inversion':'Root position',beats:2})));
-  steps.key=((pc%12)+12)%12; steps.multi=true; cur=0; chips(); show(); if(!quiet) play1(steps[0]); }
+/* Inversions mode: the chord picked by Note and Chord (triads and seventh chords), in every inversion that is on. His right-hand fingering:
+   triads: root position 1 3 5, first inversion 1 2 5, second inversion 1 2 4 (or 1 3 5, less often 1 2 5);
+   seventh chords: root 1 2 3 5, first 1 2 4 5, second 1 2 3 5, third 1 2 4 5 when the root is a white note, 1 2 3 5 when it is a black note.
+   The third inversion is for seventh chords. The left hand plays the root (5). */
+function loadInv(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit; if(!K) return; if(!st.cpick||/^nin:/.test(st.cpick)){ st.cpick='tri:0'; save(); } let ch=chordPick(); if(!ch){ st.cpick='tri:0'; save(); ch=chordPick(); }
+  const root=K.pickRoot(ch[1],tKey(st.ckey,K.KEYS)), pc=root[2], rootN=K.spellAt(root,1,0), names=ch[1].map(([g,sm])=>K.spellAt(root,g,sm)), semis=ch[1].map(([g,sm])=>sm), n=semis.length, sev=/^sev:/.test(st.cpick);
+  const nm=rootN+' '+ch[0].toLowerCase(), title=nm[0].toUpperCase()+nm.slice(1), lh=[36+pc], spBase={}; spBase[lh[0]]=rootN;
+  const blackRoot=[1,3,6,8,10].includes(((pc%12)+12)%12);
+  const FING=k=>n===3?[[1,3,5],[1,2,5],[1,2,4]][k]:sev?[[1,2,3,5],[1,2,4,5],[1,2,3,5],blackRoot?[1,2,3,5]:[1,2,4,5]][k]:null;
+  const ok=k=>k<n&&(k<3||sev); let iv=(st.invs||[0]).slice().sort().filter(ok); const skipped=(st.invs||[]).some(k=>!ok(k)); if(!iv.length) iv=[0];
+  steps=octShift(iv.map(k=>{ const rh=[...semis.slice(k).map(x=>60+pc+x),...semis.slice(0,k).map(x=>72+pc+x)], sp=Object.assign({},spBase); rh.forEach(m=>{ const j=semis.indexOf(((m-60-pc)%12+12)%12)>=0?semis.indexOf(((m-60-pc)%12+12)%12):semis.findIndex(x=>((x%12)+12)%12===((m-60-pc)%12+12)%12); sp[m]=names[j]; });
+    const f=FING(k), st0={name:title+(k?' ('+INV[k]+' inversion)':''),src:rootN+' '+ch[0],lh,rh,fing:'',lfing:'',spell:sp,beats:2,chip:k?INV[k]+' inversion':'Root position',tri:n===3,lfm:{[lh[0]]:5}};
+    if(f){ st0.rfm={}; rh.forEach((m,i)=>{ st0.rfm[m]=f[i]; }); st0.nofing=false; return st0; } return handFit(st0); }));
+  steps.key=((pc%12)+12)%12; steps.multi=true; cur=0; chips(); show(); if(skipped) $('#prMsg').textContent=n===3?'The 3rd inversion is for seventh chords.':''; if(!quiet) play1(steps[0]); }
 /* Voicings mode: the chord picked by Key and Chord, played every way he gives for it */
 function loadVoicings(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit, T=window.VOICE&&VOICE._t; if(!K) return; let ch=chordPick(); if(!ch){ st.cpick=K.CHK[0]+':0'; save(); ch=chordPick(); }
   const root=K.pickRoot(ch[1],tKey(st.ckey,K.KEYS)), names=ch[1].map(([g,sm])=>K.spellAt(root,g,sm)), rootN=K.spellAt(root,1,0), name=rootN+' '+ch[0].toLowerCase();
@@ -1169,7 +1177,7 @@ function chordConsole(box){
   const strips=el('div','p-mix p-cmix'), cv=st.cmode==='canvas', vo=st.cmode==='voice'; box.appendChild(strips);
   strips.append(
     cStrip('Mode',[['canvas','Chord canvas','Type a progression: Dr. Onye plays it chord by chord'],['inv','Inversions','One chord at a time, in the inversions you choose'],['voice','Voicings','One chord at a time, and every way to play it'],['arp','Arpeggios','Chords played harp-like, with his fingering']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
-    cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode!=='inv',offWhy:'Turn on Inversions in Mode'}),
+    cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion'],[3,'3rd inversion','For seventh chords']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode!=='inv',offWhy:'Turn on Inversions in Mode'}),
     /* only the chord canvas uses the techniques; grace notes and the bass line go with Chords and can each be switched off (bass line off by default). Voicings can use grace notes (off until you turn them on). */
     cStrip('Technique',[['v','Chords','All the notes together. Turn on Broken chords too for the arpeggio'],['h','Broken chords','One note at a time. Turn on Chords too for the arpeggio'],['grace','Grace notes','A grace note on the middle or bottom note when the right hand has three notes'],['bline','Bass line','Two sixteenths now and then lead into the next bass note']],
       ()=>cv?[...(st.vh==='a'?['v','h']:[st.vh]),st.cg!==false?'grace':'',st.bline?'bline':'']:vo?[st.vg?'grace':'']:[],
