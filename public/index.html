@@ -3,6 +3,61 @@
 <head>
 <script>try{if(navigator.audioSession&&(navigator.maxTouchPoints||0)>0)navigator.audioSession.type='playback';}catch(e){}document.documentElement.classList.add('ps-boot');setTimeout(function(){document.documentElement.classList.remove('ps-boot')},8000);</script>
 <style>html.ps-boot body{visibility:hidden}html.ps-boot{background:linear-gradient(180deg,rgba(5,5,5,.80),rgba(5,5,5,.58) 45%,rgba(5,5,5,.28)),url(hub-bg.webp) center/cover no-repeat #0a0e17;min-height:100%}html.ps-boot #suiteHub.on{visibility:visible}</style>
+<!-- first visit of the day: "Built by a MUSICIAN, for MUSICIANS." in the dark, a flashlight sweeps across it, the letters dissolve and fall away, then the suite fades in -->
+<style>
+html.ps-intro,html.ps-intro body{background:#000!important}
+html.ps-intro body{visibility:hidden}
+html.ps-intro #suiteHub,html.ps-intro #suiteHub.on{visibility:hidden!important}
+#psIntro{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#000;visibility:visible;overflow:hidden;cursor:pointer;transition:opacity .7s ease}
+#psIntro.done{opacity:0;pointer-events:none}
+#psIntro .glow{position:absolute;width:62vmin;height:62vmin;left:50%;top:50%;margin:-31vmin 0 0 -31vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,244,214,.20),rgba(255,236,190,.07) 38%,transparent 68%);transform:translateX(-80vw);opacity:0;pointer-events:none}
+#psIntro .t{position:relative;display:grid;padding:0 6vw;text-align:center;font:800 clamp(30px,6.4vw,92px)/1.08 "Bricolage Grotesque","Avenir Next",system-ui,sans-serif;letter-spacing:-.02em}
+#psIntro .t>div{grid-area:1/1}
+#psIntro .base{color:rgba(255,255,255,.035);transition:color .5s,text-shadow .6s}
+#psIntro .beam{background:radial-gradient(circle at var(--x,-30%) 50%,#fff 0,#fff3d6 9%,rgba(255,236,200,.22) 24%,rgba(255,255,255,0) 44%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;transition:opacity .5s}
+#psIntro .t.lit .base{color:#fff;text-shadow:0 0 30px rgba(255,236,200,.35)} #psIntro .t.lit .beam{opacity:0}
+#psIntro .t b{font-weight:900}
+#psIntro .ch{display:inline-block;white-space:pre;transition:transform 1.25s cubic-bezier(.55,0,.85,.4),opacity 1.1s ease-in,filter 1.1s ease-in}
+#psIntro .t.fall .ch{opacity:0;filter:blur(6px)}
+@media (prefers-reduced-motion:reduce){ #psIntro .glow{display:none} #psIntro .ch{transition:opacity .8s} }
+#suiteHub.ps-fadein{animation:psHubIn 1s ease both}
+@keyframes psHubIn{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:none}}
+</style>
+<script>
+(function(){ var day; try{ var d=new Date(); day=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); if(localStorage.getItem('ps-intro-day')===day) return; }catch(e){ return; }
+  var H=document.documentElement; H.classList.add('ps-intro');
+  var finish=function(){ if(!H.classList.contains('ps-intro')) return; try{ localStorage.setItem('ps-intro-day',day); }catch(e){}
+    var o=document.getElementById('psIntro'); if(o){ o.classList.add('done'); setTimeout(function(){ o.remove(); },800); }
+    H.classList.remove('ps-intro'); var hub=document.getElementById('suiteHub'); if(hub){ hub.classList.add('ps-fadein'); setTimeout(function(){ hub.classList.remove('ps-fadein'); },1200); } };
+  setTimeout(finish,12000);   /* never hold the suite back for long */
+  var run=function(){ var o=document.createElement('div'); o.id='psIntro'; o.setAttribute('role','presentation'); o.title='Click to skip';
+    o.innerHTML='<div class="glow"></div><div class="t" aria-label="Built by a MUSICIAN, for MUSICIANS."><div class="base" aria-hidden="true"></div><div class="beam" aria-hidden="true"></div></div>'; document.body.appendChild(o);
+    var t=o.querySelector('.t'), base=o.querySelector('.base'), beam=o.querySelector('.beam'), g=o.querySelector('.glow'), txt='Built by a MUSICIAN, for MUSICIANS.';
+    /* two copies in the same place: the dim letters (which later fall) and the beam layer the flashlight lights up */
+    txt.split(/(\s+)/).forEach(function(w){ if(w===' '&&/,$/.test(beam.textContent)){ beam.appendChild(document.createElement('br')); base.appendChild(document.createElement('br')); return; }   /* line two starts after the comma */
+      var sp2=document.createElement('span'); sp2.textContent=w; if(/[A-Z]{2}/.test(w)) sp2.style.fontWeight='900'; beam.appendChild(sp2);
+      var wd=document.createElement('span'); if(/^\s+$/.test(w)){ wd.textContent=' '; base.appendChild(wd); return; } wd.style.whiteSpace='nowrap'; wd.style.display='inline-block';
+      w.split('').forEach(function(c){ var sp=document.createElement('span'); sp.className='ch'; sp.textContent=c; if(/[A-Z]{2}/.test(w)) sp.style.fontWeight='900'; wd.appendChild(sp); }); base.appendChild(wd); });
+    var skip=false; o.addEventListener('click',function(){ skip=true; finish(); }); document.addEventListener('keydown',function k(){ document.removeEventListener('keydown',k); skip=true; finish(); });
+    var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /* the flashlight: sweeps left to right, swings back to the middle, then the light comes up full */
+    var t0=performance.now(), D=reduce?600:2600;
+    var ease=function(x){ return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2; };
+    var step=function(now){ if(skip) return; var p=Math.min(1,(now-t0)/D), x;
+      if(p<.62) x=-30+ease(p/.62)*150; else x=120-ease((p-.62)/.38)*70;
+      beam.style.setProperty('--x',x.toFixed(1)+'%'); g.style.opacity=String(Math.min(1,p*4)); g.style.transform='translateX('+((x-50)*0.9).toFixed(1)+'vw)';
+      if(p<1) requestAnimationFrame(step); else lit(); };
+    var lit=function(){ t.classList.add('lit'); g.style.transition='opacity .6s'; g.style.opacity='0';
+      setTimeout(function(){ if(skip) return; fall(); },reduce?400:1100); };
+    /* dissolve and fall away, letter by letter */
+    var fall=function(){ var chs=t.querySelectorAll('.ch'); t.classList.add('fall');
+      Array.prototype.forEach.call(chs,function(c,i){ var dl=reduce?0:(i*28+Math.random()*120); c.style.transitionDelay=dl+'ms';
+        if(!reduce) c.style.transform='translate('+((Math.random()-.5)*60).toFixed(0)+'px,'+(140+Math.random()*260).toFixed(0)+'px) rotate('+((Math.random()-.5)*70).toFixed(0)+'deg)'; });
+      setTimeout(finish,reduce?900:(chs.length*28+1300)); };
+    requestAnimationFrame(step); };
+  if(document.body) run(); else document.addEventListener('DOMContentLoaded',run);
+})();
+</script>
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -694,7 +749,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-r (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-s (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
