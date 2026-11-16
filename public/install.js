@@ -44,7 +44,7 @@
   let cur=which, box=null;
   function build(){
     box=document.createElement('div'); box.id='psInst'; box.setAttribute('role','dialog'); box.setAttribute('aria-label','Install HearandPlay Piano Suite');
-    box.innerHTML='<div class="pi"><h2><img src="icon-192.png" alt="">Install HearandPlay Piano Suite</h2><p class="pi-sub">Open it from your home screen like any app: full screen, no browser bars, and it loads faster.</p><div id="piGo"></div><div class="pi-tabs" id="piTabs"></div><ol id="piSteps"></ol><div class="pi-foot"><span>Your saved work stays on this device.</span><button class="pi-x" type="button">Close</button></div></div>';
+    box.innerHTML='<div class="pi"><h2><img src="hp-icon-192.png" alt="">Install HearandPlay Piano Suite</h2><p class="pi-sub">Open it from your home screen like any app: full screen, no browser bars, and it loads faster.</p><div id="piGo"></div><div class="pi-tabs" id="piTabs"></div><ol id="piSteps"></ol><div class="pi-foot"><span>Your saved work stays on this device.</span><button class="pi-x" type="button">Close</button></div></div>';
     document.body.appendChild(box);
     box.querySelector('.pi-x').onclick=close; box.addEventListener('click',e=>{ if(e.target===box) close(); });
     document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&box.classList.contains('on')) close(); });
@@ -64,7 +64,7 @@
     try{ if(localStorage.getItem('ps-installed')||+localStorage.getItem('ps-inst-no')>Date.now()) return; }catch(_){}
     if(matchMedia('(min-width:900px)').matches) return;
     const b=document.createElement('div'); b.id='psInstBar';
-    b.innerHTML='<img src="icon-192.png" alt=""><span>Install HearandPlay Piano Suite on your '+(ios?'iPhone':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
+    b.innerHTML='<img src="hp-icon-192.png" alt=""><span>Install HearandPlay Piano Suite on your '+(ios?'iPhone':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
     b.querySelector('.go').onclick=()=>{ open(); };
     b.querySelector('.no').onclick=()=>{ b.remove(); try{ localStorage.setItem('ps-inst-no',String(Date.now()+14*864e5)); }catch(_){} };
     document.body.appendChild(b);
