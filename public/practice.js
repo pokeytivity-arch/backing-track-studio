@@ -867,6 +867,7 @@ function render(){
     const r2=el('div','e-ctl p-ctr'); transport(r2); { const dt=$('#prDisp .pd-top'); if(dt){ r2.classList.add('p-ctop'); dt.appendChild(r2); } else box.appendChild(r2); }
     /* the console's own bottom bar: the memory banks, then Ask Dr. Onye, like the Scale room's */
     const bkr=el('div','p-cbar p-ccbar'); box.appendChild(bkr); bkr.append(bankBar(),el('span','p-sp'));
+    { const sb=el('button','p-ubtn p-stud','Studio'); sb.type='button'; sb.id='prCStudio'; const why=st.cmode==='arp'?'Arpeggios are practised here':''; sb.disabled=!!why; sb.title=why||'Practise these chords with a backing track in the Studio (Chord mode)'; sb.onclick=chordsToStudio; bkr.appendChild(sb); }
     const ask=el('button','p-ubtn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; bkr.appendChild(ask);
     $('#prLbl').textContent='Chord practice'; ov.classList.toggle('p-xm',!!XM); xmPrep();
     if(st.cmode==='voice') loadVoicings(true); else if(st.cmode==='inv') loadInv(true); else if(st.cmode==='arp') loadArp(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
@@ -1255,6 +1256,17 @@ function xmPrint(kind2){ const list=steps.slice(0,48), title=(kind2==='staff'?'S
   const w=window.open('','_blank'); if(!w){ const m=$('#prMsg'); if(m) m.textContent='Allow pop-ups for this site to export.'; return; }
   w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:20px} figure{display:inline-block;margin:10px;width:300px;vertical-align:top} figcaption{font-weight:700;margin-bottom:4px} svg{max-width:100%;height:auto} @media print{button{display:none}}</style></head><body><h1>'+title+'</h1>'+body+'<p style="color:#666;font-size:12px">Made with HearandPlay Piano Suite · hearandplay.app</p><button onclick="print()">Print / Save as PDF</button></body></html>'); w.document.close(); }
 function xmPrep(){ if(XM&&!window.Vex&&typeof loadVex==='function') loadVex().catch(()=>{}); }
+/* Studio: the progression goes to the Studio's Chord mode, bar by bar (4/4), so it can be practised with a backing track; the menu bar's back arrow returns here */
+function chordsToStudio(){ if(st.cmode==='arp'||!window.STUDIO_CHORDS) return; const NM=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'], nn=m=>NM[((m%12)+12)%12]+(Math.floor(m/12)-1);
+  let toks=[], tr=0;
+  if(st.cmode==='canvas'){ toks=canvasParse(st.chords).map(x=>({t:x.tok,b:x.beats})); tr=trN(); }
+  else toks=steps.map(x=>({t:'['+(x.lh||[]).slice().sort((a,b)=>a-b).map(nn).join(' ')+((x.lh||[]).length?' / ':'')+(x.rh||[]).slice().sort((a,b)=>a-b).map(nn).join(' ')+']',b:x.beats||2}));
+  if(!toks.length){ const m=$('#prMsg'); if(m) m.textContent='Put some chords in first.'; return; }
+  const slots=[]; toks.forEach(x=>{ const n=Math.max(1,Math.round(x.b)); slots.push(x.t); for(let i=1;i<n;i++) slots.push('.'); }); while(slots.length%4) slots.push('.');
+  const bars=[]; for(let i=0;i<slots.length;i+=4) bars.push(slots.slice(i,i+4).join(' '));
+  const title=st.cmode==='canvas'?'Chord progression':($('#prBig').textContent||'Chords'), back=from||'class'; close();
+  if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if(back==='class'&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('chords'); else open('chords',{resume:true}); },260); }); };
+  window.STUDIO_CHORDS({title,chords:'| '+bars.join(' | ')+' |',bpm:st.bpm,transpose:tr}); }
 /* a console strip of lit buttons, like the Scale room's */
 function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col);
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; } if(o.cls&&o.cls()) strip.classList.add(o.cls());

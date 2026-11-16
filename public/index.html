@@ -2866,6 +2866,12 @@ window.STUDIO_SCALE=function(p){
   if(typeof setMeter==='function') setMeter('4/4',{snap:false,convert:false}); syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild(); SUITE.go('studio'); if(window.__psRet){ window.__psRet(); window.__psRet=null; }
   toast('Scale loaded. Pick a backing track (style), then press Play. Only the drums play in scale mode.');
 };
+/* the Chord room sends its progression here (Chord mode) to practise with a backing track */
+window.STUDIO_CHORDS=function(p){
+  loadTrack({title:p.title||'Chord progression',chords:p.chords,style:S.style,bpm:p.bpm||S.bpm,transpose:p.transpose||0,meter:'4/4'}); rebuild(); SUITE.go('studio');
+  if(window.__psRet){ window.__psRet(); window.__psRet=null; }
+  toast('Chords loaded in Chord mode. Pick a backing track (style), then press Play.');
+};
 function loadTrack(t){
   if(playing) stop(); if(S.sm==='scale'){ S.sm='chord'; S.chordBak=null; syncSm(); }
   S.title=t.title||''; S.chords=t.chords||''; S.style=STYLES[t.style]?t.style:'pop'; S.bpm=clampBpm(t.bpm); S.transpose=+t.transpose||0; S.flatsHint=(typeof t.flats==='boolean')?t.flats:null;
@@ -3082,7 +3088,7 @@ init();
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zz15" defer></script>
 <script src="hands.js?v=69" defer></script>
-<script src="practice.js?v=j5" defer></script>
+<script src="practice.js?v=j6" defer></script>
 <script src="scale-library.js?v=4" defer></script>
 <script src="scales.js?v=12" defer></script>
 <script src="check.js" defer></script>
