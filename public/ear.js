@@ -36,6 +36,25 @@ const midiName=m=>NAMES[((m%12)+12)%12];
 
 /* ---------- look: the same dark stage as the Studio ---------- */
 const css=document.createElement('style'); css.textContent=`
+.ec-con{display:flex;align-items:stretch;gap:0;padding:10px 6px;border-radius:14px;border:1px solid #2b3245;background:linear-gradient(180deg,#1c2130,#0d1018);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.45);overflow-x:auto;max-width:100%;color:#e6e9f2}
+.ec-ch{display:flex;flex-direction:column;gap:8px;padding:0 10px;border-right:1px solid rgba(255,255,255,.07);flex:none} .ec-ch:last-child{border-right:0}
+.ec-t{font:800 9px var(--body);letter-spacing:.16em;text-transform:uppercase;color:#8d97b0;white-space:nowrap}
+.ec-col{display:flex;flex-direction:column;gap:5px}
+.ec-key{display:flex;align-items:center;gap:7px;min-height:26px;padding:3px 10px 3px 8px;border-radius:5px;border:1px solid #070910;background:linear-gradient(180deg,#2a3042,#1a1f2c);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 3px rgba(0,0,0,.55);color:#9aa3ba;font:700 12px var(--body);white-space:nowrap;cursor:pointer;text-align:left}
+.ec-key:hover{color:#fff} .ec-key:active{transform:translateY(1px)} .ec-key.on{color:#eafff0;background:linear-gradient(180deg,#323a4f,#222838)}
+.ec-led{flex:none;width:7px;height:7px;border-radius:50%;background:#123018;box-shadow:inset 0 1px 1px rgba(0,0,0,.8)} .ec-key.on .ec-led{background:#3dff6e;box-shadow:0 0 6px 1px rgba(61,255,110,.85),0 0 14px rgba(61,255,110,.45)}
+.ec-knob{align-items:center} .ec-kw{position:relative;width:170px;height:118px}
+.ec-dial{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;cursor:grab;touch-action:none;background:radial-gradient(circle at 35% 30%,#5b6378,#2a3042 55%,#141824);box-shadow:0 0 0 3px #0a0c12,0 0 0 5px #2b3245,0 6px 14px rgba(0,0,0,.7),inset 0 1px 1px rgba(255,255,255,.25)}
+.ec-dial::after{content:'';position:absolute;inset:6px;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.06) 0 4deg,transparent 4deg 12deg)}
+.ec-ptr{position:absolute;left:50%;top:5px;width:4px;height:18px;margin-left:-2px;border-radius:2px;background:#ffd43b;box-shadow:0 0 8px rgba(255,212,59,.8);z-index:1}
+.ec-dial.spin{cursor:progress}
+.ec-ml{position:absolute;padding:2px 6px;border:0;border-radius:5px;background:none;color:#69728a;font:800 10px var(--body);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.ec-ml[data-a="-45"]{left:0;top:2px} .ec-ml[data-a="45"]{right:0;top:2px} .ec-ml[data-a="135"]{right:0;bottom:2px} .ec-ml[data-a="-135"]{left:0;bottom:2px}
+.ec-ml.on{color:#ffd43b;text-shadow:0 0 8px rgba(255,212,59,.5)} .ec-ml:hover{color:#fff}
+.ec-spin{padding:3px 12px;border-radius:999px;border:1px solid #3a4258;background:#1a1f2c;color:#e6e9f2;font:800 11px var(--body);cursor:pointer}
+@media (max-width:700px){ html:not(.ps-rot) .ec-con{flex-wrap:wrap;gap:8px 0;overflow:visible} html:not(.ps-rot) .ec-knob{flex-basis:100%;flex-direction:row;justify-content:center;border-right:0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.07)} html:not(.ps-rot) .ec-ch{border-right:0} }
+html.ps-rot .ec-kw{width:140px;height:96px} html.ps-rot .ec-dial{width:50px;height:50px;margin:-25px 0 0 -25px} html.ps-rot .ec-key{min-height:20px;font-size:10.5px;padding:2px 8px 2px 6px} html.ps-rot .ec-con{padding:6px 4px} html.ps-rot .ec-ch{gap:5px;padding:0 7px}
+
 #earRoom,#prRoom{position:fixed;left:0;right:0;bottom:0;top:36px;z-index:9998;background:var(--stage,#070b14);color:var(--stage-ink,#fff);display:flex;flex-direction:column;gap:18px;overflow:auto;padding:18px clamp(16px,3vw,34px) 28px;font-family:var(--body,system-ui)}
 #earRoom[hidden],#prRoom[hidden]{display:none}
 #earRoom>*,#prRoom>*{flex-shrink:0}
@@ -98,12 +117,53 @@ function build(){
 function open(){ if(!ov) build(); ov.hidden=false; render(); }
 function close(){ clr(); sgStop(); if(ov) ov.hidden=true; try{ if(window.CLASS&&CLASS.endPractice) CLASS.endPractice(); }catch(_){} }
 
+/* ---------- the ear-training console ----------
+   A mode knob (Awareness, Recognition, Singing, Relative pitch): turn it by dragging round, click a mode's name, or flick / press Spin to land on a
+   random mode. Next to it, one channel per section (Note, Scale, Interval, Chord, Pattern) with a lit button for each exercise. Exercise names are
+   provisional until the teacher names them (Note Finder and Scale Finder are his). */
+const KMODES=[['aware','Awareness',-45],['recog','Recognition',45],['sing','Singing',135],['rel','Relative pitch',-135]];   /* clockwise from top left */
+const SECT={note:'Note',scale:'Scale',interval:'Interval',chord:'Chord',pattern:'Pattern',sing:'Singing'};
+const EXS={
+  aware:{note:[['note','Note awareness']],scale:[['scale','Scale awareness']],interval:[['interval','Interval awareness']],chord:[['chord','Chord awareness']],pattern:[['pattern','Pattern awareness']]},
+  recog:{note:[['note','Note Finder']],scale:[['scale','Scale Finder'],['tones','Scale tones']],interval:[['interval','Interval recognition']],chord:[['chord:tri','Triads'],['chord:sev','Seventh chords'],['chord:deg','1-6 chords in C']],pattern:[['pattern','Pattern recognition']]},
+  sing:{sing:[['sing','Singing test']]},
+  rel:{note:[['note','Note relative pitch']],scale:[['scale','Scale relative pitch']],interval:[['interval','Interval relative pitch']],chord:[['chord','Chord relative pitch']]}};
+const MWORD={aware:'awareness',recog:'recognition',sing:'',rel:'relative pitch'};
+let kAng=null;
+function lptE(el,e){ const r=el.getBoundingClientRect(); let a=1,b=0,c=0,d=1; try{ const t=getComputedStyle(document.body).transform; if(t&&t!=='none'){ const m=new DOMMatrix(t), k=Math.hypot(m.a,m.b)||1; a=Math.round(m.a/k); b=Math.round(m.b/k); c=Math.round(m.c/k); d=Math.round(m.d/k); } }catch(_){}
+  const ox=(a<0||c<0)?r.right:r.left, oy=(b<0||d<0)?r.bottom:r.top, dx=e.clientX-ox, dy=e.clientY-oy; return {x:dx*a+dy*b,y:dx*c+dy*d}; }
+function setMode(m){ if(m===mode) return; mode=m; try{ localStorage.setItem('ps-ear-mode',mode); }catch(_){} render(); }
+function earConsole(host){
+  const con=el('div','ec-con'), ks=el('div','ec-ch ec-knob'); ks.appendChild(el('div','ec-t','Mode'));
+  const kw=el('div','ec-kw'); kw.innerHTML='<div class="ec-dial"><i class="ec-ptr"></i></div>'; const dial=kw.querySelector('.ec-dial');
+  KMODES.forEach(([k,l,a])=>{ const b=el('button','ec-ml'+(k===mode?' on':''),l); b.type='button'; b.dataset.a=a; b.onclick=()=>turnTo(k); kw.appendChild(b); });
+  const cur=KMODES.find(x=>x[0]===mode)||KMODES[0]; if(kAng==null) kAng=cur[2]; else { const base=cur[2]; kAng=kAng+(((base-kAng)%360)+540)%360-180; } dial.style.transform='rotate('+kAng+'deg)';
+  const spin=el('button','ec-spin','↻ Spin'); spin.type='button'; spin.title='Spin the knob and land on a random mode'; spin.onclick=()=>spinTo();
+  ks.append(kw,spin); con.appendChild(ks);
+  function turnTo(k){ const t=KMODES.find(x=>x[0]===k); const d=((t[2]-kAng)%360+540)%360-180; kAng+=d; dial.style.transition='transform .35s cubic-bezier(.3,1.4,.5,1)'; dial.style.transform='rotate('+kAng+'deg)'; setTimeout(()=>setMode(k),300); }
+  function spinTo(){ const others=KMODES.filter(x=>x[0]!==mode), t=others[Math.floor(Math.random()*others.length)], d=((t[2]-kAng)%360+360)%360; kAng+=720+360*Math.floor(Math.random()*2)+d;
+    dial.classList.add('spin'); dial.style.transition='transform 2.2s cubic-bezier(.12,.75,.2,1)'; dial.style.transform='rotate('+kAng+'deg)'; setTimeout(()=>{ dial.classList.remove('spin'); setMode(t[0]); },2250); }
+  /* drag round the knob; a fast flick spins it */
+  let dr=null; const angAt=e=>{ const p=lptE(dial,e); return Math.atan2(p.y-dial.offsetHeight/2,p.x-dial.offsetWidth/2)*180/Math.PI+90; };
+  dial.addEventListener('pointerdown',e=>{ e.preventDefault(); dial.setPointerCapture(e.pointerId); dial.style.transition='none'; dr={a0:angAt(e),k0:kAng,last:[]}; });
+  dial.addEventListener('pointermove',e=>{ if(!dr) return; let d=angAt(e)-dr.a0; d=((d%360)+540)%360-180; dr.a0=angAt(e); kAng+=d; dial.style.transform='rotate('+kAng+'deg)'; dr.last.push([performance.now(),d]); if(dr.last.length>6) dr.last.shift(); });
+  const up=()=>{ if(!dr) return; const L=dr.last, v=L.length>1?L.reduce((a,x)=>a+x[1],0)/Math.max(1,(L[L.length-1][0]-L[0][0])):0; dr=null;
+    if(Math.abs(v)>1.2){ spinTo(); return; } let best=KMODES[0], bd=1e9; KMODES.forEach(x=>{ const dd=Math.abs((((x[2]-kAng)%360)+540)%360-180); if(dd<bd){ bd=dd; best=x; } }); turnTo(best[0]); };
+  dial.addEventListener('pointerup',up); dial.addEventListener('pointercancel',up);
+  /* the sections */
+  const ex=EXS[mode]||{}, curK=mode==='rel'?rcat:mode==='sing'?'sing':(cat==='chord'?'chord:'+chordSet:cat);
+  Object.keys(ex).forEach(sec=>{ const ch=el('div','ec-ch'); ch.appendChild(el('div','ec-t',SECT[sec]+(MWORD[mode]&&mode!=='sing'?' '+MWORD[mode]:''))); const col=el('div','ec-col');
+    ex[sec].forEach(([k,l])=>{ const on=mode==='rel'?k===rcat:mode==='sing'?true:(k===curK||(k===cat&&!k.startsWith('chord:'))); const b=el('button','ec-key'+(on?' on':'')); b.type='button'; b.innerHTML='<i class="ec-led"></i><span></span>'; b.lastChild.textContent=l;
+      b.onclick=()=>{ if(mode==='rel'){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else if(mode!=='sing'){ if(k.startsWith('chord:')){ cat='chord'; chordSet=k.slice(6); } else cat=k; try{ localStorage.setItem('ps-ear-cat',cat); }catch(_){} } render(); };
+      col.appendChild(b); }); ch.appendChild(col); con.appendChild(ch); });
+  host.appendChild(con); }
+
 function render(){
   clr(); lit=[]; n=0; score=0; missed={}; stats={}; q=null; answered=false;
   ov.querySelectorAll('#earMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===mode)));
-  sgStop(); const cats=$('#earCats'); cats.textContent=''; cats.hidden=mode==='sing';
+  sgStop(); const cats=$('#earCats'); cats.textContent=''; cats.hidden=false; { const em=$('#earMode'); if(em) em.hidden=true; }
   { const ct=ov.querySelector('.ear-sp'); if(ct) ct.remove(); } if(mode==='aware'&&cat==='tones') cat='note';
-  (mode==='rel'?RCATS:mode==='recog'?CATS.concat([['tones','Scale tones']]):CATS).forEach(([k,t])=>{ const rl=mode==='rel', b=el('button','e-cat',k==='tones'?'Scale recognition: tone':mode==='recog'&&k==='scale'?'Scale recognition: type':t+' '+(rl?'relative pitch':mode==='aware'?'awareness':'recognition')); b.type='button'; b.setAttribute('aria-pressed',String(k===(rl?rcat:cat))); b.onclick=()=>{ if(rl){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else { cat=k; try{ localStorage.setItem('ps-ear-cat',k); }catch(_){} } render(); }; cats.appendChild(b); });
+  earConsole(cats);
   $('#earKb').hidden=mode!=='aware'&&mode!=='sing'&&mode!=='rel';
   $('#earLbl').textContent=mode==='recog'&&cat==='tones'?'Scale recognition · Tone':mode==='recog'&&cat==='scale'?'Scale recognition · Type':mode==='sing'?'Singing test':mode==='rel'?'Relative pitch · '+RCATS.find(c=>c[0]===rcat)[1]:(mode==='aware'?'Awareness':'Recognition')+' · '+CATS.find(c=>c[0]===cat)[1];
   $('#earMsg').textContent=''; $('#earOpts').textContent=''; $('#earCtl').textContent=''; $('#earBig').textContent=''; $('#earSub').textContent='';
@@ -401,7 +461,7 @@ function openTones(k,t){ if(k) TT.key=k; if(t) TT.type=t; mode='recog'; cat='ton
 
 function recognition(){
   const ctl=$('#earCtl');
-  if(cat==='chord'){ const seg=el('div','e-seg sm'); Object.keys(CHORDSETS).forEach(k=>{ const b=el('button',null,CHORDSETS[k].name); b.type='button'; b.setAttribute('aria-pressed',String(k===chordSet)); b.onclick=()=>{ chordSet=k; render(); }; seg.appendChild(b); }); ctl.appendChild(seg); }
+  if(cat==='chord'&&!$('#earCats .ec-con')){ const seg=el('div','e-seg sm'); Object.keys(CHORDSETS).forEach(k=>{ const b=el('button',null,CHORDSETS[k].name); b.type='button'; b.setAttribute('aria-pressed',String(k===chordSet)); b.onclick=()=>{ chordSet=k; render(); }; seg.appendChild(b); }); ctl.appendChild(seg); }
   next();
 }
 function next(){
