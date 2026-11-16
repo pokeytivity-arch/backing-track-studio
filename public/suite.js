@@ -11,7 +11,7 @@ const DEST={
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
-  challenge:{name:'90 Day Challenge',icon:'🏆',blurb:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.',panel:null}
+  challenge:{name:'Practice Arena',icon:'🏆',blurb:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.',panel:null}
 };
 const ORDER=['class','studio','plus','challenge'];
 const get=()=>{ try{ const v=localStorage.getItem(KEY); return DEST[v]?v:null; }catch(_){ return null; } };
@@ -145,7 +145,7 @@ body[data-dest="class"][data-cl-mini="1"] #psMini{display:flex}
 #suiteHub .dcard[data-k=plus]{--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255}
 #suiteHub .dcard[data-k=challenge]{--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170}
 #suiteHub .dcard[data-k=challenge] .phi{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.18),transparent 55%),linear-gradient(160deg,#7a1238,#2a0613)!important}
-#suiteHub .dcard[data-k=challenge] .phi:after{content:'90';position:absolute;inset:0;display:grid;place-items:center;font:900 112px/1 var(--display,var(--body));color:rgba(255,255,255,.9);text-shadow:0 8px 30px rgba(0,0,0,.4)}
+#suiteHub .dcard[data-k=challenge] .phi:after{content:'';position:absolute;left:12%;right:12%;top:14%;bottom:34%;background-image:radial-gradient(circle,rgba(255,255,255,.92) 0 5px,transparent 6px),radial-gradient(circle,rgba(255,255,255,.28) 0 5px,transparent 6px);background-size:22px 22px,22px 22px;background-position:0 0,0 0;-webkit-mask-image:linear-gradient(90deg,#000 55%,rgba(0,0,0,.35) 56%);mask-image:linear-gradient(90deg,#000 55%,rgba(0,0,0,.35) 56%);filter:drop-shadow(0 6px 18px rgba(0,0,0,.4))}
 #suiteHub .dcard,#suiteHub .dcard.last{background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.45);
  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 -2px 0 rgba(0,0,0,.45) inset,0 3px 6px rgba(0,0,0,.5),0 26px 40px -10px rgba(0,0,0,.75),0 60px 80px -28px rgba(0,0,0,.8)}
 #suiteHub .dcard.last{border-color:rgba(255,212,59,.9)}
@@ -194,6 +194,7 @@ function renderHub(){
   document.getElementById('psFoot').textContent=last?'Your last place is saved on this device.':'You can switch any time from the Window menu.';
   const back=document.getElementById('psBack'); back.hidden=!cur; back.onclick=()=>go(cur);
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
+  try{ if(window.PSROLE) PSROLE.hub(); }catch(_){}
 }
 function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.documentElement.classList.remove('ps-boot'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }

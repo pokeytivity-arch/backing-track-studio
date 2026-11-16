@@ -181,13 +181,13 @@ function render(){
 }
 function head(w,sub){
   const h=el('div','row'); h.style.justifyContent='space-between';
-  const l=el('div'); l.innerHTML='<h1><button id="chBk" aria-label="Back" title="Back" style="margin-right:10px;padding:2px 12px">←</button>90 Day Challenge</h1><div class="mut">'+esc(sub||'Practice a little every day. Stay consistent.')+'</div>'; h.appendChild(l);
+  const l=el('div'); l.innerHTML='<h1><button id="chBk" aria-label="Back" title="Back" style="margin-right:10px;padding:2px 12px">←</button>Practice Arena</h1><div class="mut">'+esc(sub||'Practice plans to keep you going. The 90 Day Challenge is one of them.')+'</div>'; h.appendChild(l);
   l.querySelector('#chBk').onclick=()=>{ if(window.SUITE) SUITE.back(); };
   const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await AUTH.signOut(); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
 }
 /* --- sign in --- */
 function authView(w){
-  w.innerHTML='<h1>90 Day Challenge</h1><p class="mut">Create a free account so your plan and check-ins follow you to any phone or computer.</p>';
+  w.innerHTML='<h1>Practice Arena</h1><p class="mut">Create a free account so your plan and check-ins follow you to any phone or computer.</p>';
   const box=el('div','box au-box'); w.appendChild(box);
   AUTH.form(box,async()=>{ tok=AUTH.token(); await loadAcct();
     if(D&&!D.plan){ let g=null; try{ g=JSON.parse(localStorage.getItem(GK)||'null'); }catch(_){} if(g&&g.data&&g.data.plan){ D=Object.assign(emptyData(),g.data); flush(); } }

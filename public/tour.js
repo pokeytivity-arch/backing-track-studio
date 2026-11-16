@@ -6,7 +6,7 @@ const STEPS=[
  {sel:'.dcard[data-k=class]',t:'Class',b:'Learn with HearandPlay. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.'},
  {sel:'.dcard[data-k=studio]',t:'Studio',b:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.'},
  {sel:'.dcard[data-k=plus]',t:'Studio+',b:'Transcription. Turn any recording into notes you can see and practice on the keyboard.'},
- {sel:'.dcard[data-k=challenge]',t:'90 Day Challenge',b:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.'},
+ {sel:'.dcard[data-k=challenge]',t:'Practice Arena',b:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.'},
  {sel:'#hubTop .thbtn',t:'Theme',b:'Change the look of the whole suite. Five themes to choose from.'},
  {sel:'#hubTop .ac-av',t:'Your account',b:'Tap your photo to open your Account: your photo, name, streak and progress.'},
  {t:'Moving around',b:'Inside any room, the arrow at the top left takes you back to where you came from, and the room name at the top opens a menu to jump anywhere.'}
