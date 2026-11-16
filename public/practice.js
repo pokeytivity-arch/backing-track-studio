@@ -496,9 +496,9 @@ function chordHands(s){
       if(lo.length&&hi.length){ const a=Math.max(...lo), b=Math.min(...hi); let m=Math.round(pos[a]+(pos[b]-pos[a])*(j-a)/(b-a)); if(!isW(m)) m+=(pos[b]>pos[a]?1:-1); pos[j]=m; continue; }
       const r=have.reduce((a,b)=>Math.abs(b-j)<Math.abs(a-j)?b:a); let m=pos[r], n=Math.abs(j-r), st=Math.sign(j-r)*dir;
       while(n>0){ m+=st; while(!isW(m)) m+=st; n--; } pos[j]=m; }
-    const last=done?[...press].sort((a,b)=>all.indexOf(pos[b])-all.indexOf(pos[a]))[0]:null; const f=last||(press.includes(1)?1:press.length?Math.min(...press):Math.min(...have)); return {pos,press,f,note:pos[f]}; };
+    const last=done?[...press].sort((a,b)=>all.indexOf(pos[b])-all.indexOf(pos[a]))[0]:null; const f=last||(press.includes(1)?1:press.length?Math.min(...press):Math.min(...have)); return {pos,press,own:have.slice(),f,note:pos[f]}; };
   const R=side([...XR,...(s.rh||[])],1), L=side([...XL,...(s.lh||[])],-1);
-  return {rh:R?[R.note]:[],fing:R?String(R.f):'',rpos:R?R.pos:null,rpress:R?R.press:null,lh:L?[L.note]:[],lfing:L?String(L.f):'',lpos:L?L.pos:null,lpress:L?L.press:null};
+  return {rh:R?[R.note]:[],fing:R?String(R.f):'',rpos:R?R.pos:null,rpress:R?R.press:null,rown:R?R.own:null,lh:L?[L.note]:[],lfing:L?String(L.f):'',lpos:L?L.pos:null,lpress:L?L.press:null,lown:L?L.own:null};
 }
 function names(s){ const w=/^\[/.test(s.src||'')&&!trN()?s.src:''; if(w) return /[A-G](b|♭)/.test(w)?FLAT_N:/[A-G](#|♯)/.test(w)?SHARP_N:FLAT_N;   /* written chords keep the spelling the student typed */
   return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
@@ -993,8 +993,8 @@ function bassFing(st){
 { const c=document.createElement('style'); c.textContent=`
 #prRoom .p-ccon{display:flex;flex-direction:column;gap:12px}
 #prRoom .p-cmix{flex-wrap:wrap;gap:8px 0;padding:6px 0 4px;border-bottom:1px solid rgba(255,255,255,.07)} #prRoom .p-cmix .p-cht{cursor:default}
-#prRoom .p-cmix .p-ch{padding:0 14px;min-width:150px} #prRoom .p-cmix .p-key{min-height:30px;font-size:13px;padding:4px 12px 4px 9px}
-#prRoom .p-cmix .p-c2{display:grid;grid-template-columns:repeat(2,minmax(130px,auto));grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:5px 8px}
+#prRoom .p-cmix{flex-wrap:wrap!important;align-items:stretch;row-gap:12px!important} #prRoom .p-cmix>.p-ch{padding:0 9px;min-width:max-content;flex:1 0 auto} #prRoom .p-cmix .p-key{min-height:28px;font-size:12.5px;padding:3px 9px 3px 7px;white-space:nowrap} #prRoom .p-lvls{display:flex;flex:none;border-left:1px solid rgba(255,255,255,.07)} #prRoom .p-lvls .p-ch{border-right:0} #prConP .ep-body>*,#prRoom .p-ccon,#prRoom .p-carea{min-width:0;max-width:100%} #prRoom .p-cmix{max-width:100%}
+#prRoom .p-cmix .p-c2{display:grid;grid-template-columns:repeat(2,auto);grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:5px 8px}
 #prRoom .p-cmix .p-ch.off{opacity:.4}
 #prRoom .p-cv{display:flex;flex-direction:column;gap:8px} #prRoom .p-cvh{display:flex;align-items:center;gap:12px}
 #prRoom .p-cvseg{display:inline-flex;border:1.5px solid #3a4a74;border-radius:999px;padding:2px} #prRoom .p-cvseg button{border:0;background:none;color:#aab4cf;font:700 13px system-ui,sans-serif;padding:5px 14px;border-radius:999px;cursor:pointer} #prRoom .p-cvseg button[aria-pressed=true]{background:#c8d0c8;color:#111}
@@ -1005,8 +1005,8 @@ function bassFing(st){
 #prRoom .p-cvn{color:#6d7894;font:700 10px system-ui,sans-serif}
 #prRoom .p-cvbar input{min-width:0;width:100%;box-sizing:border-box;background:#0c0f17;color:#eef2ff;border:1.5px solid #2c3a5e;border-radius:8px;padding:7px 6px;font:700 13px system-ui,sans-serif;text-align:center} #prRoom .p-cvbar input:focus{border-color:#7aa2ff;outline:none}
 #prRoom .p-cvadd{display:flex;gap:8px}
-#prRoom .p-ctr{gap:10px;flex-wrap:wrap;align-items:center} #prRoom .p-cmix [data-ch=Technique] .p-c2{grid-template-rows:repeat(2,auto)} #prRoom .p-trr{display:flex;align-items:center;gap:5px} #prRoom .p-trl{width:52px;color:#8d97b0;font:800 10px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
-#prRoom .p-trs .p-trb{justify-content:center;min-width:40px;font-size:18px!important;font-weight:900} #prRoom .p-trs .p-trv{justify-content:center;min-width:76px;color:#cfd6e6} #prRoom .p-trs .p-trv.on{color:#ffd43b}
+#prRoom .p-ctr{gap:10px;flex-wrap:wrap;align-items:center} #prRoom .p-cmix [data-ch=Technique] .p-c2{grid-template-rows:repeat(2,auto)} #prRoom .p-amix{flex-wrap:wrap!important} #prRoom .p-amix>.p-ch{flex:1 0 auto;min-width:max-content} #prRoom .p-trr{display:flex;align-items:center;gap:5px} #prRoom .p-trl{width:52px;color:#8d97b0;font:800 10px system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase}
+#prRoom .p-trs .p-trb{justify-content:center;min-width:40px;font-size:18px!important;font-weight:900} #prRoom .p-trs .p-trv{justify-content:center;min-width:76px;flex:1;color:#cfd6e6} #prRoom .p-trs .p-bcol{width:100%} #prRoom .p-trs .p-trv.on{color:#ffd43b}
 /* Chords and Broken chords both on: the arpeggio. Their lights flash red, blue and green */
 @keyframes pArp{0%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}33%{background:#3b8bff;box-shadow:0 0 7px 1px #3b8bff}66%{background:#3dff6e;box-shadow:0 0 7px 1px #3dff6e}100%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}}
 #prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
@@ -1199,7 +1199,7 @@ function chordConsole(box){
   strips.append(cStrip('Notation',[['staff','Staff','The voicing on a grand staff, in the Display'],['kb','Virtual keyboard','The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)']],()=>[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },{off:()=>!vo,offWhy:'For Voicings'}),
     cStrip('Labels',[['letter','Letter'],['solfa','Solfa'],['number','Number']],()=>st.nlab,v=>{ const a=new Set(st.nlab); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.nlab=['letter','solfa','number'].filter(x=>a.has(x)); save(); render(); },{off:()=>!vo||!st.nkb,offWhy:'Turn on Virtual keyboard (Voicings)'}));
   strips.append(trStrip());
-  /* Keys and Click: a fader, a meter, and mute and solo, like every console in the suite */ strips.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118)));
+  /* Keys and Click: a fader, a meter, and mute and solo, like every console in the suite; they stay together at the right-hand end */ { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
 }
 /* the chord canvas: Easy (type the chart) or Professional (a box for every beat), like the Studio's chord chart */
 function canvasUI(area){

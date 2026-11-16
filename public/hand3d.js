@@ -141,7 +141,7 @@ function poseHand(h, d, s) {
     const T = toLocal(new THREE.Vector3(d.tips[i][0], d.tips[i][2], d.tips[i][1]));
     const rel = T.clone().sub(P0), v = rel.dot(n), hz = rel.clone().sub(n.clone().multiplyScalar(v));
     const f0 = P3.clone().sub(P0); f0.sub(n.clone().multiplyScalar(f0.dot(n))); f0.normalize();
-    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.open ? .95 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
+    let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.yl ? d.yl[i] : d.open ? .95 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
     const dist = hz.length() * Math.cos(Math.abs(yaw) > .39 ? 0 : 0);
     h.sol[i] = solve2(L1, L2, L3, dist, v, h.sol[i]);
     const [a1, a2] = h.sol[i], a3 = a2 * .7; if (window.__h3dbg) { (h.dbg3 = h.dbg3 || [])[i] = { L: [L1, L2, L3].map(x => +x.toFixed(4)), dist: +dist.toFixed(4), v: +v.toFixed(4), a: [a1, a2].map(x => +x.toFixed(2)), s }; }

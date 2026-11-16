@@ -27,30 +27,38 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=17').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=18').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 /* chords: a hand of its own, separate from the scale hand. Every chord finger lands on its key (black keys near their front end, and when
    the chord uses black keys the white-key fingers play further in, between them), the fingers the chord doesn't use wait just above
    their keys, the knuckles sit across the chord and the hand sits back just far enough that every finger reaches down onto its key. */
 function pose3c(h){
-  const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, pos=h.pos||{}, pr=h.press||[];
+  const {kw,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, pos=h.pos||{}, pr=h.press||[], own=(h.own&&h.own.length?h.own:pr);
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
-  const isW=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), deep=pr.some(f=>pos[f]!=null&&!isW(pos[f]));
-  const dep=(f,m)=>{ const w=isW(m); if(f===1) return w?(deep?kbH*.74:kbH*.84):kbH*.5; return w?(deep?kbH*.66:kbH*.8):kbH*.5; };
-  if(!h.cd) h.cd=[0,0,0,0,0]; let moving=false;
-  const want=[]; for(let i=0;i<5;i++){ const m=pos[i+1]; want.push(m==null?kbH*.8:dep(i+1,m)); }
-  const pd=pr.filter(f=>f>1).map(f=>want[f-1]), avg=pd.length?pd.reduce((a,b)=>a+b,0)/pd.length:kbH*.8;
-  for(let i=0;i<5;i++){ if(!pr.includes(i+1)&&i>0) want[i]=Math.min(kbH*.86,avg+kw*.25); if(!h.cinit) h.cd[i]=want[i]; else { h.cd[i]+=(want[i]-h.cd[i])*.25; if(Math.abs(want[i]-h.cd[i])>.4) moving=true; } }
+  /* the hand is placed from the whole chord (every finger that has a chord note), so it stays still while the notes are played one by one;
+     the fingers press as their notes sound and lift (over their own keys) when they stop. Fingers with no note in the chord rest in the hand's natural shape. */
+  const isW=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), deep=own.some(f=>pos[f]!=null&&!isW(pos[f])), tb=own.includes(1)&&pos[1]!=null&&!isW(pos[1]);
+  /* a thumb on a black key brings the whole hand in: the other fingers play their white keys far in, between the black keys */
+  const dep=(f,m)=>{ const w=isW(m); if(f===1) return w?(deep?kbH*.74:kbH*.84):kbH*.5; return w?(tb?kbH*.56:deep?kbH*.66:kbH*.8):kbH*.5; };
+  const KN=[-2.3,-1.28,-.43,.43,1.2];
+  const cf=[1,2,3,4].filter(i=>own.includes(i+1)&&pos[i+1]!=null), cd=cf.map(i=>dep(i+1,pos[i+1])), avg=cd.length?cd.reduce((a,b)=>a+b,0)/cd.length:kbH*.8;
+  /* across the keys: from the chord fingers' keys (the thumb, if it is in the chord, pulls the hand towards it) */
+  let ax; if(cf.length){ ax=0; cf.forEach(i=>{ ax+=h.fx[i]-KN[i]*dir*kw; }); ax/=cf.length; } else { ax=0; for(let i=1;i<5;i++) ax+=h.fx[i]-KN[i]*dir*kw; ax/=4; }
+  if(own.includes(1)&&pos[1]!=null){ const tx=h.fx[0]+2.2*dir*kw; if(!cf.length) ax=tx; else if((ax-tx)*dir>0) ax=tb?ax*.3+tx*.7:ax*.45+tx*.55; }
+  /* how far back the knuckles sit: every chord finger keeps room to curve down onto its key; the thumb draws the hand in only as far as that allows */
+  const mx=cd.length?Math.max(...cd):avg, mn=cd.length?Math.min(...cd):avg, lo=mx+(tb?.026:.032)*s;
+  let az=Math.max(lo,Math.min(mx+.046*s,mn+.066*s)); if(own.includes(1)&&pos[1]!=null) az=Math.max(lo,Math.min(az,dep(1,pos[1])+.036*s));
+  if(!h.cd) h.cd=[0,0,0,0,0]; let moving=false; const want=[], xs=[];
+  for(let i=0;i<5;i++){ const inC=own.includes(i+1)&&pos[i+1]!=null;
+    if(inC){ want.push(dep(i+1,pos[i+1])); xs.push(h.fx[i]); }
+    else { const kx=ax+KN[i]*dir*kw; xs.push(kx+(h.fx[i]-kx)*.3); want.push(i===0?Math.min(kbH*.9,avg+kw*.6):Math.min(az-.04*s,avg+kw*.2)); } }
+  for(let i=0;i<5;i++){ if(!h.cinit) h.cd[i]=want[i]; else { h.cd[i]+=(want[i]-h.cd[i])*.3; if(Math.abs(want[i]-h.cd[i])>.4) moving=true; } }
   h.cinit=true;
-  const tips=[]; for(let i=0;i<5;i++){ const m=pos[i+1], play=pr.includes(i+1), blk=m!=null&&!isW(m);
-    tips.push([h.fx[i],h.cd[i],(blk?.011*s:0)+(play?0:(i===0?.018*s:.016*s))]); }
-  /* how far back the knuckles sit: the nearest chord finger still has room to curve down, the furthest can still reach */
-  const fy=[1,2,3,4].filter(i=>pr.includes(i+1)).map(i=>tips[i][1]); const mx=fy.length?Math.max(...fy):avg, mn=fy.length?Math.min(...fy):avg;
-  let az=Math.min(mx+.046*s,mn+.066*s); if(pr.includes(1)) az=Math.min(az,tips[0][1]+.036*s);   /* the thumb is short: the hand comes in until it reaches its key */ h.caz=h.caz==null?az:h.caz+(az-h.caz)*.25; if(Math.abs(az-h.caz)>.4) moving=true; az=h.caz;
-  /* across the keys: each knuckle as near as it can be to its own finger's key */
-  const KN=[-1.28,-.43,.43,1.2]; let ax=0; for(let i=1;i<5;i++) ax+=tips[i][0]-KN[i-1]*dir*kw; ax/=4;
-  /* a thumb far from the fingers pulls the hand over towards it */ if(pr.includes(1)){ const tx=tips[0][0]+2.2*dir*kw; if((ax-tx)*dir>0) ax=ax*.45+tx*.55; }
+  const tips=[], yl=[0]; for(let i=0;i<5;i++){ const m=pos[i+1], play=pr.includes(i+1), inC=own.includes(i+1), blk=m!=null&&!isW(m)&&inC;
+    tips.push([xs[i],h.cd[i],(blk?.011*s:0)+(play?0:inC?(i===0?.016*s:.014*s):(i===0?.02*s:.018*s))]); if(i) yl.push(inC?.9:.3); }
+  h.caz=h.caz==null?az:h.caz+(az-h.caz)*.25; if(Math.abs(az-h.caz)>.4) moving=true; az=h.caz;
+  h.cax=h.cax==null?ax:h.cax+(ax-h.cax)*.35; if(Math.abs(ax-h.cax)>.4) moving=true; ax=h.cax;
   if(moving){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
-  P3.pose({side:h.side,open:true,on:true,f:0,thr:null,threst:false,thx:null,ax,ay:.028*s,az,th:0,tips});
+  P3.pose({side:h.side,open:true,on:true,f:0,thr:null,threst:false,thx:null,ax,ay:.028*s,az,th:0,tips,yl});
 }
 function pose3(h){
   if(h.press) return pose3c(h);
@@ -173,7 +181,7 @@ function sync(kb,avail,s,cb){
   if(!ro&&window.ResizeObserver){ ro=new ResizeObserver(()=>{ if(lastA&&lastA[0]&&lastA[0].isConnected&&host) sync(...lastA); }); }
   if(ro&&ro.__t!==kb){ ro.disconnect(); ro.observe(kb); ro.__t=kb; }
   const hasR=s&&s.rh&&s.rh.length&&s.fing, hasL=s&&s.lh&&s.lh.length&&s.lfing;
-  H.rh.press=s&&s.rpress||null; H.lh.press=s&&s.lpress||null;
+  H.rh.press=s&&s.rpress||null; H.lh.press=s&&s.lpress||null; H.rh.own=s&&s.rown||null; H.lh.own=s&&s.lown||null;
   target(H.rh,on&&hasR?s.rh[0]:null,hasR?+s.fing:0,s&&s.rpos||null); target(H.lh,on&&hasL?s.lh[0]:null,hasL?+s.lfing:0,s&&s.lpos||null);
   ['rh','lh'].forEach(k=>{ if(!H[k].on) set(H[k].g,{display:'none'}); });
   if(!raf&&!paused){ last=0; raf=requestAnimationFrame(tick); }
