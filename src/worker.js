@@ -411,7 +411,7 @@ const pclip = (v, n) => String(v == null ? "" : v).replace(/[<>\u0000-\u001f]/g,
 async function presence(request, env) {
   if (!env.PRESENCE) return json({ list: [], count: 0, off: true });
   const stub = env.PRESENCE.get(env.PRESENCE.idFromName('global'));
-  if (request.method === 'GET') return stub.fetch('https://presence/list?me=' + encodeURIComponent(new URL(request.url).searchParams.get('me') || ''));
+  if (request.method === 'GET') { const r = await stub.fetch('https://presence/list?me=' + encodeURIComponent(new URL(request.url).searchParams.get('me') || '')); const d = await r.json(); d.samples = env.FEED_SAMPLES !== 'off'; return json(d); }
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
   let b = {}; try { b = await request.json(); } catch (_) { return json({ error: 'bad' }, 400); }
   const id = pclip(b.id, 40); if (!/^[a-z0-9]{8,40}$/i.test(id)) return json({ error: 'bad' }, 400);

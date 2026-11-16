@@ -11,8 +11,9 @@ const MOTIONS=[['similar','Similar'],['contrary','Contrary']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let paused=false, waitL=false, pauseFn=null;
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='';
-let st={sys:'letter',family:'regular',motion:'similar',mode:'practice',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'updown',bpm:80,loop:false,chords:'',vh:'v',ckey:'C'};
+let st={sys:'letter',family:'regular',motion:'similar',mode:'practice',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'updown',bpm:80,loop:true,chords:'',vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
+try{ if(!localStorage.getItem('pr-loop-on')){ st.loop=true; localStorage.setItem('pr-loop-on','1'); } }catch(_){}   /* Loop is now on by default, once for everyone */
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
 let curDesc=false;
@@ -39,9 +40,11 @@ function watchEl(){ let w=document.querySelector('#prRoom .p-watch'); if(w) retu
    +'<div class="p-wv p-wv-motiv"><div class="p-big" data-w="mot"></div></div>'
    +'<div class="p-wv p-wv-prompt"><div class="p-big">Ready to continue?</div><div class="p-sub" data-w="pt"></div><button type="button" class="p-go">Continue</button></div>'
    +'<div class="p-wv p-wv-count"><div class="p-cnt" data-w="cnt">5</div><div class="p-sub">Get ready…</div></div>'
+   +'<div class="p-wv p-wv-recover"><div class="p-ring p-ring-l"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="p-rbg"/><circle cx="60" cy="60" r="52" class="p-rfg" data-w="rring"/></svg><div class="p-rt" data-w="rt">0:30</div></div><div class="p-bside"><div class="p-rec">Recover</div><div class="p-sub">Two minutes of playing. Shake out your hands and breathe. Practice carries on when the circle runs out.</div><div class="p-rbtns"><button type="button" class="p-add">+ Add a scale</button><button type="button" class="p-go p-rgo">Continue</button></div><div class="p-apick" hidden><select data-w="ak" aria-label="Note"></select><select data-w="at" aria-label="Scale"></select><button type="button" class="p-go p-aok">Add</button><button type="button" class="p-acx">Cancel</button></div><div class="p-rout" data-w="rout"></div></div></div>'
    +'<div class="p-wv p-wv-break"><div class="p-ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="p-rbg"/><circle cx="60" cy="60" r="52" class="p-rfg" data-w="ring"/></svg><div class="p-rt" data-w="bt">1:00</div></div><div class="p-bside"><div class="p-big">Break</div><div class="p-sub">Rest your hands. Practice carries on when the circle runs out.</div><div class="p-wg"><button type="button" data-b="-30" aria-label="Shorter break">−</button><span data-w="bl"></span><button type="button" data-b="30" aria-label="Longer break">+</button><button type="button" class="p-go p-endb">End break</button></div></div></div>';
   w.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{ goalMin=Math.max(5,Math.min(180,goalMin+ +b.dataset.g)); try{ localStorage.setItem('pr-goal',String(goalMin)); }catch(_){} SES.goalDone=sesSec()>=goalMin*60; watchDraw(); });
   w.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{ breakSec=Math.max(30,Math.min(900,breakSec+ +b.dataset.b)); try{ localStorage.setItem('pr-break',String(breakSec)); }catch(_){} if(PM.mode==='break') PM.end=Math.max(Date.now()+1000,PM.end+ +b.dataset.b*1000); watchDraw(); });
+  w.querySelector('.p-rgo').onclick=()=>recoverEnd(); w.querySelector('.p-add').onclick=()=>addPick(w,true); w.querySelector('.p-acx').onclick=()=>addPick(w,false); w.querySelector('.p-aok').onclick=()=>addScale(w);
   w.querySelector('.p-wv-prompt .p-go').onclick=()=>resumeNow(); w.querySelector('.p-endb').onclick=()=>countIn();
   { const jb=w.querySelector('.p-fjoin'); if(jb) jb.onclick=feedDlg; } row.appendChild(w); return w; }
 function watchPlace(w){ const row=document.querySelector('#prRoom .p-mixrow'), con=document.querySelector('#prRoom .p-con'), mx=document.querySelector('#prRoom .p-mix'); if(!row||!con||!mx) return;
@@ -59,15 +62,15 @@ const FEED_T0=Date.now(), RHYW={q:'quarter notes',e:'eighth notes',t:'triplets',
 const FD=(()=>{ let f={}; try{ f=JSON.parse(localStorage.getItem('pr-feed')||'{}')||{}; }catch(_){} if(!f.id){ const a=new Uint8Array(12); (window.crypto||{}).getRandomValues?crypto.getRandomValues(a):a.forEach((_,i)=>a[i]=Math.random()*256|0); f.id=[...a].map(x=>x.toString(16).padStart(2,'0')).join(''); } return f; })();
 const fdSave=()=>{ try{ localStorage.setItem('pr-feed',JSON.stringify(FD)); }catch(_){} };
 const nickIdea=()=>['arctic','cobalt','maple','ember','violet','echo','harbor','sable','lunar','cedar','nova','coral'][Math.random()*12|0]+(1000+(Math.random()*9000|0));
-let FEED_LIVE=[], feedT=0, beatT=0;
+let FEED_LIVE=[], FEED_SAMP=true, feedT=0, beatT=0;   /* FEED_SAMP: beta sample entries, switched off from the server (FEED_SAMPLES=off) at launch */
 const scaleLabel=()=>{ const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===st.type); return SYMK(st.key)+' '+(st.type==='major'?'major':(t?t.l:st.type)); };
 const handsLabel=()=>st.motion==='contrary'?'both hands, contrary':({rh:'right hand',lh:'left hand',both:'both hands'}[st.hand]||'');
-async function feedPull(){ if(!FD.on) return; try{ const r=await fetch('/api/presence?me='+FD.id,{cache:'no-store'}); const d=await r.json(); FEED_LIVE=Array.isArray(d.list)?d.list:[]; }catch(_){} }
+async function feedPull(){ if(!FD.on) return; try{ const r=await fetch('/api/presence?me='+FD.id,{cache:'no-store'}); const d=await r.json(); FEED_LIVE=Array.isArray(d.list)?d.list:[]; FEED_SAMP=d.samples!==false; }catch(_){} }
 function feedBeat(off){ if(!FD.on&&!off) return; try{ fetch('/api/presence',{method:'POST',headers:{'content-type':'application/json'},keepalive:true,body:JSON.stringify(off?{id:FD.id,off:true}:{id:FD.id,nick:FD.nick,scale:scaleLabel(),hands:handsLabel(),bpm:st.bpm,rhy:RHYW[st.rhy||'free'],min:sesSec()/60})}).catch(()=>{}); }catch(_){} }
 function feedRun(on){ clearInterval(feedT); clearInterval(beatT); feedT=beatT=0; if(!on||!FD.on) return; feedBeat(); feedPull(); beatT=setInterval(()=>feedBeat(),25000); feedT=setInterval(feedPull,15000); }
 const place=(city,cc)=>[city,cc?cname(cc):''].filter(Boolean).join(', ');
 function feedItems(){ const live=FEED_LIVE.map(x=>({who:x.nick+(x.city||x.cc?' · '+place(x.city,x.cc):''),cc:x.cc||'',what:'Practicing '+x.scale+' ('+x.hands+') · tempo '+x.bpm+' · '+x.rhy,min:x.min,ex:false}));
-  const ex=live.length<30?FEED_EX.map(x=>({who:x[0]+' · '+place(x[1],x[7]),cc:x[7],what:'Practicing '+x[2]+' ('+x[3]+') · tempo '+x[4]+' · '+RHYW[x[5]],min:x[6]+Math.floor((Date.now()-FEED_T0)/60000),ex:true})):[]; return live.concat(ex); }
+  const ex=FEED_SAMP&&live.length<30?FEED_EX.map(x=>({who:x[0]+' · '+place(x[1],x[7]),cc:x[7],what:'Practicing '+x[2]+' ('+x[3]+') · tempo '+x[4]+' · '+RHYW[x[5]],min:x[6]+Math.floor((Date.now()-FEED_T0)/60000),ex:true})):[]; return live.concat(ex); }
 function feedDlg(){ let d=document.querySelector('#prRoom .p-fdlg'); if(d){ d.remove(); return; } d=el('div','p-fdlg'); d.setAttribute('role','dialog'); d.setAttribute('aria-label','Practice feed');
   d.innerHTML='<div class="p-fbox"><h3>Practice feed</h3><p>When the feed is on, you can see what other students are practicing, and they can see what you are practicing: your nickname, your city, the scale, hands, tempo and rhythm, and how long you have been practicing.</p><p>Use a nickname or pseudonym (like <b>arctic2342</b>) if you would rather not use your name. You can switch the feed off at any time.</p><label>Nickname <input maxlength="24" autocomplete="off" spellcheck="false"></label><div class="p-ferr"></div><div class="p-fbtns"><button type="button" class="p-fon"></button><button type="button" class="p-foff"></button></div></div>';
   const inp=d.querySelector('input'), on=d.querySelector('.p-fon'), off=d.querySelector('.p-foff'), er=d.querySelector('.p-ferr'); inp.value=FD.nick||nickIdea();
@@ -82,6 +85,7 @@ const CYC=[['proj',15],['feed',15],['motiv',8]], CYT=CYC.reduce((a,x)=>a+x[1],0)
 const flag=cc=>/^[A-Z]{2}$/i.test(cc||'')?String.fromCodePoint(...[...cc.toUpperCase()].map(c=>0x1F1A5+c.charCodeAt(0))):'';
 const cname=cc=>{ try{ return new Intl.DisplayNames(['en'],{type:'region'}).of(cc.toUpperCase()); }catch(_){ return cc||''; } };
 function watchDraw(){ const w=document.querySelector('#prRoom .p-watch'); if(!w) return; watchPlace(w);
+  if(SES.on&&SES.t0&&!PM.mode&&sesSec()>=SES.nextRec){ SES.nextRec=Math.floor(sesSec())+REC; recoverStart(); return; }
   const q=k=>w.querySelector('[data-w='+k+']'), sec=sesSec(), left=goalMin*60-sec;
   let mode=PM.mode; if(!mode){ const t=Math.floor(sec)%CYT; let a=0; mode='proj'; for(const [m,d] of CYC){ if(t<a+d){ mode=m; break; } a+=d; } if(Date.now()<SES.until) mode='proj'; }
   if(w.dataset.mode!==mode){ w.dataset.mode=mode; if(mode==='motiv'){ SES.mi++; q('mot').textContent=MOTIV[SES.mi%MOTIV.length]; } }
@@ -93,30 +97,53 @@ function watchDraw(){ const w=document.querySelector('#prRoom .p-watch'); if(!w)
   if(mode==='feed'){ const fl=q('fl'), jb=w.querySelector('.p-fjoin'), items=FD.on?feedItems():[], live=FEED_LIVE.length; jb.hidden=!!FD.on; q('fh').textContent=FD.on?'Practicing now':'Practice feed';
     if(!FD.on){ fl.innerHTML='<div class="p-fi p-foffm">The practice feed is off. Switch it on to see who else is practicing, and to be seen.</div>'; }
     else { const n=MQM.matches?2:3, st0=Math.floor(Date.now()/5000)*n, rows=[]; for(let k=0;k<Math.min(n,items.length);k++) rows.push(items[(st0+k)%items.length]);
-      fl.textContent=''; q('fh').textContent=rows.some(f=>f.ex)?'Practice feed · preview':'Practicing now'; rows.forEach(f=>{ const r=el('div','p-fi'); r.innerHTML='<span class="p-ff"></span><span class="p-fw"></span><span class="p-fx"></span><span class="p-fl"></span>'; r.children[0].textContent=flag(f.cc); r.children[1].textContent=f.who; r.children[2].textContent=f.what; r.children[3].textContent=Math.round(f.min)+' min'; fl.appendChild(r); }); void live; } }
+      fl.textContent=''; rows.forEach(f=>{ const r=el('div','p-fi'); r.innerHTML='<span class="p-ff"></span><span class="p-fw"></span><span class="p-fx"></span><span class="p-fl"></span>'; r.children[0].textContent=flag(f.cc); r.children[1].textContent=f.who; r.children[2].textContent=f.what; r.children[3].textContent=Math.round(f.min)+' min'; fl.appendChild(r); }); void live; } }
   if(mode==='prompt'){ q('pt').textContent='You have been paused for a while. Practice starts again by itself in '+Math.max(0,Math.ceil((PM.end-Date.now())/1000))+' seconds.'; }
   if(mode==='count'){ q('cnt').textContent=String(Math.max(1,Math.ceil((PM.end-Date.now())/1000))); }
+  if(mode==='recover'){ const rem=Math.max(0,(PM.end-Date.now())/1000), C=2*Math.PI*52; q('rring').style.strokeDasharray=C.toFixed(1); q('rring').style.strokeDashoffset=(C*(1-rem/RECS)).toFixed(1); q('rt').textContent=hms(rem).replace(/^00:/,'0:');
+    const ro=q('rout'), list=ROUT.length?ROUT:[snapNow()]; ro.textContent=''; ro.appendChild(el('b',null,'Routine')); list.forEach((x,i)=>{ const c=el('span','p-rc'+(i===RI?' cur':''+(i===(RI+1)%list.length&&list.length>1?' nx':'')),snapName(x)); ro.appendChild(c); }); }
   if(mode==='break'){ const rem=Math.max(0,(PM.end-Date.now())/1000), f=PM.total?rem/PM.total:0, C=2*Math.PI*52; q('ring').style.strokeDasharray=C.toFixed(1); q('ring').style.strokeDashoffset=(C*(1-f)).toFixed(1); q('bt').textContent=hms(rem).replace(/^00:/,'0:'); q('bl').textContent=(breakSec%60?Math.floor(breakSec/60)+':'+two(breakSec%60):breakSec/60+' min')+' default'; } }
 /* while paused: after a minute it asks if you are ready; a minute later it counts 5 4 3 2 1 and carries on. Break shows a circle that unwinds over the break time. */
 let breakSec=(()=>{ try{ const b=+localStorage.getItem('pr-break'); return b>=30&&b<=900?b:60; }catch(_){ return 60; } })();
 const PM={mode:'',end:0,total:0,t:0};
-function pmClear(){ clearTimeout(PM.t); PM.t=0; PM.mode=''; PM.end=0; }
-function pmTick(){ clearTimeout(PM.t); PM.t=0; if(!SES.on||!paused){ pmClear(); return; } const now=Date.now();
+function pmClear(){ clearTimeout(PM.t); PM.t=0; PM.mode=''; PM.end=0; PM.hold=0; PM.last=0; }
+function pmTick(){ clearTimeout(PM.t); PM.t=0; if(!SES.on||!paused){ pmClear(); return; } const now=Date.now(), dt=PM.last?now-PM.last:0; PM.last=now;
+  if(document.hidden&&PM.mode!=='break'){ PM.end+=dt; if(PM.hold) PM.hold=PM.hold; PM.t=setTimeout(pmTick,500); return; }
+  if(document.hidden&&PM.mode==='break'&&now>=PM.end){ PM.t=setTimeout(pmTick,500); return; }
   if(PM.mode==='idle'){ if(now>=PM.end){ PM.mode='prompt'; PM.end=now+60000; watchSync(); } }
   else if(PM.mode==='prompt'||PM.mode==='break'){ if(now>=PM.end){ countIn(); return; } }
+  else if(PM.mode==='recover'){ if(PM.hold) PM.end=now+PM.hold; else if(now>=PM.end){ recoverEnd(); return; } }
   else if(PM.mode==='count'){ if(now>=PM.end){ resumeNow(); return; } }
   watchDraw(); PM.t=setTimeout(pmTick,200); }
 function pmIdle(){ pmClear(); PM.mode='idle'; PM.end=Date.now()+60000; PM.t=setTimeout(pmTick,200); }
 function countIn(){ PM.mode='count'; PM.end=Date.now()+5000; watchSync(); clearTimeout(PM.t); PM.t=setTimeout(pmTick,100); }
 function takeBreak(){ if(!SES.on||!paused) return; PM.mode='break'; PM.total=breakSec; PM.end=Date.now()+breakSec*1000; watchSync(); clearTimeout(PM.t); PM.t=setTimeout(pmTick,100); }
 function resumeNow(){ pmClear(); if(playing&&paused&&pauseFn) pauseFn(); }
+/* recovery: after every two minutes of playing, practice stops for 30 seconds (the circle unwinds). Press + to add another scale to the
+   routine; when practice carries on it moves to the next scale in the routine. The routine lasts for this session. */
+let ROUT=[], RI=0, SWITCHING=false; const REC=120, RECS=30;
+function recoverStart(){ if(!SES.on||!playing||paused||waitL||!pauseFn) return; pauseFn(); clearTimeout(PM.t); PM.mode='recover'; PM.total=RECS; PM.end=Date.now()+RECS*1000; PM.hold=0; watchSync(); PM.t=setTimeout(pmTick,100); }
+function recoverEnd(){ const w=document.querySelector('#prRoom .p-watch'); if(w) addPick(w,false); pmClear();
+  if(ROUT.length>1){ RI=(RI+1)%ROUT.length; const snap=ROUT[RI]; SWITCHING=true; try{ clr(); BKEYS.forEach(k=>{ if(snap[k]!==undefined) st[k]=snap[k]; }); save(); render(); playAll(); } finally{ SWITCHING=false; } updPause(); return; }
+  resumeNow(); }
+const snapNow=()=>{ const o={}; BKEYS.forEach(k=>o[k]=st[k]); return o; };
+const snapName=x=>{ const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===x.type); return SYMK(x.key)+' '+(x.type==='major'?'major':(t?t.l:x.type)); };
+function addPick(w,on){ const pk=w.querySelector('.p-apick'), ad=w.querySelector('.p-add'); if(!pk) return; if(!on){ pk.hidden=true; ad.hidden=false; if(PM.hold){ PM.end=Date.now()+PM.hold; PM.hold=0; } return; }
+  if(PM.mode==='recover'&&!PM.hold){ PM.hold=Math.max(1000,PM.end-Date.now()); }   /* the countdown waits while you choose */
+  const SC=window.SCALES, ts=(SC&&SC.types)||[], ks=w.querySelector('[data-w=ak]'), tsel=w.querySelector('[data-w=at]');
+  tsel.textContent=''; let og=null,gl=null; ts.forEach(t=>{ if(t.g!==gl){ gl=t.g; og=document.createElement('optgroup'); og.label=(t.fam==='exotic'?'Exotic · ':'')+(t.g||''); tsel.appendChild(og); } const o=document.createElement('option'); o.value=t.id; o.textContent=t.l; og.appendChild(o); }); tsel.value=st.type;
+  const fillK=()=>{ const ok=(SC&&SC.allowedKeys)?SC.allowedKeys(tsel.value):((SC&&SC.keys)||[]); const cur=ks.value; ks.textContent=''; ok.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=SYMK(k); ks.appendChild(o); });
+    const pc=k=>{ const L={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[String(k)[0]]; let a=0; for(const ch of String(k).slice(1)){ if(ch==='#'||ch==='♯') a++; if(ch==='b'||ch==='♭') a--; } return ((L+a)%12+12)%12; }, want=(pc(st.key)+7)%12, nx=ok.find(k=>pc(k)===want); ks.value=ok.includes(cur)?cur:(nx||ok[0]); };   /* suggests the key a fifth up */
+  tsel.onchange=fillK; ks.value=''; fillK(); pk.hidden=false; ad.hidden=true; }
+function addScale(w){ const ks=w.querySelector('[data-w=ak]'), tsel=w.querySelector('[data-w=at]'); if(!ks.value) return; if(!ROUT.length){ ROUT=[snapNow()]; RI=0; }
+  const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===tsel.value)||{}; ROUT.push(Object.assign(snapNow(),{key:ks.value,type:tsel.value,family:t.fam||st.family})); addPick(w,false); watchDraw(); }
 function watchSync(){ if(!ov) return; const sc=kind==='scales';
-  if(playing&&sc&&!SES.on){ Object.assign(SES,{on:true,ms:0,t0:0,lh:0,rh:0,next:100,msg:'',until:0,mi:Math.floor(Math.random()*MOTIV.length),goalDone:false}); clearInterval(SES.timer); SES.timer=setInterval(()=>{ if(SES.on) watchDraw(); },250); }
-  if(SES.on&&(!playing||!sc)){ pmClear(); { const bk=$('#prBreak'); if(bk) bk.hidden=true; } if(SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } SES.on=false; clearInterval(SES.timer); feedRun(false); if(FD.on) feedBeat(true); const w=document.querySelector('#prRoom .p-watch'); if(w) w.remove(); ov.classList.remove('p-locked'); { const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.remove('p-hide'); }
+  if(playing&&sc&&!SES.on){ ROUT=[]; RI=0; Object.assign(SES,{nextRec:REC,on:true,ms:0,t0:0,lh:0,rh:0,next:100,msg:'',until:0,mi:Math.floor(Math.random()*MOTIV.length),goalDone:false}); clearInterval(SES.timer); SES.timer=setInterval(()=>{ if(SES.on) watchDraw(); },250); }
+  if(SES.on&&(!playing||!sc)&&!SWITCHING){ pmClear(); ROUT=[]; RI=0; { const bk=$('#prBreak'); if(bk) bk.hidden=true; } if(SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } SES.on=false; clearInterval(SES.timer); feedRun(false); if(FD.on) feedBeat(true); const w=document.querySelector('#prRoom .p-watch'); if(w) w.remove(); ov.classList.remove('p-locked'); { const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.remove('p-hide'); }
     const tot=SES.lh+SES.rh, m=$('#prMsg'); if(m&&tot) m.textContent='Practice session: '+hms(SES.ms/1000)+' · '+tot.toLocaleString()+' notes'+(SES.lh&&SES.rh?' (left hand '+SES.lh.toLocaleString()+', right hand '+SES.rh.toLocaleString()+')':'')+'. Well done!'; return; }
   if(!SES.on) return;
   const run=!paused, was=!!SES.t0; if(run&&!SES.t0) SES.t0=Date.now(); if(!run&&SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } if(run!==was){ if(run){ feedRun(true); pmClear(); } else { feedRun(false); if(FD.on) feedBeat(true); pmIdle(); } }
-  const show=run||['prompt','count','break'].includes(PM.mode); const w=watchEl(); if(w){ w.hidden=!show; watchPlace(w); } ov.classList.toggle('p-locked',show); { const bk=$('#prBreak'); if(bk) bk.hidden=run||PM.mode==='break'||PM.mode==='count'; } watchDraw(); if(run) meterGo(); }
+  if(SWITCHING) return; const show=run||['prompt','count','break','recover'].includes(PM.mode); const w=watchEl(); if(w){ w.hidden=!show; watchPlace(w); } ov.classList.toggle('p-locked',show); { const bk=$('#prBreak'); if(bk) bk.hidden=run||PM.mode==='break'||PM.mode==='count'||PM.mode==='recover'; } watchDraw(); if(run) meterGo(); }
 const playPause=()=>{ if(!playing){ playAll(); updPause(); return; } if(waitL) return; if(pauseFn) pauseFn(); };
 const clr=()=>{ curDesc=false; timers.forEach(x=>{ if(x&&x.clear) x.clear(); else clearTimeout(x); }); timers=[]; playing=false; paused=false; waitL=false; pauseFn=null; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} updPause(); const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent='▶ Play'; };
 
@@ -273,6 +300,19 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-mixrow.ph .p-big{font-size:17px} #prRoom .p-mixrow.ph .p-sub{font-size:10.5px} #prRoom .p-mixrow.ph .p-cnt{font-size:48px} #prRoom .p-mixrow.ph .p-go{padding:4px 14px;font-size:12px}
 #prRoom .p-mixrow.ph .p-wg .p-endb{padding:3px 10px!important;min-height:0!important;height:auto!important;width:auto!important;font-size:11px!important;line-height:1.3} #prRoom .p-mixrow.ph .p-ring{width:74px;height:74px} #prRoom .p-mixrow.ph .p-rt{font-size:16px} #prRoom .p-mixrow.ph .p-wv-break{gap:12px} #prRoom .p-mixrow.ph .p-bside{gap:3px}
 #prRoom .p-mixrow.ph .p-wv-motiv,#prRoom .p-mixrow.ph .p-wv-prompt,#prRoom .p-mixrow.ph .p-wv-count{gap:4px}
+#prRoom .p-watch[data-mode=recover] .p-wv-recover{display:flex;animation:pwIn .25s ease-out}
+#prRoom .p-wv-recover{align-items:center;justify-content:center;gap:24px}
+#prRoom .p-ring-l{width:150px;height:150px} #prRoom .p-wv-recover .p-rfg{stroke:#7cc4ff;filter:drop-shadow(0 0 6px rgba(124,196,255,.6))}
+#prRoom .p-rec{font:900 30px/1 var(--display,var(--body));letter-spacing:.18em;text-transform:uppercase;color:#7cc4ff;text-shadow:0 0 16px rgba(124,196,255,.45)}
+#prRoom .p-rbtns,#prRoom .p-apick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#prRoom .p-add{padding:8px 16px;border-radius:999px;border:0;background:#ffd43b;color:#151b28;font:800 14px var(--body);cursor:pointer;animation:pAdd 1s ease-in-out infinite}
+@keyframes pAdd{50%{box-shadow:0 0 0 6px rgba(255,212,59,.25),0 0 18px rgba(255,212,59,.6);filter:brightness(1.15)}}
+#prRoom .p-apick select{padding:6px 8px;border-radius:8px;border:1px solid #3a4258;background:#05070c;color:#fff;font:700 13px var(--body);max-width:210px}
+#prRoom .p-acx{padding:7px 12px;border-radius:999px;border:1px solid #3a4258;background:#1a1f2c;color:#e6e9f2;font:700 13px var(--body);cursor:pointer}
+#prRoom .p-rout{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font:600 12px var(--body);color:#8d97b0} #prRoom .p-rout b{font:800 9px var(--body);letter-spacing:.14em;text-transform:uppercase}
+#prRoom .p-rc{padding:2px 8px;border-radius:999px;border:1px solid #2b3245;background:#0b0e16} #prRoom .p-rc.cur{border-color:#7cc4ff;color:#fff} #prRoom .p-rc.nx{border-color:#ffd43b;color:#ffd43b}
+#prRoom .p-mixrow.ph .p-ring-l{width:80px;height:80px} #prRoom .p-mixrow.ph .p-rec{font-size:17px} #prRoom .p-mixrow.ph .p-wv-recover{gap:10px} #prRoom .p-mixrow.ph .p-add,#prRoom .p-mixrow.ph .p-rgo,#prRoom .p-mixrow.ph .p-aok,#prRoom .p-mixrow.ph .p-acx{padding:3px 10px!important;font-size:11px!important;min-height:0!important}
+#prRoom .p-mixrow.ph .p-wv-recover .p-sub{display:none} #prRoom .p-mixrow.ph .p-apick select{font-size:11px;padding:2px 4px;max-width:120px;min-height:0} #prRoom .p-mixrow.ph .p-rout{font-size:9.5px;gap:3px}
 #prRoom .p-cdd{gap:10px;flex-wrap:wrap;align-items:flex-end} #prRoom .p-cdd .p-sel{min-width:130px} #prRoom #prChord{min-width:220px} #prRoom .p-more{position:relative;display:inline-block} #prRoom .p-more>summary{list-style:none;cursor:pointer} #prRoom .p-more>summary::-webkit-details-marker{display:none} #prRoom .p-morebox{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:#12141c;border:1px solid #3a3424;border-radius:12px;padding:12px;width:min(520px,86vw);box-shadow:0 10px 30px rgba(0,0,0,.5)} #prRoom .p-tab{position:relative;height:22px;margin:0 0 3px} #prRoom .p-tab span{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;border-radius:5px;background:#1a2340;color:#7d8bb0;font:700 11px/1 system-ui,sans-serif;letter-spacing:-.3px;white-space:nowrap;overflow:visible;transition:background .12s,color .12s} #prRoom .p-tab span.on{color:#fff;box-shadow:0 0 10px currentColor} #prRoom .p-tab span.on.l{background:${LH};color:#fff;box-shadow:0 0 12px ${LH}} #prRoom .p-tab span.on.r{background:${RH};color:#fff;box-shadow:0 0 12px ${RH}}
 `; document.head.appendChild(css);
 
@@ -289,7 +329,7 @@ function build(){
   document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape'&&!/INPUT|SELECT/.test((e.target||{}).tagName||'')) close(); });
 }
 let from=null;
-const DEF={family:'regular',type:'major',key:'C',motion:'similar',mode:'practice',oct:1,hand:'rh',dir:'updown',sys:'letter',bpm:80,loop:false,rhy:'free'};
+const DEF={family:'regular',type:'major',key:'C',motion:'similar',mode:'practice',oct:1,hand:'rh',dir:'updown',sys:'letter',bpm:80,loop:true,rhy:'free'};
 const isDef=()=>Object.keys(DEF).every(k=>st[k]===DEF[k]);
 function resumeAsk(){
   const SCN=window.SCALES, TL=((SCN&&SCN.types||[]).find(t=>t.id===st.type)||{l:'Major'}).l, what=SYMK(st.key)+' '+(st.type==='major'?'major':TL)+(st.oct>1?', '+st.oct+' octaves':'');
@@ -456,7 +496,7 @@ function playRhythm(){
         if(k===0&&beatK===0&&cyc>0&&at(beats-1,cyc-1)+spb>pausedAt){ cyc--; k=ev.length; beatK=beats; }
         while(k>0&&at(ev[k-1].b,cyc)>=pausedAt) k--; while(beatK>-4&&at(beatK-1,cyc)>=pausedAt) beatK--;
         try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); }catch(_){} }
-      else { base+=C.now()-pausedAt+0.05; paused=false; rbus=C.bus&&C.bus(); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} pump(); }
+      else { paused=false; C.ready().then(()=>{ if(!playing||paused) return; base+=C.now()-pausedAt+0.05; rbus=C.bus&&C.bus(); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} pump(); }); }
       updPause(); }; });
   pauseFn=()=>{};
 }
@@ -878,5 +918,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
     {label:'Keyboard shortcuts',key:'?',run:()=>{ const t=[['Space','Play / Pause'],['S','Stop'],['L','Loop on/off'],['= / −','Tempo up / down 5 BPM'],['H','Show / hide the hands']]; const d=document.createElement('dialog'); d.className='info-dlg'; d.innerHTML='<h2>Scale practice shortcuts</h2><table class="keys">'+t.map(([k,v])=>'<tr><td><kbd>'+k+'</kbd></td><td>'+v+'</td></tr>').join('')+'</table>'; const c=el('button','btn pri','Close'); c.onclick=()=>{ d.close(); d.remove(); }; d.appendChild(c); document.body.appendChild(d); d.showModal(); }},
     {label:'Ask Pokey…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
 function menuSync(){ try{ if(!window.PSMENU) return; PSMENU.set(ov&&!ov.hidden&&kind==='scales'?scaleMenus():null); }catch(_){} }
-window.PRACTICE={open,close};
+/* leaving the app (screen locked, another app, tab hidden): pause where you are; nothing carries on by itself until you come back */
+function bg(){ try{ if(playing&&!paused&&!waitL&&pauseFn) pauseFn(); }catch(_){} }
+window.PRACTICE={open,close,bg};
 })();

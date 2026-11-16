@@ -694,7 +694,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-n (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-p (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1552,7 +1552,11 @@ const ticker=(()=>{
     stop(){ if(w) w.postMessage('stop'); clearInterval(iv); iv=null; }
   };
 })();
-document.addEventListener('visibilitychange',()=>{ if(playing) tick(); });
+/* screen locked, app in the background or tab hidden: pause everything that makes sound */
+function suiteToBackground(){ if(!document.hidden) return;
+  try{ if(playing) pause(); }catch(_){} try{ if(window.PRACTICE&&PRACTICE.bg) PRACTICE.bg(); }catch(_){} try{ if(window.CLASS&&CLASS.bg) CLASS.bg(); }catch(_){} try{ if(window.TX&&TX.stop) TX.stop(); }catch(_){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} try{ if(ctx&&ctx.state==='running') ctx.suspend(); }catch(_){} }
+document.addEventListener('visibilitychange',suiteToBackground); window.addEventListener('pagehide',()=>{ try{ if(playing) pause(); }catch(_){} try{ if(window.PRACTICE&&PRACTICE.bg) PRACTICE.bg(); }catch(_){} try{ if(window.CLASS&&CLASS.bg) CLASS.bg(); }catch(_){} try{ if(ctx&&ctx.state==='running') ctx.suspend(); }catch(_){} });
 
 function tick(){
   const style=STYLES[S.style];
@@ -1609,7 +1613,7 @@ function pause(){
   setPlayUI(); pendBeatT=null;   // pendulum freezes where it is
 }
 function resume(){
-  const z=paused; paused=null; if(!z) return play();
+  const z=paused; paused=null; if(!z) return play(); try{ if(ctx.state!=='running') ctx.resume(); }catch(_){}
   E.applyMix(S.mix,STYLES[S.style]); Object.assign(E,z.keep||{});
   E.viz=(pad,t,v,x)=>{ if(!$('stageDrums').hidden && !(S.mix.drums.mute) ) drumQ.push({t,pad,v,open:pad==='hat'&&x===true}); };
   const bpm=S.bpm, bd=60/bpm*MET().q, start=ctx.currentTime+0.08;
@@ -2991,11 +2995,11 @@ init();
 <script src="voicings.js" defer></script>
 <script src="transcribe.js" defer></script>
 <script src="suite.js?v=2" defer></script>
-<script src="class.js?v=z5" defer></script>
+<script src="class.js?v=z6" defer></script>
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zw" defer></script>
 <script src="hands.js?v=64" defer></script>
-<script src="practice.js?v=d1" defer></script>
+<script src="practice.js?v=d3" defer></script>
 <script src="scale-library.js" defer></script>
 <script src="scales.js?v=8" defer></script>
 <script src="check.js" defer></script>

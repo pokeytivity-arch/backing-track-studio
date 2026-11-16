@@ -619,6 +619,7 @@ function build(){
 }
 
 window.CLASS={
+  bg(){ try{ if(K.playing) stopProg(); }catch(_){} },
   sound,K,stepGo,loadSteps(title,steps){ setSteps(title,steps,{mode:'melodic'}); setPane('keys'); if(slideAfterLoad){ slideAfterLoad=false; slide(true); } },
   back,slide,setView,welcome,
   init:build,
