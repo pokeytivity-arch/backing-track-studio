@@ -83,7 +83,8 @@ function buildContrary(key,type,oct,alt){
   if(T.id==='mel'&&!NOALT){ NOALT=true; try{ const nt=buildContrary(key,'nat',oct,alt); steps.forEach((x,i)=>{ x.alt=nt[i]; }); } finally{ NOALT=false; } } /* open with melodic minor, close with natural minor */
   return steps;
 }
-function build(key,hand,type,oct,motion,alt){
+let ALH='oct';
+function build(key,hand,type,oct,motion,alt,alh){ if(alh) ALH=alh;
   if(motion==='contrary') return buildContrary(key,type,oct,alt);
   oct=Math.max(1,Math.min(4,Math.round(+oct)||1));
   const T=typeOf(type), isMaj=T.id==='major', d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct, p=d.m%12;
@@ -103,6 +104,8 @@ function build(key,hand,type,oct,motion,alt){
     if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; else if(fam.rhm){ const M=fam.rhm; st.fing=top?M.l:(i<7?M.f[i]:M.r[(i-7)%7]); } } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
     if(hand!=='rh'&&lhF){ if(oct===1) st.lfing=lhF[i]||''; else if(lfam.lhm){ const M=lfam.lhm, q=Math.floor(i/7); st.lfing=top?M.l:q===0?M.f.split(' ')[i]:(q===oct-1&&M.z)?M.z.split(' ')[i%7]:M.r.split(' ')[i%7]; } }
     /* chromatic scale (his fingering, the same in all 12 keys, reversed coming down; start anywhere): by key. Right hand up from C: 1 3 1 3 1 2 3 1 3 1 3 1 2; left hand up from C: 4 3 1 3 2 1 3 1 3 1 3 2 1; both carry on from D♭ as 3 1 */
+    if(T.id==='arpmaj'||T.id==='arpmin'){ const A=arpFing(T.id,p,oct); if(hand!=='lh'&&A.r) st.fing=String(A.r[i]); if(hand!=='rh'&&A.l) st.lfing=String(A.l[i]);
+      if(hand==='rh'&&deg===0){ const b=lBoth+semi, blk=ALH==='root'?[b]:ALH==='fill'?[b,b+7,b+12]:[b,b+12]; st.lh=blk; blk.forEach(m=>{ st.spell[m]=dispName(names[(m-b)===7?2:0]); }); } }
     if(T.id==='chr'){ const q=(p+semi)%12; if(hand!=='lh') st.fing=String(i===0&&q===0?1:CHR_R[q]); if(hand!=='rh') st.lfing=String(i===0&&q===0?4:CHR_L[q]); }
     const SF=SCALELIB.solfa[T.id]; if(SF){ st.sol=top?SF.up[0]:SF.up[deg]; if(SF.down) st.solD=top?SF.down[0]:SF.down[deg]; }
     steps.push(st); }
@@ -110,6 +113,19 @@ function build(key,hand,type,oct,motion,alt){
   return steps;
 }
 let NOALT=false;
+/* Arpeggio fingering (his). Right hand, one octave 1 2 3 for root, third and fifth, and 5 (the pinky) on the top note after 1, 2, 3 or 4 octaves:
+   C D E F G A B major and minor, G♭/F♯ major, E♭/D♯ minor. D♭ major, C♯ minor, E♭ major, F♯ minor, A♭ major, G♯ minor, B♭ major: 2 1 2 4 in octave position,
+   then 1 2 4 for each further octave. B♭ minor: 2 3 1 2, then 3 1 2.
+   Two-handed, the left hand: 5 4 2 1 (+ 4 2 1 each further octave) in C D E F G A B major and minor, G♭/F♯ major, E♭/D♯ minor; 2 1 4 2 (then 1 4 2) in
+   D♭ major, C♯ minor, E♭ major, F♯ minor, A♭ major, G♯ minor; 4 2 1 4 (then 2 1 4) in B♭ major and B♭ minor.
+   One-handed: the left hand plays the root, the octave or the filled-in octave (1-5-8). */
+const ARP={maj:{r:{g1:[0,2,4,5,7,9,11,6],g2:[1,3,8,10]},l:{a:[0,2,4,5,7,9,11,6],b:[1,3,8],c:[10]}},
+           min:{r:{g1:[0,2,4,5,7,9,11,3],g2:[1,6,8],g3:[10]},l:{a:[0,2,4,5,7,9,11,3],b:[1,6,8],c:[10]}}};
+function arpSeq(first,rep,n){ const o=first.slice(); for(let k=1;k<n;k++) o.push(...rep); return o; }
+function arpFing(type,pc,n){ const T=ARP[type==='arpmin'?'min':'maj'], has=(g,x)=>g&&g.includes(x);
+  const r=has(T.r.g1,pc)?(()=>{ const o=[]; for(let k=0;k<n;k++) o.push(1,2,3); o.push(5); return o; })():has(T.r.g2,pc)?arpSeq([2,1,2,4],[1,2,4],n):has(T.r.g3,pc)?arpSeq([2,3,1,2],[3,1,2],n):null;
+  const l=has(T.l.a,pc)?arpSeq([5,4,2,1],[4,2,1],n):has(T.l.b,pc)?arpSeq([2,1,4,2],[1,4,2],n):has(T.l.c,pc)?arpSeq([4,2,1,4],[2,1,4],n):null;
+  return {r,l}; }
 const CHR_R={0:2,1:3,2:1,3:3,4:1,5:2,6:3,7:1,8:3,9:1,10:3,11:1}, CHR_L={0:1,1:3,2:1,3:3,4:2,5:1,6:3,7:1,8:3,9:1,10:3,11:2};
 function acc(key){ const n=spellDeg(key,TYPES[0].d).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
 let ov=null;

@@ -396,6 +396,18 @@ In a minor scale sung from la, the numbers follow the solfa (la is 6), so the na
 - Cyclical: 0 5 10 3 8 1 6 11 4 9 2 7. A classic example in C: C F B♭ E♭ A♭ D♭ G♭ B E A D G, back to C. Some serialism using pitch-class numbers 0 to 11.
 Why pitch classes: so the cycle does not jump up in fourths indefinitely. Each new key sits that many half steps above the starting key, inside one octave, so the cyclical movement has fourths and fifths: up a fourth, then down a fifth. B♭ descends to E♭; A♭ descends to D♭. From D the cyclical keys are D G C F B♭ E♭ A♭ D♭ G♭ B E A, back to D. Teach students the logic (the numbers), not a list of notes to memorise.
 
+ARPEGGIO FINGERING (his fingering; in the Scale room under Arpeggios: Major arpeggio and Minor arpeggio, root, third and fifth)
+One-handed arpeggio (right hand):
+- 1 2 3 for root, third and fifth for one octave in C, D, E, F, G, A and B major and minor, G♭ (F♯) major and E♭ (D♯) minor. Add 5 (the pinky) after 1, 2, 3 or even 4 octaves.
+- All played with the root, the octave or the filled-in octave (1-5-8) in the left hand.
+- D♭ major and C♯ minor, E♭ major, F♯ minor, A♭ major and G♯ minor, B♭ major: 2 1 2 4 plays it in octave position, then you keep repeating 1 2 4 for subsequent octaves.
+- B♭ minor: 2 3 1 2 for octave position, then you keep repeating 3 1 2 for additional octaves.
+Two-handed arpeggio: replaces the octave and filled-in octave in the left hand with the left hand playing the arpeggio:
+- 5 4 2 1 (+ 4 2 1 for additional octaves) in C, D, E, F, G, A and B major and minor, G♭ (F♯) major and E♭ (D♯) minor.
+- D♭ major and C♯ minor, E♭ major, F♯ minor, A♭ major and G♯ minor: 2 1 4 2 plays it in octave position, then you keep repeating 1 4 2 for subsequent octaves.
+- B♭ major and B♭ minor: 4 2 1 4 for octave position, then you keep repeating 2 1 4 for additional octaves.
+The right hand plays its one-handed fingering in the two-handed arpeggio. Coming down, the same fingers are used in reverse.
+
 THE CHORD ROOM CONSOLE AND HIS CHORD TECHNIQUES (his words)
 Mode: Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart) or Voicings (one chord at a time, and the student gets multiple ways of playing it). Both modes cannot be on at the same time: turning on Voicings deactivates the Chord canvas.
 Inversion: Root position, 1st inversion, 2nd inversion. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
