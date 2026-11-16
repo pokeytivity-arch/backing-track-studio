@@ -413,6 +413,7 @@ Triad arpeggios are played with an eighth-note triplet feel: Tri (1) Ple (3) Let
 THE CHORD ROOM CONSOLE AND HIS CHORD TECHNIQUES (his words)
 Mode (one at a time): Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart), Inversions, Voicings (one chord at a time, and the student gets multiple ways of playing it) and Arpeggios. The Note and Chord menus are for Inversions and Voicings.
 Inversion is one of the modes: Root position, 1st inversion, 2nd inversion and 3rd inversion (the 3rd inversion is for seventh chords). In Inversions the chord menu has triads and seventh chords.
+Solfa for chords (his; context matters too): major triad do mi sol; minor triad la do mi; diminished triad ti re fa; dominant seventh sol ti re fa (from the Mixolydian mode).
 Right-hand fingering for inversions (his):
 - Triads: first inversion 1 2 5; second inversion 1-2-4, or 1-3-5, and less frequently 1-2-5.
 - Seventh chords: root position 1 2 3 5; first inversion 1 2 4 5; second inversion 1 2 3 5; third inversion 1 2 4 5 when the root is a white note, 1 2 3 5 when the root is a black note. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.

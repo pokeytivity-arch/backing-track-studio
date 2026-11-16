@@ -435,7 +435,7 @@ function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales'||steps.arp) handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
   const V=kind==='chords'&&vis&&vis.s===s?vis:null, XL=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='l'):[], XR=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='r'):[];
-  if(kind==='chords'&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales'&&!(VO&&!st.nkb),fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  if(kind==='chords'&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   /* while a chord plays, each note lights up as it sounds and dims when it stops */
   if(V) [...(s.lh||[]),...(s.rh||[]),...XL,...XR].forEach(m=>{ const r=svg.querySelector('rect[data-m="'+m+'"]'); if(!r) return; if(V.on.has(m)){ r.setAttribute('stroke','#fff'); r.setAttribute('stroke-width','2'); } else { const w=+r.getAttribute('width')>10, f=r.getAttribute('fill'); r.setAttribute('fill',f==='#f76707'?(w?'#ffd8bd':'#7a3a12'):f==='#1c7ed6'?(w?'#c4ddf6':'#163d63'):f); r.setAttribute('data-dim','1'); } });
@@ -1063,7 +1063,8 @@ function playChord(s,len,nx){ const C=CLASS.clock; C.ready().then(()=>{ if(!ov||
   const at=(t,fn)=>{ timers.push(setTimeout(()=>{ if(vis!==V) return; fn(); redraw(); },Math.max(0,(t-C.now())*1000))); };
   const lit=(m,t,e,ex)=>{ at(t,()=>{ if(ex) V.extra[m]=ex; V.on.add(m); }); at(e,()=>{ V.on.delete(m); if(ex) delete V.extra[m]; }); };
   let gDone=false; /* the grace note comes once, on beat one, then nothing more for the rest of the chord */
-  const N=(m,t,e,v)=>{ if(e-t<.03) return; if(gr&&m===gr.tgt&&!gDone){ gDone=true; const gd=Math.min(.07,bt/8); C.note(gr.g,t,gd+.02,(v||.72)*.8,b); lit(gr.g,t,t+gd,{h:(s.rh||[]).includes(m)?'r':'l',f:FM[m]}); C.note(m,t+gd,e-t-gd,v,b); lit(m,t+gd,e); } else { C.note(m,t,e-t,v,b); lit(m,t,e); } };
+  const mute=st.cmode==='voice'&&st.nkb===false;   /* Voicings: Virtual keyboard off = the keyboard is silent; the keys still light and the hands still play */
+  const N=(m,t,e,v)=>{ if(e-t<.03) return; if(mute){ lit(m,t,e); return; } if(gr&&m===gr.tgt&&!gDone){ gDone=true; const gd=Math.min(.07,bt/8); C.note(gr.g,t,gd+.02,(v||.72)*.8,b); lit(gr.g,t,t+gd,{h:(s.rh||[]).includes(m)?'r':'l',f:FM[m]}); C.note(m,t+gd,e-t-gd,v,b); lit(m,t+gd,e); } else { C.note(m,t,e-t,v,b); lit(m,t,e); } };
   const isL=m=>(s.lh||[]).includes(m), endOf=m=>isL(m)?lhEnd:end;
   if(tech==='a'){ const k=arpBeat(beats), ta=t0+k*bt, plan=arpPlan(s,ta,bt);
     if(plan){ arpN=null; drawKb(); if(k>0) [...s.lh,...s.rh].forEach(m=>N(m,t0,ta-.01,isL(m)?.75:.7));   /* the arpeggio comes on a later beat: the chord is held until then */
@@ -1089,11 +1090,12 @@ function loadChords(text,quiet){
   const fitted=bassFing(base.map(x=>handFit(/^\[/.test(x.src||'')?x:invert(x,0))));
   steps=octShift(fitted); steps.key=progKey(base); steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(P.length>base.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(P.map(x=>x.tok));
 }
-/* voicing labels on the keys: letter, solfa (do on the root of a major chord, la on the root of a minor chord) and number (the chord tone) */
+/* voicing labels on the keys: letter, solfa and number (the chord tone). Solfa (his): major triad do mi sol, minor triad la do mi, diminished triad ti re fa,
+   dominant seventh sol ti re fa (from the Mixolydian mode); so major ninth do mi sol ti re, minor ninth la do mi sol ti, dominant ninth sol ti re fa la */
 const SOLC=['do','ra','re','me','mi','fa','fi','sol','si','la','te','ti'], NUMC=['1','♭9','9','♭3','3','11','♭5','5','♯5','13','♭7','7'];
 function vLabels(s){ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ const i=((m-s.vroot)%12+12)%12, L=[];
     if(st.nlab.includes('letter')) L.push((s.spell&&s.spell[m])||SHARP_N[((m%12)+12)%12]);
-    if(st.nlab.includes('solfa')) L.push(SOLC[(i+(s.vmin?9:0))%12]);
+    if(st.nlab.includes('solfa')) L.push(SOLC[(i+(s.voff||0))%12]);
     if(st.nlab.includes('number')) L.push(NUMC[i]); o[m]=L.length===1?L[0]:L; }); return o; }
 /* the staff: the voicing as one chord on a grand staff (right hand on the treble, left hand on the bass), shown in the Display */
 let stfN=0;
@@ -1129,7 +1131,7 @@ function loadVoicings(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit, T=win
   if(!res||!res.list.length){ showPicked(ch,K,quiet); $('#prMsg').textContent='Voicings for '+name+' are not in the lessons yet. He has given them for major and minor triads and for major, minor and dominant ninth chords.'; return; }
   const kp=((root[2]%12)+12)%12;
   steps=res.list.map((v,i)=>{ const ns=v.pos[v.cur], lh=ns.filter(n=>n.hand==='lh').map(n=>n.midi), rh=ns.filter(n=>n.hand!=='lh').map(n=>n.midi), sp={}; ns.forEach(n=>{ sp[n.midi]=n.label; });
-    return handFit({src:'[v'+i+']',name:name[0].toUpperCase()+name.slice(1),chip:'Voicing '+(i+1),vdesc:v.d+' ('+v.f+')',lh,rh,fing:'',lfing:'',spell:sp,beats:4,vroot:res.root.pc,vmin:/min/.test(res.K.k)}); });
+    return handFit({src:'[v'+i+']',name:name[0].toUpperCase()+name.slice(1),chip:'Voicing '+(i+1),vdesc:v.d+' ('+v.f+')',lh,rh,fing:'',lfing:'',spell:sp,beats:4,vroot:res.root.pc,voff:({maj:0,maj9:0,min:9,min9:9,dom9:7,dim:11})[res.K.k]||0}); });
   steps=octShift(steps); steps.key=kp; steps.multi=true; cur=0; chips(); show(); invBtn(); if(!quiet) play1(steps[0]); }
 function chordReload(quiet){ const c=cur; if(st.cmode==='inv') loadInv(quiet); else if(st.cmode==='arp') loadArp(quiet); else if(st.cmode==='voice') loadVoicings(quiet); else loadChords(st.chords,quiet); if(c>=0&&c<steps.length){ cur=c; show(); } }
 /* Arpeggios: chords played harp-like (root, third, fifth), with his fingering. One-handed: the right hand plays the arpeggio and the left hand
@@ -1185,7 +1187,7 @@ function chordConsole(box){
         else { const on={v:st.vh==='v'||st.vh==='a',h:st.vh==='h'||st.vh==='a'}; on[v]=!on[v]; if(!on.v&&!on.h) return; st.vh=on.v&&on.h?'a':on.v?'v':'h'; } save(); render(); },
       {two:true,off:()=>!cv&&!vo,offWhy:'For the chord canvas',cls:()=>cv&&st.vh==='a'?'p-arpon':'',dis:v=>vo?v!=='grace':(v==='grace'||v==='bline')&&st.vh!=='v',disWhy:vo?'Voicings can use grace notes':'Grace notes and the bass line go with Chords'}));
   /* Notation (Voicings): Staff and Virtual keyboard; with the virtual keyboard on, its labels: Letter, Solfa, Number (any or all) */
-  strips.append(cStrip('Notation',[['staff','Staff','The voicing on a grand staff, in the Display'],['kb','Virtual keyboard','Names on the keys']],()=>[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },{off:()=>!vo,offWhy:'For Voicings'}),
+  strips.append(cStrip('Notation',[['staff','Staff','The voicing on a grand staff, in the Display'],['kb','Virtual keyboard','The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)']],()=>[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },{off:()=>!vo,offWhy:'For Voicings'}),
     cStrip('Labels',[['letter','Letter'],['solfa','Solfa'],['number','Number']],()=>st.nlab,v=>{ const a=new Set(st.nlab); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.nlab=['letter','solfa','number'].filter(x=>a.has(x)); save(); render(); },{off:()=>!vo||!st.nkb,offWhy:'Turn on Virtual keyboard (Voicings)'}));
   strips.append(trStrip());
   /* Keys and Click: a fader, a meter, and mute and solo, like every console in the suite */ strips.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118)));
