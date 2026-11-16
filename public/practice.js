@@ -231,7 +231,7 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-watch.ph{padding:5px 6px;gap:4px;border-radius:9px} #prRoom .p-watch.ph .p-wps{gap:5px} #prRoom .p-watch.ph .p-wp{padding:3px;gap:2px}
 #prRoom .p-watch.ph .p-wd{font-size:19px} #prRoom .p-watch.ph .p-wp b{font-size:7.5px} #prRoom .p-watch.ph .p-wp small{font-size:9px} #prRoom .p-watch.ph .p-wm{font-size:10.5px;gap:6px} #prRoom .p-watch.ph .p-wn{font-size:9.5px}
 #prRoom .p-watch.ph .p-wg button{width:18px;height:16px;font-size:11px;min-height:0}
-#prRoom .p-cbar{display:flex;align-items:center;gap:5px;padding:7px 6px;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18);border-radius:0 0 12px 12px}
+#prRoom .p-cbar{display:flex;flex-wrap:wrap;row-gap:6px;align-items:center;gap:5px;padding:7px 6px;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18);border-radius:0 0 12px 12px}
 #prRoom .p-cbar .p-banks{margin:0;padding:0;border:0;background:none;flex:0 1 auto;gap:4px} #prRoom .p-cbar .p-bank{padding:2px 7px 2px 6px} #prRoom .p-cbar .p-pow,#prRoom .p-cbar .p-ubtn{padding:2px 8px 2px 7px} #prRoom .p-cbar .p-bl{margin-right:1px}
 #prRoom .p-sp{flex:1}
 #prRoom .p-pow,#prRoom .p-ubtn,#prRoom .p-tapw{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:2px 10px 2px 8px;border-radius:5px;border:1px solid #070910;background:linear-gradient(180deg,#2a3042,#1a1f2c);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 3px rgba(0,0,0,.55);color:#c9cfdd;font:800 10px var(--body);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
@@ -736,24 +736,27 @@ function mixOrder(panel){
 /* memory banks: store the whole console (scale, note, octaves, tempo, loop, every channel and both volume faders) in one of six banks.
    Press SAVE, then a number, to store; press a number to recall. A lit number holds a setting; green is the one in use. */
 const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc'];
-let bankArm=false, bankDel=false, bankCur=(()=>{ try{ return +(localStorage.getItem('pr-bank-cur')??-1); }catch(_){ return -1; } })();
-const banksGet=()=>{ try{ const b=JSON.parse(localStorage.getItem(BKS)||'[]'); return Array.isArray(b)?b:[]; }catch(_){ return []; } };
-const bankName=b=>{ if(!b||!b.s) return 'Empty'; const x=b.s, SC=window.SCALES, t=((SC&&SC.types)||[]).find(q=>q.id===x.type);
+/* twelve memory banks in the Scale room and twelve in the Chord room (each room keeps its own) */
+const NBANK=12, CKEYS=['cmode','chords','cview','invs','vh','cg','vg','bline','ckey','cpick','ctr','coct','nstaff','nkb','nlab','akey','aq','aoct','ahand','alh','adir','bpm','loop'];
+const bks=()=>kind==='chords'?'pr-cbanks':BKS, bkeys=()=>kind==='chords'?CKEYS:BKEYS, bcurK=()=>kind==='chords'?'pr-cbank-cur':'pr-bank-cur';
+let bankArm=false, bankDel=false;
+const bcur=()=>{ try{ return +(localStorage.getItem(bcurK())??-1); }catch(_){ return -1; } }, bcurSet=i=>{ try{ localStorage.setItem(bcurK(),String(i)); }catch(_){} };
+const banksGet=()=>{ try{ const b=JSON.parse(localStorage.getItem(bks())||'[]'); return Array.isArray(b)?b:[]; }catch(_){ return []; } };
+const bankName=b=>{ if(!b||!b.s) return 'Empty'; const x=b.s; if(kind==='chords') return cBankName(x); const SC=window.SCALES, t=((SC&&SC.types)||[]).find(q=>q.id===x.type);
   return SYMK(x.key)+' '+(x.type==='major'?'major':(t?t.l:x.type))+' · '+({rh:'right hand',lh:'left hand',both:'both hands'}[x.hand]||'')+(x.motion==='contrary'?', contrary':'')+' · '+(x.rhy&&x.rhy!=='free'?{q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes'}[x.rhy]:(x.oct||1)+' oct')+' · '+x.bpm+' BPM'; };
 function bankSync(){ const b=banksGet(); document.querySelectorAll('#prRoom .p-banks').forEach(bar=>{ bar.classList.toggle('arm',bankArm); bar.classList.toggle('del',bankDel); { const dl=bar.querySelector('.p-bdel'); if(dl) dl.setAttribute('aria-pressed',String(bankDel)); }
-  bar.querySelectorAll('.p-bank').forEach((k,i)=>{ k.classList.toggle('has',!!b[i]); k.classList.toggle('on',i===bankCur&&!!b[i]); k.title=(bankDel?(b[i]?'Delete bank '+(i+1)+': '+bankName(b[i]):'Bank '+(i+1)+' is already empty'):bankArm?'Save to bank '+(i+1)+(b[i]?' (replaces: '+bankName(b[i])+')':''):b[i]?'Bank '+(i+1)+': '+bankName(b[i]):'Bank '+(i+1)+' is empty. Press SAVE, then '+(i+1)+', to store this setting'); });
+  bar.querySelectorAll('.p-bank').forEach((k,i)=>{ k.classList.toggle('has',!!b[i]); k.classList.toggle('on',i===bcur()&&!!b[i]); k.title=(bankDel?(b[i]?'Delete bank '+(i+1)+': '+bankName(b[i]):'Bank '+(i+1)+' is already empty'):bankArm?'Save to bank '+(i+1)+(b[i]?' (replaces: '+bankName(b[i])+')':''):b[i]?'Bank '+(i+1)+': '+bankName(b[i]):'Bank '+(i+1)+' is empty. Press SAVE, then '+(i+1)+', to store this setting'); });
   const sv=bar.querySelector('.p-bsave'); if(sv) sv.setAttribute('aria-pressed',String(bankArm)); }); }
 function bankPress(i){ const b=banksGet();
-  if(bankDel){ bankDel=false; const m=$('#prMsg'); if(!b[i]){ if(m) m.textContent='Bank '+(i+1)+' is already empty.'; bankSync(); return; } b[i]=null; try{ localStorage.setItem(BKS,JSON.stringify(b)); }catch(_){} if(bankCur===i){ bankCur=-1; try{ localStorage.setItem('pr-bank-cur','-1'); }catch(_){} } bankSync(); if(m) m.textContent='Bank '+(i+1)+' deleted.'; return; }
-  if(bankArm){ const snap={s:{},v:{}}; BKEYS.forEach(k=>snap.s[k]=st[k]); if(window.CLASS&&CLASS.vol){ snap.v.keys=CLASS.vol.get('keys'); snap.v.click=CLASS.vol.get('click'); } b[i]=snap; try{ localStorage.setItem(BKS,JSON.stringify(b)); }catch(_){} bankArm=false; bankCur=i;
-    try{ localStorage.setItem('pr-bank-cur',String(i)); }catch(_){} bankSync(); const m=$('#prMsg'); if(m) m.textContent='Saved to bank '+(i+1)+': '+bankName(snap)+'.'; return; }
+  if(bankDel){ bankDel=false; const m=$('#prMsg'); if(!b[i]){ if(m) m.textContent='Bank '+(i+1)+' is already empty.'; bankSync(); return; } b[i]=null; try{ localStorage.setItem(bks(),JSON.stringify(b)); }catch(_){} if(bcur()===i) bcurSet(-1); bankSync(); if(m) m.textContent='Bank '+(i+1)+' deleted.'; return; }
+  if(bankArm){ const snap={s:{},v:{}}; bkeys().forEach(k=>snap.s[k]=st[k]); if(window.CLASS&&CLASS.vol){ snap.v.keys=CLASS.vol.get('keys'); snap.v.click=CLASS.vol.get('click'); } b[i]=snap; try{ localStorage.setItem(bks(),JSON.stringify(b)); }catch(_){} bankArm=false; bcurSet(i); bankSync(); const m=$('#prMsg'); if(m) m.textContent='Saved to bank '+(i+1)+': '+bankName(snap)+'.'; return; }
   if(!b[i]){ const m=$('#prMsg'); if(m) m.textContent='Bank '+(i+1)+' is empty. Press SAVE, then '+(i+1)+', to store the console here.'; return; }
-  clr(); BKEYS.forEach(k=>{ if(b[i].s[k]!==undefined) st[k]=b[i].s[k]; }); save(); if(b[i].v&&window.CLASS&&CLASS.vol){ if(isFinite(b[i].v.keys)) CLASS.vol.set('keys',b[i].v.keys); if(isFinite(b[i].v.click)) CLASS.vol.set('click',b[i].v.click); }
-  bankCur=i; try{ localStorage.setItem('pr-bank-cur',String(i)); }catch(_){} loadScale(); render(); try{ menuSync(); }catch(_){} const m=$('#prMsg'); if(m) m.textContent='Bank '+(i+1)+': '+bankName(b[i])+'.'; }
+  clr(); bkeys().forEach(k=>{ if(b[i].s[k]!==undefined) st[k]=JSON.parse(JSON.stringify(b[i].s[k])); }); save(); if(b[i].v&&window.CLASS&&CLASS.vol){ if(isFinite(b[i].v.keys)) CLASS.vol.set('keys',b[i].v.keys); if(isFinite(b[i].v.click)) CLASS.vol.set('click',b[i].v.click); }
+  bcurSet(i); if(kind==='scales') loadScale(); render(); try{ menuSync(); }catch(_){} const m=$('#prMsg'); if(m) m.textContent='Bank '+(i+1)+': '+bankName(b[i])+'.'; }
 function bankBar(){ const bar=el('div','p-banks'); bar.setAttribute('role','group'); bar.setAttribute('aria-label','Memory banks'); bar.appendChild(el('span','p-bl','Memory'));
-  for(let i=0;i<6;i++){ const k=el('button','p-bank'); k.type='button'; k.innerHTML='<i class="p-led"></i>'+(i+1); k.onclick=()=>bankPress(i); bar.appendChild(k); }
-  const sv=el('button','p-bsave','Save'); sv.type='button'; sv.onclick=()=>{ bankArm=!bankArm; bankDel=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankArm?'Now press a bank number (1 to 6) to save this console there.':''; }; bar.appendChild(sv);
-  const dl=el('button','p-bdel','Delete'); dl.type='button'; dl.onclick=()=>{ bankDel=!bankDel; bankArm=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankDel?'Now press the bank number (1 to 6) you want to delete.':''; }; bar.appendChild(dl);
+  for(let i=0;i<NBANK;i++){ const k=el('button','p-bank'); k.type='button'; k.innerHTML='<i class="p-led"></i>'+(i+1); k.onclick=()=>bankPress(i); bar.appendChild(k); }
+  const sv=el('button','p-bsave','Save'); sv.type='button'; sv.onclick=()=>{ bankArm=!bankArm; bankDel=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankArm?'Now press a bank number (1 to 12) to save this console there.':''; }; bar.appendChild(sv);
+  const dl=el('button','p-bdel','Delete'); dl.type='button'; dl.onclick=()=>{ bankDel=!bankDel; bankArm=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankDel?'Now press the bank number (1 to 12) you want to delete.':''; }; bar.appendChild(dl);
   setTimeout(bankSync,0); return bar; }
 /* a pointer position in an element's own coordinates. On a phone the whole page is turned sideways (the body is rotated 90°),
    so screen up/down is the page's left/right: map through the rotation so faders and dragging follow the finger */
@@ -853,6 +856,7 @@ function render(){
       else area.appendChild(el('p','p-cvhelp',st.cmode==='inv'?'One chord at a time, in every inversion that is on: tap one in the Display to hear it.':'One chord at a time: tap a voicing in the Display to hear it and see it on the keys.')); }
     else arpUI(area);
     const r2=el('div','e-ctl p-ctr'); box.appendChild(r2); transport(r2);
+    const bkr=el('div','e-ctl p-cbk'); box.appendChild(bkr); bkr.appendChild(bankBar());
     const ask=el('button','e-btn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
     $('#prLbl').textContent='Chord practice';
     if(st.cmode==='voice') loadVoicings(true); else if(st.cmode==='inv') loadInv(true); else if(st.cmode==='arp') loadArp(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
@@ -1005,7 +1009,7 @@ function bassFing(st){
 #prRoom .p-trs .p-trb{justify-content:center;min-width:40px;font-size:18px!important;font-weight:900} #prRoom .p-trs .p-trv{justify-content:center;min-width:76px;color:#cfd6e6} #prRoom .p-trs .p-trv.on{color:#ffd43b}
 /* Chords and Broken chords both on: the arpeggio. Their lights flash red, blue and green */
 @keyframes pArp{0%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}33%{background:#3b8bff;box-shadow:0 0 7px 1px #3b8bff}66%{background:#3dff6e;box-shadow:0 0 7px 1px #3dff6e}100%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}}
-#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
+#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
 @media (max-width:700px){ #prRoom .p-cmix .p-ch{min-width:0;padding:0 6px} #prRoom .p-cmix .p-key{min-height:24px;font-size:11px} #prRoom .p-cmix .p-c2{grid-template-columns:repeat(2,auto)} #prRoom .p-cvgrid{grid-template-columns:1fr} }
 `; document.head.appendChild(c); }
 const VREG=/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\.?\s*\/\s*\.?\s*[A-G]/;
@@ -1169,6 +1173,11 @@ function trStrip(){ const strip=el('div','p-ch p-bch p-trs'); strip.appendChild(
   row('Key',trN,v=>{ st.ctr=v; },-6,6,v=>v?lab(v)+' ½':'0','the original key');
   row('Octave',ocN,v=>{ st.coct=v; },-2,2,v=>v?lab(v)+' oct':'0','the written octave');
   return strip; }
+const cBankName=x=>{ const M={canvas:'Chord canvas',inv:'Inversions',voice:'Voicings',arp:'Arpeggios'}[x.cmode]||'Chord canvas', K=window.EAR&&EAR.kit; let w='';
+  if(x.cmode==='arp') w=DSP(x.akey||'C')+(x.aq==='arpmin'?' minor':' major')+(x.aoct>1?', '+x.aoct+' octaves':'')+(x.ahand==='both'?', two-handed':'');
+  else if(x.cmode==='inv'||x.cmode==='voice'){ try{ const [c,i]=String(x.cpick||'tri:0').split(':'); w=DSP(x.ckey||'C')+' '+K.CH[c][1][+i][0].toLowerCase(); }catch(_){ w=''; } }
+  else { const t=String(x.chords||'').replace(/\s+/g,' ').trim(); w=t.length>34?t.slice(0,33)+'…':t||'empty canvas'; }
+  return M+': '+w+(x.ctr?' · '+(x.ctr>0?'+':'')+x.ctr+' ½':'')+' · '+(x.bpm||80)+' BPM'; };
 /* a console strip of lit buttons, like the Scale room's */
 function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col);
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; } if(o.cls&&o.cls()) strip.classList.add(o.cls());

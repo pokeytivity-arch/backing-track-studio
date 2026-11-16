@@ -14,10 +14,10 @@ html.ps-intro #suiteHub,html.ps-intro #suiteHub.on{visibility:hidden!important}
 #psIntro .glow{position:absolute;width:62vmin;height:62vmin;left:50%;top:50%;margin:-31vmin 0 0 -31vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,244,214,.20),rgba(255,236,190,.07) 38%,transparent 68%);transform:translateX(-80vw);opacity:0;pointer-events:none}
 #psIntro .t{position:relative;display:grid;padding:0 6vw;text-align:center;font:800 clamp(30px,6.4vw,92px)/1.08 "Bricolage Grotesque","Avenir Next",system-ui,sans-serif;letter-spacing:-.02em}
 #psIntro .t>div{grid-area:1/1}
-#psIntro .col{position:relative;display:flex;flex-direction:column;align-items:center;gap:clamp(18px,5vh,48px)}
-#psIntro .lg{display:block;width:clamp(220px,40vw,460px);height:auto;opacity:.05;transition:opacity .9s ease,transform 1.5s cubic-bezier(.55,0,.85,.4),filter 1.2s ease-in}
+#psIntro .col{position:relative;display:flex;flex-direction:column;align-items:center}
+#psIntro .lg{position:fixed;top:clamp(18px,6vh,56px);left:50%;transform:translateX(-50%);display:block;width:clamp(130px,18vw,230px);height:auto;opacity:.05;transition:opacity .9s ease,transform 1.5s cubic-bezier(.55,0,.85,.4),filter 1.2s ease-in}
 #psIntro.lit .lg{opacity:1;filter:drop-shadow(0 0 22px rgba(255,236,200,.28))}
-#psIntro.fall .lg{opacity:0;filter:blur(6px);transform:translateY(220px) rotate(-5deg)}
+#psIntro.fall .lg{opacity:0;filter:blur(6px);transform:translate(-50%,220px) rotate(-5deg)}
 #psIntro .base{color:rgba(255,255,255,.035);transition:color .5s,text-shadow .6s}
 #psIntro .beam{background:radial-gradient(circle at var(--x,-30%) 50%,#fff 0,#fff3d6 9%,rgba(255,236,200,.22) 24%,rgba(255,255,255,0) 44%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;transition:opacity .5s}
 #psIntro .t.lit .base{color:#fff;text-shadow:0 0 30px rgba(255,236,200,.35)} #psIntro .t.lit .beam{opacity:0}
@@ -3082,7 +3082,7 @@ init();
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zz14" defer></script>
 <script src="hands.js?v=67" defer></script>
-<script src="practice.js?v=h3" defer></script>
+<script src="practice.js?v=h6" defer></script>
 <script src="scale-library.js?v=4" defer></script>
 <script src="scales.js?v=12" defer></script>
 <script src="check.js" defer></script>
