@@ -73,7 +73,7 @@ const css=document.createElement('style'); css.textContent=`
 .e-res-r{display:grid;grid-template-columns:minmax(120px,220px) minmax(90px,150px) 1fr;gap:12px;align-items:center;padding:10px 16px;border-radius:14px;background:var(--k0d0b07,#0c1222);border-left:5px solid #2fbf64;font:600 16px var(--body)}.e-res-r.bad{border-left-color:#e0653d}.e-res-r b{font:800 18px var(--body)}.e-res-t{color:var(--stage-muted,#9aa6c0)}
 .e-dots{display:flex;gap:5px;flex-wrap:wrap}.e-dots .d{width:14px;height:14px;border-radius:50%;display:inline-block}.e-dots .d.ok{background:#2fbf64}.e-dots .d.bad{background:#e0653d}
 @media(max-width:700px){.e-res-r{grid-template-columns:1fr}}
-.e-opt.ok{background:#1f7a3f!important;border-color:#2fbf64}.e-opt.bad{background:#a33a1c!important;border-color:#e0653d}
+.e-opt.ok{background:#1f7a3f!important;border-color:#2fbf64} .ear-sp{position:fixed;right:18px;bottom:18px;z-index:5;box-shadow:0 8px 22px rgba(0,0,0,.45)} .e-opt.tt{display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:70px;padding:10px 14px} .e-opt.tt small{font:700 11px var(--body);opacity:.7} #earRoom .e-opt.tt.ok{background:#1f9e46!important;border-color:#3dff6e!important;color:#fff!important;opacity:1!important} #earRoom .e-opt.tt.bad{background:#c92a2a!important;border-color:#ff6b6b!important;color:#fff!important;opacity:1!important} #earRoom .e-opt.tt.now{background:var(--hi,#ffd43b)!important;color:#151b28!important} .e-opt.bad{background:#a33a1c!important;border-color:#e0653d}
 .e-msg{font:600 clamp(16px,1.9vw,21px)/1.5 var(--body);min-height:1.5em}
 .e-kb{background:var(--k0d0b07,#0c1222);border-radius:18px;padding:12px 14px 10px}
 .e-kb .e-lbl{margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
@@ -102,11 +102,12 @@ function render(){
   clr(); lit=[]; n=0; score=0; missed={}; stats={}; q=null; answered=false;
   ov.querySelectorAll('#earMode button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===mode)));
   sgStop(); const cats=$('#earCats'); cats.textContent=''; cats.hidden=mode==='sing';
-  (mode==='rel'?RCATS:CATS).forEach(([k,t])=>{ const rl=mode==='rel', b=el('button','e-cat',t+' '+(rl?'relative pitch':mode==='aware'?'awareness':'recognition')); b.type='button'; b.setAttribute('aria-pressed',String(k===(rl?rcat:cat))); b.onclick=()=>{ if(rl){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else { cat=k; try{ localStorage.setItem('ps-ear-cat',k); }catch(_){} } render(); }; cats.appendChild(b); });
+  { const ct=ov.querySelector('.ear-sp'); if(ct) ct.remove(); } if(mode==='aware'&&cat==='tones') cat='note';
+  (mode==='rel'?RCATS:mode==='recog'?CATS.concat([['tones','Scale tones']]):CATS).forEach(([k,t])=>{ const rl=mode==='rel', b=el('button','e-cat',k==='tones'?'Scale recognition: tones':t+' '+(rl?'relative pitch':mode==='aware'?'awareness':'recognition')); b.type='button'; b.setAttribute('aria-pressed',String(k===(rl?rcat:cat))); b.onclick=()=>{ if(rl){ rcat=k; try{ localStorage.setItem('ps-ear-rcat',k); }catch(_){} } else { cat=k; try{ localStorage.setItem('ps-ear-cat',k); }catch(_){} } render(); }; cats.appendChild(b); });
   $('#earKb').hidden=mode!=='aware'&&mode!=='sing'&&mode!=='rel';
-  $('#earLbl').textContent=mode==='sing'?'Singing test':mode==='rel'?'Relative pitch · '+RCATS.find(c=>c[0]===rcat)[1]:(mode==='aware'?'Awareness':'Recognition')+' · '+CATS.find(c=>c[0]===cat)[1];
+  $('#earLbl').textContent=mode==='recog'&&cat==='tones'?'Scale recognition · Tones':mode==='sing'?'Singing test':mode==='rel'?'Relative pitch · '+RCATS.find(c=>c[0]===rcat)[1]:(mode==='aware'?'Awareness':'Recognition')+' · '+CATS.find(c=>c[0]===cat)[1];
   $('#earMsg').textContent=''; $('#earOpts').textContent=''; $('#earCtl').textContent=''; $('#earBig').textContent=''; $('#earSub').textContent='';
-  if(mode==='aware') awareness(); else if(mode==='sing') singing(); else if(mode==='rel') relUI(); else recognition();
+  if(mode==='aware') awareness(); else if(mode==='sing') singing(); else if(mode==='rel') relUI(); else if(cat==='tones') tonesTest(); else recognition();
 }
 
 /* ---------- the keyboard ---------- */
@@ -351,6 +352,53 @@ function makeQ(){
   const a=PROGS[R(PROGS.length)], r=48+R(12), others=PROGS.filter(x=>x!==a).sort(()=>Math.random()-.5).slice(0,5), opts=[a,...others].sort((x,y)=>PROGS.indexOf(x)-PROGS.indexOf(y)).map(x=>x.name);
   return {opts,ans:a.name,play(){ playProg(r,a.deg,1.3,1.5); },why:'That was '+a.name+' in '+midiName(r)+': '+a.deg.map(d=>chName(r,d)).join(' → ')+'.'};
 }
+/* ---------- scale recognition: tones ----------
+   The scale is played 5 times, slowly enough to hear every tone. Then Ready (or Hear again). Pokey plays the scale tones in random order and
+   the student picks the tone heard: right turns green; wrong turns red and the right one shows green. A score at the end.
+   A button in the corner goes to the Scale room to practise this scale. */
+const TT={key:null,type:null,bpm:60,reps:5};
+const symk=k=>String(k).replace(/b/g,'♭').replace(/#/g,'♯');
+function ttScale(){ const L=window.SCALES; if(!L||!L.build) return null; const ty=(L.types||[]).find(t=>t.id===TT.type)||(L.types||[])[0]; if(!ty) return null; TT.type=ty.id;
+  const ok=L.allowedKeys?L.allowedKeys(ty.id):(L.keys||[]); if(!ok.includes(TT.key)) TT.key=ok[0];
+  const st=L.build(TT.key,'rh',ty.id,1,'similar').filter(x=>x.rh&&x.rh.length); return {ty,ok,tones:st.map((x,i)=>({m:x.rh[0],name:symk(x.name),deg:i+1}))}; }
+function tonesTest(){
+  if(TT.key==null){ try{ const p=JSON.parse(localStorage.getItem('ps-pr')||'{}'); TT.key=p.key||'C'; TT.type=p.type||'major'; }catch(_){ TT.key='C'; TT.type='major'; } }
+  const ctl=$('#earCtl'), big=$('#earBig'), sub=$('#earSub'), msg=$('#earMsg'), opts=$('#earOpts'); $('#earKb').hidden=true;
+  const sc=ttScale(); if(!sc){ big.textContent='Scales are loading…'; return; }
+  const corner=el('button','e-btn ear-sp','🎹 Scale practice'); corner.type='button'; corner.title='Practise this scale in the Scale room';
+  corner.onclick=()=>{ const k=TT.key, t=TT.type; close(); try{ if(window.PRACTICE&&PRACTICE.openScale) PRACTICE.openScale(k,t); else if(window.PRACTICE) PRACTICE.open('scales'); }catch(_){} }; ov.appendChild(corner);
+  const name=()=>symk(TT.key)+' '+(sc.ty.id==='major'?'major':sc.ty.l);
+  const mk=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
+  const toneBtns=(on)=>{ opts.textContent=''; return sc.tones.map(x=>{ const b=el('button','e-opt tt'); b.type='button'; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=x.name; b.lastChild.textContent=x.deg; b.disabled=!on; opts.appendChild(b); return b; }); };
+  /* step 1: choose the scale */
+  const setup=()=>{ clr(); ctl.textContent=''; msg.textContent=''; big.textContent=name(); sub.textContent='You will hear this scale 5 times. Listen to every tone. Then Pokey plays the tones one at a time and you pick the one you heard.';
+    const ks=el('select'); sc.ok.forEach(k=>{ const o=el('option',null,symk(k)); o.value=k; ks.appendChild(o); }); ks.value=TT.key; ks.setAttribute('aria-label','Note');
+    const ts=el('select'); let og=null, gl=null; (window.SCALES.types||[]).forEach(t=>{ if(t.g!==gl){ gl=t.g; og=el('optgroup'); og.label=(t.fam==='exotic'?'Exotic · ':'')+(t.g||''); ts.appendChild(og); } const o=el('option',null,t.l); o.value=t.id; og.appendChild(o); }); ts.value=TT.type; ts.setAttribute('aria-label','Scale');
+    ks.onchange=()=>{ TT.key=ks.value; render(); }; ts.onchange=()=>{ TT.type=ts.value; render(); }; ctl.append(ks,ts); mk('▶ Listen',()=>listen(TT.reps),true); toneBtns(false); };
+  /* step 2: hear it 5 times; the tone buttons light up as they sound */
+  const listen=(times)=>{ clr(); ctl.textContent=''; msg.textContent=''; big.textContent=name(); const bs=toneBtns(false), spb=60/TT.bpm, per=sc.tones.length+2; let t=0;
+    for(let r=0;r<times;r++){ sc.tones.forEach((x,i)=>{ const at=t+i*spb, last=i===sc.tones.length-1; S(x.m,last?spb*1.9:spb*.95,.82,at+.15);
+        timers.push(setTimeout(()=>{ bs.forEach((b,j)=>b.classList.toggle('now',j===i)); sub.textContent='Listening '+(r+1)+' of '+times; },(at+.15)*1000)); }); t+=per*spb; }
+    timers.push(setTimeout(()=>{ bs.forEach(b=>b.classList.remove('now')); sub.textContent='Ready to be tested, or hear it again?'; mk('READY',quiz,true); mk('Hear again',()=>listen(1)); mk('Change scale',setup); },(t+.2)*1000)); };
+  /* step 3: ten tones in random order */
+  const quiz=()=>{ clr(); let qn=0, ok=0, prev=-1, cur=-1, wrong={}; const N=10;
+    const ask=()=>{ clr(); ctl.textContent=''; msg.textContent=''; if(qn>=N) return result();
+      do{ cur=R(sc.tones.length); }while(cur===prev&&sc.tones.length>1); prev=cur; const x=sc.tones[cur];
+      big.textContent='?'; sub.textContent='Tone '+(qn+1)+' of '+N+' · Score '+ok; mk('Hear the tone again',()=>S(x.m,1.4,.85,0)); mk('Hear the scale',()=>{ sc.tones.forEach((y,i)=>S(y.m,.5,.75,i*.45)); });
+      const bs=toneBtns(true); let done=false;
+      bs.forEach((b,i)=>b.onclick=()=>{ if(done) return; done=true; bs.forEach(z=>z.disabled=true); const right=i===cur;
+        if(right){ ok++; b.classList.add('ok'); msg.textContent='Correct! That was '+x.name+' ('+x.deg+').'; } else { b.classList.add('bad'); bs[cur].classList.add('ok'); wrong[cur]=(wrong[cur]||0)+1; msg.textContent='That was '+x.name+' ('+x.deg+').'; }
+        big.textContent=x.name; qn++; sub.textContent='Tone '+qn+' of '+N+' · Score '+ok; timers.push(setTimeout(ask,1500)); });
+      timers.push(setTimeout(()=>S(x.m,1.4,.85,0),350)); };
+    const result=()=>{ ctl.textContent=''; opts.textContent=''; big.textContent=ok+' / '+N; const pct=ok/N;
+      sub.textContent=name()+' · '+(pct===1?'Perfect score!':pct>=.8?'Excellent listening!':pct>=.5?'Good work. Keep listening and it gets easier.':'Keep going. Listen to the scale again and try once more.');
+      const miss=Object.keys(wrong).map(i=>sc.tones[i].name+' ('+sc.tones[i].deg+')'); msg.textContent=miss.length?'Tones to listen to again: '+miss.join(', ')+'.':'';
+      mk('Try again',()=>listen(TT.reps),true); mk('Test again now',quiz); mk('Change scale',setup); };
+    ask(); };
+  setup();
+}
+function openTones(k,t){ if(k) TT.key=k; if(t) TT.type=t; mode='recog'; cat='tones'; open(); }
+
 function recognition(){
   const ctl=$('#earCtl');
   if(cat==='chord'){ const seg=el('div','e-seg sm'); Object.keys(CHORDSETS).forEach(k=>{ const b=el('button',null,CHORDSETS[k].name); b.type='button'; b.setAttribute('aria-pressed',String(k===chordSet)); b.onclick=()=>{ chordSet=k; render(); }; seg.appendChild(b); }); ctl.appendChild(seg); }
@@ -412,5 +460,5 @@ function report(host,label,score,total,rows){
     const send=async()=>{ l.textContent='Sending to '+t.name+'…'; const j=await AUTH.post('submit',{result,code:t.code}); if(j.ok){ l.textContent='Sent to '+t.name+' ✓'; return; } l.textContent=''; const b=el('button','e-btn','Could not send to '+t.name+'. Try again'); b.type='button'; b.onclick=send; l.appendChild(b); };
     send(); });
 }
-window.EAR={open,close,kit:{KEYS,CH,CHK,pickRoot,spellAt,labelMap}};
+window.EAR={open,close,openTones,kit:{KEYS,CH,CHK,pickRoot,spellAt,labelMap}};
 })();

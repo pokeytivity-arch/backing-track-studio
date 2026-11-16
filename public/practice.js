@@ -325,7 +325,7 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom.p-ph .e-top{display:none!important} #prRoom .p-bk{flex:none;width:36px;height:36px;min-height:0!important;padding:0!important;font-size:18px}
 /* phone: the utility buttons sit right after the memory, set apart by a divider and their own colours */
 #prRoom .p-mixrow.ph .p-sp.p-dv{flex:none;width:1px;height:18px;margin:0 3px;background:rgba(255,255,255,.18)}
-#prRoom .p-feedb span{color:#7dffa1} #prRoom .p-cbar .p-ubtn#prStudio{color:#ffd43b;border-color:#5a4a12;background:linear-gradient(180deg,#2c2714,#1c1a10)} #prRoom .p-cbar .p-ubtn:not(#prStudio){color:#9fd0ff;border-color:#1f3a5c;background:linear-gradient(180deg,#16263a,#0f1826)}
+#prRoom .p-feedb span{color:#7dffa1} #prRoom .p-cbar .p-ubtn.p-eart{color:#ffd43b;border-color:#5a4a12;background:linear-gradient(180deg,#2c2714,#1c1a10)} #prRoom .p-cbar .p-ubtn:not(.p-eart){color:#9fd0ff;border-color:#1f3a5c;background:linear-gradient(180deg,#16263a,#0f1826)}
 #prRoom .p-maxb{margin-left:auto;flex:none;min-height:19px;padding:1px 9px;border-radius:5px;border:1px solid #070910;background:linear-gradient(180deg,#3a4258,#232a3a);color:#fff;font:800 12px var(--body);cursor:pointer}
 #prRoom .p-mixrow.maxi .p-maxb{min-height:28px;padding:3px 16px;background:#1f9e46;border-color:#1f9e46;font-size:13px}
 /* the full-screen console */
@@ -638,7 +638,7 @@ function conSum(){ const sm=document.querySelector('#prRoom .p-sum'); if(!sm) re
 function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Power</span>'; pw.classList.add('p-pwr');
   const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Power: on. Click to switch the console off':'Power: off. Click to switch the console on'; pw.classList.toggle('on',on); }; ps();
   pw.onclick=()=>{ const on=!conOn(); try{ localStorage.setItem('pr-con',on?'1':'0'); }catch(_){} const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.toggle('off',!on); ps(); conSum(); };
-  const sb=$('#prStudio'); if(sb){ sb.className='p-ubtn'; sb.textContent='Studio'; } if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Pokey'; }
+  const sb=el('button','p-ubtn p-eart','Ear training'); sb.type='button'; sb.title='Scale recognition: hear this scale, then name its tones'; sb.onclick=()=>{ const k=st.key, t=st.type; close(); try{ if(window.EAR&&EAR.openTones) EAR.openTones(k,t); }catch(_){} };   /* replaces the Studio button */ { const os=$('#prStudio'); if(os) os.hidden=true; }   /* Practice in Studio stays in the Playback menu */ if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Pokey'; }
   const fb=el('button','p-pow p-feedb'); fb.type='button'; fb.innerHTML='<i class="p-led"></i><span>Feed</span>'; fb.onclick=feedDlg; const sp=el('span',MQM.matches&&!MAXI?'p-sp p-dv':'p-sp'); bar.append(pw,bankBar(),sp,fb); setTimeout(feedSync,0);
   /* phone: the console can be opened full screen to set it, then closed */
   if(MQM.matches){ const mb=el('button','p-maxb'); mb.type='button'; mb.textContent=MAXI?'Done':'⤢'; mb.title=MAXI?'Close the full-screen console':'Open the console full screen'; mb.setAttribute('aria-label',mb.title); mb.onclick=()=>{ if(playing) return; MAXI=!MAXI; render(); }; setTimeout(()=>bar.appendChild(mb),0); } if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
@@ -988,5 +988,6 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
 function menuSync(){ try{ if(!window.PSMENU) return; PSMENU.set(ov&&!ov.hidden&&kind==='scales'?scaleMenus():null); }catch(_){} }
 /* leaving the app (screen locked, another app, tab hidden): pause where you are; nothing carries on by itself until you come back */
 function bg(){ try{ if(playing&&!paused&&!waitL&&pauseFn) pauseFn(); }catch(_){} }
-window.PRACTICE={open,close,bg};
+function openScale(k,t){ const T=((window.SCALES&&SCALES.types)||[]).find(x=>x.id===t); if(T){ st.type=t; if(T.fam) st.family=T.fam; } if(k) st.key=k; save(); open('scales',{resume:true}); }
+window.PRACTICE={open,close,bg,openScale};
 })();
