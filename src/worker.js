@@ -403,7 +403,7 @@ export class Presence {
   async fetch(request) {
     const now = Date.now(); for (const [k, v] of this.m) if (now - v.t > 75000) this.m.delete(k);
     if (request.method === 'POST') { const b = await request.json(); if (b && b.id) { if (b.off) this.m.delete(b.id); else if (this.m.size < 500 || this.m.has(b.id)) this.m.set(b.id, Object.assign(b, { t: now })); } return json({ ok: true }); }
-    const me = new URL(request.url).searchParams.get('me') || ''; const list = [...this.m.values()].filter(v => v.id !== me).sort((x, y) => y.t - x.t).slice(0, 60).map(v => ({ nick: v.nick, city: v.city, scale: v.scale, hands: v.hands, bpm: v.bpm, rhy: v.rhy, min: v.min }));
+    const me = new URL(request.url).searchParams.get('me') || ''; const list = [...this.m.values()].filter(v => v.id !== me).sort((x, y) => y.t - x.t).slice(0, 60).map(v => ({ nick: v.nick, city: v.city, cc: v.cc, scale: v.scale, hands: v.hands, bpm: v.bpm, rhy: v.rhy, min: v.min }));
     return json({ list, count: this.m.size });
   }
 }
@@ -417,8 +417,8 @@ async function presence(request, env) {
   const id = pclip(b.id, 40); if (!/^[a-z0-9]{8,40}$/i.test(id)) return json({ error: 'bad' }, 400);
   if (b.off) return stub.fetch('https://presence/set', { method: 'POST', body: JSON.stringify({ id, off: true }) });
   const nick = pclip(b.nick, 24).replace(/[^\p{L}\p{N} _.\-]/gu, '').trim(); if (nick.length < 2) return json({ error: 'nick' }, 400);
-  const cf = request.cf || {}, city = pclip([cf.city, cf.country].filter(Boolean).join(', '), 60);
-  const rec = { id, nick, city, scale: pclip(b.scale, 60), hands: pclip(b.hands, 30), bpm: Math.max(20, Math.min(300, +b.bpm || 0)), rhy: pclip(b.rhy, 20), min: Math.max(0, Math.min(600, Math.round(+b.min || 0))) };
+  const cf = request.cf || {}, city = pclip(cf.city, 60), cc = /^[A-Z]{2}$/.test(cf.country || '') ? cf.country : '';
+  const rec = { id, nick, city, cc, scale: pclip(b.scale, 60), hands: pclip(b.hands, 30), bpm: Math.max(20, Math.min(300, +b.bpm || 0)), rhy: pclip(b.rhy, 20), min: Math.max(0, Math.min(600, Math.round(+b.min || 0))) };
   return stub.fetch('https://presence/set', { method: 'POST', body: JSON.stringify(rec) });
 }
 
