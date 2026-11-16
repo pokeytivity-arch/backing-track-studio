@@ -138,7 +138,7 @@ function addPick(w,on){ const pk=w.querySelector('.p-apick'), ad=w.querySelector
 function addScale(w){ const ks=w.querySelector('[data-w=ak]'), tsel=w.querySelector('[data-w=at]'); if(!ks.value) return; if(!ROUT.length){ ROUT=[snapNow()]; RI=0; }
   const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===tsel.value)||{}; ROUT.push(Object.assign(snapNow(),{key:ks.value,type:tsel.value,family:t.fam||st.family})); addPick(w,false); watchDraw(); }
 function watchSync(){ if(!ov) return; const sc=kind==='scales';
-  if(playing&&sc&&!SES.on){ ROUT=[]; RI=0; KC.origin=pcOf(st.key); KC.i=0; KC.rep=0; Object.assign(SES,{nextRec:REC,on:true,ms:0,t0:0,lh:0,rh:0,next:100,msg:'',until:0,mi:Math.floor(Math.random()*MOTIV.length),goalDone:false}); clearInterval(SES.timer); SES.timer=setInterval(()=>{ if(SES.on) watchDraw(); },250); }
+  if(playing&&sc&&!SES.on){ ROUT=[]; RI=0; KC.origin=pcOf(st.key); KC.i=0; KC.rep=0; KC.base=tonicOf(); Object.assign(SES,{nextRec:REC,on:true,ms:0,t0:0,lh:0,rh:0,next:100,msg:'',until:0,mi:Math.floor(Math.random()*MOTIV.length),goalDone:false}); clearInterval(SES.timer); SES.timer=setInterval(()=>{ if(SES.on) watchDraw(); },250); }
   if(SES.on&&(!playing||!sc)&&!SWITCHING){ pmClear(); ROUT=[]; RI=0; { const bk=$('#prBreak'); if(bk) bk.hidden=true; } if(SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } SES.on=false; clearInterval(SES.timer); feedRun(false); if(FD.on) feedBeat(true); const w=document.querySelector('#prRoom .p-watch'); if(w) w.remove(); ov.classList.remove('p-locked'); { const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.remove('p-hide'); }
     const tot=SES.lh+SES.rh, m=$('#prMsg'); if(m&&tot) m.textContent='Practice session: '+hms(SES.ms/1000)+' · '+tot.toLocaleString()+' notes'+(SES.lh&&SES.rh?' (left hand '+SES.lh.toLocaleString()+', right hand '+SES.rh.toLocaleString()+')':'')+'. Well done!'; return; }
   if(!SES.on) return;
@@ -621,19 +621,28 @@ function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); 
   const fb=el('button','p-pow p-feedb'); fb.type='button'; fb.innerHTML='<i class="p-led"></i><span>Feed</span>'; fb.onclick=feedDlg; const sp=el('span','p-sp'); bar.append(pw,bankBar(),sp,fb); setTimeout(feedSync,0); if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
 /* reps and key cycles: after the set number of reps the scale moves to the next key of the chosen cycle (pitch-class steps from the starting key) */
 const KCY=[['chrom','Chromatic',[0,1,2,3,4,5,6,7,8,9,10,11]],['whole','Wholetone',[0,2,4,6,8,10]],['oct','Octatonic',[0,2,3,5,6,8,9,11]],['cyc4','Cyclical',[0,5,10,3,8,1,6,11,4,9,2,7]]];
-const KC={origin:null,i:0,rep:0};
+const KC={origin:null,i:0,rep:0,base:null,place:false};
+/* the pitch-class numbers say where each new tonic sits: that many half steps above the starting tonic, inside one octave.
+   So the cycle never climbs away: in Cyclical, B♭ (10) goes down to E♭ (3) and A♭ (8) down to D♭ (1). Any starting key follows the same logic. */
+const tonicOf=()=>{ const s0=steps[0]; if(!s0) return null; return (s0.rh&&s0.rh.length&&st.hand!=='lh')?s0.rh[0]:(s0.lh&&s0.lh.length?s0.lh[0]+(st.hand==='both'?24:0):null); };
+function kcShift(x,d){ if(!x||!d) return; ['rh','lh'].forEach(k=>{ if(Array.isArray(x[k])) x[k]=x[k].map(m=>m+d); }); if(x.spell){ const o={}; Object.keys(x.spell).forEach(m=>o[+m+d]=x.spell[m]); x.spell=o; } if(x.alt) kcShift(x.alt,d); }
+function kcRegister(){ if(!KC.place) return; KC.place=false; const c=KCY.find(x=>x[0]===st.kc); if(!c||KC.base==null) return; const t=tonicOf(); if(t==null) return;
+  const want=KC.base+c[2][KC.i]; let d=12*Math.round((want-t)/12);
+  const all=steps.flatMap(x=>[...(x.rh||[]),...(x.lh||[]),...((x.alt&&x.alt.rh)||[]),...((x.alt&&x.alt.lh)||[])]), hi=Math.max(...all), lo=Math.min(...all);
+  while(hi+d>108) d-=12; while(lo+d<21) d+=12;   /* stays on the 88 keys */
+  if(d) steps.forEach(x=>kcShift(x,d)); }
 const pcOf=k=>{ const L={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[String(k)[0]]; let a=0; for(const ch of String(k).slice(1)){ if(ch==='#'||ch==='♯') a++; if(ch==='b'||ch==='♭') a--; } return ((L+a)%12+12)%12; };
 function kcNextKey(peek){ const c=KCY.find(x=>x[0]===st.kc); if(!c) return null; const SC=window.SCALES, ok=(SC&&SC.allowedKeys)?SC.allowedKeys(st.type):((SC&&SC.keys)||[]); if(KC.origin==null) KC.origin=pcOf(st.key);
   let i=KC.i; for(let n=0;n<c[2].length;n++){ i=(i+1)%c[2].length; const pc=(KC.origin+c[2][i])%12, pref=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'][pc], k=ok.includes(pref)?pref:ok.find(x=>pcOf(x)===pc); if(k){ if(!peek) KC.i=i; return k; } } return null; }
 /* called when one rep of the scale finishes; returns true when it has moved to a new key (playback restarts there) */
 function repDone(){ KC.rep++; if(!st.kc||KC.rep<(st.reps||1)) return false; const nk=kcNextKey(); if(!nk) return false; KC.rep=0;
-  SWITCHING=true; try{ clr(); st.key=nk; save(); render(); playAll(); } finally{ SWITCHING=false; } updPause(); const m=$('#prMsg'); if(m) m.textContent='Next key: '+SYMK(nk)+'.'; return true; }
+  SWITCHING=true; try{ clr(); st.key=nk; save(); KC.place=true; render(); playAll(); } finally{ SWITCHING=false; } updPause(); const m=$('#prMsg'); if(m) m.textContent='Next key: '+SYMK(nk)+'.'; return true; }
 function repsRow(){ const r=el('div','p-xrow'), rl=el('label','p-rng p-tempo p-reps'); rl.innerHTML='Reps <input type="range" min="1" max="20" step="1" aria-label="Reps"><span class="p-bpm p-rpn"></span>'; const ri=rl.querySelector('input'), ro=rl.querySelector('span');
   ri.value=st.reps||5; ro.textContent=ri.value; ri.oninput=()=>{ st.reps=+ri.value; ro.textContent=ri.value; save(); }; r.appendChild(rl);
   const g=el('div','p-kcg'); g.setAttribute('role','group'); g.setAttribute('aria-label','Key cycle'); g.appendChild(el('span','p-bl','Keys'));
   KCY.forEach(([k,l])=>{ const b=el('button','p-key'); b.type='button'; b.innerHTML='<i class="p-led"></i><span></span>'; b.lastChild.textContent=l; b.title=l==='Cyclical'?'Up in perfect fourths: pitch classes 0 5 10 3 8 1 6 11 4 9 2 7':l==='Octatonic'?'Whole step, half step, until it gets back to the starting note':l==='Wholetone'?'Up a whole step each time (six keys)':'Up a half step each time (all twelve keys)';
     const sync=()=>{ b.classList.toggle('on',st.kc===k); b.setAttribute('aria-pressed',String(st.kc===k)); }; sync(); b.__s=sync;
-    b.onclick=()=>{ st.kc=st.kc===k?'':k; KC.origin=pcOf(st.key); KC.i=0; KC.rep=0; save(); g.querySelectorAll('.p-key').forEach(x=>x.__s&&x.__s()); conSum(); }; g.appendChild(b); });
+    b.onclick=()=>{ st.kc=st.kc===k?'':k; KC.origin=pcOf(st.key); KC.i=0; KC.rep=0; KC.base=tonicOf(); save(); g.querySelectorAll('.p-key').forEach(x=>x.__s&&x.__s()); conSum(); }; g.appendChild(b); });
   r.appendChild(g); return r; }
 /* the reps row sits in the empty space under the shorter channels when there is room; otherwise on its own line */
 function xrowPlace(){ const con=document.querySelector('#prRoom .p-con'), mx=con&&con.querySelector('.p-mix'), xr=con&&con.querySelector('.p-xrow'); if(!xr||!mx) return;
@@ -827,7 +836,7 @@ function keyTip(){
   p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
 }
 function loadScale(){
-  syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt'); cur=-1; chips();
+  syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt'); kcRegister(); cur=-1; chips();
   const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent='';   /* the page title already says Scale practice */ const ocN=rhyN()||st.oct; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(ocN>1?' · '+ocN+' octaves':'')+(rhyN()?' · '+({q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes'})[st.rhy]:'')+(st.motion==='contrary'?' · contrary motion':'')+((st.fa==='alt'&&SC.alts&&SC.alts(st.key,st.type))?' · alternate fingering':''); { const L=steps.map(x=>lab(x,false)); let sub=(maj&&st.oct===1)?(L.slice(0,3).join(' ')+'  |  '+L.slice(3,7).join(' ')+'  |  '+L[7]):L.join(' '); const dn=steps.map(x=>lab(x.alt||x,true)); if(dn.join(' ')!==L.join(' ')&&(steps.some(x=>x.alt)||(sysNow()!=='letter'&&steps.some(x=>x.solD)))) sub+='   ·   coming down: '+dn.slice().reverse().join(' '); $('#prSub').textContent=sub; }
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start together on the '+SYMK(st.key)+'. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }

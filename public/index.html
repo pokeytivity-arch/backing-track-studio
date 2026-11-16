@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}document.documentElement.classList.add('ps-boot');setTimeout(function(){document.documentElement.classList.remove('ps-boot')},8000);</script>
+<script>try{if(navigator.audioSession&&(navigator.maxTouchPoints||0)>0)navigator.audioSession.type='playback';}catch(e){}document.documentElement.classList.add('ps-boot');setTimeout(function(){document.documentElement.classList.remove('ps-boot')},8000);</script>
 <style>html.ps-boot body{visibility:hidden}html.ps-boot{background:linear-gradient(180deg,rgba(5,5,5,.80),rgba(5,5,5,.58) 45%,rgba(5,5,5,.28)),url(hub-bg.webp) center/cover no-repeat #0a0e17;min-height:100%}html.ps-boot #suiteHub.on{visibility:visible}</style>
 
 <meta charset="utf-8">
@@ -694,7 +694,7 @@ audio{width:100%}
     </div>
   </div>
 </div>
-<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-q (Ask Piano Study Suite)</footer>
+<footer class="credits">Recorded sounds: Splendid Grand Piano (public domain) · Wurlitzer EP200 by Greg Sullivan (CC BY 3.0) · electric and upright bass by D. Smolken / Karoryfer (CC0) · drums, percussion and tenor sax from the Versilian Community Sample Library (CC0) and Sample Pi (CC0). Soloist lines are generated, not recordings. Notation by VexFlow (MIT).<br>Version 2026.11.16-r (Ask Piano Study Suite)</footer>
 <div class="sheet-modal" id="sheetModal" hidden role="dialog" aria-modal="true" aria-label="Sheet music">
   <div class="sheet-bar"><b>Print</b>
     <label class="check"><input type="checkbox" id="sheetMusic" checked> Sheet music</label>
@@ -1556,7 +1556,9 @@ const ticker=(()=>{
 function suiteToBackground(){ if(!document.hidden) return;
   try{ if(playing) pause(); }catch(_){} try{ if(window.PRACTICE&&PRACTICE.bg) PRACTICE.bg(); }catch(_){} try{ if(window.CLASS&&CLASS.bg) CLASS.bg(); }catch(_){} try{ if(window.TX&&TX.stop) TX.stop(); }catch(_){}
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} try{ if(ctx&&ctx.state==='running') ctx.suspend(); }catch(_){} }
-document.addEventListener('visibilitychange',suiteToBackground); window.addEventListener('pagehide',()=>{ try{ if(playing) pause(); }catch(_){} try{ if(window.PRACTICE&&PRACTICE.bg) PRACTICE.bg(); }catch(_){} try{ if(window.CLASS&&CLASS.bg) CLASS.bg(); }catch(_){} try{ if(ctx&&ctx.state==='running') ctx.suspend(); }catch(_){} });
+document.addEventListener('visibilitychange',suiteToBackground);
+/* Safari can leave the sound 'suspended' or 'interrupted' (after sleep, a change of speakers or headphones, or coming back to the tab): any tap or key wakes it */
+['pointerdown','keydown','touchend'].forEach(ev=>document.addEventListener(ev,()=>{ try{ if(ctx&&ctx.state!=='running'&&!document.hidden) ctx.resume().catch(()=>{}); }catch(_){} },true)); window.addEventListener('pagehide',()=>{ try{ if(playing) pause(); }catch(_){} try{ if(window.PRACTICE&&PRACTICE.bg) PRACTICE.bg(); }catch(_){} try{ if(window.CLASS&&CLASS.bg) CLASS.bg(); }catch(_){} try{ if(ctx&&ctx.state==='running') ctx.suspend(); }catch(_){} });
 
 function tick(){
   const style=STYLES[S.style];
@@ -1575,7 +1577,7 @@ function tick(){
   }
 }
 async function ensureCtx(){
-  try{ if(navigator.audioSession&&navigator.audioSession.type!=='playback') navigator.audioSession.type='playback'; }catch(_){}
+  try{ if(navigator.audioSession&&(navigator.maxTouchPoints||0)>0&&navigator.audioSession.type!=='playback') navigator.audioSession.type='playback'; }catch(_){}   /* phones and tablets only: the silent switch */
   if(!ctx){ const AC=window.AudioContext||window.webkitAudioContext; ctx=new AC(); E=new Engine(ctx); }
   if(ctx.state!=='running') await ctx.resume();
 }
@@ -2999,7 +3001,7 @@ init();
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zw" defer></script>
 <script src="hands.js?v=64" defer></script>
-<script src="practice.js?v=d5" defer></script>
+<script src="practice.js?v=d6" defer></script>
 <script src="scale-library.js" defer></script>
 <script src="scales.js?v=8" defer></script>
 <script src="check.js" defer></script>
