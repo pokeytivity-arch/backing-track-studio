@@ -886,6 +886,8 @@ function nameFromPcs(pcs,bass){
 function parseVoicing(tok){
   const inner=tok.replace(/^\[|\]$/g,'').trim(); const parts=inner.split(/\s*\/\s*/);
   if(parts.length>2) return null;
+  /* a dot just before the slash puts an octave between the hands; a dot before the first right-hand note lifts the right hand an octave */
+  let gap=false; if(parts.length===2&&/\.\s*$/.test(parts[0])){ gap=true; parts[0]=parts[0].replace(/\.\s*$/,''); }
   /* a dot lifts the next note one more octave: C.E = C then the E a tenth above */
   const rd=str=>str.replace(/\./g,' .').split(/[\s,]+/).filter(Boolean).map(x=>{ const m=x.match(/^(\.?)([A-G])([#b♯♭]?)(-?\d)?$/); return m?{pc:pcOf(m[2],m[3]),oct:m[4]!=null?+m[4]:null,lift:!!m[1]}:null; });
   const lh=parts.length===2?rd(parts[0]):[], rh=rd(parts[parts.length-1]);
@@ -896,13 +898,13 @@ function parseVoicing(tok){
       else { m=prev+1+((n.pc-(prev+1)%12+12)%12); if(n.lift) m+=12; }
       out.push(m); prev=m; }); return out; };
   /* every chord sits in the same place: the left hand from C2 up, the right hand's first note the one nearest middle C (F#3 to F4), above the left hand */
-  const L=place(lh,36), lt=L.length?L[L.length-1]+3:0; let r0=54; if(rh[0]&&rh[0].oct==null){ r0=54+((rh[0].pc-54%12+12)%12); while(r0<lt) r0+=12; }
-  const R=place(rh,Math.max(r0,lt));
+  const L=place(lh,36), lt=L.length?L[L.length-1]+3:0; let r0=54; if(rh[0]&&rh[0].oct==null){ r0=54+((rh[0].pc-54%12+12)%12); while(r0<lt) r0+=12; if(gap&&L.length) while(r0<L[L.length-1]+12) r0+=12; if(rh[0].lift) r0+=12; }
+  const R=place(rh,Math.max(r0,lt)), rfree=!!(rh[0]&&rh[0].oct==null&&!rh[0].lift&&!gap);
   const all=[...L,...R], bass=all[0]%12, pcs=[...new Set(all.map(m=>m%12))];
   const nm=nameFromPcs(pcs,bass);
   const iv=[...new Set(pcs.map(p=>(p-nm.root+12)%12))].sort((a,b)=>a-b);
   const N=FLAT_N, nm2=n=>N[n%12];
-  return {root:nm.root,bass,iv,suffix:nm.suf,slash:bass!==nm.root,voicing:all,lh:L.length,
+  return {root:nm.root,bass,iv,suffix:nm.suf,slash:bass!==nm.root,voicing:all,lh:L.length,rfree,
           vlabel:(L.length?`Left hand ${L.map(nm2).join(' ')} · `:'')+`Right hand ${R.map(nm2).join(' ')}`};
 }
 function tokenize(bar){ return bar.match(/\[[^\]]*\]|\S+/g)||[]; }
@@ -2376,6 +2378,8 @@ function vfKey(m,flats){ const N=flats?['c','db','d','eb','e','f','gb','g','ab',
 function sheetVoicing(ev,prev){
   const c=ev.chord; if(!c) return null;
   if(c.voicing){ const n=c.lh||0, all=c.voicing.slice(); let lh=all.slice(0,n), rh=all.slice(n);
+    /* a written chord with no octave marks follows the one before it: the right hand starts on the octave nearest the last chord's lowest note (staying between C3 and C5, above the left hand) */
+    if(c.rfree&&prev&&prev.length&&rh.length){ const lt=lh.length?lh[lh.length-1]+3:0; let best=0,bd=1e9; [-12,0,12].forEach(k=>{ const f=rh[0]+k; if(f<lt||f<48||f>72) return; const dd=Math.abs(f-prev[0]); if(dd<bd){ bd=dd; best=k; } }); if(best) rh=rh.map(m=>m+best); }
     if(!lh.length){ lh=[bassLow(c.bass)]; while(lh[0]<36) lh[0]+=12; }
     return {lh,rh}; }
   let b=bassLow(c.bass); while(b<36) b+=12;
@@ -3078,7 +3082,7 @@ init();
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zz13" defer></script>
 <script src="hands.js?v=67" defer></script>
-<script src="practice.js?v=f5" defer></script>
+<script src="practice.js?v=f6" defer></script>
 <script src="scale-library.js?v=2" defer></script>
 <script src="scales.js?v=10" defer></script>
 <script src="check.js" defer></script>

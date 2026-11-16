@@ -415,7 +415,7 @@ function normChords(text){
   String(text||'').split(/[|,;\n]+/).map(x=>x.trim()).filter(Boolean).forEach(seg=>{
     /* written voicings: "C.E / G B D E" = left hand / right hand notes, a dot lifts the next note an octave; chords are separated by commas */
     if(/^\[.*\]$/.test(seg)){ out.push(seg); return; }
-    if(seg.includes('/')&&/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\/\s*[A-G]/.test(seg)){ out.push('['+seg.replace(/\s*\.\s*/g,'.')+']'); return; }
+    if(seg.includes('/')&&/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\.?\s*\/\s*\.?\s*[A-G]/.test(seg)){ out.push('['+seg.replace(/\s*\.\s*/g,'.')+']'); return; }
     let cur=null; seg.split(/\s+/).forEach(t=>{
       const word=QW.has(t.toLowerCase())||/^\d+$/.test(t)||/^(add|sus)\d*$/i.test(t);
       if(!word&&/^[A-G]/.test(t)){ if(cur) out.push(cur.r+normDesc(cur.d)); cur={r:t,d:[]}; }
@@ -496,7 +496,8 @@ function chordHands(s){
   const R=side(s.rh,1), L=side(s.lh,-1);
   return {rh:R?[R.note]:[],fing:R?String(R.f):'',rpos:R?R.pos:null,rpress:R?R.press:null,lh:L?[L.note]:[],lfing:L?String(L.f):'',lpos:L?L.pos:null,lpress:L?L.press:null};
 }
-function names(s){ return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
+function names(s){ const w=/^\[/.test(s.src||'')?s.src:''; if(w) return /[A-G](b|♭)/.test(w)?FLAT_N:/[A-G](#|♯)/.test(w)?SHARP_N:FLAT_N;   /* written chords keep the spelling the student typed */
+  return /b|♭|F(?!#)/.test(s.name)&&!/#|♯/.test(s.name)?FLAT_N:SHARP_N; }
 
 /* ---------- steps ---------- */
 function chips(){
@@ -938,10 +939,11 @@ function invert(s){ const T=triad(s); if(!T||!(s.rh&&s.rh.length)) return s; s.t
    and no hand is asked to stretch past a tenth: a note beyond that drops an octave */
 function handFit(s){ if(!s) return s; const fit=(a,up)=>{ if(!a||a.length<2) return a; a=a.slice().sort((x,y)=>x-y); let guard=0; while(a[a.length-1]-a[0]>16&&guard++<6){ if(up){ a[a.length-1]-=12; } else { a[0]+=12; } a.sort((x,y)=>x-y); } return a; };
   const wr=/^\[/.test(s.src||''), rh=wr?s.rh:fit(s.rh,true), lh=wr?s.lh:fit(s.lh,false), o=Object.assign({},s,{rh,lh});   /* written voicings stay exactly as written */
-  /* four notes: whichever of 1 2 3 5 / 1 2 4 5 / 1 3 4 5 fits the gaps best (G B D E -> 1 2 4 5, C E G B -> 1 2 3 5); five notes: 1 2 3 4 5 */
+  /* four notes: whichever of 1 2 3 5 / 1 2 4 5 / 1 3 4 5 fits the gaps (G B D E -> 1 2 4 5, C E G B -> 1 2 3 5); five notes: 1 2 3 4 5 */
   if(!o.rfm&&rh&&(rh.length===4||rh.length===5)){ let F=[1,2,3,4,5];
-    if(rh.length===4){ const pref={'1,2':3,'1,3':5,'2,3':2,'2,4':3,'3,4':2,'3,5':3,'4,5':2}, g=[rh[1]-rh[0],rh[2]-rh[1],rh[3]-rh[2]]; let bc=1e9;
-      [[1,2,3,5],[1,2,4,5],[1,3,4,5]].forEach(f=>{ let c=0; for(let k=0;k<3;k++) c+=Math.abs(g[k]-pref[f[k]+','+f[k+1]]); if(c<bc){ bc=c; F=f; } }); }
+    /* each pair of fingers has a comfortable span (thumb to 2 reaches a fourth); the fingering that keeps every gap inside its span wins, 1 2 3 5 first (F# B C E -> 1 2 3 5) */
+    if(rh.length===4){ const rg={'1,2':[1,5],'1,3':[3,7],'2,3':[1,3],'2,4':[3,5],'3,4':[1,2],'3,5':[3,5],'4,5':[1,3]}, g=[rh[1]-rh[0],rh[2]-rh[1],rh[3]-rh[2]]; let bc=1e9;
+      [[1,2,3,5],[1,2,4,5],[1,3,4,5]].forEach(f=>{ let c=0; for(let k=0;k<3;k++){ const r=rg[f[k]+','+f[k+1]]; c+=g[k]<r[0]?r[0]-g[k]:g[k]>r[1]?g[k]-r[1]:0; } if(c<bc){ bc=c; F=f; } }); }
     o.rfm={}; rh.forEach((m,i)=>o.rfm[m]=F[i]); o.nofing=false; }
   /* left hand: two notes 5 1, three notes 5 3 1 (or 5 2 1 when the top two are close) */
   if(!o.lfm&&lh&&lh.length>=2&&lh.length<=3){ o.lfm={}; const L=lh.length===2?[5,1]:(lh[2]-lh[1]<=2?[5,2,1]:[5,3,1]); lh.forEach((m,i)=>o.lfm[m]=L[i]); }
