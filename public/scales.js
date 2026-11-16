@@ -64,18 +64,21 @@ function spellDeg(key,degs){ // letters follow the scale degree; accidentals fol
 const typeOf=id=>TYPES.find(t=>t.id===id)||TYPES[0];
 const dispName=nm=>nm.replace(/##|x/,'𝄪').replace(/bb/,'𝄫').replace('#','♯').replace('b','♭');
 function allowedKeys(type){ const T=typeOf(type); return T.keys?ORDER.filter(k=>T.keys.includes(k)):ORDER; }
+const ctrMax=key=>{ const d=SC[key]; return d&&[9,10,11,0].includes(d.m%12)?3:2; };   /* contrary motion, hands an octave apart, on 88 keys */
 function buildContrary(key,type,oct,alt){
-  oct=Math.max(1,Math.min(2,Math.round(+oct)||1));
+  oct=Math.max(1,Math.min(ctrMax(key),Math.round(+oct)||1));
   const T=typeOf(type), d=SC[key], names=spellDeg(key,T.d), f=T.s, n=f.length, N=n*oct;
   /* contrary fingering comes from each hand's own up and down fingering: the right hand goes up the scale, the left hand goes down it (the same finger plays a note either way) */
   const RF=build(key,'rh',type,oct,'similar',alt).map(x=>x.fing), LF=build(key,'lh',type,oct,'similar',alt).map(x=>x.lfing);
-  const T0=60+d.m%12; /* hands meet on the tonic; two octaves open and close always fit between C2 and C7 */
+  /* the hands start an octave apart on the tonic (right hand in the middle octave, left hand an octave below). Three octaves need the whole 88 keys,
+     so they start a little higher, and only keys whose tonic fits (A, B♭, B, C) can go three octaves */
+  const pc=d.m%12, T0=oct>=3?[69,70,71,72].find(x=>x%12===pc):60+pc, L0=T0-12;
   const steps=[];
   for(let i=0;i<=N;i++){
     const q=Math.floor(i/n), r=i%n, top=i===N;
     const up=top?12*oct:f[r]+12*q, down=top?12*oct:(r===0?12*q:12*q+(12-f[n-r]));
     const rn=top?names[0]:names[r], ln=top?names[0]:names[(n-r)%n];
-    const rm=T0+up, lm=T0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:RF[i]||'',lfing:LF[N-i]||'',spell:{}};
+    const rm=T0+up, lm=L0-down, st={src:key,name:rn,lname:ln,lh:[lm],rh:[rm],fing:RF[i]||'',lfing:LF[N-i]||'',spell:{}};
     st.spell[rm]=dispName(rn); st.spell[lm]=dispName(ln); steps.push(st); }
   if(T.id==='mel'&&!NOALT){ NOALT=true; try{ const nt=buildContrary(key,'nat',oct,alt); steps.forEach((x,i)=>{ x.alt=nt[i]; }); } finally{ NOALT=false; } } /* open with melodic minor, close with natural minor */
   return steps;
@@ -130,5 +133,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build,maxOct:(k,h,mo)=>mo==='contrary'?2:(h==='both'&&SC[k]&&SC[k].m%12!==0)?3:4,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,maxOct:(k,h,mo)=>mo==='contrary'?ctrMax(k):(h==='both'&&SC[k]&&SC[k].m%12!==0)?3:4,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();

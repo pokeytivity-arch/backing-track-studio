@@ -492,8 +492,8 @@ function show(){
 const RHY=[['free','Free'],['q','Quarter'],['e','Eighth'],['t','Triplet'],['s','Sixteenth']], RN={q:1,e:2,t:3,s:4};
 const rhyN=()=>kind==='scales'&&st.rhy&&st.rhy!=='free'?RN[st.rhy]:0;
 function seven(){ try{ const SC=window.SCALES, s=SC.build(st.key,'rh',st.type,1,'similar'); return s.length===8&&new Set(s.slice(0,7).map(x=>((x.rh[0]||x.lh[0])%12+12)%12)).size===7; }catch(_){ return false; } }
-function rhyOK(k){ if(k==='free') return ''; if(st.motion==='contrary') return 'Rhythm practice is in similar motion'; if(!seven()) return 'Rhythm practice is for scales with seven notes';
-  const SC=window.SCALES, mx=SC&&SC.maxOct?SC.maxOct(st.key,st.hand,st.motion):4; return RN[k]>mx?RN[k]+' octaves do not fit '+(st.hand==='both'?'both hands':'this hand')+' on the keyboard in this key':''; }
+function rhyOK(k){ if(k==='free') return ''; if(!seven()) return 'Rhythm practice is for scales with seven notes';
+  const SC=window.SCALES, mx=SC&&SC.maxOct?SC.maxOct(st.key,st.hand,st.motion):4; return RN[k]>mx?(st.motion==='contrary'?'In contrary motion, with the hands an octave apart, '+RN[k]+' octaves do not fit on the 88 keys in this key':RN[k]+' octaves do not fit '+(st.hand==='both'?'both hands':'this hand')+' on the keyboard in this key'):''; }
 function rhyPlan(){ const n=rhyN(), L=steps.length, top=L-1, ev=[]; let b=0;
   for(let i=0;i<top;i++){ ev.push({i,b,d:1/n,desc:false}); b+=1/n; } ev.push({i:top,b,d:1,desc:false}); b+=1;
   for(let i=top;i>0;i--){ ev.push({i,b,d:1/n,desc:true}); b+=1/n; } ev.push({i:0,b,d:1,desc:true}); b+=1;
@@ -683,9 +683,9 @@ function mixOrder(panel){
   strips.map((x,i)=>[x,i]).sort((a,b)=>(pos(a[0].dataset.ch)-pos(b[0].dataset.ch))||(a[1]-b[1])).forEach(([x])=>panel.appendChild(x));
   const save=()=>{ try{ localStorage.setItem(MXO,JSON.stringify([...panel.children].map(x=>x.dataset.ch))); }catch(_){} };
   [...panel.children].forEach(strip=>{ const h=strip.querySelector('.p-cht'); if(!h) return; h.title='Drag to move this channel';
-    h.addEventListener('pointerdown',e=>{ if(e.button) return; e.preventDefault(); const x0=e.clientX; let moved=false;
-      const mv=ev=>{ if(!moved&&Math.abs(ev.clientX-x0)<=4) return; moved=true; strip.classList.add('p-drag');
-        const sib=[...panel.children].filter(x=>x!==strip); let before=null; for(const x of sib){ const r=x.getBoundingClientRect(); if(ev.clientX<r.left+r.width/2){ before=x; break; } }
+    h.addEventListener('pointerdown',e=>{ if(e.button) return; e.preventDefault(); const x0=lpt(panel,e).x; let moved=false;
+      const mv=ev=>{ if(!moved&&Math.abs(lpt(panel,ev).x-x0)<=4) return; moved=true; strip.classList.add('p-drag');
+        const sib=[...panel.children].filter(x=>x!==strip); let before=null; for(const x of sib){ if(lpt(x,ev).x<x.offsetWidth/2){ before=x; break; } }
         if(strip.nextSibling!==before) panel.insertBefore(strip,before); };
       const up=()=>{ document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up); document.removeEventListener('pointercancel',up); if(moved){ strip.classList.remove('p-drag'); save(); setTimeout(xrowPlace,0); } };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up); }); });
@@ -712,6 +712,10 @@ function bankBar(){ const bar=el('div','p-banks'); bar.setAttribute('role','grou
   const sv=el('button','p-bsave','Save'); sv.type='button'; sv.onclick=()=>{ bankArm=!bankArm; bankDel=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankArm?'Now press a bank number (1 to 6) to save this console there.':''; }; bar.appendChild(sv);
   const dl=el('button','p-bdel','Delete'); dl.type='button'; dl.onclick=()=>{ bankDel=!bankDel; bankArm=false; bankSync(); const m=$('#prMsg'); if(m) m.textContent=bankDel?'Now press the bank number (1 to 6) you want to delete.':''; }; bar.appendChild(dl);
   setTimeout(bankSync,0); return bar; }
+/* a pointer position in an element's own coordinates. On a phone the whole page is turned sideways (the body is rotated 90°),
+   so screen up/down is the page's left/right: map through the rotation so faders and dragging follow the finger */
+function lpt(el,e){ const r=el.getBoundingClientRect(); let a=1,b=0,c=0,d=1; try{ const t=getComputedStyle(document.body).transform; if(t&&t!=='none'){ const m=new DOMMatrix(t), k=Math.hypot(m.a,m.b)||1; a=Math.round(m.a/k); b=Math.round(m.b/k); c=Math.round(m.c/k); d=Math.round(m.d/k); } }catch(_){}
+  const ox=(a<0||c<0)?r.right:r.left, oy=(b<0||d<0)?r.bottom:r.top, dx=e.clientX-ox, dy=e.clientY-oy; return {x:dx*a+dy*b,y:dx*c+dy*d}; }
 /* practice levels: keyboard and metronome volume, as continuous mixer faders (desktop) or small sliders (phone) */
 const VK=[['keys','Keys'],['click','Click']], vget=k=>(window.CLASS&&CLASS.vol)?CLASS.vol.get(k):0.87, vset=(k,v)=>{ if(window.CLASS&&CLASS.vol) CLASS.vol.set(k,v); document.querySelectorAll('#prRoom [data-vol='+k+']').forEach(x=>x.__sync&&x.__sync()); };
 /* meters: 12 lights per channel (green, then amber, then red at the top), reading the level after the fader while you play */
@@ -729,7 +733,7 @@ function levels(HH){
     const cap=el('div','p-cap'); fz.appendChild(cap); const rd=el('div','p-lvn'); strip.appendChild(fz); strip.appendChild(rd);
     { const mt=el('div','p-mtr'); mt.style.top='9px'; mt.style.height=H+'px'; for(let j=MSEG-1;j>=0;j--) mt.appendChild(el('i',j>=MSEG-2?'r':j>=MSEG-4?'a':'g')); fz.appendChild(mt); }
     const sync=()=>{ const v=vget(k); cap.style.top=(9+(1-v)*H)+'px'; rd.textContent=Math.round(v*100); strip.setAttribute('aria-valuenow',String(Math.round(v*100))); }; strip.__sync=sync; sync();
-    const at=e=>1-(Math.max(9,Math.min(H+9,e.clientY-fz.getBoundingClientRect().top))-9)/H;
+    const at=e=>1-(Math.max(9,Math.min(H+9,lpt(fz,e).y))-9)/H;
     let drag=false; fz.addEventListener('pointerdown',e=>{ drag=true; fz.setPointerCapture(e.pointerId); cap.classList.add('drag'); cap.style.transition='none'; vset(k,at(e)); e.preventDefault(); });
     fz.addEventListener('pointermove',e=>{ if(drag) vset(k,at(e)); });
     const end=()=>{ if(!drag) return; drag=false; cap.classList.remove('drag'); cap.style.transition=''; }; fz.addEventListener('pointerup',end); fz.addEventListener('pointercancel',end);
@@ -761,7 +765,7 @@ function render(){
     cats.classList.add('p-keybtns');
     const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,st.motion==='contrary'?CDIRS:DIRS,st.dir,k=>{ st.dir=k; save(); syncStudioBtn(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
     const fm=el('div','e-seg sm'); fm.setAttribute('role','group'); fm.setAttribute('aria-label','Scale family'); seg(fm,[['regular','Regular'],['exotic','Exotic']],st.family,k=>{ st.family=k; save(); clr(); render(); },true); ctl.appendChild(fm);
-    const mo=el('div','e-seg sm'); mo.setAttribute('role','group'); mo.setAttribute('aria-label','Motion'); seg(mo,MOTIONS,st.motion,k=>{ st.motion=k; if(k==='contrary'&&st.oct>2) st.oct=2; save(); clr(); render(); },true); if(!isDia){ const cb=mo.querySelector('[data-k=contrary]'); if(cb){ cb.disabled=true; cb.title='Contrary motion is for the diatonic scales'; } } ctl.appendChild(mo);
+    const mo=el('div','e-seg sm'); mo.setAttribute('role','group'); mo.setAttribute('aria-label','Motion'); seg(mo,MOTIONS,st.motion,k=>{ st.motion=k; if(k==='contrary'){ const mc=(SC&&SC.maxOct)?SC.maxOct(st.key,'both','contrary'):2; if(st.oct>mc) st.oct=mc; } save(); clr(); render(); },true); if(!isDia){ const cb=mo.querySelector('[data-k=contrary]'); if(cb){ cb.disabled=true; cb.title='Contrary motion is for the diatonic scales'; } } ctl.appendChild(mo);
     const md=el('div','e-seg sm'); md.setAttribute('role','group'); md.setAttribute('aria-label','Mode'); seg(md,[['learn','Learning'],['practice','Practice']],st.mode,k=>{ st.mode=k; save(); clr(); md.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); ctl.appendChild(md);
     const fav=(SC&&SC.alts)?SC.alts(st.key,st.type):null; if(!fav&&st.fa==='alt') st.fa='main'; let fg=null;
     if(fav){ fg=el('div','e-seg sm'); fg.setAttribute('role','group'); fg.setAttribute('aria-label','Fingering'); seg(fg,[['main','Main fingering'],['alt','Alternate']],st.fa||'main',k=>{ st.fa=k; save(); fg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); },true); fg.title='Alternate fingering, from the book'; ctl.appendChild(fg); }
@@ -772,7 +776,7 @@ function render(){
     ry.querySelectorAll('button').forEach(b=>{ const w=rhyOK(b.dataset.k); if(w){ b.disabled=true; b.title=w; } }); ctl.appendChild(ry);
     if(rhyN()) d.querySelectorAll('button').forEach(b=>{ b.disabled=true; b.title='Rhythm practice always goes up and down'; });
     const mo4=(SC&&SC.maxOct)?SC.maxOct(st.key,st.hand,st.motion):3; if(st.oct>mo4) st.oct=mo4;
-    ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion==='contrary'?[]:[{v:'3',t:'Three octaves'}]).concat(mo4>=4?[{v:'4',t:'Four octaves'}]:[]),String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
+    ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion!=='contrary'||mo4>=3?[{v:'3',t:'Three octaves'}]:[]).concat(mo4>=4?[{v:'4',t:'Four octaves'}]:[]),String(st.oct||1),v=>{ st.oct=+v; save(); loadScale(); }));
     ctl.lastChild.classList.add('p-octs'); if(rhyN()){ const os=ctl.lastChild.querySelector('select'); if(os){ os.disabled=true; os.title='The rhythm sets the octaves'; const o=[...os.options].find(x=>+x.value===rhyN()); if(o) os.value=o.value; else { const n=document.createElement('option'); n.value=String(rhyN()); n.textContent=['','One','Two','Three','Four'][rhyN()]+' octave'+(rhyN()>1?'s':''); os.appendChild(n); os.value=n.value; } } }
     transport(ctl); ctl.appendChild(d);
     const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
@@ -862,7 +866,7 @@ function loadScale(){
   syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt'); kcRegister(); cur=-1; chips();
   const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent='';   /* the page title already says Scale practice */ const ocN=rhyN()||st.oct; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(ocN>1?' · '+ocN+' octaves':'')+(rhyN()?' · '+({q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes'})[st.rhy]:'')+(st.motion==='contrary'?' · contrary motion':'')+((st.fa==='alt'&&SC.alts&&SC.alts(st.key,st.type))?' · alternate fingering':''); { const L=steps.map(x=>lab(x,false)); let sub=(maj&&st.oct===1)?(L.slice(0,3).join(' ')+'  |  '+L.slice(3,7).join(' ')+'  |  '+L[7]):L.join(' '); const dn=steps.map(x=>lab(x.alt||x,true)); if(dn.join(' ')!==L.join(' ')&&(steps.some(x=>x.alt)||(sysNow()!=='letter'&&steps.some(x=>x.solD)))) sub+='   ·   coming down: '+dn.slice().reverse().join(' '); $('#prSub').textContent=sub; }
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
-  if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start together on the '+SYMK(st.key)+'. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }
+  if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start on '+SYMK(st.key)+', an octave apart. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
   $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Press Play to hear it.';
   drawKb(); keyTip();
