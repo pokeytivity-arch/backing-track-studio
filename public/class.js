@@ -42,11 +42,11 @@ function parseBoard(src){
 const NOTE_PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function noteMidi(s){ const m=/^([A-Ga-g])([#b♯♭]?)(-?\d)$/.exec(String(s).trim()); if(!m) return null; let pc=NOTE_PC[m[1].toUpperCase()]; if(m[2]==='#'||m[2]==='♯') pc++; if(m[2]==='b'||m[2]==='♭') pc--; return 12*(+m[3]+1)+pc; }
 function notesList(v,hand){ if(window.ASSIGN){ const t=Array.isArray(v)?v.join(' '):String(v||''); return ASSIGN.parse(t,hand||'rh').notes.map(n=>n.midi); } const a=Array.isArray(v)?v:String(v||'').split(/[\s,]+/); return a.map(noteMidi).filter(x=>x!=null&&x>=21&&x<=108); }
-function stepsFrom(list,max){
+function stepsFrom(list,max,tr){
   const out=[];
   (Array.isArray(list)?list:[]).slice(0,max||16).forEach(s=>{
     const src=typeof s==='string'?s:String((s&&(s.name||s.chord))||''); if(!src.trim()) return;
-    let sg; try{ sg=parseChart(src.trim(),0,16); }catch(_){ return; }
+    let sg; try{ sg=parseChart(src.trim(),tr||0,16); }catch(_){ return; }
     if(sg.errors.length||!sg.events.some(e=>e.chord)) return;
     out.push({src:src.trim(),obj:typeof s==='object'?s:null,ev:sg.events.find(e=>e.chord)}); });
   if(!out.length) return [];
@@ -95,7 +95,26 @@ let BUSN=0; const MTR={};
    sounds like the same change; the very bottom is silence. The default position gives the level the piano had before the faders existed. */
 const VDEF=0.87, VOL=(()=>{ try{ const v=JSON.parse(localStorage.getItem('pr-vol2')||'null'); if(v&&isFinite(v.keys)&&isFinite(v.click)) return v; }catch(_){} return {keys:VDEF,click:VDEF}; })();
 const vgain=p=>p<=0.015?0:1.4*Math.pow(10,-1.8*(1-p));
-function applyVol(){ try{ if(typeof playing!=='undefined'&&playing) return; if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=vgain(VOL.keys); E.ch.click.g.gain.value=vgain(VOL.click); } }catch(_){} }
+/* mute and solo for the Keys and Click channels (every console in the suite shares them): a muted channel is silent (red);
+   when a channel is soloed, every channel that is not soloed goes silent (red); a channel that sounds shows green */
+const MS={mute:{keys:false,click:false},solo:{keys:false,click:false}}, msL=new Set();
+const aud=k=>!MS.mute[k]&&(!(MS.solo.keys||MS.solo.click)||!!MS.solo[k]);
+function applyVol(){ try{ if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=aud('keys')?vgain(VOL.keys):0; E.ch.click.g.gain.value=aud('click')?vgain(VOL.click):0; } }catch(_){} }
+function msUI(k,o){ o=o||{}; const w=document.createElement('div'); w.className='ms-w'+(o.cls?' '+o.cls:''); w.innerHTML='<i class="ms-led"></i><button type="button" class="ms-b ms-m">M</button><button type="button" class="ms-b ms-s">S</button>';
+  const [led,m,sb]=w.children, nm=o.name||k; m.title='Mute '+nm; sb.title='Solo '+nm; m.setAttribute('aria-label','Mute '+nm); sb.setAttribute('aria-label','Solo '+nm);
+  const sync=()=>{ m.setAttribute('aria-pressed',String(!!MS.mute[k])); sb.setAttribute('aria-pressed',String(!!MS.solo[k])); const on=aud(k); led.classList.toggle('on',on); led.title=on?nm+' is playing':nm+' is off'; };
+  m.onclick=e=>{ e.stopPropagation(); MS.mute[k]=!MS.mute[k]; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
+  sb.onclick=e=>{ e.stopPropagation(); MS.solo[k]=!MS.solo[k]; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
+  [m,sb].forEach(b=>{ b.addEventListener('pointerdown',e=>e.stopPropagation()); }); msL.add(sync); sync(); return w; }
+{ const c=document.createElement('style'); c.textContent=`
+.ms-w{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+.ms-led{flex:none;width:8px;height:8px;border-radius:50%;background:#ff3b3b;box-shadow:0 0 6px 1px rgba(255,59,59,.7)}
+.ms-led.on{background:#3dff6e;box-shadow:0 0 6px 1px rgba(61,255,110,.8)}
+.ms-b{min-width:24px;height:22px;min-height:22px;padding:0 6px;border-radius:5px;border:1px solid #070910;background:linear-gradient(180deg,#2a3042,#1a1f2c);font:800 11px system-ui,sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 3px rgba(0,0,0,.5)}
+.ms-m{color:#ff6b6b} .ms-s{color:#f5b301}
+.ms-m[aria-pressed=true]{background:#e03131;color:#fff;box-shadow:0 0 8px rgba(224,49,49,.7)}
+.ms-s[aria-pressed=true]{background:#f59f00;color:#1b1200;box-shadow:0 0 8px rgba(245,159,0,.7)}
+`; document.head.appendChild(c); }
 async function ready(){ await ensureCtx(); try{ loadBank(ctx); }catch(_){} applyVol(); }
 async function sound(midi,dur,vel,delay,voice){ await ready(); const t=ctx.currentTime+0.03+(delay||0); voiceNote(t,midi,dur,vel||0.8,voice||'piano'); }
 /* keyboard voices for ear training: piano and organ from the engine; strings, bell and brass made here */
@@ -644,6 +663,7 @@ window.CLASS={
   /* level meters: the peak level (in dB, 0 = full scale) coming out of the keyboard or metronome channel, after its fader */
   meter(k){ try{ if(!E||!E.ch||!E.ch[k]) return -99; let a=MTR[k]; if(!a||a.src!==E.ch[k].g){ a=MTR[k]={an:ctx.createAnalyser(),src:E.ch[k].g}; a.an.fftSize=512; a.buf=new Float32Array(512); E.ch[k].g.connect(a.an); }
     a.an.getFloatTimeDomainData(a.buf); let m=0; for(let i=0;i<a.buf.length;i++){ const v=Math.abs(a.buf[i]); if(v>m) m=v; } return m>0?20*Math.log10(m):-99; }catch(_){ return -99; } },
+  ms:{ ui:msUI, aud, get:k=>({mute:!!MS.mute[k],solo:!!MS.solo[k],on:aud(k)}), on(f){ msL.add(f); } },
   vol:{ def:VDEF, get:k=>VOL[k], set(k,v){ VOL[k]=Math.max(0,Math.min(1,+v||0)); try{ localStorage.setItem('pr-vol2',JSON.stringify(VOL)); }catch(_){} applyVol(); } },
   /* rhythm practice schedules well ahead (so a busy screen can't make notes late); each run gets its own little buses so pausing or stopping silences
      everything already scheduled at once */

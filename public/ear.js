@@ -181,7 +181,7 @@ const MSEG=12; let mRaf=0, mDisp=-99, mLast=0;
 function toneStrip(){ const H=96, ch=el('div','ec-ch ec-lvl'); ch.appendChild(el('div','ec-t','Tones')); const fz=el('div','ec-fz'); fz.style.height=(H+18)+'px'; fz.innerHTML='<i class="ec-tr"></i>'; const cap=el('i','ec-cap'), mt=el('div','ec-mtr');
   for(let j=MSEG-1;j>=0;j--) mt.appendChild(el('i',j>=MSEG-2?'r':j>=MSEG-4?'a':'g')); mt.style.height=H+'px'; fz.append(cap,mt); const rd=el('div','ec-rd'); ch.append(fz,rd);
   const get=()=>(window.CLASS&&CLASS.vol)?CLASS.vol.get('keys'):.87, set=v=>{ if(window.CLASS&&CLASS.vol) CLASS.vol.set('keys',v); sync(); };
-  const sync=()=>{ const v=get(); cap.style.top=(9+(1-v)*H)+'px'; rd.textContent=Math.round(v*100); }; sync();
+  const sync=()=>{ const v=get(); cap.style.top=(9+(1-v)*H)+'px'; rd.textContent=Math.round(v*100); }; sync(); if(window.CLASS&&CLASS.ms) ch.appendChild(CLASS.ms.ui('keys',{name:'Tones'}));
   const at=e=>1-(Math.max(9,Math.min(H+9,lptE(fz,e).y))-9)/H; let dr=false;
   fz.addEventListener('pointerdown',e=>{ dr=true; fz.setPointerCapture(e.pointerId); set(at(e)); e.preventDefault(); }); fz.addEventListener('pointermove',e=>{ if(dr) set(at(e)); });
   const up=()=>{ dr=false; }; fz.addEventListener('pointerup',up); fz.addEventListener('pointercancel',up); fz.addEventListener('dblclick',()=>set(.87));

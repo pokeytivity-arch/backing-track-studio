@@ -309,7 +309,7 @@ input[type=number]{width:76px;font-variant-numeric:tabular-nums}
 .ch .nm{font-weight:600;font-size:14px;line-height:1.2}
 .ch .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .mute{border:1.5px solid var(--line);background:var(--surface);border-radius:6px;font:700 12px var(--mono);height:30px}
-.mute[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.mute[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff} .mute.solo[aria-pressed="true"]{background:#f59f00;border-color:#f59f00;color:#1b1200}
 .ch .val{font:500 12px var(--mono);color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .ch.off .nm{opacity:.45}
 
@@ -1037,8 +1037,8 @@ class Engine{
   }
   applyMix(mix, style){
     if(typeof S!=='undefined'&&S.sm==='scale'){ mix=Object.assign({},mix); ['bass','keys','extra','lead'].forEach(n=>{ mix[n]=Object.assign({},mix[n],{mute:true,solo:false}); }); }
-    const anySolo=CHANNELS.some(n=>n!=='click'&&mix[n].solo);
-    CHANNELS.forEach(n=>{ const m=mix[n], off=m.mute||(anySolo&&n!=='click'&&!m.solo);
+    const anySolo=CHANNELS.some(n=>n!=='lead'&&mix[n].solo);
+    CHANNELS.forEach(n=>{ const m=mix[n], off=m.mute||(anySolo&&!m.solo);
       this.ch[n].g.gain.value = off?0:m.vol; this.ch[n].s.gain.value = n==='lead'?0.16:((style.sends&&style.sends[n])||0.06); });
     this.kit=style.kit||{};
   }
@@ -1799,9 +1799,9 @@ function renderStyles(){
 function renderMix(){
   const st=STYLES[S.style], L=SOLOISTS[S.lead];
   const names={drums:['Drums',''],bass:['Bass',''],keys:['Keys',st.keysName],extra:['Extra',st.extraName],lead:['Soloist',L?L.inst:'choose one below'],click:['Click','metronome & count-in']};
-  const anySolo=CHANNELS.some(n=>n!=='click'&&n!=='lead'&&S.mix[n].solo);
+  const anySolo=CHANNELS.some(n=>n!=='lead'&&S.mix[n].solo);
   const w=$('mix'); w.replaceChildren();
-  CHANNELS.forEach(n=>{ if(n==='lead') return; const m=S.mix[n], row=document.createElement('div'); row.className='ch'+(m.mute?' off':'')+(anySolo&&n!=='click'&&!m.solo?' solo-off':'');
+  CHANNELS.forEach(n=>{ if(n==='lead') return; const m=S.mix[n], row=document.createElement('div'); row.className='ch'+(m.mute?' off':'')+(anySolo&&!m.solo?' solo-off':'');
     const nm=document.createElement('div'); nm.className='nm'; nm.textContent=names[n][0]; if(names[n][1]){ const sm=document.createElement('small'); sm.textContent=names[n][1]; nm.appendChild(sm); }
     const mb=document.createElement('button'); mb.className='mute'; mb.textContent='M'; mb.setAttribute('aria-pressed',m.mute); mb.setAttribute('aria-label',`Mute ${names[n][0]}`);
     const r=document.createElement('input'); r.type='range'; r.min=0; r.max=1.2; r.step=0.01; r.value=m.vol; r.id='vol-'+n; r.setAttribute('aria-label',`${names[n][0]} volume`);
@@ -1809,10 +1809,10 @@ function renderMix(){
     mb.onclick=()=>{ m.mute=!m.mute; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); };
     r.oninput=()=>{ m.vol=+r.value; val.textContent=Math.round(m.vol*100); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); };
     let sb;
-    if(n==='click'){ sb=document.createElement('span'); }
-    else { sb=document.createElement('button'); sb.className='mute solo'; sb.textContent='S'; sb.setAttribute('aria-pressed',!!m.solo); sb.setAttribute('aria-label',`Solo ${names[n][0]}`);
+    { sb=document.createElement('button'); sb.className='mute solo'; sb.textContent='S'; sb.setAttribute('aria-pressed',!!m.solo); sb.setAttribute('aria-label',`Solo ${names[n][0]}`);
       sb.onclick=()=>{ m.solo=!m.solo; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); }; }
     if(S.sm==='scale'&&n!=='drums'&&n!=='click'){ row.classList.add('off'); [mb,r].forEach(x=>{ x.disabled=true; }); if(sb.tagName==='BUTTON') sb.disabled=true; nm.appendChild(Object.assign(document.createElement('small'),{textContent:'locked in scale mode'})); }
+    const led=document.createElement('i'); led.className='ms-led'+((m.mute||(anySolo&&!m.solo))?'':' on'); led.title=(m.mute||(anySolo&&!m.solo))?names[n][0]+' is off':names[n][0]+' is playing'; nm.prepend(led); led.style.cssText='display:inline-block;margin-right:7px;vertical-align:middle';
     row.append(nm,mb,sb,r,val); w.appendChild(row); });
 }
 
@@ -3078,11 +3078,11 @@ init();
 <script src="transcribe.js?v=3" defer></script>
 <script src="suite.js?v=7" defer></script>
 <script src="layout3.js?v=5" defer></script>
-<script src="class.js?v=z10" defer></script>
+<script src="class.js?v=z11" defer></script>
 <script src="progress.js" defer></script>
-<script src="ear.js?v=zz13" defer></script>
+<script src="ear.js?v=zz14" defer></script>
 <script src="hands.js?v=67" defer></script>
-<script src="practice.js?v=g4" defer></script>
+<script src="practice.js?v=g6" defer></script>
 <script src="scale-library.js?v=4" defer></script>
 <script src="scales.js?v=12" defer></script>
 <script src="check.js" defer></script>
