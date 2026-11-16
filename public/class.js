@@ -105,7 +105,8 @@ function msUI(k,o){ o=o||{}; const w=document.createElement('div'); w.className=
   const sync=()=>{ m.setAttribute('aria-pressed',String(!!MS.mute[k])); sb.setAttribute('aria-pressed',String(!!MS.solo[k])); const on=aud(k); led.classList.toggle('on',on); led.title=on?nm+' is playing':nm+' is off'; };
   /* a channel is either muted or soloed, never both: pressing one releases the other */
   m.onclick=e=>{ e.stopPropagation(); MS.mute[k]=!MS.mute[k]; if(MS.mute[k]) MS.solo[k]=false; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
-  sb.onclick=e=>{ e.stopPropagation(); MS.solo[k]=!MS.solo[k]; if(MS.solo[k]) MS.mute[k]=false; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
+  /* only one channel can be soloed: soloing one releases the other's solo */
+  sb.onclick=e=>{ e.stopPropagation(); MS.solo[k]=!MS.solo[k]; if(MS.solo[k]){ MS.mute[k]=false; Object.keys(MS.solo).forEach(o=>{ if(o!==k) MS.solo[o]=false; }); } applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
   [m,sb].forEach(b=>{ b.addEventListener('pointerdown',e=>e.stopPropagation()); }); msL.add(sync); sync(); return w; }
 { const c=document.createElement('style'); c.textContent=`
 .ms-w{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}

@@ -1072,7 +1072,9 @@ function runPlan(s){ const m=/^([A-G])([b#♭♯]?)(.*)$/.exec(String(s.name||''
   const minor=/^(m|min|-)(?!aj|a)/.test(q)&&!/b5|♭5|dim|°|ø/.test(q), altered=/b5|#5|♭5|♯5|b9|#9|♭9|♯9|#11|♯11|b13|♭13|alt|aug|\+|dim|sus/.test(q), majdom=!minor&&!altered&&/^(maj|M|Δ|add|6|7|9|11|13|)$|^(maj7|maj9|maj13|6\/9|69|add9|7|9|11|13)/.test(q);
   if(!minor&&!majdom) return null; if(brLast||Math.random()<.5){ brLast=false; return null; } brLast=true;
   let r=B; while(r<33) r+=12; while(r>45) r-=12;   /* a root from A1 to A2 leaves room for the whole run */
-  return minor?[r+12,r+7,r+3,r+2,r]:[r,r+7,r+12,r+14,r+16]; }
+  /* his fingering: descending (minor) 1 2 3 4 5; ascending (major) 5 2 1 then 2 1, or 3 2 when the second and third tones are the same colour (D E, C# D#) */
+  const W=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), notes=minor?[r+12,r+7,r+3,r+2,r]:[r,r+7,r+12,r+14,r+16];
+  notes.f=minor?[1,2,3,4,5]:(W(r+14)===W(r+16)?[5,2,1,3,2]:[5,2,1,2,1]); return notes; }
 /* arpeggio rhythm (sixteenths). Four notes in all: one by one from the left hand up. Five: the left hand's note together with one right-hand note,
    then the other three up or down. Two notes in the left hand share the bass note's sixteenth as two thirty-seconds.
    More than two notes in the left hand, or more than six in all: not arpeggiated. A bass with a two-note harmony is not arpeggiated either:
@@ -1106,7 +1108,7 @@ function playChord(s,len,nx){ const C=CLASS.clock; C.ready().then(()=>{ if(!ov||
     else [...s.lh,...s.rh].forEach(m=>N(m,t0,endOf(m),isL(m)?.75:.7)); }
   else if(tech==='h'){ const ns=[...s.lh,...s.rh].sort((a,b)=>a-b), gap=Math.min(.5,Math.max(.12,(dur-.3)/ns.length)); arpN=null; ns.forEach((m,i)=>N(m,t0+i*gap,endOf(m),.8)); }
   else if(brun){ arpN=null; drawKb(); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,end,.7));   /* the left hand plays the bass run instead of holding its notes */
-    const s16=bt/4; brun.forEach((m,i)=>{ const t=i<4?t0+i*s16:t0+bt, e=i<4?t+s16*.95:end; C.note(m,t,e-t,i===4?.78:.72,b); lit(m,t,e,{h:'l',f:null}); }); }
+    const s16=bt/4; brun.forEach((m,i)=>{ const t=i<4?t0+i*s16:t0+bt, e=i<4?t+s16*.95:end; C.note(m,t,e-t,i===4?.78:.72,b); lit(m,t,e,{h:'l',f:brun.f?brun.f[i]:null}); }); }
   else { arpN=null; drawKb(); s.lh.forEach((m,i)=>N(m,t0+i*.012,endOf(m),.75)); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,end,.7)); }
   /* the bass line's two sixteenths show on the keys and in the left hand's fingers */
   if(run){ const s16=bt/4, FN=Object.assign(fingering(nx.lh||[],nx.rh||[]),nx.lfm||{}), T=Math.min(...(nx.lh&&nx.lh.length?nx.lh:nx.rh)), tf=FN[T]||5, up=run[0]<T;
