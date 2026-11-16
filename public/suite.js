@@ -35,7 +35,7 @@ const css=document.createElement('style'); css.textContent=`
 #suiteHub .badge{position:absolute;top:14px;right:14px;font:700 11px var(--body);letter-spacing:.04em;text-transform:uppercase;background:var(--hi,var(--ke8c25a,#ffd43b));color:#151b28;padding:4px 9px;border-radius:999px}
 #suiteHub .foot{margin-top:30px;font-size:13px;color:#b4bdd0}
 #suiteHub .back{margin-top:18px;background:transparent;border:1px solid rgba(255,255,255,.25);color:#e6eaf2;font:600 14px var(--body);padding:9px 16px;border-radius:999px;cursor:pointer}
-.ps-chip{border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)!important;background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important;font-weight:700!important;border-radius:999px!important;padding:3px 12px!important;margin-left:6px}
+.ps-chip{font-weight:700!important;margin-left:2px} .ps-chip[aria-expanded=true],.ps-chip:hover{background:var(--accent)!important;color:var(--accent-ink)!important}
 /* Class with Coach and Studio+ use the Studio's dark stage look: same fonts, colours, pill buttons */
 body[data-dest="class"],body[data-dest="studio"],body[data-dest="plus"]{background-color:#0a0e17;background-repeat:no-repeat;background-position:center;background-size:cover;background-attachment:fixed}
 body[data-dest="class"]{background-image:linear-gradient(180deg,rgba(5,5,5,.72),rgba(5,5,5,.55)),url(card-class.webp)}
@@ -160,11 +160,11 @@ body[data-dest="class"][data-cl-mini="1"] #psMini{display:flex}
 #suiteHub .dcard[data-k]:focus-visible:not(:hover){background:linear-gradient(165deg,var(--g1) -30%,var(--g2) 62%);border-color:rgba(var(--gl),.8);outline:2px solid rgba(var(--gl),.55);outline-offset:3px}
 @media (hover:none){#suiteHub .dcard:after{display:none}}
 `; css.textContent+=`
-#psNav{position:fixed;z-index:300000;min-width:250px;padding:8px;border-radius:16px;background:var(--surface,#14171f);color:var(--ink,#fff);border:1px solid var(--line,rgba(255,255,255,.18));box-shadow:0 18px 44px rgba(0,0,0,.5)}
-#psNav button{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border:0;border-radius:11px;background:transparent;color:inherit;font:600 15px var(--body,system-ui);cursor:pointer;text-align:left}
-#psNav button:hover,#psNav button.cur{background:color-mix(in srgb,var(--ink,#fff) 10%,transparent)}
-#psNav i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;box-shadow:0 1px 0 rgba(255,255,255,.4) inset}
-#psNav i svg{width:22px;height:22px}
+#psNav{position:fixed;z-index:300000;min-width:240px;padding:5px;border-radius:10px;background:var(--surface,#14171f);color:var(--ink,#fff);border:1px solid var(--line,rgba(255,255,255,.18));box-shadow:0 12px 32px rgba(0,0,0,.22)}
+#psNav button{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;border-radius:6px;background:transparent;color:inherit;font:14px var(--body,system-ui);cursor:pointer;text-align:left}
+#psNav button:hover,#psNav button:focus-visible{background:var(--accent);color:var(--accent-ink);outline:none} #psNav button.cur:not(:hover){background:color-mix(in srgb,var(--ink,#fff) 8%,transparent)}
+#psNav i{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;flex:none;box-shadow:0 1px 0 rgba(255,255,255,.4) inset}
+#psNav i svg{width:12px;height:12px}
 #psNav span{flex:1}#psNav em{font-style:normal;color:var(--hi,#e8c25a)}
 `;
 document.head.appendChild(css);
@@ -205,8 +205,10 @@ let popping=false;
 function hpush(){ if(popping) return; const p=place(); try{ if(!history.state){ history.replaceState({ps:p},''); return; } if(history.state.ps===p) return; history.pushState({ps:p},''); }catch(_){} }
 window.addEventListener('popstate',e=>{ const t=e.state&&e.state.ps; if(!t) return; popping=true; navBack=true; try{ if(t==='hub'){ if(!hub.classList.contains('on')) showHub(); } else if(DEST[t]) go(t); } finally{ popping=false; navBack=false; } });
 const place=()=>hub.classList.contains('on')?'hub':cur;
+function closeRooms(){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden); };
+  try{ if(vis('vcRoom')&&window.VOICE&&VOICE.close) VOICE.close(); }catch(_){} try{ if(vis('earRoom')&&window.EAR) EAR.close(); }catch(_){} try{ if(vis('prRoom')&&window.PRACTICE) PRACTICE.close(); }catch(_){} window.__earBack=window.__prBack=null; }
 function go(k){
-  if(!DEST[k]) return; if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
+  if(!DEST[k]) return; closeRooms(); if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
   cur=k; if(k!=='account') put(k); document.body.dataset.dest=k;
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
@@ -228,7 +230,7 @@ function navMenu(anchor){
   const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','studio','plus','challenge'].map(k=>[k,DEST[k].name,ICONS[k],NAVC[k]]));
   rows.forEach(([k,label,svg,c])=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitem'); const on=k==='home'?hub.classList.contains('on'):(!hub.classList.contains('on')&&cur===k); if(on) b.className='cur';
     b.innerHTML='<i style="background:linear-gradient(150deg,'+c[0]+','+c[1]+')">'+svg+'</i><span></span>'+(on?'<em>✓</em>':''); b.querySelector('span').textContent=label==='Studio+'?'Studio+ (Transcription)':label;
-    b.onclick=()=>{ m.remove(); if(k==='home') showHub(); else go(k); }; m.appendChild(b); });
+    b.onclick=()=>{ m.remove(); closeRooms(); if(k==='home') showHub(); else go(k); }; m.appendChild(b); });
   document.body.appendChild(m); const r=anchor.getBoundingClientRect(); m.style.top=(r.bottom+6)+'px'; m.style.left=Math.max(8,Math.min(r.left,innerWidth-280))+'px';
   const off=e=>{ if(!m.contains(e.target)){ m.remove(); document.removeEventListener('click',off,true); } }; setTimeout(()=>document.addEventListener('click',off,true),0);
   document.addEventListener('keydown',function k(e){ if(e.key==='Escape'){ m.remove(); document.removeEventListener('keydown',k); } });
