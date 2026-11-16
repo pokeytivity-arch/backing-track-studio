@@ -27,8 +27,33 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=16').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=17').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+/* chords: a hand of its own, separate from the scale hand. Every chord finger lands on its key (black keys near their front end, and when
+   the chord uses black keys the white-key fingers play further in, between them), the fingers the chord doesn't use wait just above
+   their keys, the knuckles sit across the chord and the hand sits back just far enough that every finger reaches down onto its key. */
+function pose3c(h){
+  const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, pos=h.pos||{}, pr=h.press||[];
+  if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
+  const isW=q=>[0,2,4,5,7,9,11].includes(((q%12)+12)%12), deep=pr.some(f=>pos[f]!=null&&!isW(pos[f]));
+  const dep=(f,m)=>{ const w=isW(m); if(f===1) return w?(deep?kbH*.74:kbH*.84):kbH*.5; return w?(deep?kbH*.66:kbH*.8):kbH*.5; };
+  if(!h.cd) h.cd=[0,0,0,0,0]; let moving=false;
+  const want=[]; for(let i=0;i<5;i++){ const m=pos[i+1]; want.push(m==null?kbH*.8:dep(i+1,m)); }
+  const pd=pr.filter(f=>f>1).map(f=>want[f-1]), avg=pd.length?pd.reduce((a,b)=>a+b,0)/pd.length:kbH*.8;
+  for(let i=0;i<5;i++){ if(!pr.includes(i+1)&&i>0) want[i]=Math.min(kbH*.86,avg+kw*.25); if(!h.cinit) h.cd[i]=want[i]; else { h.cd[i]+=(want[i]-h.cd[i])*.25; if(Math.abs(want[i]-h.cd[i])>.4) moving=true; } }
+  h.cinit=true;
+  const tips=[]; for(let i=0;i<5;i++){ const m=pos[i+1], play=pr.includes(i+1), blk=m!=null&&!isW(m);
+    tips.push([h.fx[i],h.cd[i],(blk?.011*s:0)+(play?0:(i===0?.018*s:.016*s))]); }
+  /* how far back the knuckles sit: the nearest chord finger still has room to curve down, the furthest can still reach */
+  const fy=[1,2,3,4].filter(i=>pr.includes(i+1)).map(i=>tips[i][1]); const mx=fy.length?Math.max(...fy):avg, mn=fy.length?Math.min(...fy):avg;
+  let az=Math.min(mx+.046*s,mn+.066*s); if(pr.includes(1)) az=Math.min(az,tips[0][1]+.036*s);   /* the thumb is short: the hand comes in until it reaches its key */ h.caz=h.caz==null?az:h.caz+(az-h.caz)*.25; if(Math.abs(az-h.caz)>.4) moving=true; az=h.caz;
+  /* across the keys: each knuckle as near as it can be to its own finger's key */
+  const KN=[-1.28,-.43,.43,1.2]; let ax=0; for(let i=1;i<5;i++) ax+=tips[i][0]-KN[i-1]*dir*kw; ax/=4;
+  /* a thumb far from the fingers pulls the hand over towards it */ if(pr.includes(1)){ const tx=tips[0][0]+2.2*dir*kw; if((ax-tx)*dir>0) ax=ax*.45+tx*.55; }
+  if(moving){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
+  P3.pose({side:h.side,open:true,on:true,f:0,thr:null,threst:false,thx:null,ax,ay:.028*s,az,th:0,tips});
+}
 function pose3(h){
+  if(h.press) return pose3c(h);
   const {kw,HP,kbH}=geo, s=kw/0.0235, dir=h.side==='rh'?1:-1, SY=y=>HP+kbH-y, hf=+h.f||0;
   if(p3skin!==skin){ P3.setSkin(skin); p3skin=skin; }
   const tips=[]; for(let i=0;i<5;i++){ const sy=SY(h.fy[i]), play=h.press?h.press.includes(i+1):i===hf-1, blk=sy<kbH*.6;
@@ -297,5 +322,5 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num); set(n.n,{display:'none'}); set(n.t,{display:'none'});
 }
-window.PSHANDS={lead,pause,sync,tones:TONES,isOn:()=>on};
+window.PSHANDS={lead,pause,sync,tones:TONES,isOn:()=>on,dbg:()=>P3&&P3.dbg&&P3.dbg()};
 })();

@@ -144,8 +144,8 @@ function poseHand(h, d, s) {
     let yaw = Math.atan2(new THREE.Vector3().crossVectors(f0, hz).dot(n), f0.dot(hz)); const yl = d.open ? .95 : .4; yaw = Math.max(-yl, Math.min(yl, yaw));
     const dist = hz.length() * Math.cos(Math.abs(yaw) > .39 ? 0 : 0);
     h.sol[i] = solve2(L1, L2, L3, dist, v, h.sol[i]);
-    const [a1, a2] = h.sol[i], a3 = a2 * .7;
-    const qy = tmpQ.clone().setFromAxisAngle(n, yaw), axis = new THREE.Vector3().crossVectors(n, f0).normalize().negate();
+    const [a1, a2] = h.sol[i], a3 = a2 * .7; if (window.__h3dbg) { (h.dbg3 = h.dbg3 || [])[i] = { L: [L1, L2, L3].map(x => +x.toFixed(4)), dist: +dist.toFixed(4), v: +v.toFixed(4), a: [a1, a2].map(x => +x.toFixed(2)), s }; }
+    const qy = tmpQ.clone().setFromAxisAngle(n, yaw), axis = new THREE.Vector3().crossVectors(n, f0).normalize().negate(); if (d.open) axis.negate();   /* chords: the bend that really takes the fingertip down onto the key */
     /* positive flexion bends the finger towards the palm (away from the back of the hand) */
     const fl = ang => qy.clone().multiply(new THREE.Quaternion().setFromAxisAngle(axis, ang));
     const rest0 = f0.clone(); void rest0;
@@ -181,6 +181,7 @@ function poseHand(h, d, s) {
     h.root.updateMatrixWorld(true); const tw = new THREE.Vector3(); h.bones['thumb-tip'].getWorldPosition(tw); const mw = new THREE.Vector3(); h.bones['thumb-metacarpal'].getWorldPosition(mw); const fk3=fk()[3]; h.dbg = { target: d.tips[0], tip: tw.toArray().map(v => +v.toFixed(1)), base: mw.toArray().map(v => +v.toFixed(1)), fkLocal: fk3.toArray(), Tl: T.toArray() };
   }
 
+  if (window.__h3dbg) { h.root.updateMatrixWorld(true); h.dbg2 = ['thumb', 'index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'].map((f, i) => { const v = new THREE.Vector3(); h.bones[f + '-tip'].getWorldPosition(v); const k = new THREE.Vector3(); h.bones[i ? f + '-phalanx-proximal' : 'thumb-metacarpal'].getWorldPosition(k); return { want: d.tips[i].map(x => +x.toFixed(1)), got: [+v.x.toFixed(1), +v.z.toFixed(1), +v.y.toFixed(1)], kn: [+k.x.toFixed(1), +k.z.toFixed(1), +k.y.toFixed(1)], az: d.az, ay: d.ay }; }); }
   /* forearm: from the wrist back off the bottom of the screen */
   { const w = rest['wrist'].p.clone(); h.root.localToWorld(w);
     const back = fw.clone().negate(), len = s * .32, r0 = s * .029;
@@ -231,7 +232,7 @@ export function pose(d) {
   h.root.visible = !!d.on; h.arm.visible = false; if (!d.on) return;
   h.lastD = { f: d.f, az: Math.round(d.az), az3: d.az3, ax: d.ax, tips: d.tips.map(t => t.map(v => Math.round(v))) }; poseHand(h, d, G.kw / (KEY_MM / 1000));
 }
-export function dbg() { return { rh: hands.rh && hands.rh.dbg, d: hands.rh && hands.rh.lastD, frames: nR }; }
+export function dbg() { return { t3: hands.rh && hands.rh.dbg3, t2: { rh: hands.rh && hands.rh.dbg2, lh: hands.lh && hands.lh.dbg2 }, rh: hands.rh && hands.rh.dbg, d: hands.rh && hands.rh.lastD, frames: nR }; }
 let nR = 0;
 export function render() { nR++; if (ready && canvas.style.display !== 'none') renderer.render(scene, cam); }
 export function _plain() { Object.values(hands).forEach(h => { h.mat.map = null; h.mat.color.set('#d09070'); h.mat.needsUpdate = true; }); }
