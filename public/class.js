@@ -42,9 +42,9 @@ function parseBoard(src){
 const NOTE_PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function noteMidi(s){ const m=/^([A-Ga-g])([#b♯♭]?)(-?\d)$/.exec(String(s).trim()); if(!m) return null; let pc=NOTE_PC[m[1].toUpperCase()]; if(m[2]==='#'||m[2]==='♯') pc++; if(m[2]==='b'||m[2]==='♭') pc--; return 12*(+m[3]+1)+pc; }
 function notesList(v,hand){ if(window.ASSIGN){ const t=Array.isArray(v)?v.join(' '):String(v||''); return ASSIGN.parse(t,hand||'rh').notes.map(n=>n.midi); } const a=Array.isArray(v)?v:String(v||'').split(/[\s,]+/); return a.map(noteMidi).filter(x=>x!=null&&x>=21&&x<=108); }
-function stepsFrom(list){
+function stepsFrom(list,max){
   const out=[];
-  (Array.isArray(list)?list:[]).slice(0,16).forEach(s=>{
+  (Array.isArray(list)?list:[]).slice(0,max||16).forEach(s=>{
     const src=typeof s==='string'?s:String((s&&(s.name||s.chord))||''); if(!src.trim()) return;
     let sg; try{ sg=parseChart(src.trim(),0,16); }catch(_){ return; }
     if(sg.errors.length||!sg.events.some(e=>e.chord)) return;
@@ -650,6 +650,7 @@ window.CLASS={
   clock:{ ready, now:()=>ctx?ctx.currentTime:0,
     bus(){ if(!E||!E.ch||!E.ch.keys) return null; const id='pr'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(E.ch.keys.g); c.connect(E.ch.click.g); E.ch[id]={g:k}; E.ch[id+'c']={g:c}; return {id,k,c}; },
     kill(b){ if(!b) return; try{ b.k.disconnect(); b.c.disconnect(); }catch(_){} delete E.ch[b.id]; delete E.ch[b.id+'c']; },
+    note(m,t,d,v,b){ E.note(t,m,d,v||0.72,'piano',b?b.id:'keys'); },
     step(s,t,d,b){ const ch=b?b.id:'keys'; s.lh.forEach(m=>E.note(t,m,d,0.75,'piano',ch)); s.rh.forEach(m=>E.note(t,m,d,0.72,'piano',ch)); },
     click(t,acc,b){ if(!b){ E.click(t,!!acc); return; } const o=E.osc('square',acc?1760:1180), g=E.gain(); E.perc(g,t,acc?0.32:0.2,0.04); o.connect(g).connect(b.c); o.start(t); o.stop(t+0.06); } },
   stepsFrom,playStep,endPractice(){ practice=false; syncBar(); },

@@ -396,6 +396,20 @@ In a minor scale sung from la, the numbers follow the solfa (la is 6), so the na
 - Cyclical: 0 5 10 3 8 1 6 11 4 9 2 7. A classic example in C: C F B♭ E♭ A♭ D♭ G♭ B E A D G, back to C. Some serialism using pitch-class numbers 0 to 11.
 Why pitch classes: so the cycle does not jump up in fourths indefinitely. Each new key sits that many half steps above the starting key, inside one octave, so the cyclical movement has fourths and fifths: up a fourth, then down a fifth. B♭ descends to E♭; A♭ descends to D♭. From D the cyclical keys are D G C F B♭ E♭ A♭ D♭ G♭ B E A, back to D. Teach students the logic (the numbers), not a list of notes to memorise.
 
+THE CHORD ROOM CONSOLE AND HIS CHORD TECHNIQUES (his words)
+Mode: Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart) or Voicings (one chord at a time, and the student gets multiple ways of playing it). Both modes cannot be on at the same time: turning on Voicings deactivates the Chord canvas.
+Inversion: Root position, 1st inversion, 2nd inversion. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
+Technique: Chords (together, the default) and Broken chords (separately), plus Arpeggio, Grace notes and Bass line.
+Grace notes: add grace notes to all tones of the scale except the 1st and 4th tones. If the right hand has three notes, do a grace note; if it has four, don't. Example: B / A D F, grace note on the D, C♯ to D or C to D. E / G♯ C D G: no grace note.
+Bass line: two sixteenth notes to anticipate a bass note. If you are meant to land on G, the two sixteenth notes in the previous measure are F–F♯ and then G, or A–A♭ and then G. Apply this to all tones in the key except the 3rd and the 7th, where you can't do descending bass lines; you can only go ascending. Don't overdo bass lines. Just be creative.
+Arpeggio rhythm:
+- A 4-note chord aggregate on both hands: a sixteenth-note pattern where each note is played against a sixteenth, from the left hand to the right hand in ascending order.
+- A 5-note chord aggregate on both hands: a sixteenth-note pattern where the first note in the left hand is played with any of the notes in the right hand at the same time, then the rest of the notes (three of them) are arpeggiated in ascending or descending order.
+- With two notes in the left hand, the two notes are played as thirty-second notes, subdividing whatever one bass note would have gotten in duration.
+- More than two notes in the left hand, or more than six notes aggregated on both hands: don't arpeggiate.
+- When a chord lasts for more than one beat, do not keep repeating the arpeggio pattern; it gets noisy. If a chord lasts two beats, do it on the first or the second beat. If it lasts 3, 4 or 6 beats, do it on any one of the beats.
+The arpeggio works with chord voicings, the chord canvas and chord inversions. More arpeggio patterns are coming from him; if a student asks for one he has not given, say he has not given it yet.
+
 LEFT HAND LOGIC FOR CHORDS (his words; the chord room fingers the bass this way)
 Once a chord progression is laid, look ahead at the whole bass line first to know what is going on, then decide how to approach the left hand. This is for chord progressions and is valid even on the black keys (B♭ E♭ A♭ D♭ G♭).
 - When the bass movement is a 2-5-1 or is cyclical, the left-hand fingering is 1-5-2 or 1-5-1.
