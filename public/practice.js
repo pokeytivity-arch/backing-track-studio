@@ -768,6 +768,8 @@ function bankBar(){ const bar=el('div','p-banks'); bar.setAttribute('role','grou
 function lpt(el,e){ const r=el.getBoundingClientRect(); let a=1,b=0,c=0,d=1; try{ const t=getComputedStyle(document.body).transform; if(t&&t!=='none'){ const m=new DOMMatrix(t), k=Math.hypot(m.a,m.b)||1; a=Math.round(m.a/k); b=Math.round(m.b/k); c=Math.round(m.c/k); d=Math.round(m.d/k); } }catch(_){}
   const ox=(a<0||c<0)?r.right:r.left, oy=(b<0||d<0)?r.bottom:r.top, dx=e.clientX-ox, dy=e.clientY-oy; return {x:dx*a+dy*b,y:dx*c+dy*d}; }
 /* practice levels: keyboard and metronome volume, as continuous mixer faders (desktop) or small sliders (phone) */
+/* his: in the chord canvas only Chords, or Chords with Broken chords, use the click; Broken chords alone turn it off and the Click fader goes unclickable */
+const noClick=()=>kind==='chords'&&st.cmode==='canvas'&&st.vh==='h';
 const VK=[['keys','Keys'],['click','Click']], vget=k=>(window.CLASS&&CLASS.vol)?CLASS.vol.get(k):0.87, vset=(k,v)=>{ if(window.CLASS&&CLASS.vol) CLASS.vol.set(k,v); document.querySelectorAll('#prRoom [data-vol='+k+']').forEach(x=>x.__sync&&x.__sync()); };
 /* meters: 12 lights per channel (green, then amber, then red at the top), reading the level after the fader while you play */
 const MSEG=12, MLO=-36, MREF={keys:6,click:-17};   /* the meter reads relative to each channel's normal level: amber at full playing level, red when pushed hot */ let mRaf=0, mLast=0; const mDisp={keys:-99,click:-99};
@@ -778,10 +780,10 @@ function meterTick(t){ mRaf=0; const dt=mLast?Math.min(.1,(t-mLast)/1000):.016; 
   if(ov&&!ov.hidden&&(playing||live)) mRaf=requestAnimationFrame(meterTick); else mLast=0; }
 const meterGo=()=>{ if(!mRaf){ mLast=0; mRaf=requestAnimationFrame(meterTick); } };
 function levels(HH){
-  return VK.map(([k,title],i)=>{ const H=HH||100, strip=el('div','p-ch p-lvl'); strip.tabIndex=0; strip.dataset.vol=k; strip.dataset.ch=title; strip.setAttribute('role','slider'); strip.setAttribute('aria-label',title+' volume'); strip.setAttribute('aria-valuemin','0'); strip.setAttribute('aria-valuemax','100'); strip.title=title==='Keys'?'Keyboard volume':'Metronome volume';
+  return VK.map(([k,title],i)=>{ const H=HH||100, strip=el('div','p-ch p-lvl'); strip.tabIndex=0; strip.dataset.vol=k; strip.dataset.ch=title; strip.setAttribute('role','slider'); strip.setAttribute('aria-label',title+' volume'); strip.setAttribute('aria-valuemin','0'); strip.setAttribute('aria-valuemax','100'); strip.title=title==='Keys'?'Keyboard volume':'Metronome volume'; const nc=k==='click'&&noClick(); if(nc){ strip.classList.add('off'); strip.title='The click is off with Broken chords alone. Turn on Chords to use it'; strip.setAttribute('aria-disabled','true'); strip.tabIndex=-1; }
     strip.appendChild(el('div','p-cht',title)); const fz=el('div','p-fz'); fz.style.height=(H+18)+'px'; fz.appendChild(el('div','p-tr'));
     [0,.25,.5,.75,1].forEach(f=>fz.appendChild(Object.assign(el('i','p-tick'),{style:'top:'+(9+(1-f)*H)+'px'})));
-    const cap=el('div','p-cap'); fz.appendChild(cap); const rd=el('div','p-lvn'); strip.appendChild(fz); strip.appendChild(rd); if(window.CLASS&&CLASS.ms) strip.appendChild(CLASS.ms.ui(k,{name:title}));
+    const cap=el('div','p-cap'); fz.appendChild(cap); const rd=el('div','p-lvn'); strip.appendChild(fz); strip.appendChild(rd); if(window.CLASS&&CLASS.ms){ const u=CLASS.ms.ui(k,{name:title}); if(nc) u.querySelectorAll('button').forEach(x=>{ x.disabled=true; }); strip.appendChild(u); }
     { const mt=el('div','p-mtr'); mt.style.top='9px'; mt.style.height=H+'px'; for(let j=MSEG-1;j>=0;j--) mt.appendChild(el('i',j>=MSEG-2?'r':j>=MSEG-4?'a':'g')); fz.appendChild(mt); }
     const sync=()=>{ const v=vget(k); cap.style.top=(9+(1-v)*H)+'px'; rd.textContent=Math.round(v*100); strip.setAttribute('aria-valuenow',String(Math.round(v*100))); }; strip.__sync=sync; sync();
     const at=e=>1-(Math.max(9,Math.min(H+9,lpt(fz,e).y))-9)/H;
@@ -1008,7 +1010,7 @@ function bassFing(st){
 #prRoom .p-cmix{flex-wrap:wrap;gap:8px 0;padding:6px 0 4px;border-bottom:1px solid rgba(255,255,255,.07)} #prRoom .p-cmix .p-cht{cursor:default}
 #prRoom .p-cmix{flex-wrap:wrap!important;align-items:stretch;row-gap:12px!important} #prRoom .p-cmix>.p-ch{padding:0 9px;min-width:max-content;flex:1 0 auto} #prRoom .p-cmix .p-key{min-height:28px;font-size:12.5px;padding:3px 9px 3px 7px;white-space:nowrap} #prRoom .p-lvls{display:flex;flex:none;border-left:1px solid rgba(255,255,255,.07)} #prRoom .p-lvls .p-ch{border-right:0} #prConP .ep-body>*,#prRoom .p-ccon,#prRoom .p-carea{min-width:0;max-width:100%} #prRoom .p-cmix{max-width:100%}
 #prRoom .p-cmix .p-c2{display:grid;grid-template-columns:repeat(2,auto);grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:5px 8px}
-#prRoom .p-cmix .p-ch.off{opacity:.4}
+#prRoom .p-cmix .p-ch.off{opacity:.4} #prRoom .p-lvl.off{opacity:.4;filter:grayscale(1)} #prRoom .p-lvl.off .p-fz,#prRoom .p-lvl.off button{pointer-events:none;cursor:not-allowed}
 #prRoom .p-cv{display:flex;flex-direction:column;gap:8px} #prRoom .p-cvh{display:flex;align-items:center;gap:12px}
 #prRoom .p-cvseg{display:inline-flex;border:1.5px solid #3a4a74;border-radius:999px;padding:2px} #prRoom .p-cvseg button{border:0;background:none;color:#aab4cf;font:700 13px system-ui,sans-serif;padding:5px 14px;border-radius:999px;cursor:pointer} #prRoom .p-cvseg button[aria-pressed=true]{background:#c8d0c8;color:#111}
 #prRoom .p-cvta{width:100%;min-height:86px;resize:vertical;background:#0c0f17;color:#eef2ff;border:1.5px solid #3a4a74;border-radius:12px;padding:12px 14px;font:700 17px/1.45 ui-monospace,Menlo,monospace;letter-spacing:.02em;box-sizing:border-box}
@@ -1164,7 +1166,7 @@ function bassEff(s,ahead){ if(!s||s.bg==null) return s; if(s.bfirst){ if(ahead){
 function playChord(s0,len,nx0){ const C=CLASS.clock, bOn0=st.cmode==='canvas'&&st.vh==='v'&&!!st.bline, s=bOn0?bassEff(s0,false):s0, nx=bOn0?bassEff(nx0,true):nx0; C.ready().then(()=>{ if(!ov||ov.hidden) return;
   const b=C.bus(); if(b) chBus.push(b); const bt=60/st.bpm, beats=s.beats||(len?Math.max(1,Math.round(len/bt)):2), dur=len||Math.max(1.6,beats*bt), t0=C.now()+0.05, end=t0+dur;
   /* only the chord canvas uses the techniques; grace notes and the bass line go with Chords (together). Voicings can add grace notes. */
-  meterGo(); if(playing){ for(let k=0;k<Math.max(1,Math.round(beats));k++){ C.click(t0+k*bt,chBeat%4===0,b); chBeat++; } }
+  meterGo(); if(playing&&!noClick()){ for(let k=0;k<Math.max(1,Math.round(beats));k++){ C.click(t0+k*bt,chBeat%4===0,b); chBeat++; } }
   const md=st.cmode, tech=md==='canvas'?st.vh:'v', gOn=md==='canvas'?(st.vh==='v'&&st.cg!==false):md==='voice'?!!st.vg:false, bOn=md==='canvas'&&st.vh==='v'&&!!st.bline;
   /* bass runs are decided one chord ahead, so a lead-in from the chord before lands on the run's first note */
   const key=steps.key!=null?steps.key:0, gr=gOn?graceFor(s,key):null, brun=bOn&&!s.walk?((planNext&&planNext.step===s0)?planNext.plan:(Math.round(beats)===2?runPlan(s):null)):null;
