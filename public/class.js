@@ -97,7 +97,20 @@ const VDEF=0.87, VOL=(()=>{ try{ const v=JSON.parse(localStorage.getItem('pr-vol
 const vgain=p=>p<=0.015?0:1.4*Math.pow(10,-1.8*(1-p));
 function applyVol(){ try{ if(typeof playing!=='undefined'&&playing) return; if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=vgain(VOL.keys); E.ch.click.g.gain.value=vgain(VOL.click); } }catch(_){} }
 async function ready(){ await ensureCtx(); try{ loadBank(ctx); }catch(_){} applyVol(); }
-async function sound(midi,dur,vel,delay){ await ready(); const t=ctx.currentTime+0.03+(delay||0); E.note(t,midi,dur,vel||0.8,'piano','keys'); }
+async function sound(midi,dur,vel,delay,voice){ await ready(); const t=ctx.currentTime+0.03+(delay||0); voiceNote(t,midi,dur,vel||0.8,voice||'piano'); }
+/* keyboard voices for ear training: piano and organ from the engine; strings, bell and brass made here */
+function voiceNote(t,m,d,v,vc){ if(vc==='piano'||!E.osc){ E.note(t,m,d,v,'piano','keys'); return; } if(vc==='organ'){ E.note(t,m,d,v*.8,'organ','keys'); return; }
+  const f=440*Math.pow(2,(m-69)/12), out=E.out('keys'), g=E.gain(0.0001), end=t+Math.max(.08,d);
+  if(vc==='strings'){ const lp=E.filt('lowpass',Math.min(6000,f*6),.6); [-7,0,7].forEach(dt=>{ const o=E.osc('sawtooth',f); o.detune.value=dt; const og=E.gain(.28); o.connect(og).connect(lp); o.start(t); o.stop(end+.8); });
+    lp.connect(g);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(v*.55,t+.14); g.gain.setValueAtTime(v*.55,end); g.gain.setTargetAtTime(0.0001,end,.22); g.connect(out); return; }
+  if(vc==='bell'){ const c=E.osc('sine',f), mo=E.osc('sine',f*3.5), mg=E.gain(f*2.2); mg.gain.setValueAtTime(f*2.2,t); mg.gain.exponentialRampToValueAtTime(f*.05,t+1.6); mo.connect(mg).connect(c.frequency);
+    const h=E.osc('sine',f*2), hg=E.gain(.25); h.connect(hg).connect(g); c.connect(g); [c,mo,h].forEach(o=>{ o.start(t); o.stop(t+3.2); });
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v*.7,t+.004); g.gain.exponentialRampToValueAtTime(0.0001,t+3); g.connect(out); return; }
+  if(vc==='brass'){ const lp=E.filt('lowpass',f*1.5,1.2); lp.frequency.setValueAtTime(f*1.2,t); lp.frequency.exponentialRampToValueAtTime(Math.min(7000,f*7),t+.06); lp.frequency.exponentialRampToValueAtTime(Math.min(4000,f*4),t+.35);
+    [['sawtooth',0,.5],['sawtooth',5,.35],['square',-4,.12]].forEach(([ty,dt,lv])=>{ const o=E.osc(ty,f); o.detune.value=dt; const og=E.gain(lv); o.connect(og).connect(lp); o.start(t); o.stop(end+.4); });
+    lp.connect(g); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v*.6,t+.05); g.gain.setTargetAtTime(v*.45,t+.06,.15); g.gain.setValueAtTime(v*.45,end); g.gain.setTargetAtTime(0.0001,end,.08); g.connect(out); return; }
+  E.note(t,m,d,v,'piano','keys'); }
 async function playStep(s,len){ await ready(); const t=ctx.currentTime+0.04, d=len||1.6;
   s.lh.forEach((m,i)=>E.note(t+i*0.012,m,d,0.75,'piano','keys')); s.rh.forEach((m,i)=>E.note(t+0.03+i*0.018,m,d,0.7,'piano','keys')); }
 
