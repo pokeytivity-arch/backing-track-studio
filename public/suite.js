@@ -208,7 +208,7 @@ const place=()=>hub.classList.contains('on')?'hub':cur;
 function closeRooms(){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden); };
   try{ if(vis('vcRoom')&&window.VOICE&&VOICE.close) VOICE.close(); }catch(_){} try{ if(vis('earRoom')&&window.EAR) EAR.close(); }catch(_){} try{ if(vis('prRoom')&&window.PRACTICE) PRACTICE.close(); }catch(_){} window.__earBack=window.__prBack=null; }
 function go(k){
-  if(!DEST[k]) return; closeRooms(); if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
+  if(!DEST[k]) return; if(!navBack&&!fwdNav&&!popping) FWD=[]; closeRooms(); if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
   cur=k; if(k!=='account') put(k); document.body.dataset.dest=k;
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
@@ -253,7 +253,19 @@ function heads(){
     const d=document.createElement('div'); d.className='ps-head'; d.innerHTML='<span class="lbl"></span><h1></h1><p></p>'; d.querySelector('.lbl').textContent=lbl; d.querySelector('h1').textContent=t; d.querySelector('p').textContent=sub;
     const bar=c.querySelector('.panel-bar'); if(bar) bar.after(d); else c.prepend(d); });
 }
-function back(){
+/* Back and Forward. The menu bar's ← and the keyboard's ← go back; the keyboard's → goes forward again, step by step, through every place you went back from
+   (a room like Scales or Chords included). Going somewhere new clears the forward steps. */
+let FWD=[], fwdNav=false;
+const roomNow=()=>{ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden&&e.offsetWidth); }; if(vis('vcRoom')) return 'vc'; if(vis('earRoom')) return 'ear'; if(vis('prRoom')){ const r=document.getElementById('prRoom'); return 'pr:'+((r&&r.dataset.kind)||'scales'); } return null; };
+const locNow=()=>({p:place(),r:roomNow()});
+function back(){ const L=locNow(); back0(); setTimeout(()=>{ const L2=locNow(); if(L.p!==L2.p||L.r!==L2.r){ FWD.push(L); if(FWD.length>40) FWD.shift(); } },420); }
+function forward(){ const L=FWD.pop(); if(!L) return; fwdNav=true;
+  try{ if(L.p==='hub'){ closeRooms(); if(!hub.classList.contains('on')) showHub(); } else if(place()!==L.p||(!L.r&&roomNow())) go(L.p); } finally{ fwdNav=false; }
+  if(L.r) setTimeout(()=>{ try{ if(L.r==='vc'){ if(window.VOICE) VOICE.open(); } else if(L.r==='ear'){ if(window.EAR) EAR.open(); } else if(/^pr:/.test(L.r)&&window.PRACTICE){ PRACTICE.open(L.r.slice(3),{resume:true}); } }catch(_){} },250); }
+window.addEventListener('keydown',e=>{ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight') return; if(e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey) return;
+  const t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||(t.closest&&t.closest('[role=slider],[role=radiogroup],[role=menu],.menubar,dialog[open],#psNav')))) return;
+  if(document.getElementById('psTour')) return; e.preventDefault(); if(e.key==='ArrowLeft') back(); else forward(); });
+function back0(){
   /* rooms open on top of the Class: close the top one with its own back action; if it was opened from another room, go back to that room */
   if(!hub.classList.contains('on')){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden&&e.offsetWidth); };
     for(const [id,btn,ret] of [['vcRoom','.vc-x','__vcBack'],['earRoom','#earX','__earBack'],['prRoom','#prX','__prBack']]){ if(vis(id)){ const b=document.querySelector('#'+id+' '+btn); try{ if(b) b.click(); }catch(_){} const f=window[ret]; window[ret]=null; if(typeof f==='function'){ try{ f(); }catch(_){} } return; } } }
@@ -266,7 +278,7 @@ function addBackBtn(){
   const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psBackBtn')) return;
   const b=document.createElement('button'); b.id='psBackBtn'; b.type='button'; b.className='menu-btn'; b.textContent='←'; b.title='Back'; b.setAttribute('aria-label','Back'); b.style.cssText='font-size:18px;padding:0 10px'; b.onclick=back; mb.insertBefore(b,mb.firstChild);
 }
-window.SUITE={returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back};
+window.SUITE={returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back,forward};
 
 
 /* ---------- clear buttons + clear after an hour away ---------- */
