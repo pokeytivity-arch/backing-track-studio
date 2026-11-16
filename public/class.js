@@ -665,7 +665,8 @@ window.CLASS={
   /* level meters: the peak level (in dB, 0 = full scale) coming out of the keyboard or metronome channel, after its fader */
   meter(k){ try{ if(!E||!E.ch||!E.ch[k]) return -99; let a=MTR[k]; if(!a||a.src!==E.ch[k].g){ a=MTR[k]={an:ctx.createAnalyser(),src:E.ch[k].g}; a.an.fftSize=512; a.buf=new Float32Array(512); E.ch[k].g.connect(a.an); }
     a.an.getFloatTimeDomainData(a.buf); let m=0; for(let i=0;i<a.buf.length;i++){ const v=Math.abs(a.buf[i]); if(v>m) m=v; } return m>0?20*Math.log10(m):-99; }catch(_){ return -99; } },
-  ms:{ ui:msUI, aud, get:k=>({mute:!!MS.mute[k],solo:!!MS.solo[k],on:aud(k)}), on(f){ msL.add(f); } },
+  ms:{ ui:msUI, aud, get:k=>({mute:!!MS.mute[k],solo:!!MS.solo[k],on:aud(k)}), on(f){ msL.add(f); },
+    /* a memory bank calls back mute and solo too */ snap:()=>JSON.parse(JSON.stringify(MS)), set(o){ if(!o) return; ['mute','solo'].forEach(x=>{ if(o[x]) Object.keys(MS[x]).forEach(k=>{ MS[x][k]=!!o[x][k]; }); }); applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); } },
   vol:{ def:VDEF, get:k=>VOL[k], set(k,v){ VOL[k]=Math.max(0,Math.min(1,+v||0)); try{ localStorage.setItem('pr-vol2',JSON.stringify(VOL)); }catch(_){} applyVol(); } },
   /* rhythm practice schedules well ahead (so a busy screen can't make notes late); each run gets its own little buses so pausing or stopping silences
      everything already scheduled at once */

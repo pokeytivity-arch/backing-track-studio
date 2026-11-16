@@ -735,7 +735,7 @@ function mixOrder(panel){
 }
 /* memory banks: store the whole console (scale, note, octaves, tempo, loop, every channel and both volume faders) in one of six banks.
    Press SAVE, then a number, to store; press a number to recall. A lit number holds a setting; green is the one in use. */
-const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc'];
+const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc','fa'];
 /* twelve memory banks in the Scale room and twelve in the Chord room (each room keeps its own) */
 const NBANK=12, CKEYS=['cmode','chords','cview','invs','vh','cg','vg','bline','ckey','cpick','ctr','coct','nstaff','nkb','nlab','akey','aq','aoct','ahand','alh','adir','bpm','loop'];
 const bks=()=>kind==='chords'?'pr-cbanks':BKS, bkeys=()=>kind==='chords'?CKEYS:BKEYS, bcurK=()=>kind==='chords'?'pr-cbank-cur':'pr-bank-cur';
@@ -754,9 +754,9 @@ function bankEdit(i,pre){ const m=$('#prMsg'); if(!m) return; const b=banksGet()
   inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); keep(); inp.blur(); } }; inp.onchange=keep; inp.onblur=keep; m.appendChild(inp); m.appendChild(el('span','p-bnh',' ✎ rename')); }
 function bankPress(i){ const b=banksGet();
   if(bankDel){ bankDel=false; const m=$('#prMsg'); if(!b[i]){ if(m) m.textContent='Bank '+(i+1)+' is already empty.'; bankSync(); return; } b[i]=null; try{ localStorage.setItem(bks(),JSON.stringify(b)); }catch(_){} if(bcur()===i) bcurSet(-1); bankSync(); if(m) m.textContent='Bank '+(i+1)+' deleted.'; return; }
-  if(bankArm){ const snap={s:{},v:{}}; bkeys().forEach(k=>snap.s[k]=st[k]); if(window.CLASS&&CLASS.vol){ snap.v.keys=CLASS.vol.get('keys'); snap.v.click=CLASS.vol.get('click'); } b[i]=snap; try{ localStorage.setItem(bks(),JSON.stringify(b)); }catch(_){} bankArm=false; bcurSet(i); bankSync(); const m=$('#prMsg'); bankEdit(i,'Saved to bank '); return; }
+  if(bankArm){ const snap={s:{},v:{}}; bkeys().forEach(k=>snap.s[k]=st[k]); if(window.CLASS&&CLASS.vol){ snap.v.keys=CLASS.vol.get('keys'); snap.v.click=CLASS.vol.get('click'); } if(window.CLASS&&CLASS.ms&&CLASS.ms.snap) snap.ms=CLASS.ms.snap(); b[i]=snap; try{ localStorage.setItem(bks(),JSON.stringify(b)); }catch(_){} bankArm=false; bcurSet(i); bankSync(); const m=$('#prMsg'); bankEdit(i,'Saved to bank '); return; }
   if(!b[i]){ const m=$('#prMsg'); if(m) m.textContent='Bank '+(i+1)+' is empty. Press SAVE, then '+(i+1)+', to store the console here.'; return; }
-  clr(); bkeys().forEach(k=>{ if(b[i].s[k]!==undefined) st[k]=JSON.parse(JSON.stringify(b[i].s[k])); }); save(); if(b[i].v&&window.CLASS&&CLASS.vol){ if(isFinite(b[i].v.keys)) CLASS.vol.set('keys',b[i].v.keys); if(isFinite(b[i].v.click)) CLASS.vol.set('click',b[i].v.click); }
+  clr(); bkeys().forEach(k=>{ if(b[i].s[k]!==undefined) st[k]=JSON.parse(JSON.stringify(b[i].s[k])); }); save(); if(b[i].v&&window.CLASS&&CLASS.vol){ if(isFinite(b[i].v.keys)) CLASS.vol.set('keys',b[i].v.keys); if(isFinite(b[i].v.click)) CLASS.vol.set('click',b[i].v.click); } if(b[i].ms&&window.CLASS&&CLASS.ms&&CLASS.ms.set) CLASS.ms.set(b[i].ms);
   bcurSet(i); if(kind==='scales') loadScale(); render(); try{ menuSync(); }catch(_){} bankEdit(i,'Bank '); }
 function bankBar(){ const bar=el('div','p-banks'); bar.setAttribute('role','group'); bar.setAttribute('aria-label','Memory banks'); bar.appendChild(el('span','p-bl','Memory'));
   for(let i=0;i<NBANK;i++){ const k=el('button','p-bank'); k.type='button'; k.innerHTML='<i class="p-led"></i>'+(i+1); k.onclick=()=>bankPress(i); bar.appendChild(k); }
