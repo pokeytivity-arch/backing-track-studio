@@ -498,6 +498,8 @@ function draw(t){
   // the line where notes land
   const lg=g.createLinearGradient(0,fallH-3,0,fallH+2); lg.addColorStop(0,'rgba(255,255,255,0)'); lg.addColorStop(1,'rgba(255,255,255,.55)'); g.fillStyle=lg; g.fillRect(0,fallH-3,W,5);
   if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.72)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Upload a file or record with the microphone',W0/2,fallH/2); }
+  /* three-part layout: the keyboard strip is shown in its own Keyboard panel, and the Display shows only the falling notes */
+  { const kc=document.getElementById('txKbCanvas'); if(kc){ const kh=Math.round((H-fallH)*dpr); if(kc.width!==cv.width||kc.height!==kh){ kc.width=cv.width; kc.height=kh; } kc.style.height=(H-fallH)+'px'; kc.getContext('2d').drawImage(cv,0,Math.round(fallH*dpr),cv.width,kh,0,0,cv.width,kh); const st=cv.parentNode; if(st&&st.classList.contains('txstage')) st.style.height=Math.round(fallH)+'px'; } }
 }
 
 /* ---------- MIDI export (format 0) ---------- */
