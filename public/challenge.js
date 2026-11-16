@@ -280,7 +280,7 @@ function certDraw(cv,name,pct,plan,start,id){
   g.fillStyle='#c9d3ea'; g.font='600 26px system-ui,sans-serif'; g.fillText('DEDICATION',W/2,942);
   const end=addDays(start,89), f=d=>d.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
   g.font='24px system-ui,sans-serif'; g.fillText(f(mid(start))+'  to  '+f(end),W/2,1000);
-  g.textAlign='left'; g.font='20px system-ui,sans-serif'; g.fillStyle='#8f9bb8'; g.fillText('Certificate '+id,110,1050); g.textAlign='right'; g.fillText('app.pokeytivity.com',W-110,1050);
+  g.textAlign='left'; g.font='20px system-ui,sans-serif'; g.fillStyle='#8f9bb8'; g.fillText('Certificate '+id,110,1050); g.textAlign='right'; g.fillText('hearandplay.app',W-110,1050);
   g.textAlign='center'; g.fillStyle=gold; g.font='italic 40px Georgia,serif'; g.fillText('Pokey',W-330,1000); g.fillRect(W-470,1010,280,2);
 }
 /* --- plan builder --- */
