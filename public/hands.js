@@ -39,7 +39,9 @@ function pose3(h){
   if(hf!==1&&h.c<.3&&!(h.press&&h.press.includes(1))){ if(h.pos&&h.pos[1]!=null) tips[0]=[h.fx[0],Math.min(kbH-kw*.2,tips[0][1]),.014*s]; else tips[0]=[tips[1][0]-dir*kw*1.25,az-.034*s,.02*s]; }
   else { tips[0][1]=Math.min(kbH-kw*.2,tips[0][1]); tips[0][2]=hf===1?0:.006*s; }
   /* the thumb is shorter than the fingers: when it plays the whole hand leans in so it can reach its key, then eases back */
-  const thP=h.press?h.press.includes(1):hf===1, want=thP&&chord?Math.min(az,tips[0][1]+.024*s):az; h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
+  const thP=h.press?h.press.includes(1):hf===1; let want=thP&&chord?Math.min(az,tips[0][1]+.024*s):az;
+  /* but never so far back that a pressed finger can't reach its key (a black key sits further in): the hand comes forward just enough, so the fingers stretch out onto their keys */
+  if(chord){ let far=-1e9; h.press.forEach(f=>{ if(f>1&&tips[f-1]) far=Math.max(far,tips[f-1][1]); }); if(far>-1e9) want=Math.max(want,far-.048*s); } h.az3=h.az3==null?want:h.az3+(want-h.az3)*.18; if(Math.abs(want-h.az3)>.5){ last=0; if(!raf) raf=requestAnimationFrame(tick); } az=h.az3;
   /* when the thumb plays, the hand moves a little towards the little finger so the thumb is clear of the index finger */
   const wx=(hf===1||(h.pos&&h.pos[1]!=null&&h.c<.3))&&!h.press?dir*kw*.6:0; h.ax3=h.ax3==null?wx:h.ax3+(wx-h.ax3)*.2; if(Math.abs(wx-h.ax3)>.3){ last=0; if(!raf) raf=requestAnimationFrame(tick); }
   /* in a chord the hand sits across the whole chord, thumb to little finger, so it opens evenly */
@@ -95,7 +97,7 @@ function layout(kb){
   /* y runs up from the bottom of the overlay (the arm runs off that edge); the whole group is flipped so the hands come in from the player's side and point away.
      Fingertips rest on the keys and every finger segment stays within the keyboard; only the back of the hand reaches below it. */
   geo={kw,lk,HP,kbH:KH,W,xOf:m=>{ const pc=((m%12)+12)%12, white=wh.includes(pc); let n=0; if(m>=lo){ for(let q=lo;q<m;q++) if(wh.includes(((q%12)+12)%12)) n++; } else { for(let q=m;q<lo;q++) if(wh.includes(((q%12)+12)%12)) n--; } const u=white?1+(n+.5)*14:1+n*14; return u/Wv*W; },
-        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.62};  /* white notes are played low on the wide part, leaving room for the key labels above */
+        yOf:m=>wh.includes(((m%12)+12)%12)?HP+KH*0.22:HP+KH*0.47};   /* black keys are played near their front end, where a pianist's finger lands */  /* white notes are played low on the wide part, leaving room for the key labels above */
   host.style.paddingTop=''; host.style.paddingBottom='24px'; set(svg,{width:W,height:HP+KH,viewBox:'0 0 '+W+' '+(HP+KH)}); host._hw.style.height=(HP+KH)+'px'; host._hw.style.display=on?'':'none';
   sw.style.display=on?'flex':'none'; btn.textContent='Hands'; btn.title=on?'Hide the hands':'Show the hands'; btn.setAttribute('aria-pressed',String(on)); btn.style.background=on?'#e9c46a':''; btn.style.color=on?'#1b1405':''; btn.style.borderColor=on?'#e9c46a':''; ctrl.hidden=false; if(P3) P3.resize(g3()); return true;
 }
