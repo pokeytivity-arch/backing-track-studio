@@ -479,7 +479,7 @@ function tonesTest(){
   const ctl=$('#earCtl'), big=$('#earBig'), sub=$('#earSub'), msg=$('#earMsg'), opts=$('#earOpts'); $('#earKb').hidden=true;
   const sc=ttScale(); if(!sc){ big.textContent='Scales are loading…'; return; }
   const corner=el('button','e-btn ear-sp','🎹 Scale practice'); corner.type='button'; corner.title='Practise this scale in the Scale room';
-  corner.onclick=()=>{ const k=TT.key, t=TT.type; close(); try{ if(window.PRACTICE&&PRACTICE.openScale) PRACTICE.openScale(k,t); else if(window.PRACTICE) PRACTICE.open('scales'); }catch(_){} }; ov.appendChild(corner);
+  corner.onclick=()=>{ const k=TT.key, t=TT.type; close(); window.__prBack=()=>openTones(k,t); try{ if(window.PRACTICE&&PRACTICE.openScale) PRACTICE.openScale(k,t); else if(window.PRACTICE) PRACTICE.open('scales'); }catch(_){} }; ov.appendChild(corner);
   const name=()=>symk(TT.key)+' '+(sc.ty.id==='major'?'major':sc.ty.l);
   const mk=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
   const toneBtns=(on)=>{ opts.textContent=''; return sc.tones.map(x=>{ const b=el('button','e-opt tt'); b.type='button'; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=x.name; b.lastChild.textContent=x.deg; b.disabled=!on; opts.appendChild(b); return b; }); };
