@@ -102,12 +102,15 @@ function build(key,hand,type,oct,motion,alt){
     if(hand==='rh'||hand==='both'){ const m=r0+semi; st.rh=[m]; st.spell[m]=dsp; }
     if(hand!=='lh'){ if(rhF){ st.fing=(top?rhF[7]:rhF[deg])||''; if(oct===1) st.fing=rhF[i]||''; else if(fam.rhm){ const M=fam.rhm; st.fing=top?M.l:(i<7?M.f[i]:M.r[(i-7)%7]); } } else if(isMaj&&/^(C|F)$/.test(nm)&&!top) st.fing='1'; }
     if(hand!=='rh'&&lhF){ if(oct===1) st.lfing=lhF[i]||''; else if(lfam.lhm){ const M=lfam.lhm, q=Math.floor(i/7); st.lfing=top?M.l:q===0?M.f.split(' ')[i]:(q===oct-1&&M.z)?M.z.split(' ')[i%7]:M.r.split(' ')[i%7]; } }
+    /* chromatic scale (his fingering, the same in all 12 keys, reversed coming down; start anywhere): by key. Right hand up from C: 1 3 1 3 1 2 3 1 3 1 3 1 2; left hand up from C: 4 3 1 3 2 1 3 1 3 1 3 2 1; both carry on from D♭ as 3 1 */
+    if(T.id==='chr'){ const q=(p+semi)%12; if(hand!=='lh') st.fing=String(i===0&&q===0?1:CHR_R[q]); if(hand!=='rh') st.lfing=String(i===0&&q===0?4:CHR_L[q]); }
     const SF=SCALELIB.solfa[T.id]; if(SF){ st.sol=top?SF.up[0]:SF.up[deg]; if(SF.down) st.solD=top?SF.down[0]:SF.down[deg]; }
     steps.push(st); }
   if(T.id==='mel'&&!NOALT){ NOALT=true; try{ const nt=build(key,hand,'nat',oct,'similar',alt); steps.forEach((x,i)=>{ x.alt=nt[i]; }); } finally{ NOALT=false; } } /* melodic minor comes down as natural minor */
   return steps;
 }
 let NOALT=false;
+const CHR_R={0:2,1:3,2:1,3:3,4:1,5:2,6:3,7:1,8:3,9:1,10:3,11:1}, CHR_L={0:1,1:3,2:1,3:3,4:2,5:1,6:3,7:1,8:3,9:1,10:3,11:2};
 function acc(key){ const n=spellDeg(key,TYPES[0].d).slice(0,7); let sh=0,fl=0; n.forEach(x=>{ const a=x.slice(1); if(a[0]==='#') sh+=a.length; else if(a[0]==='b') fl+=a.length; }); return {sharps:sh,flats:fl}; }
 let ov=null;
 function open(){

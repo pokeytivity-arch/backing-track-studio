@@ -36,7 +36,7 @@ add('exotic','Synthetic modes: melodic minor (modes 2 to 7)','sc.lyd7','lyddom',
 add('exotic','Synthetic modes: melodic minor (modes 2 to 7)','sc.mixb6','mixb6','Mixolydian ♭6','1 2 3 4 5 b6 b7');
 add('exotic','Synthetic modes: melodic minor (modes 2 to 7)','sc.mm6','mm6','Locrian ♮2','1 2 b3 4 b5 b6 b7');
 add('exotic','Synthetic modes: melodic minor (modes 2 to 7)','sc.sloc','super','Super Locrian','1 b2 b3 b4 b5 b6 b7');
-add('exotic','Symmetrical scales','sc.chr','chr','Chromatic scale','1 b2 2 b3 3 4 #4 5 b6 6 b7 7',['C']);
+add('exotic','Symmetrical scales','sc.chr','chr','Chromatic scale','1 b2 2 b3 3 4 #4 5 b6 6 b7 7');   /* start anywhere: all 12 keys */
 add('exotic','Symmetrical scales','sc.wt','wt','Whole tone scale','1 2 3 #4 #5 b7',['C','Db']);
 add('exotic','Symmetrical scales','sc.oct1','oct1','Octatonic whole-half','1 2 b3 4 b5 b6 6 7',['C','Db','D']);
 add('exotic','Symmetrical scales','sc.oct2','oct2','Octatonic half-whole','1 b2 b3 3 #4 5 6 b7',['C','Db','D']);

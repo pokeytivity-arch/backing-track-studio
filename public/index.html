@@ -523,7 +523,7 @@ audio{width:100%}
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
-      <button class="tog" id="askClassBtn" title="Talk about these chords with your coach">🎓 Ask Class</button>
+      <button class="tog" id="askClassBtn" title="Talk about these chords with your coach">🎓 Ask Dr. Onye</button>
       <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
@@ -702,7 +702,7 @@ audio{width:100%}
           <label><select id="txBpb"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option></select> beats</label>
           <button class="btn sm" id="txBeat1" title="Press at the first beat of a bar while the recording plays">Beat 1 is here</button>
         </div>
-        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask Class about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
+        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask Dr. Onye about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
         <h3 style="margin:14px 0 4px;font:700 13px var(--body)">Your saved transcriptions</h3>
         <div id="txLib"></div>
 
@@ -2725,7 +2725,7 @@ const MENUS=[
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
     {label:'Class…',key:'A',run:()=>SUITE.go('class')},
-    {label:'Ask Class about this chord…',run:()=>askClassFromStudio()},
+    {label:'Ask Dr. Onye about this chord…',run:()=>askClassFromStudio()},
     ]},
   {label:'Window',items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
@@ -3073,14 +3073,14 @@ init();
 <script src="voicings.js" defer></script>
 <script src="transcribe.js?v=3" defer></script>
 <script src="suite.js?v=7" defer></script>
-<script src="layout3.js?v=4" defer></script>
-<script src="class.js?v=z8" defer></script>
+<script src="layout3.js?v=5" defer></script>
+<script src="class.js?v=z9" defer></script>
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zz13" defer></script>
 <script src="hands.js?v=67" defer></script>
-<script src="practice.js?v=f4" defer></script>
-<script src="scale-library.js" defer></script>
-<script src="scales.js?v=9" defer></script>
+<script src="practice.js?v=f5" defer></script>
+<script src="scale-library.js?v=2" defer></script>
+<script src="scales.js?v=10" defer></script>
 <script src="check.js" defer></script>
 <script src="soundcheck.js" defer></script>
 <script src="rotate.js" defer></script>

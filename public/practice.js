@@ -947,11 +947,41 @@ function handFit(s){ if(!s) return s; const fit=(a,up)=>{ if(!a||a.length<2) ret
   if(!o.lfm&&lh&&lh.length>=2&&lh.length<=3){ o.lfm={}; const L=lh.length===2?[5,1]:(lh[2]-lh[1]<=2?[5,2,1]:[5,3,1]); lh.forEach((m,i)=>o.lfm[m]=L[i]); }
   if(o.rfm) o.nofing=false; return o; }
 function invBtn(){ const b=document.getElementById('prInv'); if(!b) return; const ok=steps.some(x=>x.tri), s=b.querySelector('select'); if(s) s.disabled=!ok; b.style.opacity=ok?'':'.45'; b.title=ok?'Play the triads in root position, first or second inversion':'Inversions work on triads only'; }
+/* ---------- left-hand bass fingering across a progression (Dr. Onye's logic). Only where the left hand plays one bass note per chord.
+   He looks ahead at the whole progression first, then fingers the bass:
+   - down a fifth: 1-5. A 2-5-1 or cyclical bass (down a fifth, up a fourth): 1-5-2 or 1-5-1 (1 when the cycle carries on down another fifth).
+   - up a fourth: 5-2 or 4-1. 5-2 when the next bass falls below where it started (a 2-5-1); 4-1 when the progression ends there,
+     or when the next bass goes up another fourth (the thumb stretches to play it).
+   - stepwise down the scale: 1 2 3 4 5, or 1 2 3 1 2 3 4 5 for a longer run. Stepwise up: 5 4 3 2 1, or 5 4 3 2 1 3 2 1.
+   - half steps: the chromatic fingering (left hand, by key: C 1, D♭ 3, D 1, E♭ 3, E 2, F 1, F♯ 3, G 1, A♭ 3, A 1, B♭ 3, B 2; a run up from C starts on 4, a run down to C ends on 4).
+   All of it holds on the black keys too (B♭ E♭ A♭ D♭ G♭). ---------- */
+const CHRL={0:1,1:3,2:1,3:3,4:2,5:1,6:3,7:1,8:3,9:1,10:3,11:2};
+function bassFing(st){
+  const b=st.map(s=>s&&s.lh&&s.lh.length===1?s.lh[0]:null), n=b.length, F=new Array(n).fill(null), pc=m=>((m%12)+12)%12;
+  const d=i=>(i+1<n&&b[i]!=null&&b[i+1]!=null)?b[i+1]-b[i]:null;
+  /* stepwise runs (half and whole steps, one direction): with a whole step it is the scale fingering, all half steps the chromatic one */
+  let i=0; while(i<n-1){ const d0=d(i); if(d0==null||Math.abs(d0)>2||d0===0){ i++; continue; } const sg=Math.sign(d0); let j=i; while(j<n-1){ const dj=d(j); if(dj==null||dj===0||Math.abs(dj)>2||Math.sign(dj)!==sg) break; j++; }
+    const idx=[]; for(let k=i;k<=j;k++) idx.push(k); const chrom=idx.slice(0,-1).every(k=>Math.abs(d(k))===1);
+    if(chrom){ idx.forEach(k=>{ F[k]=CHRL[pc(b[k])]; }); if(sg>0&&pc(b[i])===0) F[i]=4; if(sg<0&&pc(b[j])===0) F[j]=4; }
+    else { const L=idx.length, seq=[]; if(sg<0){ let r=L; while(r>5){ seq.push(1,2,3); r-=3; } for(let q=1;q<=r;q++) seq.push(q); } else { if(L<=5) for(let q=5;q>5-L;q--) seq.push(q); else { seq.push(5,4,3,2,1); while(seq.length<L) seq.push(3,2,1); } }
+      idx.forEach((k,x)=>{ F[k]=seq[x]; }); }
+    i=j; }
+  /* leaps of a fourth and a fifth */
+  for(let k=0;k<n-1;k++){ const dk=d(k); if(dk==null) continue;
+    if(dk===-7){ if(F[k]==null) F[k]=1; if(F[k+1]==null) F[k+1]=5;
+      if(d(k+1)===5&&F[k+2]==null) F[k+2]=d(k+2)===-7?1:2; }
+    else if(dk===5){ const dn=d(k+1), end=dn==null, below=dn!=null&&b[k+2]<b[k];
+      if(F[k]!=null&&F[k+1]!=null) continue;
+      if(below){ if(F[k]==null) F[k]=5; if(F[k+1]==null) F[k+1]=2; }
+      else if(end||dn===5){ if(F[k]==null) F[k]=4; if(F[k+1]==null) F[k+1]=1; if(dn===5&&F[k+2]==null) F[k+2]=1; }
+      else { if(F[k]==null) F[k]=5; if(F[k+1]==null) F[k+1]=2; } } }
+  return st.map((s,k)=>F[k]==null?s:Object.assign({},s,{lfm:{[b[k]]:F[k]}}));
+}
 function loadChords(text,quiet){
   clr(); st.chords=String(text||'').trim(); save();
   const list=normChords(st.chords).slice(0,16); const out=(window.CLASS&&CLASS.stepsFrom)?CLASS.stepsFrom(list):[];
   if(!out.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5.':''; chordTip([]); return; }
-  steps=out.map(x=>handFit(invert(x))); steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(list);
+  steps=bassFing(out.map(x=>handFit(invert(x)))); steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(list.length>out.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(list);
 }
 /* spacebar in the practice room: caught first (capture phase) so the Studio behind never starts its backing track */
 window.addEventListener('keydown',e=>{ if(!ov||ov.hidden||kind!=='scales'||e.ctrlKey||e.metaKey||e.altKey||e.code==='Space'||e.key===' ') return;

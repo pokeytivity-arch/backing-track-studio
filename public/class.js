@@ -233,7 +233,7 @@ function renderChat(extra){
       const l=document.createElement('button'); l.type='button'; l.className='cl-act'; l.textContent='🔊 Listen'; l.onclick=()=>speak(sp.text,l); row.appendChild(l);
       if(sp.board||sp.keys){ const w=document.createElement('button'); w.type='button'; w.className='cl-act'; w.textContent='📋 Show on the board'; w.onclick=()=>applyBoard(sp,true); row.appendChild(w); }
       sp.tracks.forEach(tk=>{ const lb=document.createElement('button'); lb.type='button'; lb.className='cl-act pri'; const kn=T_KEYS[String(tk.transpose)]||''; lb.textContent='🎹 Practice in the Studio · '+tk.title+(kn?' ('+kn+')':'');
-        lb.onclick=()=>{ loadTrack(tk); S.flatsHint=tk.flats; rebuild(); SUITE.go('studio'); toast('Loaded. Press Play to practice. Use “Ask Class” if you want to talk about the chords.'); }; row.appendChild(lb); });
+        lb.onclick=()=>{ loadTrack(tk); S.flatsHint=tk.flats; rebuild(); SUITE.go('studio'); toast('Loaded. Press Play to practice. Use “Ask Dr. Onye” if you want to talk about the chords.'); }; row.appendChild(lb); });
       d.appendChild(row); }
     log.appendChild(d); });
   if(extra){ const d=document.createElement('div'); d.className='t-msg '+extra.cls; d.textContent=extra.text; log.appendChild(d); }
