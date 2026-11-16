@@ -1806,11 +1806,11 @@ function renderMix(){
     const mb=document.createElement('button'); mb.className='mute'; mb.textContent='M'; mb.setAttribute('aria-pressed',m.mute); mb.setAttribute('aria-label',`Mute ${names[n][0]}`);
     const r=document.createElement('input'); r.type='range'; r.min=0; r.max=1.2; r.step=0.01; r.value=m.vol; r.id='vol-'+n; r.setAttribute('aria-label',`${names[n][0]} volume`);
     const val=document.createElement('span'); val.className='val'; val.textContent=Math.round(m.vol*100);
-    mb.onclick=()=>{ m.mute=!m.mute; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); };
+    mb.onclick=()=>{ m.mute=!m.mute; if(m.mute) m.solo=false; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); };
     r.oninput=()=>{ m.vol=+r.value; val.textContent=Math.round(m.vol*100); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); };
     let sb;
     { sb=document.createElement('button'); sb.className='mute solo'; sb.textContent='S'; sb.setAttribute('aria-pressed',!!m.solo); sb.setAttribute('aria-label',`Solo ${names[n][0]}`);
-      sb.onclick=()=>{ m.solo=!m.solo; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); }; }
+      sb.onclick=()=>{ m.solo=!m.solo; if(m.solo) m.mute=false; renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); saveDraft(); }; }
     if(S.sm==='scale'&&n!=='drums'&&n!=='click'){ row.classList.add('off'); [mb,r].forEach(x=>{ x.disabled=true; }); if(sb.tagName==='BUTTON') sb.disabled=true; nm.appendChild(Object.assign(document.createElement('small'),{textContent:'locked in scale mode'})); }
     const led=document.createElement('i'); led.className='ms-led'+((m.mute||(anySolo&&!m.solo))?'':' on'); led.title=(m.mute||(anySolo&&!m.solo))?names[n][0]+' is off':names[n][0]+' is playing'; nm.prepend(led); led.style.cssText='display:inline-block;margin-right:7px;vertical-align:middle';
     row.append(nm,mb,sb,r,val); w.appendChild(row); });
@@ -3078,7 +3078,7 @@ init();
 <script src="transcribe.js?v=3" defer></script>
 <script src="suite.js?v=7" defer></script>
 <script src="layout3.js?v=5" defer></script>
-<script src="class.js?v=z11" defer></script>
+<script src="class.js?v=z12" defer></script>
 <script src="progress.js" defer></script>
 <script src="ear.js?v=zz14" defer></script>
 <script src="hands.js?v=67" defer></script>

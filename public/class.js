@@ -103,8 +103,9 @@ function applyVol(){ try{ if(E&&E.ch&&E.ch.keys){ E.ch.keys.g.gain.value=aud('ke
 function msUI(k,o){ o=o||{}; const w=document.createElement('div'); w.className='ms-w'+(o.cls?' '+o.cls:''); w.innerHTML='<i class="ms-led"></i><button type="button" class="ms-b ms-m">M</button><button type="button" class="ms-b ms-s">S</button>';
   const [led,m,sb]=w.children, nm=o.name||k; m.title='Mute '+nm; sb.title='Solo '+nm; m.setAttribute('aria-label','Mute '+nm); sb.setAttribute('aria-label','Solo '+nm);
   const sync=()=>{ m.setAttribute('aria-pressed',String(!!MS.mute[k])); sb.setAttribute('aria-pressed',String(!!MS.solo[k])); const on=aud(k); led.classList.toggle('on',on); led.title=on?nm+' is playing':nm+' is off'; };
-  m.onclick=e=>{ e.stopPropagation(); MS.mute[k]=!MS.mute[k]; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
-  sb.onclick=e=>{ e.stopPropagation(); MS.solo[k]=!MS.solo[k]; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
+  /* a channel is either muted or soloed, never both: pressing one releases the other */
+  m.onclick=e=>{ e.stopPropagation(); MS.mute[k]=!MS.mute[k]; if(MS.mute[k]) MS.solo[k]=false; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
+  sb.onclick=e=>{ e.stopPropagation(); MS.solo[k]=!MS.solo[k]; if(MS.solo[k]) MS.mute[k]=false; applyVol(); msL.forEach(f=>{ try{ f(); }catch(_){} }); };
   [m,sb].forEach(b=>{ b.addEventListener('pointerdown',e=>e.stopPropagation()); }); msL.add(sync); sync(); return w; }
 { const c=document.createElement('style'); c.textContent=`
 .ms-w{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
