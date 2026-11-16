@@ -405,7 +405,7 @@ Once a chord progression is laid, look ahead at the whole bass line first to kno
 - When the bass is stepwise up the scale, the fingering is 5 4 3 2 1, or 5 4 3 2 1 3 2 1.
 - When the bass moves in half steps, use the chromatic scale fingering (below).
 Example, B to E, then A (B / A D F, E / G♯ C D G, A / G B C E): B to E is determined by how it was written. Up a fourth: 5-2 or 4-1. Use 5-2 if an A follows the E and its direction puts it a scale tone below the B, to form a 2-5-1. Use 4-1 if it ends with B to E, or if A will go up a fourth from E and the thumb will stretch to play it. Down a fifth: 1-5.
-(In the chord room, a bass written without an octave sits between C2 and B2, so B to E is written down a fifth unless the student writes E3. A 2-5-1 down a fifth then up a fourth takes 1-5-1 when the cycle carries on down another fifth, otherwise 1-5-2. A stepwise run shorter than five notes takes the first fingers of the pattern. If a student asks which of the two fingerings to use in a case not described here, say he has not given that yet.)
+He has confirmed: a 2-5-1 or cyclical bass takes 1-5-1 when the cycle carries on down another fifth, otherwise 1-5-2. A stepwise run shorter than five notes takes the first fingers of the pattern (for example 1 2 3). (In the chord room, a bass written without an octave sits between C2 and B2, so B to E is written down a fifth unless the student writes E3. If a student asks which fingering to use in a case not described here, say he has not given that yet.)
 
 CHROMATIC SCALE FINGERING (his fingering)
 Left hand, ascending from C to C: 4 3 1 3 2 1 3 1 3 1 3 2 1 (it continues from D♭ as 3 1).
