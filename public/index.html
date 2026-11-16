@@ -4,7 +4,7 @@
 <script>try{if(navigator.audioSession&&(navigator.maxTouchPoints||0)>0)navigator.audioSession.type='playback';}catch(e){}document.documentElement.classList.add('ps-boot');setTimeout(function(){document.documentElement.classList.remove('ps-boot')},8000);</script>
 <style>html.ps-boot body{visibility:hidden}html.ps-boot{background:linear-gradient(180deg,rgba(5,5,5,.80),rgba(5,5,5,.58) 45%,rgba(5,5,5,.28)),url(hub-bg.webp) center/cover no-repeat #0a0e17;min-height:100%}html.ps-boot #suiteHub.on{visibility:visible}</style>
 <style>/* one back arrow for the whole suite: the one in the menu bar */ #prX,#earX,#vcRoom .vc-x,#clBack,#chBk,#acBack,#stBack,#txRoomBack,.room-back,#prRoom .p-bk{display:none!important}</style>
-<!-- first visit of the day: the HearandPlay logo above "Built by a MUSICIAN, for MUSICIANS." in the dark, a flashlight sweeps across it, the letters dissolve and fall away, then the suite fades in -->
+<!-- first visit of the day: the HearandPlay logo above "Built by MUSICIANS, for MUSICIANS." in the dark, a flashlight sweeps across it, the letters dissolve and fall away, then the suite fades in -->
 <style>
 html.ps-intro,html.ps-intro body{background:#000!important}
 html.ps-intro body{visibility:hidden}
@@ -36,8 +36,8 @@ html.ps-intro #suiteHub,html.ps-intro #suiteHub.on{visibility:hidden!important}
     H.classList.remove('ps-intro'); var hub=document.getElementById('suiteHub'); if(hub){ hub.classList.add('ps-fadein'); setTimeout(function(){ hub.classList.remove('ps-fadein'); },1200); } };
   setTimeout(finish,15000);   /* never hold the suite back for long */
   var run=function(){ var o=document.createElement('div'); o.id='psIntro'; o.setAttribute('role','presentation'); o.title='Click to skip';
-    o.innerHTML='<div class="glow"></div><div class="col"><img class="lg" src="hp-logo.png" alt="HearandPlay"><div class="t" aria-label="Built by a MUSICIAN, for MUSICIANS."><div class="base" aria-hidden="true"></div><div class="beam" aria-hidden="true"></div></div></div>'; document.body.appendChild(o);
-    var t=o.querySelector('.t'), base=o.querySelector('.base'), beam=o.querySelector('.beam'), g=o.querySelector('.glow'), txt='Built by a MUSICIAN, for MUSICIANS.';
+    o.innerHTML='<div class="glow"></div><div class="col"><img class="lg" src="hp-logo.png" alt="HearandPlay"><div class="t" aria-label="Built by MUSICIANS, for MUSICIANS."><div class="base" aria-hidden="true"></div><div class="beam" aria-hidden="true"></div></div></div>'; document.body.appendChild(o);
+    var t=o.querySelector('.t'), base=o.querySelector('.base'), beam=o.querySelector('.beam'), g=o.querySelector('.glow'), txt='Built by MUSICIANS, for MUSICIANS.';
     /* two copies in the same place: the dim letters (which later fall) and the beam layer the flashlight lights up */
     txt.split(/(\s+)/).forEach(function(w){ if(w===' '&&/,$/.test(beam.textContent)){ beam.appendChild(document.createElement('br')); base.appendChild(document.createElement('br')); return; }   /* line two starts after the comma */
       var sp2=document.createElement('span'); sp2.textContent=w; if(/[A-Z]{2}/.test(w)) sp2.style.fontWeight='900'; beam.appendChild(sp2);
@@ -459,7 +459,7 @@ audio{width:100%}
 <script>try{var t=localStorage.getItem('ps-theme');if(t&&t!=='blue')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="hub.css">
-<link rel="stylesheet" href="mobile.css?v=ag">
+<link rel="stylesheet" href="mobile.css?v=ah">
 </head>
 <body>
 <div class="wrap">
@@ -523,7 +523,7 @@ audio{width:100%}
       <button class="tog" id="projBtn" aria-pressed="false">Projector view</button>
       <button class="tog" id="kbdBtn" aria-pressed="false">🎹 Keyboard</button>
       <button class="tog humjump" id="humJump">🎤 Hum a bass line</button>
-      <button class="tog" id="askClassBtn" title="Talk about these chords with your coach">🎓 Ask Dr. Onye</button>
+      <button class="tog" id="askClassBtn" title="Talk about these chords with your coach">🎓 Ask HearandPlay</button>
       <span class="tip">Space bar plays and pauses</span>
     </div>
   </section>
@@ -677,7 +677,7 @@ audio{width:100%}
           <button class="btn pri" id="txFileBtn">Upload file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.oga,.aac,.flac,.caf,.aif,.aiff,.wma,.mp4,.m4v,.mov,.webm,.mkv,.3gp,.mpg,.mpeg,.avi" hidden>
           <button class="btn rec" id="txRec">● Record with the microphone</button>
         </div>
-          <p class="help txfine">Upload an audio or video file (mp3, m4a, wav, ogg, mp4, mov) or record with the microphone. Dr. Onye finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.</p>
+          <p class="help txfine">Upload an audio or video file (mp3, m4a, wav, ogg, mp4, mov) or record with the microphone. HearandPlay finds the notes and drops them onto the keyboard in time with the recording. Works best with a clear piano part. It reads the first five minutes. The recording is sent to a piano transcription service to be analyzed and is not kept.</p>
           <h3 class="txmt">Playback and display</h3>
         <div class="txrow">
           <label>Speed <span class="stp"><button type="button" id="txSpDn" aria-label="Slower">−</button><output id="txSpeed">100%</output><button type="button" id="txSpUp" aria-label="Faster">+</button></span></label>
@@ -702,7 +702,7 @@ audio{width:100%}
           <label><select id="txBpb"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="6">6</option></select> beats</label>
           <button class="btn sm" id="txBeat1" title="Press at the first beat of a bar while the recording plays">Beat 1 is here</button>
         </div>
-        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask Dr. Onye about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
+        <div class="txrow"><button class="btn" id="txMidi" disabled>Save notes as a MIDI file</button><button class="btn" id="txWav" disabled>Save clean piano audio (WAV)</button><button class="btn pri" id="txAsk" disabled>🎓 Ask HearandPlay about this</button><span class="help">The tuning reference and transpose apply to the notes you hear, the keyboard and the MIDI file, not to the original recording.</span></div>
         <h3 style="margin:14px 0 4px;font:700 13px var(--body)">Your saved transcriptions</h3>
         <div id="txLib"></div>
 
@@ -2729,7 +2729,7 @@ const MENUS=[
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
     {label:'Class…',key:'A',run:()=>SUITE.go('class')},
-    {label:'Ask Dr. Onye about this chord…',run:()=>askClassFromStudio()},
+    {label:'Ask HearandPlay about this chord…',run:()=>askClassFromStudio()},
     ]},
   {label:'Window',items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
@@ -3078,27 +3078,27 @@ function init(){
 }
 init();
 </script>
-<script src="auth.js" defer></script>
+<script src="auth.js?v=h1" defer></script>
 <script src="assign.js" defer></script>
-<script src="voicings.js" defer></script>
+<script src="voicings.js?v=h1" defer></script>
 <script src="transcribe.js?v=3" defer></script>
-<script src="suite.js?v=8" defer></script>
-<script src="layout3.js?v=5" defer></script>
-<script src="class.js?v=z14" defer></script>
-<script src="progress.js" defer></script>
-<script src="ear.js?v=zz15" defer></script>
+<script src="suite.js?v=9" defer></script>
+<script src="layout3.js?v=6" defer></script>
+<script src="class.js?v=z15" defer></script>
+<script src="progress.js?v=h1" defer></script>
+<script src="ear.js?v=zz16" defer></script>
 <script src="hands.js?v=69" defer></script>
-<script src="practice.js?v=j13" defer></script>
-<script src="scale-library.js?v=4" defer></script>
+<script src="practice.js?v=j14" defer></script>
+<script src="scale-library.js?v=5" defer></script>
 <script src="scales.js?v=12" defer></script>
-<script src="check.js" defer></script>
+<script src="check.js?v=h1" defer></script>
 <script src="soundcheck.js" defer></script>
 <script src="rotate.js" defer></script>
 <script src="gate.js"></script>
 <script src="themes.js" defer></script>
 <script src="account.js" defer></script>
-<script src="challenge.js" defer></script>
-<script src="tour.js" defer></script>
+<script src="challenge.js?v=h1" defer></script>
+<script src="tour.js?v=h1" defer></script>
 <script src="install.js?v=2" defer></script>
 <script>
 /* keep each slider's filled part in step with its handle */

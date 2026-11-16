@@ -162,7 +162,7 @@ function note(t){ msg=t; if(room&&room.classList.contains('on')) render(); }
 function mount(){ if(room) return; room=el('div'); room.id='chRoom'; document.body.appendChild(room); }
 async function open(){
   mount(); room.classList.add('on'); room.innerHTML='<div class="w"><p class="mut">Loading…</p></div>';
-  try{ const r=await fetch('challenge-plans.json'); PLANS=await r.json(); }catch(_){ PLANS=[]; }
+  try{ const r=await fetch('challenge-plans.json?v=h1'); PLANS=await r.json(); }catch(_){ PLANS=[]; }
   let ok=await loadAcct();
   if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||(window.ACCOUNT&&ACCOUNT.name())||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); ok=true; }
   view=ok?'home':'auth'; render();
@@ -281,7 +281,7 @@ function certDraw(cv,name,pct,plan,start,id){
   const end=addDays(start,89), f=d=>d.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
   g.font='24px system-ui,sans-serif'; g.fillText(f(mid(start))+'  to  '+f(end),W/2,1000);
   g.textAlign='left'; g.font='20px system-ui,sans-serif'; g.fillStyle='#8f9bb8'; g.fillText('Certificate '+id,110,1050); g.textAlign='right'; g.fillText('hearandplay.app',W-110,1050);
-  g.textAlign='center'; g.fillStyle=gold; g.font='italic 40px Georgia,serif'; g.fillText('Dr. Onye',W-330,1000); g.fillRect(W-470,1010,280,2);
+  g.textAlign='center'; g.fillStyle=gold; g.font='italic 40px Georgia,serif'; g.fillText('HearandPlay',W-330,1000); g.fillRect(W-470,1010,280,2);
 }
 /* --- plan builder --- */
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -330,7 +330,7 @@ async function teachBox(box){
     box.appendChild(b);
   }
 }
-/* --- practice sheet: notes in any key, hear them, show them on the Class keyboard, ask Dr. Onye --- */
+/* --- practice sheet: notes in any key, hear them, show them on the Class keyboard, ask HearandPlay --- */
 let keyPick='C';
 function midiOf(name,base){ let m=base+pcOf(name); return m; }
 function stepsFrom(list,mode){ // list of {name,notes:[names]}
@@ -346,13 +346,13 @@ function sheet(it){
     const out=el('div'); m.appendChild(out);
     if(kind==='scale'){ const ns=notesOf(keyPick,it.f); out.innerHTML=ns.concat([ns[0]]).map(n=>'<span class="chip">'+n+'</span>').join('')+'<p style="color:var(--muted);font-size:13px">Formula: '+esc(it.f.replace(/b/g,'♭').replace(/#/g,'♯'))+'</p>'; list=ns.concat([ns[0]]).map(n=>({name:n,notes:[n]})); mode='note'; }
     else if(kind==='chord'){ const ns=notesOf(keyPick,it.f); out.innerHTML='<div style="font:700 20px var(--body);margin-bottom:6px">'+prettyKey(keyPick)+esc(it.sfx)+'</div>'+ns.map(n=>'<span class="chip">'+n+'</span>').join(''); list=[{name:prettyKey(keyPick)+it.sfx,notes:ns}]; mode='chord'; }
-    else if(kind==='prog'){ const roots=it.list.map(x=>spellTok(keyPick,x[0])); out.innerHTML=roots.map(n=>'<span class="chip">'+n+'</span>').join('<span style="color:var(--muted)">→</span>')+'<p style="color:var(--muted);font-size:13px">The numbers of this progression as root notes in the key of '+prettyKey(keyPick)+(it.minor?' minor':'')+'. Ask Dr. Onye how to play it.</p>'; list=roots.map(n=>({name:n,notes:[n]})); mode='note'; }
+    else if(kind==='prog'){ const roots=it.list.map(x=>spellTok(keyPick,x[0])); out.innerHTML=roots.map(n=>'<span class="chip">'+n+'</span>').join('<span style="color:var(--muted)">→</span>')+'<p style="color:var(--muted);font-size:13px">The numbers of this progression as root notes in the key of '+prettyKey(keyPick)+(it.minor?' minor':'')+'. Ask HearandPlay how to play it.</p>'; list=roots.map(n=>({name:n,notes:[n]})); mode='note'; }
     else if(kind==='drop2'){ const T=[['Major seventh','1 3 5 7','maj7'],['Dominant seventh','1 3 5 b7','7'],['Minor seventh','1 b3 5 b7','m7'],['Half-diminished','1 b3 b5 b7','m7♭5'],['Diminished seventh','1 b3 b5 bb7','dim7']]; list=T.map(([n,f,s])=>{ const ns=notesOf(keyPick,f); return {name:prettyKey(keyPick)+s,notes:[ns[2],ns[0],ns[1],ns[3]]}; }); out.innerHTML='<p style="color:var(--muted);font-size:13px">Drop-2: take the close-position chord and drop its second note from the top down an octave.</p>'+list.map(c=>'<div style="margin:6px 0"><b>'+esc(c.name)+'</b> &nbsp; '+c.notes.map(n=>'<span class="chip">'+n+'</span>').join('')+'</div>').join(''); mode='chord'; }
-    else { out.innerHTML='<p>This technique is taught by Dr. Onye in the Class. Tap below and Dr. Onye will walk you through it.</p>'; }
+    else { out.innerHTML='<p>This technique is taught by HearandPlay in the Class. Tap below and HearandPlay will walk you through it.</p>'; }
     const btns=el('div'); btns.style.marginTop='12px';
     if(list&&window.CLASS&&CLASS.sound){ const h=el('button','','▶ Hear it'); h.onclick=()=>{ list.forEach((x,i)=>{ const st=stepsFrom([x],mode)[0]; (st.rh||[]).forEach(mi=>CLASS.sound(mi,mode==='chord'?1.2:.5,.8,i*(mode==='chord'?1.0:0.42))); }); }; btns.appendChild(h); }
     if(list&&window.CLASS&&CLASS.loadSteps){ const k=el('button','','Show on keyboard'); k.onclick=()=>{ shade.classList.remove('on'); room.classList.remove('on'); if(window.SUITE) SUITE.go('class'); setTimeout(()=>CLASS.loadSteps(it.name+' in '+prettyKey(keyPick),stepsFrom(list,mode)),400); }; btns.appendChild(k); }
-    const ask=el('button','pri','Ask Dr. Onye about this'); ask.onclick=()=>{ shade.classList.remove('on'); room.classList.remove('on'); if(window.SUITE) SUITE.go('class'); setTimeout(()=>{ if(window.CLASS&&CLASS.ask) CLASS.ask(it.q||('Teach me '+it.name+' and how to practice it.')); },500); }; btns.appendChild(ask);
+    const ask=el('button','pri','Ask HearandPlay about this'); ask.onclick=()=>{ shade.classList.remove('on'); room.classList.remove('on'); if(window.SUITE) SUITE.go('class'); setTimeout(()=>{ if(window.CLASS&&CLASS.ask) CLASS.ask(it.q||('Teach me '+it.name+' and how to practice it.')); },500); }; btns.appendChild(ask);
     m.appendChild(btns); m.querySelector('#x').onclick=()=>shade.classList.remove('on'); };
   draw();
 }

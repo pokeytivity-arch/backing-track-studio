@@ -1,4 +1,4 @@
-/* scale-library.js: the scales Dr. Onye teaches, in one place. Used by the Scale room and the 90 Day plan builder.
+/* scale-library.js: the scales HearandPlay teaches, in one place. Used by the Scale room and the 90 Day plan builder.
    deg = scale degrees against the major scale (b = flat, # = sharp). keys = the only keys this scale is taught in (omitted = all keys). */
 (function(){
 'use strict';

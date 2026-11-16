@@ -426,7 +426,7 @@ function normChords(text){
 }
 
 /* ---------- keyboard ---------- */
-/* Letters, Solfa or Numbers. Solfa and numbers only exist for the scales Dr. Onye has given syllables for; the numbers come from the syllables. */
+/* Letters, Solfa or Numbers. Solfa and numbers only exist for the scales HearandPlay has given syllables for; the numbers come from the syllables. */
 const hasSol=()=>!!(window.SCALELIB&&SCALELIB.solfa[st.type]);
 const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
 const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
@@ -665,7 +665,7 @@ function pairStrip(title,src,pair){
   new MutationObserver(sync).observe(src,{attributes:true,subtree:true,attributeFilter:['aria-pressed','disabled']});
   return strip;
 }
-/* the console box: channel strips on top; a bar along the bottom with the power switch, the memory banks, Studio and Ask Dr. Onye.
+/* the console box: channel strips on top; a bar along the bottom with the power switch, the memory banks, Studio and Ask HearandPlay.
    Power off folds the strips away and shows a one-line summary instead. */
 let MAXI=false, PHX=0; { let ft=0; const refit=()=>{ clearTimeout(ft); ft=setTimeout(()=>{ if(ov&&!ov.hidden&&kind==='scales') phoneFit(); },350); }; window.addEventListener('resize',refit); try{ new MutationObserver(refit).observe(document.documentElement,{attributes:true,attributeFilter:['class']}); }catch(_){} }
 /* phone: use the free space between the console and the keyboard to make the console's buttons and faders taller */
@@ -681,7 +681,7 @@ function conSum(){ const sm=document.querySelector('#prRoom .p-sum'); if(!sm) re
 function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Power</span>'; pw.classList.add('p-pwr');
   const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Power: on. Click to switch the console off':'Power: off. Click to switch the console on'; pw.classList.toggle('on',on); }; ps();
   pw.onclick=()=>{ const on=!conOn(); try{ localStorage.setItem('pr-con',on?'1':'0'); }catch(_){} const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.toggle('off',!on); ps(); conSum(); };
-  const sb=el('button','p-ubtn p-eart','Ear training'); sb.type='button'; sb.title='Scale recognition: hear this scale, then name its tones'; sb.onclick=()=>{ const k=st.key, t=st.type; close(); window.__earBack=()=>openScale(k,t); try{ if(window.EAR&&EAR.openTones) EAR.openTones(k,t); }catch(_){} };   /* replaces the Studio button */ const stb=$('#prStudio'); if(stb){ stb.hidden=false; stb.className='p-ubtn p-stud'; stb.textContent='Studio'; }   /* Practice in Studio, back beside Ear training */ if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Dr. Onye'; }
+  const sb=el('button','p-ubtn p-eart','Ear training'); sb.type='button'; sb.title='Scale recognition: hear this scale, then name its tones'; sb.onclick=()=>{ const k=st.key, t=st.type; close(); window.__earBack=()=>openScale(k,t); try{ if(window.EAR&&EAR.openTones) EAR.openTones(k,t); }catch(_){} };   /* replaces the Studio button */ const stb=$('#prStudio'); if(stb){ stb.hidden=false; stb.className='p-ubtn p-stud'; stb.textContent='Studio'; }   /* Practice in Studio, back beside Ear training */ if(ask){ ask.className='p-ubtn'; ask.textContent='Ask HearandPlay'; }
   const fb=el('button','p-pow p-feedb'); fb.type='button'; fb.innerHTML='<i class="p-led"></i><span>Feed</span>'; fb.onclick=feedDlg; const sp=el('span',MQM.matches&&!MAXI?'p-sp p-dv':'p-sp'); bar.append(pw,bankBar(),sp,fb); setTimeout(feedSync,0);
   /* phone: the console can be opened full screen to set it, then closed */
   if(MQM.matches){ const mb=el('button','p-maxb'); mb.type='button'; mb.textContent=MAXI?'Done':'⤢'; mb.title=MAXI?'Close the full-screen console':'Open the console full screen'; mb.setAttribute('aria-label',mb.title); mb.onclick=()=>{ if(playing) return; MAXI=!MAXI; render(); }; setTimeout(()=>bar.appendChild(mb),0); } if(stb) bar.appendChild(stb); if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
@@ -794,9 +794,9 @@ function levels(HH){
     strip.addEventListener('keydown',e=>{ const d={ArrowUp:.05,ArrowRight:.05,ArrowDown:-.05,ArrowLeft:-.05}[e.key]; if(d){ e.preventDefault(); e.stopPropagation(); vset(k,vget(k)+d); } });
     return strip; });
 }
-function fillStrip(HH){ const H=HH||100, strip=el('div','p-ch p-lvl p-fill'); strip.dataset.ch='Fills'; strip.setAttribute('role','slider'); strip.setAttribute('aria-label','Fills: how much Dr. Onye adds'); strip.setAttribute('aria-valuemin','0'); strip.setAttribute('aria-valuemax','100');
+function fillStrip(HH){ const H=HH||100, strip=el('div','p-ch p-lvl p-fill'); strip.dataset.ch='Fills'; strip.setAttribute('role','slider'); strip.setAttribute('aria-label','Fills: how much HearandPlay adds'); strip.setAttribute('aria-valuemin','0'); strip.setAttribute('aria-valuemax','100');
   const can=st.cmode==='canvas'&&st.vh==='v'&&(st.cg!==false||!!st.bline||!!st.riff); strip.tabIndex=can?0:-1;
-  strip.title=can?'Fills: how much Dr. Onye adds to the music. Down: plain chords. Up: grace notes, bass lines and riffs more often, one at a time':'Fills work with Chords and at least one of Grace notes, Bass line or Riffs';
+  strip.title=can?'Fills: how much HearandPlay adds to the music. Down: plain chords. Up: grace notes, bass lines and riffs more often, one at a time':'Fills work with Chords and at least one of Grace notes, Bass line or Riffs';
   if(!can){ strip.classList.add('off'); strip.setAttribute('aria-disabled','true'); }
   strip.appendChild(el('div','p-cht','Fills')); const fz=el('div','p-fz'); fz.style.height=(H+18)+'px'; fz.appendChild(el('div','p-tr'));
   [0,.25,.5,.75,1].forEach(f=>fz.appendChild(Object.assign(el('i','p-tick'),{style:'top:'+(9+(1-f)*H)+'px'})));
@@ -849,12 +849,12 @@ function render(){
     ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion!=='contrary'||mo4>=3?[{v:'3',t:'Three octaves'}]:[]).concat(mo4>=4?[{v:'4',t:'Four octaves'}]:[]),String(st.oct||1),v=>{ if(rhyN()){ const r={1:'q',2:'e',3:'t',4:'s'}[+v]; if(r&&!rhyOK(r)){ st.rhy=r; save(); render(); return; } } st.oct=+v; save(); loadScale(); }));
     ctl.lastChild.classList.add('p-octs'); if(rhyN()){ const os=ctl.lastChild.querySelector('select'); if(os){ os.title='In rhythm practice the octaves go with the rhythm: one octave quarter notes, two eighth notes, three triplets, four sixteenth notes'; const o=[...os.options].find(x=>+x.value===rhyN()); if(o) os.value=o.value; else { const n=document.createElement('option'); n.value=String(rhyN()); n.textContent=['','One','Two','Three','Four'][rhyN()]+' octave'+(rhyN()>1?'s':''); os.appendChild(n); os.value=n.value; } } }
     transport(ctl); ctl.appendChild(d);
-    const ask=el('button','e-btn','Ask Dr. Onye about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
-    /* desktop: Practice in Studio and Ask Dr. Onye sit together on their own line, with the memory banks */ /* (Studio and Ask Dr. Onye now live on the console's bottom bar) */
-    if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Dr. Onye; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
+    const ask=el('button','e-btn','Ask HearandPlay about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
+    /* desktop: Practice in Studio and Ask HearandPlay sit together on their own line, with the memory banks */ /* (Studio and Ask HearandPlay now live on the console's bottom bar) */
+    if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask HearandPlay; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
-      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Dr. Onye'; r2.append(fm,mo,md,sy,hand,d,ry); if(fg) r2.append(fg); r2.hidden=true; ctl.append(r1,r2); void r3; { const bk=el('button','e-round p-bk','←'); bk.type='button'; bk.setAttribute('aria-label','Back'); bk.onclick=()=>{ const x=$('#prX'); if(x) x.click(); }; r1.prepend(bk); }
+      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask HearandPlay'; r2.append(fm,mo,md,sy,hand,d,ry); if(fg) r2.append(fg); r2.hidden=true; ctl.append(r1,r2); void r3; { const bk=el('button','e-round p-bk','←'); bk.type='button'; bk.setAttribute('aria-label','Back'); bk.onclick=()=>{ const x=$('#prX'); if(x) x.click(); }; r1.prepend(bk); }
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); /* Up / Down and Similar / Contrary sit with the hands (clear the ones from the last render first) */ top.querySelectorAll('.p-motop').forEach(x=>x.remove()); d.classList.add('p-motop'); d.style.marginLeft='auto'; mo.classList.add('p-motop'); top.insertBefore(d,hand); top.insertBefore(mo,hand); /* desktop: Scale and Note sit with the other controls */ const sl=[...ms.querySelectorAll('.p-sel')]; /* first row: Scale, Note, Tempo and Loop together */ const r0=el('div','p-r0'); sl.reverse(); /* Note first, then Scale */ sl.forEach((x,i)=>{ x.classList.add('p-sel-d'); /* fixed widths: the Scale box never grows or shrinks with the name */ x.style.minWidth=x.style.width=x.style.maxWidth=i===0?'84px':'250px'; x.style.flex='none'; if(i){ const q=x.querySelector('select'); if(q){ q.style.textOverflow='ellipsis'; q.title=q.options[q.selectedIndex]?q.options[q.selectedIndex].text:''; } } r0.appendChild(x); }); { const oc=ctl.querySelector('.p-octs'); if(oc) r0.appendChild(oc); } ctl.querySelectorAll('.p-rng').forEach(x=>r0.appendChild(x)); ctl.insertBefore(r0,ctl.firstChild); ms.remove(); }
     /* desktop: the six choices become a digital mixer, one channel strip each; the fader's stops are the options */
     { const mxi=MQM.matches&&MAXI, ph=MQM.matches&&!MAXI, chs=[['Hand',hand,{pair:[['lh','Left hand'],['rh','Right hand']],both:'both',lock:()=>st.motion==='contrary',lockWhy:'Contrary motion always uses both hands'}],['Motion',mo],['Direction',d,{pair:st.motion==='contrary'?[['up','Open'],['down','Close']]:[['up','Ascending'],['down','Descending']],both:'updown'}],['Family',fm],['Mode',md],['Names',sy],['Rhythm',ry]]; if(fg) chs.push(['Fingering',fg]);
@@ -885,10 +885,10 @@ function render(){
     canvasUI(area,st.cmode!=='canvas');
     /* Play, Stop, Tempo, Tap and Loop sit in the top right-hand corner of the Display */
     const r2=el('div','e-ctl p-ctr'); transport(r2); { const dt=$('#prDisp .pd-top'); if(dt){ r2.classList.add('p-ctop'); dt.appendChild(r2); } else box.appendChild(r2); }
-    /* the console's own bottom bar: the memory banks, then Ask Dr. Onye, like the Scale room's */
+    /* the console's own bottom bar: the memory banks, then Ask HearandPlay, like the Scale room's */
     const bkr=el('div','p-cbar p-ccbar'); box.appendChild(bkr); bkr.append(bankBar(),el('span','p-sp'));
     { const sb=el('button','p-ubtn p-stud','Studio'); sb.type='button'; sb.id='prCStudio'; const why=st.cmode==='arp'?'Arpeggios are practised here':''; sb.disabled=!!why; sb.title=why||'Practise these chords with a backing track in the Studio (Chord mode)'; sb.onclick=chordsToStudio; bkr.appendChild(sb); }
-    const ask=el('button','p-ubtn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; bkr.appendChild(ask);
+    const ask=el('button','p-ubtn','Ask HearandPlay about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; bkr.appendChild(ask);
     $('#prLbl').textContent='Chord practice'; ov.classList.toggle('p-xm',!!XM); xmPrep();
     if(st.cmode==='voice') loadVoicings(true); else if(st.cmode==='inv') loadInv(true); else if(st.cmode==='arp') loadArp(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
   }
@@ -987,7 +987,7 @@ function handFit(s){ if(!s) return s; const fit=(a,up)=>{ if(!a||a.length<2) ret
   if(!o.lfm&&lh&&lh.length>=2&&lh.length<=3){ o.lfm={}; const L=lh.length===2?[5,1]:(lh[2]-lh[1]<=2?[5,2,1]:[5,3,1]); lh.forEach((m,i)=>o.lfm[m]=L[i]); }
   if(o.rfm) o.nofing=false; return o; }
 function invBtn(){ const b=document.getElementById('prInv'); if(!b) return; const ok=steps.some(x=>x.tri), s=b.querySelector('select'); if(s) s.disabled=!ok; b.style.opacity=ok?'':'.45'; b.title=ok?'Play the triads in root position, first or second inversion':'Inversions work on triads only'; }
-/* ---------- left-hand bass fingering across a progression (Dr. Onye's logic). Only where the left hand plays one bass note per chord.
+/* ---------- left-hand bass fingering across a progression (HearandPlay's logic). Only where the left hand plays one bass note per chord.
    He looks ahead at the whole progression first, then fingers the bass:
    - down a fifth: 1-5. A 2-5-1 or cyclical bass (down a fifth, up a fourth): 1-5-2 or 1-5-1 (1 when the cycle carries on down another fifth).
    - up a fourth: 5-2 or 4-1. 5-2 when the next bass falls below where it started (a 2-5-1); 4-1 when the progression ends there,
@@ -1017,7 +1017,7 @@ function bassFing(st){
       else { if(F[k]==null) F[k]=5; if(F[k+1]==null) F[k+1]=2; } } }
   return st.map((s,k)=>F[k]==null?s:Object.assign({},s,{lfm:{[b[k]]:F[k]}}));
 }
-/* ---------- the chord room: chord canvas, voicings, inversions and techniques (Dr. Onye's) ----------
+/* ---------- the chord room: chord canvas, voicings, inversions and techniques (HearandPlay's) ----------
    Mode: Chord canvas (type a progression, Easy or Professional, like the Studio's chord chart) or Voicings (one chord at a time, every way he plays it).
    Inversion: Root position (default), 1st, 2nd; every one that is on is played, one after another, for each triad.
    Technique: Chords (together, the default), Broken chords (one by one) or Arpeggio; Grace notes and Bass line can be added. */
@@ -1109,7 +1109,7 @@ function arpBeat(beats){ const n=Math.max(1,Math.round(beats)); return n<=1?0:n=
 /* ---------- his bass-line rules for cyclical progressions (roots moving up a fourth, down a fifth) ----------
    1. After a minor chord in a 2-5-1 that is cyclical, the bass can move down a half step from the note before:
       Cm F B♭ → C, C♭ (B), B♭.
-   2. When Dr. Onye knows the key and is certain, and the progression is cyclical, a chord that lasts two beats gets eighth notes
+   2. When HearandPlay knows the key and is certain, and the progression is cyclical, a chord that lasts two beats gets eighth notes
       that walk down the key to the next root: B E A in C major → (B A) (G F) (E D) (C B) A.
       Or the line goes up to the next root and comes down onto it from the scale: E A D in C major → (E A) (C B) (A G) (F E) D.
       The line stays between A1 and the C above middle C's octave below; it goes up as few times as it can, and as early as it can. */
@@ -1164,7 +1164,7 @@ function bassPlan(L,key,sure){ const S=L.map(x=>Object.assign({},x)), n=S.length
     if(rootPc(b.name)!==(ra+5)%12||rootPc(c.name)!==(ra+10)%12) continue; const p=lo(a), lc=moved(c,p-2);
     const F=bassFing([{lh:[p]},{lh:[p-1]},{lh:[p-2]}]).map((q,k)=>q.lfm?q.lfm[p-k]:null);
     const HF=walkFing([p,p-1,p-2],prevOf(i),lc.length>1?2:0); OPT.push({cost:HF.cost/3,worst:HF.worst,lo:i+1,hi:i+2,ov:{[i+1]:{lh:[p-1],lfm:F[1]?{[p-1]:F[1]}:null},[i+2]:{lh:lc,lfm:F[2]?landF(lc,F[2]):null}}}); }
-  /* options that touch the same chords make one group: each time round Dr. Onye picks one of them, or none */
+  /* options that touch the same chords make one group: each time round HearandPlay picks one of them, or none */
   /* the options are there so he can avoid bass runs that twist the fingers: a run with an awkward move is left out */
   for(let k=OPT.length-1;k>=0;k--) if(OPT[k].worst>=2.5||OPT[k].cost>.6) OPT.splice(k,1);
   const G=[]; OPT.sort((x,y)=>x.lo-y.lo).forEach(o=>{ const g=G[G.length-1]; if(g&&o.lo<=g.hi){ g.hi=Math.max(g.hi,o.hi); g.o.push(o); } else G.push({lo:o.lo,hi:o.hi,o:[o]}); });
@@ -1282,7 +1282,7 @@ function loadInv(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit; if(!K) ret
   /* Octaves: the inversions again an octave higher, up to four octaves (staying on the keyboard); Direction: up, down, or up and down */
   arpDefaults(); const sh=(x,d)=>{ const n={}; Object.keys(x.rfm||{}).forEach(m=>{ n[+m+d]=x.rfm[m]; }); const sp={}; Object.keys(x.spell||{}).forEach(m=>{ sp[(x.lh.includes(+m)?+m:+m+d)]=x.spell[m]; }); return Object.assign({},x,{rh:x.rh.map(m=>m+d),rfm:n,spell:sp,chip:x.chip+(d?' +'+d/12+' oct':'')}); };
   let L=[]; for(let o=0;o<st.aoct;o++){ const d=12*o; if(Math.max(...one[one.length-1].rh)+d>103) break; one.forEach(x=>L.push(sh(x,d))); }
-  /* his rule: in Inversions no chord goes above G5 for its highest note. Dr. Onye finds the register: the whole set comes down by octaves
+  /* his rule: in Inversions no chord goes above G5 for its highest note. HearandPlay finds the register: the whole set comes down by octaves
      (the right hand staying above the left hand), and an octave that still will not fit is left out. Arpeggios are free to go higher. */
   { const G5=79, TOP=x=>Math.max(...x.rh), BOT=x=>Math.min(...x.rh), oc=12*ocN(), lhTop=Math.max(...lh)+oc;
     const fit=A=>{ const hi=Math.max(...A.map(TOP))+oc, lo=Math.min(...A.map(BOT))+oc; let d=0; while(hi+d>G5&&lo+d-12>lhTop) d-=12; return hi+d<=G5?d:null; };
@@ -1400,7 +1400,7 @@ function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-
 function chordConsole(box){
   const strips=el('div','p-mix p-cmix'), cv=st.cmode==='canvas', vo=st.cmode==='voice'; box.appendChild(strips);
   strips.append(
-    cStrip('Mode',[['canvas','Chord canvas','Type a progression: Dr. Onye plays it chord by chord'],['inv','Inversions','One chord at a time, in the inversions you choose'],['voice','Voicings','One chord at a time, and every way to play it'],['arp','Arpeggios','Chords played harp-like, with his fingering']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
+    cStrip('Mode',[['canvas','Chord canvas','Type a progression: HearandPlay plays it chord by chord'],['inv','Inversions','One chord at a time, in the inversions you choose'],['voice','Voicings','One chord at a time, and every way to play it'],['arp','Arpeggios','Chords played harp-like, with his fingering']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
     cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion'],[3,'3rd inversion','For seventh chords']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode!=='inv',offWhy:'Turn on Inversions in Mode'}),
     /* only the chord canvas uses the techniques; grace notes and the bass line go with Chords and can each be switched off (bass line off by default). Voicings can use grace notes (off until you turn them on). */
     cStrip('Technique',[['v','Chords','All the notes together. Turn on Broken chords too for the arpeggio'],['h','Broken chords','One note at a time. Turn on Chords too for the arpeggio'],['grace','Grace notes','A grace note on the middle or bottom note when the right hand has three notes'],['bline','Bass line','Two sixteenths now and then lead into the next bass note'],['riff','Riffs','Right-hand pentatonic riffs on beat 4, leading into the next bar']],
@@ -1408,7 +1408,7 @@ function chordConsole(box){
       v=>{ if(vo){ if(v==='grace'){ st.vg=!st.vg; save(); render(); } return; } if(v==='grace') st.cg=st.cg===false; else if(v==='bline') st.bline=!st.bline; else if(v==='riff') st.riff=!st.riff;
         else { const on={v:st.vh==='v'||st.vh==='a',h:st.vh==='h'||st.vh==='a'}; on[v]=!on[v]; if(!on.v&&!on.h) return; st.vh=on.v&&on.h?'a':on.v?'v':'h'; } save(); render(); if(v!=='grace'&&st.chords) retune(); },
       {two:true,off:()=>!cv&&!vo,offWhy:'For the chord canvas',cls:()=>cv&&st.vh==='a'?'p-arpon':'',dis:v=>vo?v!=='grace':(v==='grace'||v==='bline'||v==='riff')&&st.vh!=='v',disWhy:vo?'Voicings can use grace notes':'Grace notes, the bass line and riffs go with Chords'}));
-  /* Fills: how much Dr. Onye adds to the music (grace notes, bass lines, riffs), from nothing to a lot */
+  /* Fills: how much HearandPlay adds to the music (grace notes, bass lines, riffs), from nothing to a lot */
   strips.append(fillStrip(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118)));
   /* Notation (Voicings): Staff and Virtual keyboard; with the virtual keyboard on, its labels: Letter, Solfa, Number (any or all) */
   strips.append(cStrip('Notation',[['staff','Staff',XM?'Export the chords as sheet music (a grand staff)':'The voicing on a grand staff, in the Display'],['kb','Virtual keyboard',XM?'Export the chords as keyboard diagrams':'The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)'],['code','Code','A unique code: anyone who enters it in the suite pulls up this progression']],
@@ -1461,7 +1461,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
   return [brand,
   {label:'File',items:[
     {label:'Practice in Studio',enabled:()=>{ const b=$('#prStudio'); return !!b&&!b.disabled; },run:()=>{ const b=$('#prStudio'); if(b) b.click(); }},
-    {label:'Ask Dr. Onye about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask Dr. Onye/.test(x.textContent)); if(b) b.click(); }},
+    {label:'Ask HearandPlay about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask HearandPlay/.test(x.textContent)); if(b) b.click(); }},
     {sep:true},
     {label:'Reset to default settings',run:()=>{ clr(); Object.assign(st,JSON.parse(JSON.stringify(DEF))); save(); open('scales'); }},
     {label:'Close scale practice',run:()=>{ const b=$('#prX'); if(b) b.click(); else close(); }}]},
@@ -1511,7 +1511,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
   win,
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>{ const t=[['Space','Play / Pause'],['S','Stop'],['L','Loop on/off'],['= / −','Tempo up / down 5 BPM'],['H','Show / hide the hands']]; const d=document.createElement('dialog'); d.className='info-dlg'; d.innerHTML='<h2>Scale practice shortcuts</h2><table class="keys">'+t.map(([k,v])=>'<tr><td><kbd>'+k+'</kbd></td><td>'+v+'</td></tr>').join('')+'</table>'; const c=el('button','btn pri','Close'); c.onclick=()=>{ d.close(); d.remove(); }; d.appendChild(c); document.body.appendChild(d); d.showModal(); }},
-    {label:'Ask Dr. Onye…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
+    {label:'Ask HearandPlay…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
 function menuSync(){ try{ if(!window.PSMENU) return; PSMENU.set(ov&&!ov.hidden&&kind==='scales'?scaleMenus():null); }catch(_){} }
 /* leaving the app (screen locked, another app, tab hidden): pause where you are; nothing carries on by itself until you come back */
 function bg(){ try{ if(playing&&!paused&&!waitL&&pauseFn) pauseFn(); }catch(_){} }

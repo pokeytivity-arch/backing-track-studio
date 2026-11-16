@@ -1,5 +1,5 @@
 /* check.js: "Check my playing" for Class. Uses a MIDI keyboard (Web MIDI: Chrome or Edge on a computer or Android).
-   The student plays the chord shown on the keyboard; Dr. Onye compares the note names. */
+   The student plays the chord shown on the keyboard; HearandPlay compares the note names. */
 (function(){
 'use strict';
 const NN=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
@@ -9,7 +9,7 @@ function status(t,ok){ if(!bar){ bar=document.createElement('div'); bar.style.cs
 function target(){ const K=window.CLASS&&CLASS.K; const s=K&&K.steps[K.i]; if(!s) return null; const pcs=new Set(); [].concat(s.lh||[],s.rh||[]).forEach(m=>pcs.add(((m%12)+12)%12)); return {name:s.name,pcs}; }
 function names(set){ return [...set].sort((a,b)=>a-b).map(p=>NN[p]).join(' '); }
 function evaluate(){
-  timer=null; const t=target(); if(!t){ status('Put a chord on the keyboard first (ask Dr. Onye to teach you something).'); played.clear(); return; }
+  timer=null; const t=target(); if(!t){ status('Put a chord on the keyboard first (ask HearandPlay to teach you something).'); played.clear(); return; }
   const got=new Set([...played].map(m=>m%12)); played.clear();
   const missing=[...t.pcs].filter(p=>!got.has(p)), extra=[...got].filter(p=>!t.pcs.has(p));
   if(!missing.length&&!extra.length){ status('✓ '+t.name+': every note is right ('+names(t.pcs)+'). Moving to the next chord.',true); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} setTimeout(()=>{ if(on&&window.CLASS&&CLASS.K.steps.length>1) CLASS.stepGo(1); },900); }

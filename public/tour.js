@@ -3,7 +3,7 @@
 const KEY='ps-tour';
 const STEPS=[
  {t:'Welcome to the HearandPlay Piano Suite',b:'A quick tour of where everything is. It takes less than a minute.'},
- {sel:'.dcard[data-k=class]',t:'Class',b:'Learn with Dr. Onye. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.'},
+ {sel:'.dcard[data-k=class]',t:'Class',b:'Learn with HearandPlay. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.'},
  {sel:'.dcard[data-k=studio]',t:'Studio',b:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.'},
  {sel:'.dcard[data-k=plus]',t:'Studio+',b:'Transcription. Turn any recording into notes you can see and practice on the keyboard.'},
  {sel:'.dcard[data-k=challenge]',t:'90 Day Challenge',b:'Build a practice plan, check in every day for 90 days, and earn your certificate of consistency.'},

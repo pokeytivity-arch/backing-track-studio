@@ -35,7 +35,7 @@ function studio(){ if(stDone) return; const stage=$('stage'), kbd=$('stageKbd');
   stage.parentNode.insertBefore(dp,stage); dp.querySelector('.ep-body').appendChild(stage); dp.after(kp); kp.after(cp);
   kp.querySelector('.ep-body').appendChild(kbd);
   const kb=$('kbdBtn'); if(kb&&kb.getAttribute('aria-pressed')!=='true'){ try{ kb.click(); }catch(_){} }   /* the keyboard is always shown now */
-  /* the tempo, sync lights, chord/scale mode and the Projector / Hum / Ask Dr. Onye buttons are console controls; the display keeps the chords, the beat lights, Play and Stop */
+  /* the tempo, sync lights, chord/scale mode and the Projector / Hum / Ask HearandPlay buttons are console controls; the display keeps the chords, the beat lights, Play and Stop */
   const ctl=el('div','s3-ctl'), q=s=>stage.querySelector(s);
   [q('.stage-tempo:not(.stage-sync)'),q('.stage-sync'),$('smSeg'),$('smInfo')].forEach(x=>{ if(x) ctl.appendChild(x); });
   const row=el('div','s3-row'); ['projBtn','humJump','askClassBtn'].forEach(id=>{ const b=$(id); if(b) row.appendChild(b); }); ctl.appendChild(row);

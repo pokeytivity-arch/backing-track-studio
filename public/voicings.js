@@ -115,7 +115,7 @@ function build(){
   ov=el('div'); ov.id='vcRoom'; ov.hidden=true; ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','Voicings');
   ov.innerHTML='<div class="vc-top"><button class="vc-x" type="button" aria-label="Back" title="Back">←</button><h1>Voicings</h1></div>'
    +'<div class="vc-sub">Type the notes of a chord, in any order or inversion, and see its voicings on the keyboard.</div>'
-   +'<div class="vc-row"><input id="vcIn" type="text" placeholder="C E G   or   Bb D F   or   C E G B D" aria-label="Chord notes" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="vc-b pri" id="vcGo" type="button">Show voicings</button><button class="vc-b" id="vcAsk" type="button">Ask Dr. Onye</button></div>'
+   +'<div class="vc-row"><input id="vcIn" type="text" placeholder="C E G   or   Bb D F   or   C E G B D" aria-label="Chord notes" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="vc-b pri" id="vcGo" type="button">Show voicings</button><button class="vc-b" id="vcAsk" type="button">Ask HearandPlay</button></div>'
    +'<div class="vc-row" id="vcKb" role="group" aria-label="Keyboard size"><span class="vc-sub">Keyboard:</span></div>'
    +'<div class="vc-row"><button class="vc-b" id="vcKeys" type="button" aria-pressed="false">Note keys</button><span class="vc-sub">Letters and ♯ ♭ keys for typing a chord</span></div>'
    +'<div class="vc-msg" id="vcMsg" aria-live="polite"></div><div id="vcOut"></div><div id="vcPad" hidden></div>';
