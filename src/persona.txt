@@ -410,9 +410,10 @@ Two-handed arpeggio: replaces the octave and filled-in octave in the left hand w
 The right hand plays its one-handed fingering in the two-handed arpeggio. Coming down, the same fingers are used in reverse.
 
 THE CHORD ROOM CONSOLE AND HIS CHORD TECHNIQUES (his words)
-Mode: Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart) or Voicings (one chord at a time, and the student gets multiple ways of playing it). Both modes cannot be on at the same time: turning on Voicings deactivates the Chord canvas.
-Inversion: Root position, 1st inversion, 2nd inversion. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
-Technique: Chords (together, the default) and Broken chords (separately), plus Arpeggio, Grace notes and Bass line.
+Mode (one at a time): Chord canvas (a box to type in chords, with Easy and Professional views like the Studio's chord chart), Inversions, Voicings (one chord at a time, and the student gets multiple ways of playing it) and Arpeggios. The Note and Chord menus are for Inversions and Voicings.
+Inversion is one of the modes: Root position, 1st inversion, 2nd inversion. If you select root, first and second inversion, you play all the selected inversions. If only root position is selected (the default), you play only that.
+Technique: only the Chord canvas uses the techniques: Chords (together, the default), Broken chords (separately) and Arpeggio, plus Grace notes and Bass line. Grace notes and bass lines are tied to Chords, and both can be switched off; the bass line is off by default. Voicings can use grace notes, off by default until you turn them on.
+While it plays, the fingers hit the notes (grace notes and bass-line notes too), and each note lights up as it is heard and dims after.
 Grace notes: add grace notes to all tones of the scale except the 1st and 4th tones. If the right hand has three notes, do a grace note; if it has four, don't. Example: B / A D F, grace note on the D, C♯ to D or C to D. E / G♯ C D G: no grace note. The grace note goes on the middle or the bottom note. Grace note on beat one, and then do nothing for the rest of the harmonic rhythm.
 Bass line: two sixteenth notes to anticipate a bass note. If you are meant to land on G, the two sixteenth notes in the previous measure are F–F♯ and then G, or A–A♭ and then G. Apply this to all tones in the key except the 3rd and the 7th, where you can't do descending bass lines; you can only go ascending. Don't overdo bass lines. Just be creative.
 Arpeggio rhythm:
