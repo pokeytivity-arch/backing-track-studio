@@ -42,9 +42,6 @@ add('exotic','Symmetrical scales','sc.oct1','oct1','Octatonic whole-half','1 2 b
 add('exotic','Symmetrical scales','sc.oct2','oct2','Octatonic half-whole','1 b2 b3 3 #4 5 6 b7',['C','Db','D']);
 add('exotic','Symmetrical scales','sc.aug13','aug13','Augmented scale 1+3','1 b2 3 4 #5 6',['C','Db','D','Eb']);
 add('exotic','Symmetrical scales','sc.aug31','aug31','Augmented scale 3+1','1 b3 3 5 b6 7',['C','Db','D','Eb']);
-/* ---- Arpeggios (his fingering: scales.js) ---- */
-add('arp','Triad arpeggios (root, third, fifth)','sc.arpmaj','arpmaj','Major arpeggio','1 3 5');
-add('arp','Triad arpeggios (root, third, fifth)','sc.arpmin','arpmin','Minor arpeggio','1 b3 5');
 /* Solfa (movable do) for the scales that have it. up = names in order from the first note; down = names by ascending degree, used when the scale is played down (chromatic only). Scales not listed have no solfa yet. */
 const sf=t=>t.split(' ');
 const SOLFA={
@@ -57,5 +54,5 @@ const SOLFA={
 };
 /* numbers come from the solfa syllables */
 const SOLNUM={do:'1',di:'♯1',ra:'♭2',re:'2',ri:'♯2',me:'♭3',mi:'3',fa:'4',fi:'♯4',se:'♭5',sol:'5',si:'♯5',le:'♭6',la:'6',li:'♯6',te:'♭7',ti:'7'};
-window.SCALELIB={solfa:SOLFA,solnum:SOLNUM,list:L,byId:id=>L.find(x=>x.id===id)||null,families:['regular','exotic','arp']};
+window.SCALELIB={solfa:SOLFA,solnum:SOLNUM,list:L,byId:id=>L.find(x=>x.id===id)||null,families:['regular','exotic']};
 })();

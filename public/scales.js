@@ -21,6 +21,8 @@ const ORDER=['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#
 const MAJS={1:0,2:2,3:4,4:5,5:7,6:9,7:11};
 const LIB=(window.SCALELIB&&SCALELIB.list)||[];
 const TYPES=LIB.map(x=>({id:x.rid,lid:x.id,g:x.grp,l:x.name,fam:x.fam,d:x.deg.split(' '),keys:x.keys,s:x.deg.split(' ').map(t=>{ const m=/^(bb|b|#)?(\d)$/.exec(t); return MAJS[+m[2]]+(!m[1]?0:m[1]==='#'?1:m[1]==='b'?-1:-2); })}));
+/* Arpeggios are chords played harp-like: they live in the Chord room (Mode: Arpeggios), built here with his fingering */
+[{id:'arpmaj',lid:'arp.maj',g:'Arpeggios',l:'Major arpeggio',fam:'arp',d:['1','3','5'],keys:null,s:[0,4,7]},{id:'arpmin',lid:'arp.min',g:'Arpeggios',l:'Minor arpeggio',fam:'arp',d:['1','b3','5'],keys:null,s:[0,3,7]}].forEach(t=>TYPES.push(t));
 /* Enharmonic keys sound the same, so they share the fingering of their twin */
 /* Fingering families from the lessons. lhm = left hand over several octaves: first octave, repeated octave, last note */
 ['C','G','D','A','E'].forEach(k=>{ SC[k].rh='1 2 3 1 2 3 4 5'; SC[k].lh='5 4 3 2 1 3 2 1'; SC[k].lhm={f:'5 4 3 2 1 3 2',r:'1 4 3 2 1 3 2',l:'1'}; });
@@ -105,7 +107,7 @@ function build(key,hand,type,oct,motion,alt,alh){ if(alh) ALH=alh;
     if(hand!=='rh'&&lhF){ if(oct===1) st.lfing=lhF[i]||''; else if(lfam.lhm){ const M=lfam.lhm, q=Math.floor(i/7); st.lfing=top?M.l:q===0?M.f.split(' ')[i]:(q===oct-1&&M.z)?M.z.split(' ')[i%7]:M.r.split(' ')[i%7]; } }
     /* chromatic scale (his fingering, the same in all 12 keys, reversed coming down; start anywhere): by key. Right hand up from C: 1 3 1 3 1 2 3 1 3 1 3 1 2; left hand up from C: 4 3 1 3 2 1 3 1 3 1 3 2 1; both carry on from D♭ as 3 1 */
     if(T.id==='arpmaj'||T.id==='arpmin'){ const A=arpFing(T.id,p,oct); if(hand!=='lh'&&A.r) st.fing=String(A.r[i]); if(hand!=='rh'&&A.l) st.lfing=String(A.l[i]);
-      if(hand==='rh'&&deg===0){ const b=lBoth+semi, blk=ALH==='root'?[b]:ALH==='fill'?[b,b+7,b+12]:[b,b+12]; st.lh=blk; blk.forEach(m=>{ st.spell[m]=dispName(names[(m-b)===7?2:0]); }); } }
+      if(hand==='rh'&&deg===0){ const b=lBoth+semi, blk=ALH==='root'?[b]:ALH==='p5'?[b,b+7]:ALH==='fill'?[b,b+7,b+12]:[b,b+12]; st.lh=blk; blk.forEach(m=>{ st.spell[m]=dispName(names[(m-b)===7?2:0]); }); } }
     if(T.id==='chr'){ const q=(p+semi)%12; if(hand!=='lh') st.fing=String(i===0&&q===0?1:CHR_R[q]); if(hand!=='rh') st.lfing=String(i===0&&q===0?4:CHR_L[q]); }
     const SF=SCALELIB.solfa[T.id]; if(SF){ st.sol=top?SF.up[0]:SF.up[deg]; if(SF.down) st.solD=top?SF.down[0]:SF.down[deg]; }
     steps.push(st); }
@@ -118,7 +120,7 @@ let NOALT=false;
    then 1 2 4 for each further octave. B♭ minor: 2 3 1 2, then 3 1 2.
    Two-handed, the left hand: 5 4 2 1 (+ 4 2 1 each further octave) in C D E F G A B major and minor, G♭/F♯ major, E♭/D♯ minor; 2 1 4 2 (then 1 4 2) in
    D♭ major, C♯ minor, E♭ major, F♯ minor, A♭ major, G♯ minor; 4 2 1 4 (then 2 1 4) in B♭ major and B♭ minor.
-   One-handed: the left hand plays the root, the octave or the filled-in octave (1-5-8). */
+   One-handed: the left hand plays the root (5), root and fifth (5-2), root and octave (5-1) or root, fifth and octave (5 2 1). */
 const ARP={maj:{r:{g1:[0,2,4,5,7,9,11,6],g2:[1,3,8,10]},l:{a:[0,2,4,5,7,9,11,6],b:[1,3,8],c:[10]}},
            min:{r:{g1:[0,2,4,5,7,9,11,3],g2:[1,6,8],g3:[10]},l:{a:[0,2,4,5,7,9,11,3],b:[1,6,8],c:[10]}}};
 function arpSeq(first,rep,n){ const o=first.slice(); for(let k=1;k<n;k++) o.push(...rep); return o; }
@@ -152,5 +154,5 @@ function go(){
   if(!window.CLASS||!CLASS.loadSteps) return; const hs=hand==='rh'?'right hand':hand==='lh'?'left hand':'both hands';
   CLASS.loadSteps(key+' major: 3+4 ('+hs+')',build(key,hand)); ov.hidden=true; try{ if(window.PSPROG) PSPROG.mark(); }catch(_){}
 }
-window.SCALES={open,build,maxOct:(k,h,mo)=>mo==='contrary'?ctrMax(k):(h==='both'&&SC[k]&&SC[k].m%12!==0)?3:4,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES,keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
+window.SCALES={open,build,maxOct:(k,h,mo)=>mo==='contrary'?ctrMax(k):(h==='both'&&SC[k]&&SC[k].m%12!==0)?3:4,buildContrary,allowedKeys,acc,alts:(k,t)=>{ const a=t==='major'?ALTM[k]:ALTX[k+':'+t]; return a?{rh:!!a.rh,lh:!!a.lh}:null; },types:TYPES.filter(t=>t.fam!=='arp'),keys:ORDER,has:k=>SC[k]?{rh:!!SC[k].rh,lh:!!SC[k].lh}:null};
 })();

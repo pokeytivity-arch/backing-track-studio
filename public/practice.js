@@ -12,7 +12,7 @@ const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let paused=false, waitL=false, pauseFn=null;
 let ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='', chBus=[];
 let st={sys:'letter',family:'regular',motion:'similar',mode:'practice',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'updown',bpm:80,loop:true,chords:'',vh:'v',ckey:'C'};
-try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(!['exotic','arp'].includes(st.family)) st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
+try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
 try{ if(!localStorage.getItem('pr-loop-on')){ st.loop=true; localStorage.setItem('pr-loop-on','1'); } }catch(_){}   /* Loop is now on by default, once for everyone */
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
@@ -131,7 +131,7 @@ const snapName=x=>{ const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===x
 function addPick(w,on){ const pk=w.querySelector('.p-apick'), ad=w.querySelector('.p-add'); if(!pk) return; if(!on){ pk.hidden=true; ad.hidden=false; if(PM.hold){ PM.end=Date.now()+PM.hold; PM.hold=0; } return; }
   if(PM.mode==='recover'&&!PM.hold){ PM.hold=Math.max(1000,PM.end-Date.now()); }   /* the countdown waits while you choose */
   const SC=window.SCALES, ts=(SC&&SC.types)||[], ks=w.querySelector('[data-w=ak]'), tsel=w.querySelector('[data-w=at]');
-  tsel.textContent=''; let og=null,gl=null; ts.forEach(t=>{ if(t.g!==gl){ gl=t.g; og=document.createElement('optgroup'); og.label=(t.fam==='exotic'?'Exotic · ':t.fam==='arp'?'Arpeggios · ':'')+(t.g||''); tsel.appendChild(og); } const o=document.createElement('option'); o.value=t.id; o.textContent=t.l; og.appendChild(o); }); tsel.value=st.type;
+  tsel.textContent=''; let og=null,gl=null; ts.forEach(t=>{ if(t.g!==gl){ gl=t.g; og=document.createElement('optgroup'); og.label=(t.fam==='exotic'?'Exotic · ':'')+(t.g||''); tsel.appendChild(og); } const o=document.createElement('option'); o.value=t.id; o.textContent=t.l; og.appendChild(o); }); tsel.value=st.type;
   const fillK=()=>{ const ok=(SC&&SC.allowedKeys)?SC.allowedKeys(tsel.value):((SC&&SC.keys)||[]); const cur=ks.value; ks.textContent=''; ok.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=SYMK(k); ks.appendChild(o); });
     const pc=k=>{ const L={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[String(k)[0]]; let a=0; for(const ch of String(k).slice(1)){ if(ch==='#'||ch==='♯') a++; if(ch==='b'||ch==='♭') a--; } return ((L+a)%12+12)%12; }, want=(pc(st.key)+7)%12, nx=ok.find(k=>pc(k)===want); ks.value=ok.includes(cur)?cur:(nx||ok[0]); };   /* suggests the key a fifth up */
   tsel.onchange=fillK; ks.value=''; fillK(); pk.hidden=false; ad.hidden=true; }
@@ -432,12 +432,12 @@ const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
 const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
 function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') return DSP(s.name); const sy=(desc&&s.solD)||s.sol; if(!sy) return DSP(s.name); return y==='solfa'?sy:(SCALELIB.solnum[sy]||sy); }
 function drawKb(){
-  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales') handPos();
+  const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales'||steps.arp) handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
   if(kind==='chords'&&s&&(s.rfm||s.lfm)&&typeof fingering==='function') fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   wrap.replaceChildren(svg); tab(svg,s);
-  if(window.PSHANDS){ if(kind==="scales") PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else if(kind==="chords"&&s&&typeof fingering==="function") PSHANDS.sync(wrap,true,chordHands(s),drawKb); else PSHANDS.sync(null,false); }
+  if(window.PSHANDS){ if(kind==="scales"||steps.arp) PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else if(kind==="chords"&&s&&typeof fingering==="function") PSHANDS.sync(wrap,true,chordHands(s),drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
 /* the name tab above the keys: every note of the scale has a cell over its key showing its letter, solfa or number; the note being played lights up in its hand's colour */
@@ -516,7 +516,7 @@ function chips(){
 /* One by one: the notes sound from the bottom up, half a second apart, and each finger goes down as its note sounds and stays down;
    Together: every finger of the chord goes down at once */
 let arpN=null;
-function play1(s,len,nx){ if(kind==='chords'&&s&&window.CLASS&&CLASS.clock&&CLASS.clock.note){ try{ playChord(s,len,nx); }catch(e){ console.log(e); } return; } try{ if(kind==='chords'&&st.vh==='h'){ const ns=[...s.lh,...s.rh].sort((a,b)=>a-b); ns.forEach((m,i)=>CLASS.sound(m,1.1,.8,i*.5));
+function play1(s,len,nx){ if(kind==='chords'&&steps.arp&&s){ try{ CLASS.playStep(s,Math.max(.4,(len||.9)*1.1)); }catch(_){} return; } if(kind==='chords'&&s&&window.CLASS&&CLASS.clock&&CLASS.clock.note){ try{ playChord(s,len,nx); }catch(e){ console.log(e); } return; } try{ if(kind==='chords'&&st.vh==='h'){ const ns=[...s.lh,...s.rh].sort((a,b)=>a-b); ns.forEach((m,i)=>CLASS.sound(m,1.1,.8,i*.5));
       arpN=0; drawKb(); ns.forEach((m,i)=>timers.push(setTimeout(()=>{ if(steps.indexOf(s)<0&&curS()!==s) return; arpN=i+1; drawKb(); },i*500+20))); timers.push(setTimeout(()=>{ arpN=null; },ns.length*500+1200)); }
     else { arpN=null; if(kind==='chords') drawKb(); CLASS.playStep(s,len||1.6); } }catch(_){} }
 function show(){
@@ -673,7 +673,7 @@ function phoneFit(){ const row=document.querySelector('#prRoom .p-mixrow.ph'), k
   row.style.setProperty('--pe',PHX+'px'); const n=Date.now(); if(n-(phoneFit.t||0)>3000){ phoneFit.t=n; phoneFit.c=0; } if(want!==PHX&&phoneFit.c<6){ phoneFit.c++; PHX=want; render(); } }
 const conOn=()=>{ try{ return localStorage.getItem('pr-con')!=='0'; }catch(_){ return true; } };
 function conSum(){ const sm=document.querySelector('#prRoom .p-sum'); if(!sm) return; const HL={rh:'Right hand',lh:'Left hand',both:'Both hands'}, DL=(st.motion==='contrary'?CDIRS:DIRS).find(d=>d[0]===st.dir);
-  sm.textContent=[st.motion==='contrary'?'Both hands':HL[st.hand],st.motion==='contrary'?'Contrary':'Similar',DL?DL[1]:'',st.family==='exotic'?'Exotic':st.family==='arp'?'Arpeggios':'Regular',st.mode==='learn'?'Learning':'Practice',{letter:'Letters',solfa:'Solfa',num:'Numbers'}[st.sys]||st.sys,(RHY.find(r=>r[0]===(st.rhy||'free'))||['','Free'])[1]].filter(Boolean).join('  ·  '); }
+  sm.textContent=[st.motion==='contrary'?'Both hands':HL[st.hand],st.motion==='contrary'?'Contrary':'Similar',DL?DL[1]:'',st.family==='exotic'?'Exotic':'Regular',st.mode==='learn'?'Learning':'Practice',{letter:'Letters',solfa:'Solfa',num:'Numbers'}[st.sys]||st.sys,(RHY.find(r=>r[0]===(st.rhy||'free'))||['','Free'])[1]].filter(Boolean).join('  ·  '); }
 function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Power</span>'; pw.classList.add('p-pwr');
   const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Power: on. Click to switch the console off':'Power: off. Click to switch the console on'; pw.classList.toggle('on',on); }; ps();
   pw.onclick=()=>{ const on=!conOn(); try{ localStorage.setItem('pr-con',on?'1':'0'); }catch(_){} const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.toggle('off',!on); ps(); conSum(); };
@@ -731,7 +731,7 @@ function mixOrder(panel){
 }
 /* memory banks: store the whole console (scale, note, octaves, tempo, loop, every channel and both volume faders) in one of six banks.
    Press SAVE, then a number, to store; press a number to recall. A lit number holds a setting; green is the one in use. */
-const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc','alh'];
+const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc'];
 let bankArm=false, bankDel=false, bankCur=(()=>{ try{ return +(localStorage.getItem('pr-bank-cur')??-1); }catch(_){ return -1; } })();
 const banksGet=()=>{ try{ const b=JSON.parse(localStorage.getItem(BKS)||'[]'); return Array.isArray(b)?b:[]; }catch(_){ return []; } };
 const bankName=b=>{ if(!b||!b.s) return 'Empty'; const x=b.s, SC=window.SCALES, t=((SC&&SC.types)||[]).find(q=>q.id===x.type);
@@ -804,13 +804,11 @@ function render(){
     const ms=el('div','p-sels'); ms.append(sel('Scale',types.map(t=>({g:t.g,v:t.id,t:t.l})),st.type,v=>{ st.type=v; save(); loadScale(); render(); }),sel('Note',keysOK.map(k=>({v:k,t:SYMK(k)})),st.key,v=>{ st.key=v; save(); loadScale(); render(); })); cats.parentNode.insertBefore(ms,cats);
     cats.classList.add('p-keybtns');
     const d=el('div','e-seg sm'); d.setAttribute('role','group'); d.setAttribute('aria-label','Direction'); seg(d,st.motion==='contrary'?CDIRS:DIRS,st.dir,k=>{ st.dir=k; save(); syncStudioBtn(); clr(); d.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true);
-    const fm=el('div','e-seg sm'); fm.setAttribute('role','group'); fm.setAttribute('aria-label','Scale family'); seg(fm,[['regular','Regular'],['exotic','Exotic'],['arp','Arpeggios']],st.family,k=>{ st.family=k; save(); clr(); render(); },true); ctl.appendChild(fm);
+    const fm=el('div','e-seg sm'); fm.setAttribute('role','group'); fm.setAttribute('aria-label','Scale family'); seg(fm,[['regular','Regular'],['exotic','Exotic']],st.family,k=>{ st.family=k; save(); clr(); render(); },true); ctl.appendChild(fm);
     const mo=el('div','e-seg sm'); mo.setAttribute('role','group'); mo.setAttribute('aria-label','Motion'); seg(mo,MOTIONS,st.motion,k=>{ st.motion=k; if(k==='contrary'){ const mc=(SC&&SC.maxOct)?SC.maxOct(st.key,'both','contrary'):2; if(st.oct>mc) st.oct=mc; } save(); clr(); render(); },true); if(!isDia){ const cb=mo.querySelector('[data-k=contrary]'); if(cb){ cb.disabled=true; cb.title='Contrary motion is for the diatonic scales'; } } ctl.appendChild(mo);
     const md=el('div','e-seg sm'); md.setAttribute('role','group'); md.setAttribute('aria-label','Mode'); seg(md,[['learn','Learning'],['practice','Practice']],st.mode,k=>{ st.mode=k; save(); clr(); md.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); },true); ctl.appendChild(md);
     const fav=(SC&&SC.alts)?SC.alts(st.key,st.type):null; if(!fav&&st.fa==='alt') st.fa='main'; let fg=null;
     if(fav){ fg=el('div','e-seg sm'); fg.setAttribute('role','group'); fg.setAttribute('aria-label','Fingering'); seg(fg,[['main','Main fingering'],['alt','Alternate']],st.fa||'main',k=>{ st.fa=k; save(); fg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); },true); fg.title='Alternate fingering, from the book'; ctl.appendChild(fg); }
-    /* arpeggios, one-handed (right hand): the left hand plays the root, the octave or the filled-in octave (1-5-8) */
-    let ab=null; if(st.family==='arp'&&st.hand==='rh'){ ab=el('div','e-seg sm'); ab.setAttribute('role','group'); ab.setAttribute('aria-label','Left hand'); seg(ab,[['root','Root'],['oct','Octave'],['fill','1-5-8']],st.alh||'oct',k=>{ st.alh=k; save(); ab.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); },true); ab.title='One-handed arpeggio: what the left hand plays'; ctl.appendChild(ab); }
     const sy=el('div','e-seg sm'); sy.setAttribute('role','group'); sy.setAttribute('aria-label','Note names'); seg(sy,[['letter','Letters'],['solfa','Solfa'],['number','Numbers']],st.sys,k=>{ st.sys=k; save(); clr(); render(); },true);
     if(!hasSol()) sy.querySelectorAll('[data-k=solfa],[data-k=number]').forEach(b=>{ b.disabled=true; b.title='Solfa is not added for this scale yet'; }); ctl.appendChild(sy);
     if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free';
@@ -829,7 +827,7 @@ function render(){
       const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Dr. Onye'; r2.append(fm,mo,md,sy,hand,d,ry); if(fg) r2.append(fg); r2.hidden=true; ctl.append(r1,r2); void r3; { const bk=el('button','e-round p-bk','←'); bk.type='button'; bk.setAttribute('aria-label','Back'); bk.onclick=()=>{ const x=$('#prX'); if(x) x.click(); }; r1.prepend(bk); }
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); /* Up / Down and Similar / Contrary sit with the hands (clear the ones from the last render first) */ top.querySelectorAll('.p-motop').forEach(x=>x.remove()); d.classList.add('p-motop'); d.style.marginLeft='auto'; mo.classList.add('p-motop'); top.insertBefore(d,hand); top.insertBefore(mo,hand); /* desktop: Scale and Note sit with the other controls */ const sl=[...ms.querySelectorAll('.p-sel')]; /* first row: Scale, Note, Tempo and Loop together */ const r0=el('div','p-r0'); sl.reverse(); /* Note first, then Scale */ sl.forEach((x,i)=>{ x.classList.add('p-sel-d'); /* fixed widths: the Scale box never grows or shrinks with the name */ x.style.minWidth=x.style.width=x.style.maxWidth=i===0?'84px':'250px'; x.style.flex='none'; if(i){ const q=x.querySelector('select'); if(q){ q.style.textOverflow='ellipsis'; q.title=q.options[q.selectedIndex]?q.options[q.selectedIndex].text:''; } } r0.appendChild(x); }); { const oc=ctl.querySelector('.p-octs'); if(oc) r0.appendChild(oc); } ctl.querySelectorAll('.p-rng').forEach(x=>r0.appendChild(x)); ctl.insertBefore(r0,ctl.firstChild); ms.remove(); }
     /* desktop: the six choices become a digital mixer, one channel strip each; the fader's stops are the options */
-    { const mxi=MQM.matches&&MAXI, ph=MQM.matches&&!MAXI, chs=[['Hand',hand,{pair:[['lh','Left hand'],['rh','Right hand']],both:'both',lock:()=>st.motion==='contrary',lockWhy:'Contrary motion always uses both hands'}],['Motion',mo],['Direction',d,{pair:st.motion==='contrary'?[['up','Open'],['down','Close']]:[['up','Ascending'],['down','Descending']],both:'updown'}],['Family',fm],['Mode',md],['Names',sy],['Rhythm',ry]]; if(fg) chs.push(['Fingering',fg]); if(ab) chs.push(['Left hand',ab]);
+    { const mxi=MQM.matches&&MAXI, ph=MQM.matches&&!MAXI, chs=[['Hand',hand,{pair:[['lh','Left hand'],['rh','Right hand']],both:'both',lock:()=>st.motion==='contrary',lockWhy:'Contrary motion always uses both hands'}],['Motion',mo],['Direction',d,{pair:st.motion==='contrary'?[['up','Open'],['down','Close']]:[['up','Ascending'],['down','Descending']],both:'updown'}],['Family',fm],['Mode',md],['Names',sy],['Rhythm',ry]]; if(fg) chs.push(['Fingering',fg]);
       chs.forEach(([,x])=>x.classList.add('p-src')); const row=el('div','p-mixrow'+(ph?' ph':'')+(mxi?' maxi':'')), tp=el('div','p-tp'); { let bk=$('#prBreak'); if(!bk){ bk=el('button','e-btn p-brk','☕ Break'); bk.type='button'; bk.id='prBreak'; bk.title='Take a break: practice carries on when the timer runs out'; bk.onclick=takeBreak; } bk.hidden=!(SES.on&&paused); tp.append($('#prPlay'),bk,$('#prPause')); } const mx=mixer(chs); mx.append(...levels(ph?36+3*PHX:(ov.querySelector('#prConP.max')?220:132))); mixOrder(mx);
       const con=el('div','p-con'+(conOn()?'':' off')), sum=el('div','p-sum'); con.append(mx,sum,repsRow(),conBar(ask,ph)); if(ph) row.style.setProperty('--pe',PHX+'px'); setTimeout(()=>{ xrowPlace(); if(ph) phoneFit(); },0); row.append(con); conSum();
       /* the top controls and Play / Stop / Break live in the Display */ { const dt=$('#prDisp .pd-top'), dtp=$('#prDisp .pd-tp'); if(dt&&dtp){ const r=ctl.querySelector(ph?'.p-r1':'.p-r0'); if(r) dt.appendChild(r); dtp.appendChild(tp); } else row.append(tp); }
@@ -840,17 +838,19 @@ function render(){
     /* the chord console: Mode, Inversion and Technique as lit buttons; the chord canvas (or Key and Chord for voicings); then Play, Stop, tempo, Tap, Loop */
     chordDefaults(); const K=window.EAR&&EAR.kit, box=el('div','p-ccon'); ctl.appendChild(box); chordConsole(box);
     const area=el('div','p-carea'); box.appendChild(area);
-    if(st.cmode==='voice'){ const r1=el('div','e-ctl p-cdd'); area.appendChild(r1);
+    /* Note and Chord are for voicings; with the chord canvas on they show but cannot be used */
+    if(st.cmode==='voice'||st.cmode==='canvas'){ const r1=el('div','e-ctl p-cdd'+(st.cmode==='canvas'?' p-dis':'')); area.appendChild(r1);
       if(K){ if(!st.cpick) st.cpick=K.CHK[0]+':0';
-        r1.appendChild(selBox('Key',K.KEYS.map(k=>({v:k,t:DSP(k)})),st.ckey,v=>{ st.ckey=v; save(); loadVoicings(); }));
+        r1.appendChild(selBox('Note',K.KEYS.map(k=>({v:k,t:DSP(k)})),st.ckey,v=>{ st.ckey=v; save(); loadVoicings(); }));
         const opts=[]; K.CHK.forEach(c=>K.CH[c][1].forEach((ch,i)=>opts.push({g:K.CH[c][0],v:c+':'+i,t:ch[0]})));
         r1.appendChild(selBox('Chord',opts,st.cpick||'',v=>{ st.cpick=v; save(); loadVoicings(); }, 'prChord')); }
-      area.appendChild(el('p','p-cvhelp','One chord at a time: tap a voicing in the Display to hear it and see it on the keys.')); }
-    else canvasUI(area);
+      if(st.cmode==='canvas'){ r1.querySelectorAll('select').forEach(x=>{ x.disabled=true; }); r1.title='Note and Chord are for Voicings'; canvasUI(area); }
+      else area.appendChild(el('p','p-cvhelp','One chord at a time: tap a voicing in the Display to hear it and see it on the keys.')); }
+    else arpUI(area);
     const r2=el('div','e-ctl p-ctr'); box.appendChild(r2); transport(r2);
     const ask=el('button','e-btn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
     $('#prLbl').textContent='Chord practice';
-    if(st.cmode==='voice') loadVoicings(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
+    if(st.cmode==='voice') loadVoicings(true); else if(st.cmode==='arp') loadArp(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
   }
 }
 function pick(){
@@ -899,12 +899,11 @@ function keyTip(){
   p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
 }
 function loadScale(){
-  syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt',st.alh||'oct'); kcRegister(); cur=-1; chips();
+  syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt'); kcRegister(); cur=-1; chips();
   const g=steps.map(s=>s.name), TL=(SC.types.find(t=>t.id===st.type)||{l:'Major'}).l, maj=st.type==='major'; $('#prLbl').textContent='';   /* the page title already says Scale practice */ const ocN=rhyN()||st.oct; $('#prBig').textContent=SYMK(st.key)+' '+(maj?'major':TL)+(ocN>1?' · '+ocN+' octaves':'')+(rhyN()?' · '+({q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes'})[st.rhy]:'')+(st.motion==='contrary'?' · contrary motion':'')+((st.fa==='alt'&&SC.alts&&SC.alts(st.key,st.type))?' · alternate fingering':''); { const L=steps.map(x=>lab(x,false)); let sub=(maj&&st.oct===1)?(L.slice(0,3).join(' ')+'  |  '+L.slice(3,7).join(' ')+'  |  '+L[7]):L.join(' '); const dn=steps.map(x=>lab(x.alt||x,true)); if(dn.join(' ')!==L.join(' ')&&(steps.some(x=>x.alt)||(sysNow()!=='letter'&&steps.some(x=>x.solD)))) sub+='   ·   coming down: '+dn.slice().reverse().join(' '); $('#prSub').textContent=sub; }
   const rh=steps.some(s=>s.fing), lh=steps.some(s=>s.lfing), hs=st.hand!=='lh', ls=st.hand!=='rh';
   if(st.motion==='contrary'){ $('#prMsg').textContent='Contrary motion: both hands start on '+SYMK(st.key)+', an octave apart. Open: the right hand goes up and the left hand goes down. Close: they come back together.'+((hs&&!rh)||(ls&&!lh)?' The fingering for this key is not in the lessons yet.':''); drawKb(); keyTip(); return; }
   const miss=[]; if(hs&&!rh) miss.push('right-hand'); if(ls&&!lh) miss.push('left-hand');
-  if(st.family==='arp'&&!miss.length){ $('#prMsg').textContent=st.hand==='rh'?'One-handed arpeggio: the right hand plays the arpeggio, the left hand plays the '+({root:'root',oct:'octave',fill:'filled-in octave (1-5-8)'})[st.alh||'oct']+'.':st.hand==='both'?'Two-handed arpeggio: both hands play the arpeggio.':'Left hand: the two-handed arpeggio fingering.'; drawKb(); keyTip(); return; }
   $('#prMsg').textContent=miss.length?('The '+miss.join(' and ')+' fingering for '+SYMK(st.key)+(st.type==='major'?' major':' '+TL)+(st.oct>1?' in '+st.oct+' octaves':'')+' is not in the lessons yet. The notes are shown; fingering will appear once it is added.'):'Press Play to hear it.';
   drawKb(); keyTip();
 }
@@ -997,11 +996,11 @@ function bassFing(st){
 #prRoom .p-cvn{color:#6d7894;font:700 10px system-ui,sans-serif}
 #prRoom .p-cvbar input{min-width:0;width:100%;box-sizing:border-box;background:#0c0f17;color:#eef2ff;border:1.5px solid #2c3a5e;border-radius:8px;padding:7px 6px;font:700 13px system-ui,sans-serif;text-align:center} #prRoom .p-cvbar input:focus{border-color:#7aa2ff;outline:none}
 #prRoom .p-cvadd{display:flex;gap:8px}
-#prRoom .p-ctr{gap:10px;flex-wrap:wrap;align-items:center}
+#prRoom .p-ctr{gap:10px;flex-wrap:wrap;align-items:center} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
 @media (max-width:700px){ #prRoom .p-cmix .p-ch{min-width:0;padding:0 6px} #prRoom .p-cmix .p-key{min-height:24px;font-size:11px} #prRoom .p-cmix .p-c2{grid-template-columns:repeat(2,auto)} #prRoom .p-cvgrid{grid-template-columns:1fr} }
 `; document.head.appendChild(c); }
 const VREG=/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\.?\s*\/\s*\.?\s*[A-G]/;
-function chordDefaults(){ if(!st.cmode) st.cmode='canvas'; if(!Array.isArray(st.invs)||!st.invs.length) st.invs=[0]; if(!['v','h','a'].includes(st.vh)) st.vh='v'; if(!st.cview) st.cview='easy'; st.grace=!!st.grace; st.bline=!!st.bline; }
+function chordDefaults(){ if(!['canvas','voice','arp'].includes(st.cmode)) st.cmode='canvas'; if(!Array.isArray(st.invs)||!st.invs.length) st.invs=[0]; if(!['v','h','a'].includes(st.vh)) st.vh='v'; if(!st.cview) st.cview='easy'; st.grace=!!st.grace; st.bline=!!st.bline; }
 /* one bar's chords: commas or brackets separate chords; a written voicing (B / A D F) is one chord; "." holds the chord before it for one slot */
 function barTokens(bar){ const t=[]; String(bar).split(',').forEach(piece=>{ piece.split(/(\[[^\]]*\])/).forEach(part=>{ part=part.trim(); if(!part) return;
     if(/^\[.*\]$/.test(part)){ t.push('['+part.slice(1,-1).trim().replace(/\s*\.\s*/g,'.')+']'); return; }
@@ -1080,7 +1079,25 @@ function loadVoicings(quiet){ clr(); const K=window.EAR&&EAR.kit, T=window.VOICE
   steps=res.list.map((v,i)=>{ const ns=v.pos[v.cur], lh=ns.filter(n=>n.hand==='lh').map(n=>n.midi), rh=ns.filter(n=>n.hand!=='lh').map(n=>n.midi), sp={}; ns.forEach(n=>{ sp[n.midi]=n.label; });
     return handFit({src:'[v'+i+']',name:name[0].toUpperCase()+name.slice(1),chip:'Voicing '+(i+1),vdesc:v.d+' ('+v.f+')',lh,rh,fing:'',lfing:'',spell:sp,beats:4}); });
   steps.key=kp; steps.multi=true; cur=0; chips(); show(); invBtn(); if(!quiet) play1(steps[0]); }
-function chordReload(quiet){ const c=cur; if(st.cmode==='voice') loadVoicings(quiet); else loadChords(st.chords,quiet); if(c>=0&&c<steps.length){ cur=c; show(); } }
+function chordReload(quiet){ const c=cur; if(st.cmode==='arp') loadArp(quiet); else if(st.cmode==='voice') loadVoicings(quiet); else loadChords(st.chords,quiet); if(c>=0&&c<steps.length){ cur=c; show(); } }
+/* Arpeggios: chords played harp-like (root, third, fifth), with his fingering. One-handed: the right hand plays the arpeggio and the left hand
+   the root (5), root and fifth (5-2), root and octave (5-1) or root, fifth and octave (5 2 1). Two-handed: the left hand plays the arpeggio too. */
+function arpDefaults(){ if(!st.akey) st.akey='C'; if(!['arpmaj','arpmin'].includes(st.aq)) st.aq='arpmaj'; if(!(st.aoct>=1&&st.aoct<=4)) st.aoct=1; if(!['rh','both'].includes(st.ahand)) st.ahand='rh'; if(!['root','p5','oct','fill'].includes(st.alh)) st.alh='oct'; if(!['updown','up','down'].includes(st.adir)) st.adir='updown'; }
+function arpUI(area){ arpDefaults(); const SC=window.SCALES, r=el('div','p-mix p-cmix p-amix'), re=()=>{ save(); render(); };
+  const ks=el('div','e-ctl p-cdd'); ks.appendChild(selBox('Note',((SC&&SC.keys)||['C']).map(k=>({v:k,t:DSP(k)})),st.akey,v=>{ st.akey=v; re(); })); area.appendChild(ks);
+  r.append(cStrip('Chord',[['arpmaj','Major'],['arpmin','Minor']],()=>[st.aq],v=>{ st.aq=v; re(); }),
+    cStrip('Octaves',[[1,'1 octave'],[2,'2 octaves'],[3,'3 octaves'],[4,'4 octaves']],()=>[st.aoct],v=>{ st.aoct=v; re(); }),
+    cStrip('Hands',[['rh','One-handed'],['both','Two-handed']],()=>[st.ahand],v=>{ st.ahand=v; re(); }),
+    cStrip('Left hand',[['root','Root (5)'],['p5','Root and fifth (5-2)'],['oct','Root and octave (5-1)'],['fill','Root, fifth and octave (5 2 1)']],()=>[st.alh],v=>{ st.alh=v; re(); },{off:()=>st.ahand!=='rh',offWhy:'Two-handed: the left hand plays the arpeggio'}),
+    cStrip('Direction',[['updown','Up and down'],['up','Up'],['down','Down']],()=>[st.adir],v=>{ st.adir=v; re(); }));
+  area.appendChild(r); }
+function loadArp(quiet){ clr(); arpDefaults(); const SC=window.SCALES; if(!SC||!SC.build) return; const hand=st.ahand==='both'?'both':'rh';
+  const base=SC.build(st.akey,hand,st.aq,st.aoct,'similar',false,st.alh), BL={root:[5],p5:[5,2],oct:[5,1],fill:[5,2,1]}[st.alh];
+  const title=DSP(st.akey)+(st.aq==='arpmin'?' minor':' major')+' arpeggio'+(st.aoct>1?' · '+st.aoct+' octaves':'')+(hand==='both'?' · two-handed':'');
+  const mk=x=>{ const o=Object.assign({},x,{beats:1,name:title,chip:DSP(x.name),rfm:{},lfm:{}}); if(x.rh[0]!=null&&x.fing) o.rfm[x.rh[0]]=+x.fing;
+    if(hand==='both'){ if(x.lh[0]!=null&&x.lfing) o.lfm[x.lh[0]]=+x.lfing; } else (x.lh||[]).slice().sort((a,b)=>a-b).forEach((m,i)=>{ o.lfm[m]=BL[i]; }); return o; };
+  let L=base.map(mk); if(st.adir==='down') L=L.slice().reverse(); else if(st.adir==='updown') L=L.concat(L.slice(0,-1).reverse().map(x=>Object.assign({},x)));
+  steps=L; steps.arp=true; steps.multi=true; cur=0; chips(); show(); $('#prMsg').textContent=hand==='both'?'Two-handed arpeggio: both hands play the arpeggio.':'One-handed arpeggio: the right hand plays the arpeggio; the left hand plays the '+({root:'root',p5:'root and fifth',oct:'root and octave',fill:'root, fifth and octave'})[st.alh]+' on every root.'; if(!quiet) play1(steps[0]); }
 /* a console strip of lit buttons, like the Scale room's */
 function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col);
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; }
@@ -1090,10 +1107,10 @@ function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-
 function chordConsole(box){
   const strips=el('div','p-mix p-cmix'); box.appendChild(strips);
   strips.append(
-    cStrip('Mode',[['canvas','Chord canvas','Type a progression: Dr. Onye plays it chord by chord'],['voice','Voicings','One chord at a time, and every way to play it']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
-    cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode==='voice',offWhy:'Voicings are played as he gives them'}),
+    cStrip('Mode',[['canvas','Chord canvas','Type a progression: Dr. Onye plays it chord by chord'],['voice','Voicings','One chord at a time, and every way to play it'],['arp','Arpeggios','Chords played harp-like, with his fingering']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
+    cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode!=='canvas',offWhy:'For the chord canvas'}),
     cStrip('Technique',[['v','Chords','All the notes together'],['h','Broken chords','One note at a time, from the bottom up'],['a','Arpeggio','Sixteenth-note arpeggio, once per chord'],['grace','Grace notes','A grace note on a scale tone (not the 1st or 4th) when the right hand has three notes'],['bline','Bass line','Two sixteenths now and then lead into the next bass note']],
-      ()=>[st.vh,st.grace?'grace':'',st.bline?'bline':''],v=>{ if(v==='grace') st.grace=!st.grace; else if(v==='bline') st.bline=!st.bline; else st.vh=v; save(); render(); },{two:true}));
+      ()=>[st.vh,st.grace?'grace':'',st.bline?'bline':''],v=>{ if(v==='grace') st.grace=!st.grace; else if(v==='bline') st.bline=!st.bline; else st.vh=v; save(); render(); },{two:true,off:()=>st.cmode==='arp',offWhy:'Arpeggios have their own fingering'}));
 }
 /* the chord canvas: Easy (type the chart) or Professional (a box for every beat), like the Studio's chord chart */
 function canvasUI(area){

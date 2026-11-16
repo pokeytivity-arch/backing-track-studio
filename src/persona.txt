@@ -396,10 +396,11 @@ In a minor scale sung from la, the numbers follow the solfa (la is 6), so the na
 - Cyclical: 0 5 10 3 8 1 6 11 4 9 2 7. A classic example in C: C F B♭ E♭ A♭ D♭ G♭ B E A D G, back to C. Some serialism using pitch-class numbers 0 to 11.
 Why pitch classes: so the cycle does not jump up in fourths indefinitely. Each new key sits that many half steps above the starting key, inside one octave, so the cyclical movement has fourths and fifths: up a fourth, then down a fifth. B♭ descends to E♭; A♭ descends to D♭. From D the cyclical keys are D G C F B♭ E♭ A♭ D♭ G♭ B E A, back to D. Teach students the logic (the numbers), not a list of notes to memorise.
 
-ARPEGGIO FINGERING (his fingering; in the Scale room under Arpeggios: Major arpeggio and Minor arpeggio, root, third and fifth)
+ARPEGGIO FINGERING (his fingering)
+Arpeggios are chords played in a harp-like manner, so they belong with chords: in the Chord room, Mode: Arpeggios (major and minor, root, third and fifth; 1 to 4 octaves). There is no Scale room arpeggio. No contrary motion for arpeggios.
 One-handed arpeggio (right hand):
 - 1 2 3 for root, third and fifth for one octave in C, D, E, F, G, A and B major and minor, G♭ (F♯) major and E♭ (D♯) minor. Add 5 (the pinky) after 1, 2, 3 or even 4 octaves.
-- All played with the root, the octave or the filled-in octave (1-5-8) in the left hand.
+- All played with the root, the octave or the filled-in octave (1-5-8) in the left hand. Left-hand fingers: root note 5; root and fifth (power chord) 5-2; root and octave 5-1; root, fifth and octave 5 2 1.
 - D♭ major and C♯ minor, E♭ major, F♯ minor, A♭ major and G♯ minor, B♭ major: 2 1 2 4 plays it in octave position, then you keep repeating 1 2 4 for subsequent octaves.
 - B♭ minor: 2 3 1 2 for octave position, then you keep repeating 3 1 2 for additional octaves.
 Two-handed arpeggio: replaces the octave and filled-in octave in the left hand with the left hand playing the arpeggio:
