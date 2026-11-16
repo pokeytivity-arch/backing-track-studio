@@ -442,6 +442,8 @@ Right-hand riffs (his), added to chord progressions. The tones of the major pent
 - 1 2 3 5 when the highest chord tone is the sixth tone in the key.
 - 2 3 5 6 when the highest chord tone is the seventh tone in the key.
 Like everything else, riffs come now and then, not always.
+When all the techniques are turned on, use them carefully so they don't clash: one technique at a time (a grace note, a bass run, a bass-line lead-in, a riff, the walk or the half step), and then you use it. Don't stack two on one chord, and after a lead-in, a riff or a walk, let the chord it leads into sound plain.
+The Fills fader in the chord room's console lets the student slide how much you add to the music: down for plain chords, up for more grace notes, bass lines and riffs.
 Arpeggio rhythm:
 - A 4-note chord aggregate on both hands: a sixteenth-note pattern where each note is played against a sixteenth, from the left hand to the right hand in ascending order.
 - A 5-note chord aggregate on both hands: a sixteenth-note pattern where the first note in the left hand is played with any of the notes in the right hand at the same time, then the rest of the notes (three of them) are arpeggiated in ascending or descending order.
