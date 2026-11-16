@@ -466,7 +466,7 @@ function makeQ(){
   return {opts,ans:a.name,play(){ playProg(r,a.deg,1.3,1.5); },why:'That was '+a.name+' in '+midiName(r)+': '+a.deg.map(d=>chName(r,d)).join(' → ')+'.'};
 }
 /* ---------- scale recognition: tones ----------
-   The scale is played 5 times, slowly enough to hear every tone. Then Ready (or Hear again). Pokey plays the scale tones in random order and
+   The scale is played 5 times, slowly enough to hear every tone. Then Ready (or Hear again). Dr. Onye plays the scale tones in random order and
    the student picks the tone heard: right turns green; wrong turns red and the right one shows green. A score at the end.
    A button in the corner goes to the Scale room to practise this scale. */
 const TT={key:null,type:null,bpm:60,reps:5};
@@ -484,7 +484,7 @@ function tonesTest(){
   const mk=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=fn; ctl.appendChild(b); return b; };
   const toneBtns=(on)=>{ opts.textContent=''; return sc.tones.map(x=>{ const b=el('button','e-opt tt'); b.type='button'; b.innerHTML='<span></span><small></small>'; b.firstChild.textContent=x.name; b.lastChild.textContent=x.deg; b.disabled=!on; opts.appendChild(b); return b; }); };
   /* step 1: choose the scale */
-  const setup=()=>{ clr(); ctl.textContent=''; msg.textContent=''; big.textContent=name(); sub.textContent='You will hear this scale 5 times. Listen to every tone. Then Pokey plays the tones one at a time and you pick the one you heard.';
+  const setup=()=>{ clr(); ctl.textContent=''; msg.textContent=''; big.textContent=name(); sub.textContent='You will hear this scale 5 times. Listen to every tone. Then Dr. Onye plays the tones one at a time and you pick the one you heard.';
     const ks=el('select'); sc.ok.forEach(k=>{ const o=el('option',null,symk(k)); o.value=k; ks.appendChild(o); }); ks.value=TT.key; ks.setAttribute('aria-label','Note');
     const ts=el('select'); let og=null, gl=null; (window.SCALES.types||[]).forEach(t=>{ if(t.g!==gl){ gl=t.g; og=el('optgroup'); og.label=(t.fam==='exotic'?'Exotic · ':'')+(t.g||''); ts.appendChild(og); } const o=el('option',null,t.l); o.value=t.id; og.appendChild(o); }); ts.value=TT.type; ts.setAttribute('aria-label','Scale');
     ks.onchange=()=>{ TT.key=ks.value; render(); }; ts.onchange=()=>{ TT.type=ts.value; render(); }; ctl.append(ks,ts); mk('▶ Listen',()=>listen(TT.reps),true); toneBtns(false); };
@@ -549,7 +549,7 @@ function done(){
   const again=el('button','e-btn pri','Play another round'); again.type='button'; again.onclick=()=>{ n=0; score=0; missed={}; stats={}; next(); }; msg.appendChild(again);
   if(mode==='rel'){ const cs=el('button','e-btn','Change settings'); cs.type='button'; cs.onclick=()=>render(); msg.appendChild(cs); }
   const aw=el('button','e-btn','Switch to Awareness'); aw.type='button'; aw.onclick=()=>{ mode='aware'; try{ localStorage.setItem('ps-ear-mode',mode); }catch(_){} render(); }; msg.appendChild(aw);
-  if(miss.length){ const ask=el('button','e-btn','Ask Pokey about what I missed'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('In ear training ('+(mode==='rel'?RCATS.find(c=>c[0]===rcat)[1]+' relative pitch':CATS.find(c=>c[0]===cat)[1]+' recognition')+') I missed: '+miss.join(', ')+'. Help me hear the difference and give me something to practice on the keyboard.',{fresh:true}); }; msg.appendChild(ask); }
+  if(miss.length){ const ask=el('button','e-btn','Ask Dr. Onye about what I missed'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('In ear training ('+(mode==='rel'?RCATS.find(c=>c[0]===rcat)[1]+' relative pitch':CATS.find(c=>c[0]===cat)[1]+' recognition')+') I missed: '+miss.join(', ')+'. Help me hear the difference and give me something to practice on the keyboard.',{fresh:true}); }; msg.appendChild(ask); }
 }
 
 /* ---------- teacher: students add a teacher's code once; finished tests are sent to that teacher (needs a signed-in Student account) ---------- */

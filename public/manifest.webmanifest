@@ -1,6 +1,6 @@
 {
- "name": "Pokeytivity Piano Suite",
- "short_name": "Pokeytivity",
+ "name": "HearandPlay Piano Suite",
+ "short_name": "HearandPlay",
  "start_url": "/",
  "scope": "/",
  "display": "standalone",

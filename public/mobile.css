@@ -160,7 +160,7 @@
 #prRoom .p-orow{display:flex;gap:8px;flex-wrap:nowrap}
 #prRoom .p-orow .p-chip{flex:1 1 0;min-width:0;padding:10px 4px 8px}
 
-/* Scale room on a phone: row 1 Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 the toggles and Play scale; keyboard below */
+/* Scale room on a phone: row 1 Scale, Note, Octaves, Loop, Tempo, Ask Dr. Onye; row 2 the toggles and Play scale; keyboard below */
 @media (max-width:700px){
   html body #prRoom .p-r1,html body #prRoom .p-r2{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;width:100%}
   html body #prRoom .p-r1 .p-sel{flex:1 1 0;min-width:0}

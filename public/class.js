@@ -226,7 +226,7 @@ function mic(){
 function renderChat(extra){
   const c=chat(), log=$('tLog'); log.textContent='';
   $('clName').textContent=c.title;
-  if(!c.log.length&&false){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Pokey**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. Are you ready? Let's go!"); log.appendChild(d); }
+  if(!c.log.length&&false){ const d=document.createElement('div'); d.className='t-msg bot'; d.innerHTML=tFormat("Hello, and a very good day to you! I'm **Dr. Onye**, your piano coach. Ask me about chords, scales, ear training, or the chart you're playing right now. I'll write the important things on the whiteboard and show them on the keyboard. Are you ready? Let's go!"); log.appendChild(d); }
   c.log.forEach((m,i)=>{ const d=document.createElement('div'); d.className='t-msg '+(m.role==='user'?'user':'bot');
     if(m.role==='user') d.textContent=m.content;
     else { const sp=splitReply(m.content); d.innerHTML=tFormat(sp.text); const row=document.createElement('div'); row.className='cl-acts';
@@ -281,7 +281,7 @@ async function ask(q,opts){
     const r=await fetch('/api/teacher',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:c.log.slice(-20),context})});
     const d=await r.json().catch(()=>({}));
     if(r.ok&&d.reply){ reply=d.reply; c.log.push({role:'assistant',content:reply}); }
-    else err=d.error==='not_configured'?'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.':d.error==='slow_down'?'Lots of questions! Give it a minute, then ask again.':d.error==='daily_limit'?'You\'ve used today\'s questions for the coach on this device. Come back tomorrow and Pokey will be ready for you.':d.error==='access'?'The coach needs the access code. Ask your question again and enter the code when it appears.':'Something went wrong reaching the coach. Please try again.';
+    else err=d.error==='not_configured'?'The coach isn\'t switched on yet. The site owner needs to add the Claude API key in Cloudflare.':d.error==='slow_down'?'Lots of questions! Give it a minute, then ask again.':d.error==='daily_limit'?'You\'ve used today\'s questions for the coach on this device. Come back tomorrow and Dr. Onye will be ready for you.':d.error==='access'?'The coach needs the access code. Ask your question again and enter the code when it appears.':'Something went wrong reaching the coach. Please try again.';
   }catch(_){ err='Couldn\'t reach the coach. Check your internet connection and try again.'; }
   if(err) c.log.pop();
   busy=false; $('tSend').disabled=false; c.when=Date.now();
@@ -543,7 +543,7 @@ function build(){
   <div class="cl-home" id="clHome">
     <p class="cl-welcome">Welcome to class today, from consultation sessions, to scale and chord practice sessions and ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.</p>
     <div class="cl-four">
-    <button type="button" class="cl-box" data-go="chat" data-k="chat" style="--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9"><img class="ph" src="class-chat.webp?v=n" alt="" style="object-position:22% center" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H25l-9 8v-8H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3Z" fill="#fff"/><circle cx="16" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="24" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="32" cy="21.5" r="2.4" fill="#2a45c9"/></svg></i><b>Consultation</b><span>Talk it through with Pokey, one step at a time.</span><em class="go">Open →</em></div></button>
+    <button type="button" class="cl-box" data-go="chat" data-k="chat" style="--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9"><img class="ph" src="class-chat.webp?v=n" alt="" style="object-position:22% center" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M8 10h32a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H25l-9 8v-8H8a3 3 0 0 1-3-3V13a3 3 0 0 1 3-3Z" fill="#fff"/><circle cx="16" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="24" cy="21.5" r="2.4" fill="#2a45c9"/><circle cx="32" cy="21.5" r="2.4" fill="#2a45c9"/></svg></i><b>Consultation</b><span>Talk it through with Dr. Onye, one step at a time.</span><em class="go">Open →</em></div></button>
     <button type="button" class="cl-box" data-go="ear" data-k="ear" style="--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255;--c1:#b78bff;--c2:#6a35d8"><img class="ph" src="class-ear.webp?v=n" alt="" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg></i><b>Ear training</b><span>Train your ear with short quizzes.</span><em class="go">Open →</em></div></button>
     <button type="button" class="cl-box" data-go="scales" data-k="scales" style="--g1:#e0911a;--g2:#3b2205;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a"><img class="ph" src="class-scales.webp?v=n" alt="" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/><path d="M6 36h36" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></i><b>Scales</b><span>Load a scale on the keyboard with fingering.</span><em class="go">Open →</em></div></button>
     <button type="button" class="cl-box" data-go="chords" data-k="chords" style="--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c"><img class="ph" src="class-chords.webp?v=n" alt="" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg></i><b>Chords</b><span>Type chords and see and hear them on the keyboard.</span><em class="go">Open →</em></div></button>
@@ -566,7 +566,7 @@ function build(){
     </div>
     <form id="tForm" class="cl-form">
       <label for="tInput" class="sr">Your answer or question</label>
-      <textarea id="tInput" rows="2" maxlength="2000" placeholder="Type your answer or ask Pokey anything…"></textarea>
+      <textarea id="tInput" rows="2" maxlength="2000" placeholder="Type your answer or ask Dr. Onye anything…"></textarea>
       <span></span><div class="row"><button class="cl-ib" id="clMic" type="button" aria-label="Speak" title="Speak">🎤</button><button class="cl-ib send" id="tSend" type="submit" aria-label="Send" title="Send">↑</button></div>
     </form>
     <p class="help" style="margin:0">AI coach trained from real music lessons with real people all around the world.</p>
@@ -586,7 +586,7 @@ function build(){
         <div class="cl-notes"><b id="clStepName" style="color:#fff;font:800 15px var(--display);margin-right:8px"></b><span id="clStepNotes"></span></div>
         <div class="cl-ktools" id="clKbdTools" hidden>
           <button class="btn" id="clPrev" type="button" aria-label="Previous chord">◀</button><button class="btn" id="clNext" type="button" aria-label="Next chord">▶</button>
-          <button class="btn pri" id="clPlayProg" type="button">▶ Play progression</button><button class="btn" id="clCheck" type="button" title="Play the chord on a MIDI keyboard and Pokey checks it">🎹 Check my playing</button>
+          <button class="btn pri" id="clPlayProg" type="button">▶ Play progression</button><button class="btn" id="clCheck" type="button" title="Play the chord on a MIDI keyboard and Dr. Onye checks it">🎹 Check my playing</button>
           <label class="t-chk"><input type="checkbox" id="clLoop"> Loop</label>
           <select id="clTempo" aria-label="Speed"><option value="60">Slow</option><option value="80" selected>Medium</option><option value="104">Fast</option></select>
           <button class="btn" id="clPng" type="button">Save keyboard diagram</button><button class="btn" id="clSheet" type="button">Sheet music</button>

@@ -425,7 +425,7 @@ function normChords(text){
 }
 
 /* ---------- keyboard ---------- */
-/* Letters, Solfa or Numbers. Solfa and numbers only exist for the scales Pokey has given syllables for; the numbers come from the syllables. */
+/* Letters, Solfa or Numbers. Solfa and numbers only exist for the scales Dr. Onye has given syllables for; the numbers come from the syllables. */
 const hasSol=()=>!!(window.SCALELIB&&SCALELIB.solfa[st.type]);
 const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
 const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
@@ -657,7 +657,7 @@ function pairStrip(title,src,pair){
   new MutationObserver(sync).observe(src,{attributes:true,subtree:true,attributeFilter:['aria-pressed','disabled']});
   return strip;
 }
-/* the console box: channel strips on top; a bar along the bottom with the power switch, the memory banks, Studio and Ask Pokey.
+/* the console box: channel strips on top; a bar along the bottom with the power switch, the memory banks, Studio and Ask Dr. Onye.
    Power off folds the strips away and shows a one-line summary instead. */
 let MAXI=false, PHX=0; { let ft=0; const refit=()=>{ clearTimeout(ft); ft=setTimeout(()=>{ if(ov&&!ov.hidden&&kind==='scales') phoneFit(); },350); }; window.addEventListener('resize',refit); try{ new MutationObserver(refit).observe(document.documentElement,{attributes:true,attributeFilter:['class']}); }catch(_){} }
 /* phone: use the free space between the console and the keyboard to make the console's buttons and faders taller */
@@ -673,7 +673,7 @@ function conSum(){ const sm=document.querySelector('#prRoom .p-sum'); if(!sm) re
 function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Power</span>'; pw.classList.add('p-pwr');
   const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Power: on. Click to switch the console off':'Power: off. Click to switch the console on'; pw.classList.toggle('on',on); }; ps();
   pw.onclick=()=>{ const on=!conOn(); try{ localStorage.setItem('pr-con',on?'1':'0'); }catch(_){} const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.toggle('off',!on); ps(); conSum(); };
-  const sb=el('button','p-ubtn p-eart','Ear training'); sb.type='button'; sb.title='Scale recognition: hear this scale, then name its tones'; sb.onclick=()=>{ const k=st.key, t=st.type; close(); window.__earBack=()=>openScale(k,t); try{ if(window.EAR&&EAR.openTones) EAR.openTones(k,t); }catch(_){} };   /* replaces the Studio button */ const stb=$('#prStudio'); if(stb){ stb.hidden=false; stb.className='p-ubtn p-stud'; stb.textContent='Studio'; }   /* Practice in Studio, back beside Ear training */ if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Pokey'; }
+  const sb=el('button','p-ubtn p-eart','Ear training'); sb.type='button'; sb.title='Scale recognition: hear this scale, then name its tones'; sb.onclick=()=>{ const k=st.key, t=st.type; close(); window.__earBack=()=>openScale(k,t); try{ if(window.EAR&&EAR.openTones) EAR.openTones(k,t); }catch(_){} };   /* replaces the Studio button */ const stb=$('#prStudio'); if(stb){ stb.hidden=false; stb.className='p-ubtn p-stud'; stb.textContent='Studio'; }   /* Practice in Studio, back beside Ear training */ if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Dr. Onye'; }
   const fb=el('button','p-pow p-feedb'); fb.type='button'; fb.innerHTML='<i class="p-led"></i><span>Feed</span>'; fb.onclick=feedDlg; const sp=el('span',MQM.matches&&!MAXI?'p-sp p-dv':'p-sp'); bar.append(pw,bankBar(),sp,fb); setTimeout(feedSync,0);
   /* phone: the console can be opened full screen to set it, then closed */
   if(MQM.matches){ const mb=el('button','p-maxb'); mb.type='button'; mb.textContent=MAXI?'Done':'⤢'; mb.title=MAXI?'Close the full-screen console':'Open the console full screen'; mb.setAttribute('aria-label',mb.title); mb.onclick=()=>{ if(playing) return; MAXI=!MAXI; render(); }; setTimeout(()=>bar.appendChild(mb),0); } if(stb) bar.appendChild(stb); if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
@@ -815,12 +815,12 @@ function render(){
     ctl.appendChild(sel('Octaves',[{v:'1',t:'One octave'},{v:'2',t:'Two octaves'}].concat(st.motion!=='contrary'||mo4>=3?[{v:'3',t:'Three octaves'}]:[]).concat(mo4>=4?[{v:'4',t:'Four octaves'}]:[]),String(st.oct||1),v=>{ if(rhyN()){ const r={1:'q',2:'e',3:'t',4:'s'}[+v]; if(r&&!rhyOK(r)){ st.rhy=r; save(); render(); return; } } st.oct=+v; save(); loadScale(); }));
     ctl.lastChild.classList.add('p-octs'); if(rhyN()){ const os=ctl.lastChild.querySelector('select'); if(os){ os.title='In rhythm practice the octaves go with the rhythm: one octave quarter notes, two eighth notes, three triplets, four sixteenth notes'; const o=[...os.options].find(x=>+x.value===rhyN()); if(o) os.value=o.value; else { const n=document.createElement('option'); n.value=String(rhyN()); n.textContent=['','One','Two','Three','Four'][rhyN()]+' octave'+(rhyN()>1?'s':''); os.appendChild(n); os.value=n.value; } } }
     transport(ctl); ctl.appendChild(d);
-    const ask=el('button','e-btn','Ask Pokey about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
-    /* desktop: Practice in Studio and Ask Pokey sit together on their own line, with the memory banks */ /* (Studio and Ask Pokey now live on the console's bottom bar) */
-    if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Pokey; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
+    const ask=el('button','e-btn','Ask Dr. Onye about this scale'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout(st.type==='major'?'Tell me about the '+st.key+' major scale. How is it built with the 3+4 method, and what should I practice with it?':'Tell me about the '+st.key+' '+((SC&&SC.types||[]).find(t=>t.id===st.type)||{l:''}).l+' scale. How is it built, and what should I practice with it?',{fresh:true}); }; ctl.appendChild(ask);
+    /* desktop: Practice in Studio and Ask Dr. Onye sit together on their own line, with the memory banks */ /* (Studio and Ask Dr. Onye now live on the console's bottom bar) */
+    if(MQM.matches){ /* phone: row 1 = Scale, Note, Octaves, Loop, Tempo, Ask Dr. Onye; row 2 = the toggles and Play scale; keyboard below. Desktop keeps its layout. */
       const r1=el('div','p-r1'), r2=el('div','p-r2'), rg=ctl.querySelectorAll('.p-rng'), pl=$('#prPlay'), oc=ctl.querySelector('.p-octs');
       ms.querySelectorAll('.p-sel').forEach(x=>r1.appendChild(x)); ms.remove();
-      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Pokey'; r2.append(fm,mo,md,sy,hand,d,ry); if(fg) r2.append(fg); r2.hidden=true; ctl.append(r1,r2); void r3; { const bk=el('button','e-round p-bk','←'); bk.type='button'; bk.setAttribute('aria-label','Back'); bk.onclick=()=>{ const x=$('#prX'); if(x) x.click(); }; r1.prepend(bk); }
+      const r3=el('div','p-r3'); r1.append(oc,rg[1],rg[0]); ask.textContent='Ask Dr. Onye'; r2.append(fm,mo,md,sy,hand,d,ry); if(fg) r2.append(fg); r2.hidden=true; ctl.append(r1,r2); void r3; { const bk=el('button','e-round p-bk','←'); bk.type='button'; bk.setAttribute('aria-label','Back'); bk.onclick=()=>{ const x=$('#prX'); if(x) x.click(); }; r1.prepend(bk); }
     } else { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); /* Up / Down and Similar / Contrary sit with the hands (clear the ones from the last render first) */ top.querySelectorAll('.p-motop').forEach(x=>x.remove()); d.classList.add('p-motop'); d.style.marginLeft='auto'; mo.classList.add('p-motop'); top.insertBefore(d,hand); top.insertBefore(mo,hand); /* desktop: Scale and Note sit with the other controls */ const sl=[...ms.querySelectorAll('.p-sel')]; /* first row: Scale, Note, Tempo and Loop together */ const r0=el('div','p-r0'); sl.reverse(); /* Note first, then Scale */ sl.forEach((x,i)=>{ x.classList.add('p-sel-d'); /* fixed widths: the Scale box never grows or shrinks with the name */ x.style.minWidth=x.style.width=x.style.maxWidth=i===0?'84px':'250px'; x.style.flex='none'; if(i){ const q=x.querySelector('select'); if(q){ q.style.textOverflow='ellipsis'; q.title=q.options[q.selectedIndex]?q.options[q.selectedIndex].text:''; } } r0.appendChild(x); }); { const oc=ctl.querySelector('.p-octs'); if(oc) r0.appendChild(oc); } ctl.querySelectorAll('.p-rng').forEach(x=>r0.appendChild(x)); ctl.insertBefore(r0,ctl.firstChild); ms.remove(); }
     /* desktop: the six choices become a digital mixer, one channel strip each; the fader's stops are the options */
     { const mxi=MQM.matches&&MAXI, ph=MQM.matches&&!MAXI, chs=[['Hand',hand,{pair:[['lh','Left hand'],['rh','Right hand']],both:'both',lock:()=>st.motion==='contrary',lockWhy:'Contrary motion always uses both hands'}],['Motion',mo],['Direction',d,{pair:st.motion==='contrary'?[['up','Open'],['down','Close']]:[['up','Ascending'],['down','Descending']],both:'updown'}],['Family',fm],['Mode',md],['Names',sy],['Rhythm',ry]]; if(fg) chs.push(['Fingering',fg]);
@@ -847,7 +847,7 @@ function render(){
     const go=el('button','e-btn pri','Show chords'); go.type='button'; row.append(inp,go); mb.appendChild(row); const go2=()=>{ st.cpick=''; save(); const cs=document.querySelector('#prChord select'); if(cs) cs.value=''; loadChords(inp.value); more.open=false; }; go.onclick=go2; inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); go2(); } };
     const r3=el('div','e-ctl'); r3.style.marginTop='8px'; mb.appendChild(r3); if(lp) r3.appendChild(lp);
     const vb=el('button','e-btn','Voicings'); vb.type='button'; vb.onclick=()=>{ if(window.VOICE) VOICE.open(); }; r3.appendChild(vb);
-    const ask=el('button','e-btn','Ask Pokey about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r3.appendChild(ask);
+    const ask=el('button','e-btn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r3.appendChild(ask);
     r2.appendChild(more);
     $('#prLbl').textContent='Chord practice';
     { const c=chordPick(); if(st.cpick===undefined&&!st.chords&&K){ st.cpick=K.CHK[0]+':0'; } const c2=chordPick();
@@ -975,7 +975,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
   return [brand,
   {label:'File',items:[
     {label:'Practice in Studio',enabled:()=>{ const b=$('#prStudio'); return !!b&&!b.disabled; },run:()=>{ const b=$('#prStudio'); if(b) b.click(); }},
-    {label:'Ask Pokey about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask Pokey/.test(x.textContent)); if(b) b.click(); }},
+    {label:'Ask Dr. Onye about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask Dr. Onye/.test(x.textContent)); if(b) b.click(); }},
     {sep:true},
     {label:'Reset to default settings',run:()=>{ clr(); Object.assign(st,JSON.parse(JSON.stringify(DEF))); save(); open('scales'); }},
     {label:'Close scale practice',run:()=>{ const b=$('#prX'); if(b) b.click(); else close(); }}]},
@@ -1025,7 +1025,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
   win,
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>{ const t=[['Space','Play / Pause'],['S','Stop'],['L','Loop on/off'],['= / −','Tempo up / down 5 BPM'],['H','Show / hide the hands']]; const d=document.createElement('dialog'); d.className='info-dlg'; d.innerHTML='<h2>Scale practice shortcuts</h2><table class="keys">'+t.map(([k,v])=>'<tr><td><kbd>'+k+'</kbd></td><td>'+v+'</td></tr>').join('')+'</table>'; const c=el('button','btn pri','Close'); c.onclick=()=>{ d.close(); d.remove(); }; d.appendChild(c); document.body.appendChild(d); d.showModal(); }},
-    {label:'Ask Pokey…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
+    {label:'Ask Dr. Onye…',run:()=>{ close(); if(window.SUITE) SUITE.go('class'); }}]}].filter(Boolean); }
 function menuSync(){ try{ if(!window.PSMENU) return; PSMENU.set(ov&&!ov.hidden&&kind==='scales'?scaleMenus():null); }catch(_){} }
 /* leaving the app (screen locked, another app, tab hidden): pause where you are; nothing carries on by itself until you come back */
 function bg(){ try{ if(playing&&!paused&&!waitL&&pauseFn) pauseFn(); }catch(_){} }

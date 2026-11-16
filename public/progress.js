@@ -1,4 +1,4 @@
-/* progress.js: practice streak, topics explored, and Pokey's drill of the day.
+/* progress.js: practice streak, topics explored, and Dr. Onye's drill of the day.
    Everything is stored on this device (localStorage). */
 (function(){
 'use strict';
@@ -32,7 +32,7 @@ function hub(){
   const v=load(), s=streak(v), d=todays(), done=!!v.drills[today()], n=Object.keys(v.topics).length;
   el.innerHTML='<div class="pp-st"><b>'+(s>0?'🔥 '+s+'-day streak':'Start your streak today')+'</b><span>'+(v.days.includes(today())?'You practiced today':'Practice today to '+(s>0?'keep it going':'begin'))+'</span></div>'
    +'<div class="pp-st"><b>'+n+' topic'+(n===1?'':'s')+' explored</b><span>Open Hot Topics in Class to add more</span></div>'
-   +'<button type="button" class="pp-dr"><span>Pokey\'s drill of the day</span><b></b><i>'+(done?'Done today ✓ · Do it again':'Start →')+'</i></button>';
+   +'<button type="button" class="pp-dr"><span>Dr. Onye\'s drill of the day</span><b></b><i>'+(done?'Done today ✓ · Do it again':'Start →')+'</i></button>';
   el.querySelector('.pp-dr b').textContent=d.t; el.querySelector('.pp-dr').onclick=startDrill;
 }
 const css=document.createElement('style'); css.textContent='#psProg{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:stretch;margin:14px auto 0;width:min(1240px,94vw)}#psProg .pp-st,#psProg .pp-dr{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);border-radius:14px;padding:10px 16px;color:#fff;display:grid;gap:2px;text-align:left;font-family:inherit}#psProg .pp-st b,#psProg .pp-dr b{font-size:16px}#psProg .pp-st span,#psProg .pp-dr span{font-size:12px;color:#c4d0e6}#psProg .pp-dr{cursor:pointer;border-color:var(--ke8c25a,#ffd54a);background:rgba(255,213,74,.14)}#psProg .pp-dr:hover{background:rgba(255,213,74,.26)}#psProg .pp-dr i{font-style:normal;font-size:12px;color:var(--ke8c25a,#ffd54a);font-weight:700}';

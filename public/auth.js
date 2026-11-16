@@ -23,7 +23,7 @@ async function setRole(role){ const j=await api('PUT',{role}); if(j._s===200) se
 async function signOut(){ try{ await api('POST',{action:'logout'}); }catch(_){} tok=''; try{ localStorage.removeItem(TK); }catch(_){} me=null; emit(); }
 
 const ROLE_INFO=[['student','Student','Join a teacher with their code and send them your test results.'],['teacher','Teacher','Get a teacher code, see your students’ results and send announcements.'],['none','Prefer not to say','Use the suite on your own. No teacher links, results or announcements.']];
-const ERR={bad_email:'That email does not look right.',weak_password:'Use a password with at least 6 characters.',exists:'An account with that email already exists. Sign in instead.',wrong:'Email or password is not right. If you forgot it, ask Pokey to reset it.',slow_down:'Too many tries today. Please try again tomorrow.'};
+const ERR={bad_email:'That email does not look right.',weak_password:'Use a password with at least 6 characters.',exists:'An account with that email already exists. Sign in instead.',wrong:'Email or password is not right. If you forgot it, ask Dr. Onye to reset it.',slow_down:'Too many tries today. Please try again tomorrow.'};
 /* draws the sign-in / create-account form into a container; onDone(user) runs when signed in */
 function form(box,onDone,opts){
   opts=opts||{}; let mode=opts.mode||'in', role=opts.role||'student'; 

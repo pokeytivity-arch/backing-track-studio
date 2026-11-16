@@ -7,7 +7,7 @@
 'use strict';
 const KEY='ps-dest';
 const DEST={
-  class:{name:'Class',icon:'🎓',blurb:'Learn with Pokey. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
+  class:{name:'Class',icon:'🎓',blurb:'Learn with Dr. Onye. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
@@ -171,7 +171,7 @@ document.head.appendChild(css);
 
 /* ---------- the home screen ---------- */
 const hub=document.createElement('div'); hub.id='suiteHub'; hub.setAttribute('role','dialog'); hub.setAttribute('aria-label','Piano Suite home');
-hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>Pokeytivity Piano Suite</h1><p class="sub"><span>Consult Pokey, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span><i>|</i><span class="subpro" id="psPro">Get a professional practice plan</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
+hub.innerHTML='<div id="hubTop"></div><div class="in"><h1>HearandPlay Piano Suite</h1><p class="sub"><span>Consult Dr. Onye, the world\'s leading music AI coach</span><i>|</i><span>Practice in the studio with a backing track</span><i>|</i><span>Transcribe other musicians</span><i>|</i><span class="subpro" id="psPro">Get a professional practice plan</span></p><div class="cards" id="psCards"></div><div class="foot" id="psFoot"></div><button class="back" id="psBack" hidden>Back to where I was</button></div>';
 document.body.appendChild(hub);
 
 const ICONS={
