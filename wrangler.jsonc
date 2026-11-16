@@ -6,6 +6,10 @@
   "routes": [
     { "pattern": "app.pokeytivity.com", "custom_domain": true }
   ],
+  "durable_objects": {
+    "bindings": [ { "name": "PRESENCE", "class_name": "Presence" } ]
+  },
+  "migrations": [ { "tag": "v1", "new_sqlite_classes": ["Presence"] } ],
   "kv_namespaces": [
     { "binding": "LESSONS", "id": "00c6361654234e1796f62d789486342c" }
   ],

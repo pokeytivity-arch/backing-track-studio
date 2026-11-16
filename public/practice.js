@@ -33,11 +33,11 @@ function tally(s){ if(!SES.on||kind!=='scales'||!s) return; SES.lh+=(s.lh||[]).l
     SES.msg=k%2?"You've played "+tot.toLocaleString()+' notes so far. Keep it up!':(SES.lh&&SES.rh?"You've played "+SES.lh.toLocaleString()+' notes with your left hand and '+SES.rh.toLocaleString()+' with your right. Great work!':"Your "+(SES.lh?'left':'right')+' hand has played '+tot.toLocaleString()+' notes so far. Keep going!');
     SES.until=Date.now()+8000; watchDraw(); } }
 function watchEl(){ let w=document.querySelector('#prRoom .p-watch'); if(w) return w; const row=document.querySelector('#prRoom .p-mixrow'); if(!row) return null;
-  w=el('div','p-watch'); w.setAttribute('role','status'); w.innerHTML='<div class="p-wps"><div class="p-wp"><b>Stopwatch</b><div class="p-wd" data-w="sw">00:00</div><small>practice time</small></div><div class="p-wp"><b>Practice goal</b><div class="p-wd" data-w="cd">00:00</div><small class="p-wg"><button type="button" data-g="-5" aria-label="Shorter goal">−</button><span data-w="gl"></span><button type="button" data-g="5" aria-label="Longer goal">+</button></small></div><div class="p-wp"><b>Local time</b><div class="p-wd" data-w="clk">--:--</div><small data-w="tz"></small></div></div><div class="p-wm"><span data-w="msg"></span><span class="p-wn" data-w="n"></span></div><div class="p-feed"><b>Practicing now</b><em title="These are examples. Real students will show here once the live feed is switched on.">Examples</em><span class="p-fw" data-f="who"></span><span class="p-fx" data-f="what"></span><span class="p-fl" data-f="long"></span></div>';
+  w=el('div','p-watch'); w.setAttribute('role','status'); w.innerHTML='<div class="p-wps"><div class="p-wp"><b>Stopwatch</b><div class="p-wd" data-w="sw">00:00</div><small>practice time</small></div><div class="p-wp"><b>Practice goal</b><div class="p-wd" data-w="cd">00:00</div><small class="p-wg"><button type="button" data-g="-5" aria-label="Shorter goal">−</button><span data-w="gl"></span><button type="button" data-g="5" aria-label="Longer goal">+</button></small></div><div class="p-wp"><b>Local time</b><div class="p-wd" data-w="clk">--:--</div><small data-w="tz"></small></div></div><div class="p-wm"><span data-w="msg"></span><span class="p-wn" data-w="n"></span></div><div class="p-feed"><b>Practicing now</b><em title="An example. Real students appear here as they switch the feed on.">Example</em><span class="p-fw" data-f="who"></span><span class="p-fx" data-f="what"></span><span class="p-fl" data-f="long"></span><button type="button" class="p-fjoin" hidden>Turn on</button></div>';
   w.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{ goalMin=Math.max(5,Math.min(180,goalMin+ +b.dataset.g)); try{ localStorage.setItem('pr-goal',String(goalMin)); }catch(_){} SES.goalDone=sesSec()>=goalMin*60; watchDraw(); });
-  row.appendChild(w); return w; }
+  { const jb=w.querySelector('.p-fjoin'); if(jb) jb.onclick=feedDlg; } row.appendChild(w); return w; }
 function watchPlace(w){ const row=document.querySelector('#prRoom .p-mixrow'), con=document.querySelector('#prRoom .p-con'), mx=document.querySelector('#prRoom .p-mix'); if(!row||!con||!mx) return;
-  const flow=con.classList.contains('off'); w.classList.toggle('flow',flow); con.classList.toggle('p-hide',flow&&!w.hidden); if(flow){ w.style.left=w.style.top=w.style.width=w.style.height=''; return; }
+  const flow=false; w.classList.toggle('flow',flow); con.classList.toggle('p-hide',flow&&!w.hidden); if(flow){ w.style.left=w.style.top=w.style.width=w.style.height=''; return; }
   /* offsets, not screen rectangles: on a phone the whole page is turned sideways, which would swap a rectangle's width and height */
   const sl=mx.scrollLeft||0, C={left:con.offsetLeft,right:con.offsetLeft+con.offsetWidth,bottom:con.offsetTop+con.offsetHeight}, Mt=mx.offsetTop; let l=1e9, r=-1e9;
   mx.querySelectorAll(':scope>.p-ch:not(.p-lvl)').forEach(x=>{ if(x.offsetWidth){ l=Math.min(l,x.offsetLeft-sl); r=Math.max(r,x.offsetLeft-sl+x.offsetWidth); } });
@@ -46,10 +46,32 @@ function watchPlace(w){ const row=document.querySelector('#prRoom .p-mixrow'), c
   w.style.left=l+'px'; w.style.top=(Mt-4)+'px'; w.style.width=(r-l)+'px'; w.style.height=(C.bottom-Mt+4)+'px'; }
 /* who else is practising: until the real feed has students in it, the panel shows clearly marked examples */
 const FEED_EX=[['James','New York','D melodic minor','both hands',88,'t',14],['Grace','Lagos','B♭ major','right hand',72,'e',9],['Daniel','London','E harmonic minor','both hands',96,'q',22],['Ama','Accra','G major','left hand',80,'s',6],['Michael','Atlanta','F♯ major','both hands',100,'e',31],['Chioma','Abuja','A natural minor','both hands',84,'t',12],['Sarah','Toronto','E♭ major','right hand',76,'q',18],['David','Houston','C Dorian','both hands',90,'e',8],['Esther','Port Harcourt','B major','left hand',70,'free',27],['Samuel','Nairobi','A♭ major','both hands',92,'s',15]];
-const FEED_T0=Date.now(), RHYW={q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes',free:'free time'};
-function feedLine(){ const i=Math.floor(Date.now()/5000)%FEED_EX.length, x=FEED_EX[i], m=x[6]+Math.floor((Date.now()-FEED_T0)/60000); return [x[0]+' · '+x[1],'Practicing '+x[2]+' ('+x[3]+') · tempo '+x[4]+' · '+RHYW[x[5]],m+' min']; }
+const FEED_T0=Date.now(), RHYW={q:'quarter notes',e:'eighth notes',t:'triplets',s:'sixteenth notes',free:'free rhythm'};
+/* the live feed: students who switch it on see who else is practising, and are seen. Until 30 students are on it, marked examples fill in. */
+const FD=(()=>{ let f={}; try{ f=JSON.parse(localStorage.getItem('pr-feed')||'{}')||{}; }catch(_){} if(!f.id){ const a=new Uint8Array(12); (window.crypto||{}).getRandomValues?crypto.getRandomValues(a):a.forEach((_,i)=>a[i]=Math.random()*256|0); f.id=[...a].map(x=>x.toString(16).padStart(2,'0')).join(''); } return f; })();
+const fdSave=()=>{ try{ localStorage.setItem('pr-feed',JSON.stringify(FD)); }catch(_){} };
+const nickIdea=()=>['arctic','cobalt','maple','ember','violet','echo','harbor','sable','lunar','cedar','nova','coral'][Math.random()*12|0]+(1000+(Math.random()*9000|0));
+let FEED_LIVE=[], feedT=0, beatT=0;
+const scaleLabel=()=>{ const t=((window.SCALES&&SCALES.types)||[]).find(q=>q.id===st.type); return SYMK(st.key)+' '+(st.type==='major'?'major':(t?t.l:st.type)); };
+const handsLabel=()=>st.motion==='contrary'?'both hands, contrary':({rh:'right hand',lh:'left hand',both:'both hands'}[st.hand]||'');
+async function feedPull(){ if(!FD.on) return; try{ const r=await fetch('/api/presence?me='+FD.id,{cache:'no-store'}); const d=await r.json(); FEED_LIVE=Array.isArray(d.list)?d.list:[]; }catch(_){} }
+function feedBeat(off){ if(!FD.on&&!off) return; try{ fetch('/api/presence',{method:'POST',headers:{'content-type':'application/json'},keepalive:true,body:JSON.stringify(off?{id:FD.id,off:true}:{id:FD.id,nick:FD.nick,scale:scaleLabel(),hands:handsLabel(),bpm:st.bpm,rhy:RHYW[st.rhy||'free'],min:sesSec()/60})}).catch(()=>{}); }catch(_){} }
+function feedRun(on){ clearInterval(feedT); clearInterval(beatT); feedT=beatT=0; if(!on||!FD.on) return; feedBeat(); feedPull(); beatT=setInterval(()=>feedBeat(),25000); feedT=setInterval(feedPull,15000); }
+function feedItems(){ const live=FEED_LIVE.map(x=>({who:x.nick+(x.city?' · '+x.city:''),what:'Practicing '+x.scale+' ('+x.hands+') · tempo '+x.bpm+' · '+x.rhy,min:x.min,ex:false}));
+  const ex=live.length<30?FEED_EX.map(x=>({who:x[0]+' · '+x[1],what:'Practicing '+x[2]+' ('+x[3]+') · tempo '+x[4]+' · '+RHYW[x[5]],min:x[6]+Math.floor((Date.now()-FEED_T0)/60000),ex:true})):[]; return live.concat(ex); }
+function feedDlg(){ let d=document.querySelector('#prRoom .p-fdlg'); if(d){ d.remove(); return; } d=el('div','p-fdlg'); d.setAttribute('role','dialog'); d.setAttribute('aria-label','Practice feed');
+  d.innerHTML='<div class="p-fbox"><h3>Practice feed</h3><p>When the feed is on, you can see what other students are practicing, and they can see what you are practicing: your nickname, your city, the scale, hands, tempo and rhythm, and how long you have been practicing.</p><p>Use a nickname or pseudonym (like <b>arctic2342</b>) if you would rather not use your name. You can switch the feed off at any time.</p><label>Nickname <input maxlength="24" autocomplete="off" spellcheck="false"></label><div class="p-ferr"></div><div class="p-fbtns"><button type="button" class="p-fon"></button><button type="button" class="p-foff"></button></div></div>';
+  const inp=d.querySelector('input'), on=d.querySelector('.p-fon'), off=d.querySelector('.p-foff'), er=d.querySelector('.p-ferr'); inp.value=FD.nick||nickIdea();
+  on.textContent=FD.on?'Save nickname':'Turn feed on'; off.textContent=FD.on?'Turn feed off':'Not now';
+  on.onclick=()=>{ const n=inp.value.replace(/[^\p{L}\p{N} _.\-]/gu,'').trim(); if(n.length<2){ er.textContent='Choose a nickname of at least 2 letters or numbers.'; return; } FD.nick=n; FD.on=true; fdSave(); d.remove(); feedSync(); if(SES.on&&SES.t0) feedRun(true); };
+  off.onclick=()=>{ if(FD.on){ FD.on=false; fdSave(); feedBeat(true); feedRun(false); FEED_LIVE=[]; } d.remove(); feedSync(); };
+  d.onclick=e=>{ if(e.target===d) d.remove(); }; inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter') on.click(); if(e.key==='Escape') d.remove(); };
+  ov.appendChild(d); setTimeout(()=>inp.focus(),30); }
+function feedSync(){ document.querySelectorAll('#prRoom .p-feedb').forEach(b=>{ b.classList.toggle('on',!!FD.on); b.title=FD.on?'Practice feed is on as '+FD.nick+'. Click to change or switch off.':'Practice feed is off. Click to see who else is practicing (and be seen).'; }); }
 function watchDraw(){ const w=document.querySelector('#prRoom .p-watch'); if(!w) return; watchPlace(w);
-  { const f=feedLine(), q2=k=>w.querySelector('[data-f='+k+']'); if(q2('who')){ q2('who').textContent=f[0]; q2('what').textContent=f[1]; q2('long').textContent=f[2]; } }
+  { const q2=k=>w.querySelector('[data-f='+k+']'), tag=w.querySelector('.p-feed em'), jb=w.querySelector('.p-fjoin'); if(q2('who')){ const items=FD.on?feedItems():[];
+      if(!FD.on){ q2('who').textContent=''; q2('what').textContent='The practice feed is off. Switch it on to see who else is practicing.'; q2('long').textContent=''; tag.hidden=true; jb.hidden=false; }
+      else { const f=items[Math.floor(Date.now()/5000)%items.length]; q2('who').textContent=f.who; q2('what').textContent=f.what; q2('long').textContent=Math.round(f.min)+' min'; tag.hidden=!f.ex; jb.hidden=true; } } }
   const q=k=>w.querySelector('[data-w='+k+']'), sec=sesSec(), left=goalMin*60-sec;
   q('sw').textContent=hms(sec); q('cd').textContent=hms(left); q('cd').classList.toggle('done',left<=0); q('gl').textContent=goalMin+' min';
   { const ps=new Intl.DateTimeFormat([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(new Date()); const ap=(ps.find(x=>x.type==='dayPeriod')||{}).value||''; const c=q('clk'); c.textContent=ps.filter(x=>x.type!=='dayPeriod').map(x=>x.value).join('').trim(); if(ap){ const sm=document.createElement('span'); sm.className='p-ap'; sm.textContent=ap; c.appendChild(sm); } } q('tz').textContent=TZ;
@@ -58,10 +80,10 @@ function watchDraw(){ const w=document.querySelector('#prRoom .p-watch'); if(!w)
   q('msg').textContent=SES.msg; q('n').textContent='Notes '+(SES.lh+SES.rh).toLocaleString()+' · L '+SES.lh.toLocaleString()+' · R '+SES.rh.toLocaleString(); }
 function watchSync(){ if(!ov) return; const sc=kind==='scales';
   if(playing&&sc&&!SES.on){ Object.assign(SES,{on:true,ms:0,t0:0,lh:0,rh:0,next:100,msg:'',until:0,mi:Math.floor(Math.random()*MOTIV.length),goalDone:false}); clearInterval(SES.timer); SES.timer=setInterval(()=>{ if(SES.on) watchDraw(); },250); }
-  if(SES.on&&(!playing||!sc)){ if(SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } SES.on=false; clearInterval(SES.timer); const w=document.querySelector('#prRoom .p-watch'); if(w) w.remove(); ov.classList.remove('p-locked'); { const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.remove('p-hide'); }
+  if(SES.on&&(!playing||!sc)){ if(SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } SES.on=false; clearInterval(SES.timer); feedRun(false); if(FD.on) feedBeat(true); const w=document.querySelector('#prRoom .p-watch'); if(w) w.remove(); ov.classList.remove('p-locked'); { const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.remove('p-hide'); }
     const tot=SES.lh+SES.rh, m=$('#prMsg'); if(m&&tot) m.textContent='Practice session: '+hms(SES.ms/1000)+' · '+tot.toLocaleString()+' notes'+(SES.lh&&SES.rh?' (left hand '+SES.lh.toLocaleString()+', right hand '+SES.rh.toLocaleString()+')':'')+'. Well done!'; return; }
   if(!SES.on) return;
-  const run=!paused; if(run&&!SES.t0) SES.t0=Date.now(); if(!run&&SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; }
+  const run=!paused, was=!!SES.t0; if(run&&!SES.t0) SES.t0=Date.now(); if(!run&&SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } if(run!==was){ if(run) feedRun(true); else { feedRun(false); if(FD.on) feedBeat(true); } }
   const w=watchEl(); if(w){ w.hidden=!run; watchPlace(w); } ov.classList.toggle('p-locked',run); watchDraw(); if(run) meterGo(); }
 const playPause=()=>{ if(!playing){ playAll(); updPause(); return; } if(waitL) return; if(pauseFn) pauseFn(); };
 const clr=()=>{ curDesc=false; timers.forEach(x=>{ if(x&&x.clear) x.clear(); else clearTimeout(x); }); timers=[]; playing=false; paused=false; waitL=false; pauseFn=null; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} updPause(); const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent='▶ Play'; };
@@ -149,8 +171,8 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-mixrow.ph .p-watch{padding:5px 6px;gap:4px;border-radius:9px} #prRoom .p-mixrow.ph .p-wps{gap:5px} #prRoom .p-mixrow.ph .p-wp{padding:3px;gap:2px}
 #prRoom .p-mixrow.ph .p-wd{font-size:19px} #prRoom .p-mixrow.ph .p-wp b{font-size:7.5px} #prRoom .p-mixrow.ph .p-wp small{font-size:9px} #prRoom .p-mixrow.ph .p-wm{font-size:10.5px;gap:6px} #prRoom .p-mixrow.ph .p-wn{font-size:9.5px}
 #prRoom .p-mixrow.ph .p-wg button{width:18px;height:16px;font-size:11px;min-height:0}
-#prRoom .p-cbar{display:flex;align-items:center;gap:8px;padding:7px 8px;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18);border-radius:0 0 12px 12px}
-#prRoom .p-cbar .p-banks{margin:0;padding:0;border:0;background:none;flex:0 1 auto}
+#prRoom .p-cbar{display:flex;align-items:center;gap:5px;padding:7px 6px;border-top:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18);border-radius:0 0 12px 12px}
+#prRoom .p-cbar .p-banks{margin:0;padding:0;border:0;background:none;flex:0 1 auto;gap:4px} #prRoom .p-cbar .p-bank{padding:2px 7px 2px 6px} #prRoom .p-cbar .p-pow,#prRoom .p-cbar .p-ubtn{padding:2px 8px 2px 7px} #prRoom .p-cbar .p-bl{margin-right:1px}
 #prRoom .p-sp{flex:1}
 #prRoom .p-pow,#prRoom .p-ubtn,#prRoom .p-tapw{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:2px 10px 2px 8px;border-radius:5px;border:1px solid #070910;background:linear-gradient(180deg,#2a3042,#1a1f2c);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 2px 3px rgba(0,0,0,.55);color:#c9cfdd;font:800 10px var(--body);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 #prRoom .p-ubtn{letter-spacing:.04em;text-transform:none;font-size:12px;color:#e6e9f2}
@@ -178,6 +200,22 @@ const css=document.createElement('style'); css.textContent=`
 #prRoom .p-mixrow.ph .p-pow,#prRoom .p-mixrow.ph .p-ubtn,#prRoom .p-mixrow.ph .p-bank,#prRoom .p-mixrow.ph .p-bsave,#prRoom .p-mixrow.ph .p-bdel{min-height:19px!important;padding:1px 5px!important;font-size:9px!important;gap:3px}
 #prRoom .p-mixrow.ph .p-banks{gap:3px} #prRoom .p-mixrow.ph .p-feed{padding:2px 6px;font-size:10px;gap:5px} #prRoom .p-mixrow.ph .p-feed b{font-size:7.5px} #prRoom .p-mixrow.ph .p-fl{font-size:9.5px} #prRoom .p-mixrow.ph .p-feed em{font-size:7px}
 #prRoom .p-mixrow.ph .p-watch.flow{min-height:110px}
+#prRoom .p-feedb .p-led{background:#123018} #prRoom .p-feedb.on .p-led{background:#3dff6e;box-shadow:0 0 6px 1px rgba(61,255,110,.85)}
+#prRoom .p-fjoin{margin-left:auto;flex:none;padding:2px 9px;border-radius:5px;border:0;background:#1f9e46;color:#fff;font:800 10px var(--body);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+#prRoom .p-fdlg{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(3,5,10,.6)}
+#prRoom .p-fbox{width:min(460px,92vw);max-height:90vh;overflow:auto;padding:22px 24px;border-radius:16px;border:1px solid #3a4258;background:#121726;color:#e6e9f2;box-shadow:0 20px 50px rgba(0,0,0,.6);font:500 14.5px/1.5 var(--body)}
+#prRoom .p-fbox h3{margin:0 0 10px;font:800 20px var(--display,var(--body))} #prRoom .p-fbox p{margin:0 0 10px;color:#c9cfdd}
+#prRoom .p-fbox label{display:grid;gap:5px;margin-top:6px;font:800 10px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8d97b0}
+#prRoom .p-fbox input{padding:9px 12px;border-radius:9px;border:1px solid #3a4258;background:#05070c;color:#fff;font:700 16px var(--body);letter-spacing:0;text-transform:none}
+#prRoom .p-ferr{min-height:18px;color:#ff8a8a;font-size:12.5px;margin-top:4px} #prRoom .p-fbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+#prRoom .p-fbtns button{padding:9px 16px;border-radius:999px;border:1px solid #3a4258;background:#1a1f2c;color:#e6e9f2;font:800 14px var(--body);cursor:pointer} #prRoom .p-fbtns .p-fon{background:#1f9e46;border-color:#1f9e46;color:#fff}
+#prRoom .p-pwr svg{width:13px;height:13px} #prRoom .p-pwr .p-led{background:#ff3b3b;box-shadow:0 0 6px 1px rgba(255,59,59,.8)} #prRoom .p-pwr.on .p-led{background:#3dff6e;box-shadow:0 0 6px 1px rgba(61,255,110,.85)}
+#prRoom .p-con.off .p-mix{display:flex!important} #prRoom .p-con.off .p-sum{display:none!important} #prRoom .p-con.off .p-cbar{border-top:1px solid rgba(255,255,255,.07)!important}
+#prRoom .p-con.off .p-mix,#prRoom .p-con.off .p-cbar>*:not(.p-pwr){pointer-events:none}
+#prRoom .p-con.off .p-led,#prRoom .p-con.off .p-key.on .p-led,#prRoom .p-con.off .p-bank.has .p-led,#prRoom .p-con.off .p-mtr i.lit{background:#10141c!important;box-shadow:inset 0 1px 1px rgba(0,0,0,.8)!important}
+#prRoom .p-con.off .p-pwr .p-led{background:#ff3b3b!important;box-shadow:0 0 6px 1px rgba(255,59,59,.8)!important}
+#prRoom .p-con.off .p-key,#prRoom .p-con.off .p-key.on,#prRoom .p-con.off .p-bank,#prRoom .p-con.off .p-bsave,#prRoom .p-con.off .p-bdel,#prRoom .p-con.off .p-ubtn,#prRoom .p-con.off .p-feedb{color:#555e72!important;background:linear-gradient(180deg,#22283a,#171b26)!important}
+#prRoom .p-con.off .p-lvn{color:#3a3f4c!important;text-shadow:none} #prRoom .p-con.off .p-cht{color:#4f586c}
 #prRoom .p-cdd{gap:10px;flex-wrap:wrap;align-items:flex-end} #prRoom .p-cdd .p-sel{min-width:130px} #prRoom #prChord{min-width:220px} #prRoom .p-more{position:relative;display:inline-block} #prRoom .p-more>summary{list-style:none;cursor:pointer} #prRoom .p-more>summary::-webkit-details-marker{display:none} #prRoom .p-morebox{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:#12141c;border:1px solid #3a3424;border-radius:12px;padding:12px;width:min(520px,86vw);box-shadow:0 10px 30px rgba(0,0,0,.5)} #prRoom .p-tab{position:relative;height:22px;margin:0 0 3px} #prRoom .p-tab span{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;border-radius:5px;background:#1a2340;color:#7d8bb0;font:700 11px/1 system-ui,sans-serif;letter-spacing:-.3px;white-space:nowrap;overflow:visible;transition:background .12s,color .12s} #prRoom .p-tab span.on{color:#fff;box-shadow:0 0 10px currentColor} #prRoom .p-tab span.on.l{background:${LH};color:#fff;box-shadow:0 0 12px ${LH}} #prRoom .p-tab span.on.r{background:${RH};color:#fff;box-shadow:0 0 12px ${RH}}
 `; document.head.appendChild(css);
 
@@ -469,11 +507,11 @@ function pairStrip(title,src,pair){
 const conOn=()=>{ try{ return localStorage.getItem('pr-con')!=='0'; }catch(_){ return true; } };
 function conSum(){ const sm=document.querySelector('#prRoom .p-sum'); if(!sm) return; const HL={rh:'Right hand',lh:'Left hand',both:'Both hands'}, DL=(st.motion==='contrary'?CDIRS:DIRS).find(d=>d[0]===st.dir);
   sm.textContent=[st.motion==='contrary'?'Both hands':HL[st.hand],st.motion==='contrary'?'Contrary':'Similar',DL?DL[1]:'',st.family==='exotic'?'Exotic':'Regular',st.mode==='learn'?'Learning':'Practice',{letter:'Letters',solfa:'Solfa',num:'Numbers'}[st.sys]||st.sys,(RHY.find(r=>r[0]===(st.rhy||'free'))||['','Free'])[1]].filter(Boolean).join('  ·  '); }
-function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><span>'+(ph?'On':'Console')+'</span>';
-  const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Turn the console off (fold it away)':'Turn the console on'; pw.classList.toggle('on',on); }; ps();
+function conBar(ask,ph){ const bar=el('div','p-cbar'), pw=el('button','p-pow'); pw.type='button'; pw.innerHTML='<i class="p-led"></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Power</span>'; pw.classList.add('p-pwr');
+  const ps=()=>{ const on=conOn(); pw.setAttribute('aria-pressed',String(on)); pw.title=on?'Power: on. Click to switch the console off':'Power: off. Click to switch the console on'; pw.classList.toggle('on',on); }; ps();
   pw.onclick=()=>{ const on=!conOn(); try{ localStorage.setItem('pr-con',on?'1':'0'); }catch(_){} const c=document.querySelector('#prRoom .p-con'); if(c) c.classList.toggle('off',!on); ps(); conSum(); };
-  const sb=$('#prStudio'); if(sb){ sb.className='p-ubtn'; sb.textContent=ph?'Studio':'Practice in Studio'; } if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Pokey'; }
-  const sp=el('span','p-sp'); bar.append(pw,bankBar(),sp); if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
+  const sb=$('#prStudio'); if(sb){ sb.className='p-ubtn'; sb.textContent='Studio'; } if(ask){ ask.className='p-ubtn'; ask.textContent='Ask Pokey'; }
+  const fb=el('button','p-pow p-feedb'); fb.type='button'; fb.innerHTML='<i class="p-led"></i><span>Feed</span>'; fb.onclick=feedDlg; const sp=el('span','p-sp'); bar.append(pw,bankBar(),sp,fb); setTimeout(feedSync,0); if(sb) bar.appendChild(sb); if(ask) bar.appendChild(ask); return bar; }
 const MXO='pr-mixorder';
 function mixOrder(panel){
   let ord=[]; try{ ord=JSON.parse(localStorage.getItem(MXO)||'[]'); }catch(_){}
