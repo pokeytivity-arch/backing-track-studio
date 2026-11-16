@@ -422,9 +422,34 @@ async function presence(request, env) {
   return stub.fetch('https://presence/set', { method: 'POST', body: JSON.stringify(rec) });
 }
 
+/* chord-room progression codes: a short code (HP-XXXXXX) that pulls up a saved progression and its console settings */
+const PCA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+async function progCode(request, env, url) {
+  if (!env.LESSONS) return json({ error: 'store' }, 500);
+  if (request.method === 'GET') {
+    const c = String(url.searchParams.get('c') || '').toUpperCase().replace(/^HP-?/, '').replace(/[^A-Z0-9]/g, '');
+    if (c.length !== 6) return json({ error: 'bad' }, 400);
+    const v = await env.LESSONS.get('pc:' + c); if (!v) return json({ error: 'missing' }, 404);
+    return json({ d: JSON.parse(v) });
+  }
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  const txt = await request.text(); if (txt.length > 8000) return json({ error: 'big' }, 413);
+  let b; try { b = JSON.parse(txt); } catch (_) { return json({ error: 'bad' }, 400); }
+  if (!b || typeof b.d !== 'object' || Array.isArray(b.d)) return json({ error: 'bad' }, 400);
+  for (let i = 0; i < 6; i++) {
+    const r = crypto.getRandomValues(new Uint8Array(6)); let c = ''; r.forEach(x => { c += PCA[x % PCA.length]; });
+    if (await env.LESSONS.get('pc:' + c)) continue;
+    await env.LESSONS.put('pc:' + c, JSON.stringify(b.d)); return json({ code: 'HP-' + c });
+  }
+  return json({ error: 'busy' }, 503);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/code') {
+      try { return await progCode(request, env, url); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
     if (url.pathname === '/api/presence') {
       try { return await presence(request, env); } catch (e) { console.log(e); return json({ list: [], count: 0 }, 200); }
     }

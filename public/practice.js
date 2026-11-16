@@ -863,7 +863,7 @@ function render(){
     /* the console's own bottom bar: the memory banks, then Ask Dr. Onye, like the Scale room's */
     const bkr=el('div','p-cbar p-ccbar'); box.appendChild(bkr); bkr.append(bankBar(),el('span','p-sp'));
     const ask=el('button','p-ubtn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; bkr.appendChild(ask);
-    $('#prLbl').textContent='Chord practice';
+    $('#prLbl').textContent='Chord practice'; ov.classList.toggle('p-xm',!!XM); xmPrep();
     if(st.cmode==='voice') loadVoicings(true); else if(st.cmode==='inv') loadInv(true); else if(st.cmode==='arp') loadArp(true); else if(st.chords) loadChords(st.chords,true); else { steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent='Type chords in the Chord canvas.'; chordTip([]); }
   }
 }
@@ -1014,7 +1014,12 @@ function bassFing(st){
 #prRoom .p-trs .p-trb{justify-content:center;min-width:40px;font-size:18px!important;font-weight:900} #prRoom .p-trs .p-trv{justify-content:center;min-width:76px;flex:1;color:#cfd6e6} #prRoom .p-trs .p-bcol{width:100%} #prRoom .p-trs .p-trv.on{color:#ffd43b}
 /* Chords and Broken chords both on: the arpeggio. Their lights flash red, blue and green */
 @keyframes pArp{0%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}33%{background:#3b8bff;box-shadow:0 0 7px 1px #3b8bff}66%{background:#3dff6e;box-shadow:0 0 7px 1px #3dff6e}100%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}}
-#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-ccbar{border-radius:10px;border:1px solid #2b3245;background:linear-gradient(180deg,#1c2130,#0d1018);margin-top:4px} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prDisp .pd-top .p-ctop{margin-left:auto!important;margin-right:0!important;width:auto!important;flex:0 1 auto!important;justify-content:flex-end;gap:10px;flex-wrap:wrap} #prRoom[data-kind=chords] #prDisp .pd-top{justify-content:flex-end} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd .p-dis,#prRoom .p-cv.p-dis{opacity:.4} #prRoom .p-cv.p-dis textarea,#prRoom .p-cv.p-dis input{cursor:not-allowed} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
+#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-ccbar{border-radius:10px;border:1px solid #2b3245;background:linear-gradient(180deg,#1c2130,#0d1018);margin-top:4px} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prDisp .pd-top .p-ctop{margin-left:auto!important;margin-right:0!important;width:auto!important;flex:0 1 auto!important;justify-content:flex-end;gap:10px;flex-wrap:wrap} #prRoom[data-kind=chords] #prDisp .pd-top{justify-content:flex-end} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd .p-dis,#prRoom .p-cv.p-dis{opacity:.4} #prRoom .p-cv.p-dis textarea,#prRoom .p-cv.p-dis input{cursor:not-allowed} #prRoom.p-xm #prDisp,#prRoom.p-xm #prKbP,#prRoom.p-xm .p-ccon>*:not(.p-cmix):not(.p-carea),#prRoom.p-xm .p-carea>*:not(.p-amix),#prRoom.p-xm .p-cmix>*:not([data-ch=Notation]):not([data-ch=Share]){opacity:.12;pointer-events:none;filter:grayscale(1)}
+#prRoom.p-xm [data-ch=Notation],#prRoom.p-xm [data-ch=Share]{box-shadow:0 0 0 1px rgba(255,212,59,.5),0 0 18px rgba(255,212,59,.18);border-radius:8px}
+#prRoom .p-xms .p-xc{color:#ffb3b3} #prRoom .p-xms .p-xc:not(:disabled){background:linear-gradient(180deg,#c92a2a,#8f1d1d)!important;color:#fff!important;border-color:#5c1010!important} #prRoom .p-xms .p-xc:not(:disabled) .p-led{background:#ff6b6b;box-shadow:0 0 6px 1px rgba(255,107,107,.8)}
+#prRoom .p-xin{display:flex;gap:5px} #prRoom .p-xin input{width:120px;background:#0c0f17;color:#eef2ff;border:1.5px solid #4a5d8f;border-radius:6px;padding:4px 8px;font:800 13px ui-monospace,monospace;text-transform:uppercase}
+#prRoom .p-amix>.p-xms{flex:0 0 auto} #prRoom .p-xms .p-key{min-width:120px} #prRoom .p-xmsg{max-width:160px;color:#ffd43b;font:700 11px system-ui,sans-serif;line-height:1.35}
+#prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
 @media (max-width:700px){ #prRoom .p-cmix .p-ch{min-width:0;padding:0 6px} #prRoom .p-cmix .p-key{min-height:24px;font-size:11px} #prRoom .p-cmix .p-c2{grid-template-columns:repeat(2,auto)} #prRoom .p-cvgrid{grid-template-columns:1fr} }
 `; document.head.appendChild(c); }
 const VREG=/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\.?\s*\/\s*\.?\s*[A-G]/;
@@ -1156,7 +1161,7 @@ function arpUI(area){ arpDefaults(); const r=el('div','p-mix p-cmix p-amix'), re
     cStrip('Octaves',[[1,'1 octave'],[2,'2 octaves'],[3,'3 octaves'],[4,'4 octaves']],()=>[st.aoct],v=>{ st.aoct=v; re(); },{off:()=>!AI,offWhy:'For Inversions and Arpeggios'}),
     cStrip('Hands',[['rh','One-handed'],['both','Two-handed']],()=>[st.ahand],v=>{ st.ahand=v; re(); },{off:()=>!A,offWhy:'For Arpeggios'}),
     cStrip('Left hand',[['root','Root (5)'],['p5','Root and fifth (5-2)'],['oct','Root and octave (5-1)'],['fill','Root, fifth and octave (5 2 1)']],()=>[st.alh],v=>{ st.alh=v; re(); },{off:()=>!A||st.ahand!=='rh',offWhy:'Two-handed: the left hand plays the arpeggio'}),
-    cStrip('Direction',[['updown','Up and down'],['up','Up'],['down','Down']],()=>[st.adir],v=>{ st.adir=v; re(); },{off:()=>!AI,offWhy:'For Inversions and Arpeggios'}));
+    cStrip('Direction',[['updown','Up and down'],['up','Up'],['down','Down']],()=>[st.adir],v=>{ st.adir=v; re(); },{off:()=>!AI,offWhy:'For Inversions and Arpeggios'}),xmStrip());
   area.appendChild(r); }
 function loadArp(quiet){ if(!RET) clr(); arpDefaults(); const SC=window.SCALES; if(!SC||!SC.build) return; const hand=st.ahand==='both'?'both':'rh';
   const KL=SC.keys||['C'], nk=KL.includes(st.ckey)?st.ckey:(KL.find(x=>pcOf(x)===pcOf(st.ckey||'C'))||'C'), AK=tKey(nk,KL), base=SC.build(AK,hand,st.aq,st.aoct,'similar',false,st.alh), BL={root:[5],p5:[5,2],oct:[5,1],fill:[5,2,1]}[st.alh];
@@ -1187,6 +1192,45 @@ const cBankName=x=>{ const M={canvas:'Chord canvas',inv:'Inversions',voice:'Voic
   else if(x.cmode==='inv'||x.cmode==='voice'){ try{ const [c,i]=String(x.cpick||'tri:0').split(':'); w=DSP(x.ckey||'C')+' '+K.CH[c][1][+i][0].toLowerCase(); }catch(_){ w=''; } }
   else { const t=String(x.chords||'').replace(/\s+/g,' ').trim(); w=t.length>34?t.slice(0,33)+'…':t||'empty canvas'; }
   return M+': '+w+(x.ctr?' · '+(x.ctr>0?'+':'')+x.ctr+' ½':'')+' · '+(x.bpm||80)+' BPM'; };
+/* Import / Export: pressing either freezes the chord room (it goes dark) and lights only the Notation section, where you choose the format:
+   Staff (sheet music), Virtual keyboard (keyboard diagrams) or Code (a unique code that pulls up the progression). Import takes a code.
+   Cancel (red) is lit only while Import or Export is on, and unfreezes the room. */
+let XM=null, xmMsg='';
+function xmStrip(){ const strip=el('div','p-ch p-bch p-xms'); strip.dataset.ch='Share'; strip.appendChild(el('div','p-cht','Share')); const col=el('div','p-bcol'); strip.appendChild(col);
+  const key=(v,l,tip)=>{ const k=el('button','p-key'+(v==='cancel'?' p-xc':'')); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; k.title=tip; const on=XM===v; k.classList.toggle('on',on);
+    if(v==='cancel') k.disabled=!XM; else k.disabled=!!XM&&XM!==v; k.onclick=()=>{ if(v==='cancel'){ XM=null; xmMsg=''; render(); return; } if(XM===v) return; XM=v; xmMsg=v==='export'?'Export: choose Staff, Virtual keyboard or Code in Notation.':'Import: press Code in Notation, then enter the code.'; render(); }; col.appendChild(k); };
+  key('import','Import','Pull up a progression from a code'); key('export','Export','Export these chords as sheet music, keyboard diagrams or a code'); key('cancel','Cancel','Leave Import / Export');
+  if(XM==='import'&&xmMsg==='code'){ const w=el('div','p-xin'); const i=document.createElement('input'); i.type='text'; i.placeholder='HP-XXXXXX'; i.setAttribute('aria-label','Code'); i.autocomplete='off'; i.spellcheck=false; const g=el('button','p-key','Load'); g.type='button';
+    const go=()=>xmImport(i.value); g.onclick=go; i.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); go(); } }; w.append(i,g); col.appendChild(w); setTimeout(()=>{ try{ i.focus(); }catch(_){} },30); }
+  else if(xmMsg){ col.appendChild(el('div','p-xmsg',xmMsg)); }
+  return strip; }
+const xmSnap=()=>{ const o={}; CKEYS.forEach(k=>{ o[k]=st[k]; }); o.v=1; return o; };
+function xmDo(v){ const m=$('#prMsg');
+  if(XM==='import'){ if(v==='code'){ xmMsg='code'; render(); } return; }
+  if(!steps.length){ xmMsg='There are no chords to export yet.'; render(); return; }
+  if(v==='code'){ xmMsg='Making your code…'; render();
+    fetch('/api/code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({d:xmSnap()})}).then(r=>r.ok?r.json():Promise.reject(r.status)).then(j=>{ if(!j.code) throw 0; try{ navigator.clipboard.writeText(j.code); }catch(_){} XM=null; xmMsg=''; render(); if(m) m.textContent='Your code: '+j.code+' (copied). Anyone who enters it with Import pulls up this progression.'; })
+      .catch(()=>{ const long='HP1:'+btoa(unescape(encodeURIComponent(JSON.stringify(xmSnap())))); try{ navigator.clipboard.writeText(long); }catch(_){} XM=null; xmMsg=''; render(); if(m) m.textContent='The code service could not be reached, so here is a long code (copied): '+long.slice(0,40)+'…'; });
+    return; }
+  xmPrint(v); XM=null; xmMsg=''; render(); if(m) m.textContent=v==='staff'?'Sheet music opened: print it or save it as a PDF.':'Keyboard diagrams opened: print them or save them as a PDF.'; }
+function xmImport(raw){ const t=String(raw||'').trim(); const fin=d=>{ CKEYS.forEach(k=>{ if(d[k]!==undefined) st[k]=JSON.parse(JSON.stringify(d[k])); }); save(); XM=null; xmMsg=''; render(); const m=$('#prMsg'); if(m) m.textContent='Imported.'; };
+  if(/^HP1:/i.test(t)){ try{ fin(JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))))); }catch(_){ xmMsg='That code could not be read.'; render(); } return; }
+  if(/BT1:/.test(t)&&typeof window.decode==='function'){ const tr=window.decode(t); if(tr&&tr.chords){ fin({cmode:'canvas',chords:String(tr.chords).replace(/^\s*\|\s*|\s*\|\s*$/g,''),bpm:tr.bpm||st.bpm}); return; } }
+  fetch('/api/code?c='+encodeURIComponent(t)).then(r=>r.ok?r.json():Promise.reject(r.status)).then(j=>{ if(!j.d) throw 0; fin(j.d); }).catch(()=>{ xmMsg='code'; render(); const m=$('#prMsg'); if(m) m.textContent='That code was not found. Check it and try again.'; }); }
+/* printable exports: sheet music (grand staff, whole-note chords, chord names above) or keyboard diagrams */
+function xmPrint(kind2){ const list=steps.slice(0,48), title=(kind2==='staff'?'Sheet music':'Keyboard diagrams')+' · '+(st.cmode==='canvas'?'Chord progression':($('#prBig').textContent||'Chords')); let body='';
+  if(kind2==='kb'){ list.forEach(x=>{ const fm=Object.assign(fingering(x.lh||[],x.rh||[]),x.lfm||{},x.rfm||{}); const sv=keyboardSVG(x.lh||[],x.rh||[],{height:70,labels:true,fingers:true,fmap:fm,spell:x.spell||null}); body+='<figure><figcaption>'+(x.chip||DSP(x.name))+'</figcaption>'+sv.outerHTML+'</figure>'; }); }
+  else { const box=document.createElement('div'); box.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(box); try{ const VF=Vex.Flow, per=4, rows=Math.ceil(list.length/per);
+      for(let r=0;r<rows;r++){ const d=document.createElement('div'); box.appendChild(d); const R=new VF.Renderer(d,VF.Renderer.Backends.SVG); R.resize(760,230); const c=R.getContext(); const tr=new VF.Stave(10,20,740), bs=new VF.Stave(10,120,740); tr.addClef('treble'); bs.addClef('bass'); tr.setContext(c).draw(); bs.setContext(c).draw();
+        new VF.StaveConnector(tr,bs).setType('brace').setContext(c).draw(); new VF.StaveConnector(tr,bs).setType('singleLeft').setContext(c).draw();
+        const T=[],B=[]; list.slice(r*per,r*per+per).forEach(x=>{ const key=m=>{ const lb=String((x.spell&&typeof x.spell[m]==='string'&&x.spell[m])||SHARP_N[((m%12)+12)%12]).replace('♭','b').replace('♯','#'), L=lb[0].toLowerCase(), ac=lb.slice(1), off=(ac.match(/#/g)||[]).length-(ac.match(/b/g)||[]).length, nat={c:0,d:2,e:4,f:5,g:7,a:9,b:11}[L]; return L+ac+'/'+(Math.round((m-off-nat)/12)-1); };
+          const t=(x.rh&&x.rh.length)?new VF.StaveNote({keys:x.rh.slice().sort((a,b)=>a-b).map(key),duration:'w',clef:'treble'}):new VF.StaveNote({keys:['b/4'],duration:'wr',clef:'treble'}); const bn=(x.lh&&x.lh.length)?new VF.StaveNote({keys:x.lh.slice().sort((a,b)=>a-b).map(key),duration:'w',clef:'bass'}):new VF.StaveNote({keys:['d/3'],duration:'wr',clef:'bass'});
+          const a=new VF.Annotation(x.chip&&!/^Voicing|inversion|Root position/.test(x.chip)?x.chip:DSP(x.name)).setVerticalJustification(VF.Annotation.VerticalJustify.TOP); a.setFont('Arial',12,'bold'); t.addModifier(a,0); T.push(t); B.push(bn); });
+        const tv=new VF.Voice({num_beats:4*T.length,beat_value:4}).setStrict(false).addTickables(T), bv=new VF.Voice({num_beats:4*B.length,beat_value:4}).setStrict(false).addTickables(B); VF.Accidental.applyAccidentals([tv],'C'); VF.Accidental.applyAccidentals([bv],'C');
+        new VF.Formatter().joinVoices([tv]).joinVoices([bv]).format([tv,bv],660); tv.draw(c,tr); bv.draw(c,bs); body+=d.innerHTML; } }catch(e){ console.log(e); } box.remove(); }
+  const w=window.open('','_blank'); if(!w){ const m=$('#prMsg'); if(m) m.textContent='Allow pop-ups for this site to export.'; return; }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:20px} figure{display:inline-block;margin:10px;width:300px;vertical-align:top} figcaption{font-weight:700;margin-bottom:4px} svg{max-width:100%;height:auto} @media print{button{display:none}}</style></head><body><h1>'+title+'</h1>'+body+'<p style="color:#666;font-size:12px">Made with HearandPlay Piano Suite · hearandplay.app</p><button onclick="print()">Print / Save as PDF</button></body></html>'); w.document.close(); }
+function xmPrep(){ if(XM&&!window.Vex&&typeof loadVex==='function') loadVex().catch(()=>{}); }
 /* a console strip of lit buttons, like the Scale room's */
 function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col);
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; } if(o.cls&&o.cls()) strip.classList.add(o.cls());
@@ -1205,7 +1249,9 @@ function chordConsole(box){
         else { const on={v:st.vh==='v'||st.vh==='a',h:st.vh==='h'||st.vh==='a'}; on[v]=!on[v]; if(!on.v&&!on.h) return; st.vh=on.v&&on.h?'a':on.v?'v':'h'; } save(); render(); },
       {two:true,off:()=>!cv&&!vo,offWhy:'For the chord canvas',cls:()=>cv&&st.vh==='a'?'p-arpon':'',dis:v=>vo?v!=='grace':(v==='grace'||v==='bline')&&st.vh!=='v',disWhy:vo?'Voicings can use grace notes':'Grace notes and the bass line go with Chords'}));
   /* Notation (Voicings): Staff and Virtual keyboard; with the virtual keyboard on, its labels: Letter, Solfa, Number (any or all) */
-  strips.append(cStrip('Notation',[['staff','Staff','The voicing on a grand staff, in the Display'],['kb','Virtual keyboard','The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)']],()=>[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },{off:()=>!vo,offWhy:'For Voicings'}),
+  strips.append(cStrip('Notation',[['staff','Staff',XM?'Export the chords as sheet music (a grand staff)':'The voicing on a grand staff, in the Display'],['kb','Virtual keyboard',XM?'Export the chords as keyboard diagrams':'The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)'],['code','Code','A unique code: anyone who enters it in the suite pulls up this progression']],
+      ()=>XM?[]:[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(XM){ xmDo(v); return; } if(v==='code') return; if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },
+      {off:()=>!XM&&!vo,offWhy:'For Voicings (and for Import / Export)',dis:v=>XM?(XM==='import'&&v!=='code'):v==='code',disWhy:XM==='import'?'Import uses a code':'Code is for Import and Export'}),
     cStrip('Labels',[['letter','Letter'],['solfa','Solfa'],['number','Number']],()=>st.nlab,v=>{ const a=new Set(st.nlab); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.nlab=['letter','solfa','number'].filter(x=>a.has(x)); save(); render(); },{off:()=>!vo||!st.nkb,offWhy:'Turn on Virtual keyboard (Voicings)'}));
   strips.append(trStrip());
   /* Keys and Click: a fader, a meter, and mute and solo, like every console in the suite; they stay together at the right-hand end */ { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
@@ -1238,7 +1284,7 @@ window.addEventListener('keydown',e=>{ if(!ov||ov.hidden||kind!=='scales'||e.ctr
   /* every other single-key Studio shortcut is switched off while practising */ if(/^[a-z=+\-\[\]?]$/i.test(e.key)){ e.stopImmediatePropagation(); if(f){ e.preventDefault(); f(); } } },true);
 window.addEventListener('keydown',e=>{ if(e.code!=='Space'&&e.key!==' ') return; if(!ov||ov.hidden) return;
   const t=e.target, tg=t&&t.tagName; if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(t&&t.isContentEditable)) return;
-  e.preventDefault(); e.stopImmediatePropagation(); if(t&&t.blur&&tg==='BUTTON') t.blur(); if(kind==='scales') playPause(); },true);
+  e.preventDefault(); e.stopImmediatePropagation(); if(t&&t.blur&&tg==='BUTTON') t.blur(); if(kind==='chords'&&XM) return; playPause(); },true);   /* the space bar plays and pauses the room that is open (scales or chords) and nothing behind it */
 /* ---------- the menu bar while Scale practice is open: its own menus, built from the room's controls ---------- */
 const K=k=>{ const b=ov&&ov.querySelector('#prRoom [data-k="'+k+'"]'); if(b) b.click(); };
 const ON=k=>{ const b=ov&&ov.querySelector('#prRoom [data-k="'+k+'"]'); return !!b&&b.getAttribute('aria-pressed')==='true'; };
