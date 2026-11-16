@@ -845,16 +845,19 @@ function render(){
     /* the chord console: Mode, Inversion and Technique as lit buttons; the chord canvas (or Key and Chord for voicings); then Play, Stop, tempo, Tap, Loop */
     chordDefaults(); const K=window.EAR&&EAR.kit, box=el('div','p-ccon'); ctl.appendChild(box); chordConsole(box);
     const area=el('div','p-carea'); box.appendChild(area);
-    /* Note and Chord are for voicings; with the chord canvas on they show but cannot be used */
-    if(st.cmode==='voice'||st.cmode==='canvas'||st.cmode==='inv'){ const r1=el('div','e-ctl p-cdd'+(st.cmode==='canvas'?' p-dis':'')); area.appendChild(r1);
+    /* every part of the console is always there; each part can be used only in the modes it belongs to (greyed out otherwise):
+       Chord, Octaves, Hands, Left hand, Direction (Octaves and Direction serve Inversions too); Note (Inversions, Voicings, Arpeggios) and Chord (Inversions, Voicings); the chord canvas */
+    arpUI(area);
+    { const md=st.cmode, r1=el('div','e-ctl p-cdd'); area.appendChild(r1);
       if(K){ if(!st.cpick) st.cpick=K.CHK[0]+':0';
-        r1.appendChild(selBox('Note',K.KEYS.map(k=>({v:k,t:DSP(k)})),st.ckey,v=>{ st.ckey=v; save(); if(st.cmode==='inv') loadInv(); else loadVoicings(); }));
-        const opts=[]; K.CHK.forEach(c=>{ if(st.cmode==='inv'&&c==='nin') return; K.CH[c][1].forEach((ch,i)=>opts.push({g:K.CH[c][0],v:c+':'+i,t:ch[0]})); });
-        if(st.cmode==='inv'&&/^nin:/.test(st.cpick||'')) st.cpick='tri:0';
-        r1.appendChild(selBox('Chord',opts,st.cpick||'',v=>{ st.cpick=v; save(); if(st.cmode==='inv') loadInv(); else loadVoicings(); }, 'prChord')); }
-      if(st.cmode==='canvas'){ r1.querySelectorAll('select').forEach(x=>{ x.disabled=true; }); r1.title='Note and Chord are for Voicings'; canvasUI(area); }
-      else area.appendChild(el('p','p-cvhelp',st.cmode==='inv'?'One chord at a time, in every inversion that is on: tap one in the Display to hear it.':'One chord at a time: tap a voicing in the Display to hear it and see it on the keys.')); }
-    else arpUI(area);
+        const nb=selBox('Note',K.KEYS.map(k=>({v:k,t:DSP(k)})),st.ckey,v=>{ st.ckey=v; save(); if(st.cmode==='inv') loadInv(); else if(st.cmode==='arp') loadArp(); else loadVoicings(); }); r1.appendChild(nb);
+        const opts=[]; K.CHK.forEach(c=>{ if(md==='inv'&&c==='nin') return; K.CH[c][1].forEach((ch,i)=>opts.push({g:K.CH[c][0],v:c+':'+i,t:ch[0]})); });
+        if(md==='inv'&&/^nin:/.test(st.cpick||'')) st.cpick='tri:0';
+        const cb=selBox('Chord',opts,st.cpick||'',v=>{ st.cpick=v; save(); if(st.cmode==='inv') loadInv(); else loadVoicings(); }, 'prChord'); r1.appendChild(cb);
+        if(md==='canvas'){ nb.classList.add('p-dis'); nb.querySelector('select').disabled=true; nb.title='Note is for Inversions, Voicings and Arpeggios'; }
+        if(md==='canvas'||md==='arp'){ cb.classList.add('p-dis'); cb.querySelector('select').disabled=true; cb.title='Chord is for Inversions and Voicings'; } }
+      r1.appendChild(el('p','p-cvhelp',md==='inv'?'One chord at a time, in every inversion that is on (Octaves and Direction carry it up and down the keyboard).':md==='voice'?'One chord at a time: tap a voicing in the Display to hear it and see it on the keys.':md==='arp'?'Arpeggios: Note, then Triad (major or minor), Octaves, Hands, Left hand and Direction above.':'Type chords in the Chord canvas below.')); }
+    canvasUI(area,st.cmode!=='canvas');
     const r2=el('div','e-ctl p-ctr'); box.appendChild(r2); transport(r2);
     const bkr=el('div','e-ctl p-cbk'); box.appendChild(bkr); bkr.appendChild(bankBar());
     const ask=el('button','e-btn','Ask Dr. Onye about this chord'); ask.type='button'; ask.onclick=()=>{ const s=steps[cur>=0?cur:0]; close(); if(window.CLASS) CLASS.askAbout(s?'Tell me more about '+s.name+'. How is it built, how do I voice it, and what should I practice with it?':'Help me practice chords on the keyboard.',{fresh:true}); }; r2.appendChild(ask);
@@ -1009,7 +1012,7 @@ function bassFing(st){
 #prRoom .p-trs .p-trb{justify-content:center;min-width:40px;font-size:18px!important;font-weight:900} #prRoom .p-trs .p-trv{justify-content:center;min-width:76px;flex:1;color:#cfd6e6} #prRoom .p-trs .p-bcol{width:100%} #prRoom .p-trs .p-trv.on{color:#ffd43b}
 /* Chords and Broken chords both on: the arpeggio. Their lights flash red, blue and green */
 @keyframes pArp{0%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}33%{background:#3b8bff;box-shadow:0 0 7px 1px #3b8bff}66%{background:#3dff6e;box-shadow:0 0 7px 1px #3dff6e}100%{background:#ff3b3b;box-shadow:0 0 7px 1px #ff3b3b}}
-#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
+#prRoom .p-arpon .p-key.on:nth-child(-n+2) .p-led{animation:pArp .9s steps(3) infinite} #prRoom .p-arpon .p-key.on:nth-child(2) .p-led{animation-delay:-.3s} #prDisp .pd-screen.has-staff{padding-right:252px} #prDisp .p-staff{position:absolute;right:10px;top:8px;width:230px;height:200px;max-height:calc(100% - 16px);background:#f6f4ee;border-radius:10px;overflow:hidden} #prDisp .p-staff svg{display:block} #prRoom .p-cbk .p-banks{margin-left:0;flex-wrap:wrap} #prRoom .p-cbar .p-bank{min-width:0!important;padding:2px 5px 2px 5px!important} #prRoom .p-cbar .p-banks{gap:3px!important} #prRoom .p-cdd .p-dis,#prRoom .p-cv.p-dis{opacity:.4} #prRoom .p-cv.p-dis textarea,#prRoom .p-cv.p-dis input{cursor:not-allowed} #prRoom .p-cdd.p-dis{opacity:.4} #prRoom .p-cdd.p-dis select{cursor:not-allowed}
 @media (max-width:700px){ #prRoom .p-cmix .p-ch{min-width:0;padding:0 6px} #prRoom .p-cmix .p-key{min-height:24px;font-size:11px} #prRoom .p-cmix .p-c2{grid-template-columns:repeat(2,auto)} #prRoom .p-cvgrid{grid-template-columns:1fr} }
 `; document.head.appendChild(c); }
 const VREG=/^[A-G][#b♯♭]?-?\d?(\s*\.\s*[A-G][#b♯♭]?-?\d?)*(\s+\.?\s*[A-G][#b♯♭]?-?\d?)*\s*\.?\s*\/\s*\.?\s*[A-G]/;
@@ -1124,9 +1127,14 @@ function loadInv(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit; if(!K) ret
   const blackRoot=[1,3,6,8,10].includes(((pc%12)+12)%12);
   const FING=k=>n===3?[[1,3,5],[1,2,5],[1,2,4]][k]:sev?[[1,2,3,5],[1,2,4,5],[1,2,3,5],blackRoot?[1,2,3,5]:[1,2,4,5]][k]:null;
   const ok=k=>k<n&&(k<3||sev); let iv=(st.invs||[0]).slice().sort().filter(ok); const skipped=(st.invs||[]).some(k=>!ok(k)); if(!iv.length) iv=[0];
-  steps=octShift(iv.map(k=>{ const rh=[...semis.slice(k).map(x=>60+pc+x),...semis.slice(0,k).map(x=>72+pc+x)], sp=Object.assign({},spBase); rh.forEach(m=>{ const j=semis.indexOf(((m-60-pc)%12+12)%12)>=0?semis.indexOf(((m-60-pc)%12+12)%12):semis.findIndex(x=>((x%12)+12)%12===((m-60-pc)%12+12)%12); sp[m]=names[j]; });
+  let one=iv.map(k=>{ const rh=[...semis.slice(k).map(x=>60+pc+x),...semis.slice(0,k).map(x=>72+pc+x)], sp=Object.assign({},spBase); rh.forEach(m=>{ const j=semis.indexOf(((m-60-pc)%12+12)%12)>=0?semis.indexOf(((m-60-pc)%12+12)%12):semis.findIndex(x=>((x%12)+12)%12===((m-60-pc)%12+12)%12); sp[m]=names[j]; });
     const f=FING(k), st0={name:title+(k?' ('+INV[k]+' inversion)':''),src:rootN+' '+ch[0],lh,rh,fing:'',lfing:'',spell:sp,beats:2,chip:k?INV[k]+' inversion':'Root position',tri:n===3,lfm:{[lh[0]]:5}};
-    if(f){ st0.rfm={}; rh.forEach((m,i)=>{ st0.rfm[m]=f[i]; }); st0.nofing=false; return st0; } return handFit(st0); }));
+    if(f){ st0.rfm={}; rh.forEach((m,i)=>{ st0.rfm[m]=f[i]; }); st0.nofing=false; return st0; } return handFit(st0); });
+  /* Octaves: the inversions again an octave higher, up to four octaves (staying on the keyboard); Direction: up, down, or up and down */
+  arpDefaults(); const sh=(x,d)=>{ const n={}; Object.keys(x.rfm||{}).forEach(m=>{ n[+m+d]=x.rfm[m]; }); const sp={}; Object.keys(x.spell||{}).forEach(m=>{ sp[(x.lh.includes(+m)?+m:+m+d)]=x.spell[m]; }); return Object.assign({},x,{rh:x.rh.map(m=>m+d),rfm:n,spell:sp,chip:x.chip+(d?' +'+d/12+' oct':'')}); };
+  let L=[]; for(let o=0;o<st.aoct;o++){ const d=12*o; if(Math.max(...one[one.length-1].rh)+d>103) break; one.forEach(x=>L.push(sh(x,d))); }
+  if(st.adir==='down') L=L.slice().reverse(); else if(st.adir==='updown'&&L.length>1) L=L.concat(L.slice(0,-1).reverse());
+  steps=octShift(L);
   steps.key=((pc%12)+12)%12; steps.multi=true; cur=0; chips(); show(); if(skipped) $('#prMsg').textContent=n===3?'The 3rd inversion is for seventh chords.':''; if(!quiet) play1(steps[0]); }
 /* Voicings mode: the chord picked by Key and Chord, played every way he gives for it */
 function loadVoicings(quiet){ if(!RET) clr(); const K=window.EAR&&EAR.kit, T=window.VOICE&&VOICE._t; if(!K) return; let ch=chordPick(); if(!ch){ st.cpick=K.CHK[0]+':0'; save(); ch=chordPick(); }
@@ -1141,16 +1149,15 @@ function chordReload(quiet){ const c=cur; if(st.cmode==='inv') loadInv(quiet); e
 /* Arpeggios: chords played harp-like (root, third, fifth), with his fingering. One-handed: the right hand plays the arpeggio and the left hand
    the root (5), root and fifth (5-2), root and octave (5-1) or root, fifth and octave (5 2 1). Two-handed: the left hand plays the arpeggio too. */
 function arpDefaults(){ if(!st.akey) st.akey='C'; if(!['arpmaj','arpmin'].includes(st.aq)) st.aq='arpmaj'; if(!(st.aoct>=1&&st.aoct<=4)) st.aoct=1; if(!['rh','both'].includes(st.ahand)) st.ahand='rh'; if(!['root','p5','oct','fill'].includes(st.alh)) st.alh='oct'; if(!['updown','up','down'].includes(st.adir)) st.adir='updown'; }
-function arpUI(area){ arpDefaults(); const SC=window.SCALES, r=el('div','p-mix p-cmix p-amix'), re=()=>{ save(); render(); };
-  const ks=el('div','e-ctl p-cdd'); ks.appendChild(selBox('Note',((SC&&SC.keys)||['C']).map(k=>({v:k,t:DSP(k)})),st.akey,v=>{ st.akey=v; re(); })); area.appendChild(ks);
-  r.append(cStrip('Chord',[['arpmaj','Major'],['arpmin','Minor']],()=>[st.aq],v=>{ st.aq=v; re(); }),
-    cStrip('Octaves',[[1,'1 octave'],[2,'2 octaves'],[3,'3 octaves'],[4,'4 octaves']],()=>[st.aoct],v=>{ st.aoct=v; re(); }),
-    cStrip('Hands',[['rh','One-handed'],['both','Two-handed']],()=>[st.ahand],v=>{ st.ahand=v; re(); }),
-    cStrip('Left hand',[['root','Root (5)'],['p5','Root and fifth (5-2)'],['oct','Root and octave (5-1)'],['fill','Root, fifth and octave (5 2 1)']],()=>[st.alh],v=>{ st.alh=v; re(); },{off:()=>st.ahand!=='rh',offWhy:'Two-handed: the left hand plays the arpeggio'}),
-    cStrip('Direction',[['updown','Up and down'],['up','Up'],['down','Down']],()=>[st.adir],v=>{ st.adir=v; re(); }));
+function arpUI(area){ arpDefaults(); const r=el('div','p-mix p-cmix p-amix'), re=()=>{ save(); render(); }, A=st.cmode==='arp', AI=A||st.cmode==='inv';
+  r.append(cStrip('Triad',[['arpmaj','Major'],['arpmin','Minor']],()=>[st.aq],v=>{ st.aq=v; re(); },{off:()=>!A,offWhy:'For Arpeggios'}),
+    cStrip('Octaves',[[1,'1 octave'],[2,'2 octaves'],[3,'3 octaves'],[4,'4 octaves']],()=>[st.aoct],v=>{ st.aoct=v; re(); },{off:()=>!AI,offWhy:'For Inversions and Arpeggios'}),
+    cStrip('Hands',[['rh','One-handed'],['both','Two-handed']],()=>[st.ahand],v=>{ st.ahand=v; re(); },{off:()=>!A,offWhy:'For Arpeggios'}),
+    cStrip('Left hand',[['root','Root (5)'],['p5','Root and fifth (5-2)'],['oct','Root and octave (5-1)'],['fill','Root, fifth and octave (5 2 1)']],()=>[st.alh],v=>{ st.alh=v; re(); },{off:()=>!A||st.ahand!=='rh',offWhy:'Two-handed: the left hand plays the arpeggio'}),
+    cStrip('Direction',[['updown','Up and down'],['up','Up'],['down','Down']],()=>[st.adir],v=>{ st.adir=v; re(); },{off:()=>!AI,offWhy:'For Inversions and Arpeggios'}));
   area.appendChild(r); }
 function loadArp(quiet){ if(!RET) clr(); arpDefaults(); const SC=window.SCALES; if(!SC||!SC.build) return; const hand=st.ahand==='both'?'both':'rh';
-  const AK=tKey(st.akey,SC.keys||[st.akey]), base=SC.build(AK,hand,st.aq,st.aoct,'similar',false,st.alh), BL={root:[5],p5:[5,2],oct:[5,1],fill:[5,2,1]}[st.alh];
+  const KL=SC.keys||['C'], nk=KL.includes(st.ckey)?st.ckey:(KL.find(x=>pcOf(x)===pcOf(st.ckey||'C'))||'C'), AK=tKey(nk,KL), base=SC.build(AK,hand,st.aq,st.aoct,'similar',false,st.alh), BL={root:[5],p5:[5,2],oct:[5,1],fill:[5,2,1]}[st.alh];
   const title=DSP(AK)+(st.aq==='arpmin'?' minor':' major')+' arpeggio'+(st.aoct>1?' · '+st.aoct+' octaves':'')+(hand==='both'?' · two-handed':'');
   /* eighth-note triplet feel: Tri (1) Ple (3) Let (5) Tri (octave)... each quarter note does an octave */
   const mk=x=>{ const o=Object.assign({},x,{beats:1/3,name:title,chip:DSP(x.name),rfm:{},lfm:{}}); if(x.rh[0]!=null&&x.fing) o.rfm[x.rh[0]]=+x.fing;
@@ -1202,8 +1209,8 @@ function chordConsole(box){
   /* Keys and Click: a fader, a meter, and mute and solo, like every console in the suite; they stay together at the right-hand end */ { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
 }
 /* the chord canvas: Easy (type the chart) or Professional (a box for every beat), like the Studio's chord chart */
-function canvasUI(area){
-  const w=el('div','p-cv'), hd=el('div','p-cvh'); hd.appendChild(el('span','p-cht','Chord canvas')); const seg=el('div','p-cvseg');
+function canvasUI(area,off){
+  const w=el('div','p-cv'+(off?' p-dis':'')), hd=el('div','p-cvh'); hd.appendChild(el('span','p-cht','Chord canvas')); const seg=el('div','p-cvseg');
   [['easy','Easy'],['pro','Professional']].forEach(([v,l])=>{ const b=el('button',null,l); b.type='button'; b.setAttribute('aria-pressed',String(st.cview===v)); b.onclick=()=>{ st.cview=v; save(); render(); }; seg.appendChild(b); }); hd.appendChild(seg); w.appendChild(hd);
   let tm=0, last=st.chords; const upd=t=>{ clearTimeout(tm); tm=setTimeout(()=>{ if(t!==last||!steps.length){ last=t; loadChords(t,true); } },650); };
   if(st.cview==='easy'){ const ta=document.createElement('textarea'); ta.id='prIn'; ta.className='p-cvta'; ta.spellcheck=false; ta.autocomplete='off'; ta.value=st.chords||''; ta.placeholder='Dm7 G7 | Cmaj7 | B / A D F, E / G# C D G | A / G B C E'; ta.setAttribute('aria-label','Chord canvas');
@@ -1215,6 +1222,7 @@ function canvasUI(area){
         inp.oninput=write; inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); const all=[...g.querySelectorAll('input')], k=all.indexOf(inp); if(all[k+1]) all[k+1].focus(); else { addBar(); g.lastChild.querySelector('input').focus(); } } }; bb.appendChild(inp); }); g.appendChild(bb); };
     bars.forEach(addBar); const ad=el('div','p-cvadd'); [['+ Add bar',1],['+ Add 4 bars',4]].forEach(([l,n])=>{ const b=el('button','e-btn',l); b.type='button'; b.onclick=()=>{ for(let i=0;i<n;i++) addBar(); }; ad.appendChild(b); }); w.appendChild(ad);
     w.appendChild(el('p','p-cvhelp','A box for every beat (4/4). Type a chord or your own voicing (B / A D F); an empty box holds the chord before it. Enter moves to the next box.')); }
+  if(off){ w.querySelectorAll('textarea,input,button').forEach(x=>{ x.disabled=true; }); w.title='The chord canvas is for Chord canvas mode'; }
   area.appendChild(w); }
 const slotTok=v=>{ v=String(v||'').trim(); if(!v) return '.'; if(v.includes('/')&&VREG.test(v)) return '['+v.replace(/\s*\.\s*/g,'.')+']'; const n=normChords(v); return n.length?n[0]:v.replace(/\s+/g,''); };
 /* text to the Professional grid: four boxes a bar */
