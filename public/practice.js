@@ -1109,17 +1109,17 @@ function scStep(m,n,key){ let x=m, k=Math.abs(n); const d=Math.sign(n); while(k>
    No thumb on a black key in a crossing. A leap opens the hand. The last finger leaves room for the notes above it in the chord it lands on. */
 const BLK=m=>[1,3,6,8,10].includes(((m%12)+12)%12);
 function walkFing(notes,prev,room){ const n=notes.length; if(!n) return [];
-  const SPAN={'5,1':12,'5,2':9,'5,3':7,'5,4':4,'4,1':9,'4,2':6,'4,3':3,'3,1':7,'3,2':3,'2,1':5};
+  const SPAN={'5,1':12,'5,2':9,'5,3':7,'5,4':4,'4,1':9,'4,2':6,'4,3':3,'3,1':8,'3,2':4,'2,1':7};
   const cost=(a,fa,b,fb)=>{ const d=b-a; if(d===0) return fa===fb?0:1.5;
     if(d>0){ if(fb<fa){ const mx=SPAN[fa+','+fb]; if(d>mx) return 99; return Math.abs(d-(fa-fb)*1.8)*.35; }
       if(fa===1&&fb>1&&d<=2) return ({3:1,2:1.4,4:2})[fb]+(BLK(b)&&fb===2?.5:0); return 99; }
     const u=-d; if(fb>fa){ const mx=SPAN[fb+','+fa]; if(u>mx) return 99; return Math.abs(u-(fb-fa)*1.8)*.35; }
     if(fb===1&&fa>1&&u<=2) return ({3:1,4:1.4,2:2.2})[fa]+(BLK(b)?2.5:0); return 99; };
   const start=f=>{ let c=BLK(notes[0])&&f===1?1:0; if(prev){ const k=cost(prev.m,prev.f,notes[0],f); c+=k>=99?(Math.abs(notes[0]-prev.m)>9?0.6:3):k; } return c; };
-  let D=[1,2,3,4,5].map(f=>({c:start(f),p:[f]}));
-  for(let i=1;i<n;i++){ D=[1,2,3,4,5].map(f=>{ let best=null; D.forEach(o=>{ const fa=o.p[o.p.length-1], c=o.c+cost(notes[i-1],fa,notes[i],f)+(BLK(notes[i])&&f===1?1:0); if(!best||c<best.c) best={c,p:[...o.p,f]}; }); return best; }); }
+  let D=[1,2,3,4,5].map(f=>({c:start(f),w:start(f),p:[f]}));
+  for(let i=1;i<n;i++){ D=[1,2,3,4,5].map(f=>{ let best=null; D.forEach(o=>{ const fa=o.p[o.p.length-1], k=cost(notes[i-1],fa,notes[i],f)+(BLK(notes[i])&&f===1?2:0), c=o.c+k; if(!best||c<best.c) best={c,w:Math.max(o.w,k),p:[...o.p,f]}; }); return best; }); }
   D.forEach(o=>{ const f=o.p[o.p.length-1]; if(room&&f<=room) o.c+=50; });
-  D.sort((x,y)=>x.c-y.c); return D[0].p; }
+  D.sort((x,y)=>x.c-y.c); const r=D[0].p; r.cost=D[0].c; r.worst=D[0].w; return r; }
 function bassPlan(L,key,sure){ const S=L.map(x=>Object.assign({},x)), n=S.length, lo=s=>s&&s.lh&&s.lh.length?Math.min(...s.lh):null;
   const onRoot=s=>{ const b=lo(s), r=rootPc(s.name); return b!=null&&r!=null&&((b%12)+12)%12===r; };
   const moved=(s,to)=>{ const b=lo(s); if(b==null) return s.lh; const d=to-b; return d%12===0?s.lh.map(m=>m+d):[to,...s.lh.filter(m=>m!==b&&m>to)]; };
@@ -1138,22 +1138,27 @@ function bassPlan(L,key,sure){ const S=L.map(x=>Object.assign({},x)), n=S.length
         const lh=moved(S[j],p); all.push(p);
         const F=walkFing(all,prevOf(i),lh.length>1?2:0);
         for(let k=0;k<m;k++) ov[i+k].walkF=F.slice(k*4,k*4+4);
-        ov[j]={lh,lfm:landF(lh,F[F.length-1])}; OPT.push({lo:i,hi:j,ov}); });
+        ov[j]={lh,lfm:landF(lh,F[F.length-1])}; OPT.push({lo:i,hi:j,ov,cost:F.cost/all.length,worst:F.worst}); });
       i=j; } }
   /* the half step down after a minor chord in a cyclical 2-5-1 (the tritone substitution) */
   for(let i=0;i+2<n;i++){ const a=S[i],b=S[i+1],c=S[i+2];
     if(!onRoot(a)||!onRoot(b)||!onRoot(c)||!isMinorQ(a.name)||isMinorQ(b.name)) continue; const ra=rootPc(a.name);
     if(rootPc(b.name)!==(ra+5)%12||rootPc(c.name)!==(ra+10)%12) continue; const p=lo(a), lc=moved(c,p-2);
     const F=bassFing([{lh:[p]},{lh:[p-1]},{lh:[p-2]}]).map((q,k)=>q.lfm?q.lfm[p-k]:null);
-    OPT.push({lo:i+1,hi:i+2,ov:{[i+1]:{lh:[p-1],lfm:F[1]?{[p-1]:F[1]}:null},[i+2]:{lh:lc,lfm:F[2]?landF(lc,F[2]):null}}}); }
+    const HF=walkFing([p,p-1,p-2],prevOf(i),lc.length>1?2:0); OPT.push({cost:HF.cost/3,worst:HF.worst,lo:i+1,hi:i+2,ov:{[i+1]:{lh:[p-1],lfm:F[1]?{[p-1]:F[1]}:null},[i+2]:{lh:lc,lfm:F[2]?landF(lc,F[2]):null}}}); }
   /* options that touch the same chords make one group: each time round Dr. Onye picks one of them, or none */
+  /* the options are there so he can avoid bass runs that twist the fingers: a run with an awkward move is left out */
+  for(let k=OPT.length-1;k>=0;k--) if(OPT[k].worst>=2.5||OPT[k].cost>.6) OPT.splice(k,1);
   const G=[]; OPT.sort((x,y)=>x.lo-y.lo).forEach(o=>{ const g=G[G.length-1]; if(g&&o.lo<=g.hi){ g.hi=Math.max(g.hi,o.hi); g.o.push(o); } else G.push({lo:o.lo,hi:o.hi,o:[o]}); });
   G.forEach((g,gi)=>{ const ids=g.o.map((_,k)=>'o'+k); for(let k=g.lo;k<=g.hi;k++){ S[k].bg=gi; S[k].bov={}; } S[g.lo].bfirst=true; S[g.lo].bopts=[...ids,'none'];
+    S[g.lo].bw=[...g.o.map(o=>1/(.25+o.cost)),1/(.25+.3)];   /* the more comfortable, the more often */
     g.o.forEach((o,k)=>Object.keys(o.ov).forEach(x=>{ S[+x].bov['o'+k]=o.ov[x]; })); });
   return S; }
 /* the choice for each group, made as the group comes round: never the same thing every time */
 let BCH={}, BPEND={};
-function bassPick(s){ const g=s.bg, ids=s.bopts||['none'], last=BCH[g]; let c=ids[Math.floor(Math.random()*ids.length)]; if(c===last&&ids.length>1&&Math.random()<.7){ const r=ids.filter(x=>x!==last); c=r[Math.floor(Math.random()*r.length)]; } BCH[g]=c; }
+function bassPick(s){ const g=s.bg, ids=s.bopts||['none'], last=BCH[g], W=s.bw||ids.map(()=>1);
+  const draw=skip=>{ let tot=0; ids.forEach((x,k)=>{ if(x!==skip) tot+=W[k]; }); let r=Math.random()*tot; for(let k=0;k<ids.length;k++){ if(ids[k]===skip) continue; r-=W[k]; if(r<=0) return ids[k]; } return ids[ids.length-1]; };
+  let c=draw(null); if(c===last&&ids.length>1&&Math.random()<.7) c=draw(last); BCH[g]=c; }
 function bassEff(s,ahead){ if(!s||s.bg==null) return s; if(s.bfirst){ if(ahead){ if(!BPEND[s.bg]){ bassPick(s); BPEND[s.bg]=true; } } else { if(BPEND[s.bg]) BPEND[s.bg]=false; else bassPick(s); } }
   const o=s.bov&&s.bov[BCH[s.bg]]; if(!o) return s; const e=Object.assign({},s,o); if(!o.lfm) e.lfm=null; if(!o.walk){ delete e.walk; } return e; }
 function playChord(s0,len,nx0){ const C=CLASS.clock, bOn0=st.cmode==='canvas'&&st.vh==='v'&&!!st.bline, s=bOn0?bassEff(s0,false):s0, nx=bOn0?bassEff(nx0,true):nx0; C.ready().then(()=>{ if(!ov||ov.hidden) return;
