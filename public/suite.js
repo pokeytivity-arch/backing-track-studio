@@ -7,13 +7,14 @@
 'use strict';
 const KEY='ps-dest';
 const DEST={
-  class:{name:'Class',icon:'🎓',blurb:'Learn with HearandPlay. Ask anything about chords, scales, hymns and ear training, and get practice tracks to load into the Studio.',panel:'teacher'},
+  class:{name:'Class',icon:'🎓',blurb:'Consult HearandPlay, the world\'s leading music AI coach, about chords, scales, hymns and ear training. And meet a teacher.',panel:'teacher'},
+  hall:{name:'Practice Hall',icon:'🎹',blurb:'Ear training, scales and chords. Practise on the keyboard with the fingering, the hands and the techniques.',panel:'teacher'},
   studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
   challenge:{name:'Practice Arena',icon:'🏆',blurb:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.',panel:null}
 };
-const ORDER=['class','studio','plus','challenge'];
+const ORDER=['class','hall','studio','plus','challenge'];
 const get=()=>{ try{ const v=localStorage.getItem(KEY); return DEST[v]?v:null; }catch(_){ return null; } };
 const put=v=>{ try{ localStorage.setItem(KEY,v); }catch(_){} };
 let cur=null;
@@ -105,6 +106,8 @@ body[data-dest="class"][data-cl-mini="1"] #psMini{display:flex}
 #suiteHub .dcard[data-k=studio]{--c1:#ffd24d;--c2:#e0911a}
 #suiteHub .dcard[data-k=plus]{--c1:#b78bff;--c2:#6a35d8}
 #suiteHub .dcard[data-k=challenge]{--c1:#ff8a8a;--c2:#d6336c}
+#suiteHub .dcard[data-k=hall]{--c1:#3dd9c4;--c2:#0f8a7a;--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--pp:center 40%}
+#suiteHub .dcard[data-k=hall] .phi{background-image:url(class-chords.webp)!important}
 #suiteHub .dcard .nm{font-size:27px;letter-spacing:-.01em;transform:translateZ(28px);text-shadow:0 2px 10px rgba(0,0,0,.45)}
 #suiteHub .dcard .bl{transform:translateZ(14px)}
 #suiteHub .dcard .go{align-self:flex-start;margin-top:4px;padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;transform:translateZ(30px);transition:background .2s,color .2s,border-color .2s}
@@ -178,6 +181,7 @@ const ICONS={
  class:'<svg viewBox="0 0 48 48" fill="none"><path d="M24 8 3 19l21 11 21-11L24 8Z" fill="#fff"/><path d="M12 25v8c0 3 5.4 6 12 6s12-3 12-6v-8l-12 6-12-6Z" fill="#dfe7ff"/><path d="M42 20v12" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="42" cy="35" r="2.6" fill="#ffe08a"/></svg>',
  studio:'<svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg>',
  challenge:'<svg viewBox="0 0 48 48" fill="none"><path d="M15 8h18v10a9 9 0 0 1-18 0V8Z" fill="#fff"/><path d="M15 11H8c0 7 3 10 8 10M33 11h7c0 7-3 10-8 10" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M24 27v7" stroke="#fff" stroke-width="3.4"/><rect x="15" y="34" width="18" height="6" rx="2" fill="#fff"/></svg>',
+ hall:'<svg viewBox="0 0 48 48" fill="none"><path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/><path d="M6 36h36" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>',
  plus:'<svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg>'};
 function renderHub(){
   const last=get(), box=document.getElementById('psCards'); box.textContent='';
@@ -210,11 +214,11 @@ function closeRooms(){ const vis=id=>{ const e=document.getElementById(id); retu
   try{ if(vis('vcRoom')&&window.VOICE&&VOICE.close) VOICE.close(); }catch(_){} try{ if(vis('earRoom')&&window.EAR) EAR.close(); }catch(_){} try{ if(vis('prRoom')&&window.PRACTICE) PRACTICE.close(); }catch(_){} window.__earBack=window.__prBack=null; }
 function go(k){
   if(!DEST[k]) return; if(!navBack&&!fwdNav&&!popping) FWD=[]; closeRooms(); if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
-  cur=k; if(k!=='account') put(k); document.body.dataset.dest=k;
+  cur=k; if(k!=='account') put(k); document.body.dataset.dest=k==='hall'?'class':k; document.body.dataset.area=k==='hall'?'hall':k==='class'?'class':'';   /* the Practice Hall shares the Class page: Class keeps consultation and meet a teacher, the Hall has ear training, scales and chords */
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
   if(window.CHALLENGE&&k!=='challenge') CHALLENGE.close();
-  if(k==='class'){ openPanel('teacher'); setTimeout(()=>{ try{ if(window.CLASS&&CLASS.welcome) CLASS.welcome(); }catch(_){} },120); }
+  if(k==='class'||k==='hall'){ openPanel('teacher'); setTimeout(()=>{ try{ if(k==='hall'&&window.CLASS&&CLASS.setView) CLASS.setView('home'); if(window.CLASS&&CLASS.welcome) CLASS.welcome(); }catch(_){} try{ if(window.PSROLE&&PSROLE.area) PSROLE.area(k); }catch(_){} },120); }
   else if(k==='plus'){ openPanel('transcribe'); if(window.TX&&TX.restoreLast) TX.restoreLast(); }
   else if(k==='account'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.ACCOUNT) ACCOUNT.open(); }
   else if(k==='challenge'){ try{ closePanel(); }catch(_){} window.scrollTo(0,0); if(window.CHALLENGE) CHALLENGE.open(); }
@@ -222,13 +226,13 @@ function go(k){
   chip(); window.dispatchEvent(new Event('resize')); hpush();
 }
 function chip(){ const c=document.getElementById('psChip'); if(c) c.textContent=DEST[cur]?DEST[cur].name+' ▾':'Piano Suite ▾'; }
-const NAVC={class:['#5b8cff','#2a45c9'],studio:['#ffd24d','#e0911a'],plus:['#b78bff','#6a35d8'],challenge:['#ff8a8a','#d6336c']};
+const NAVC={class:['#5b8cff','#2a45c9'],hall:['#3dd9c4','#0f8a7a'],studio:['#ffd24d','#e0911a'],plus:['#b78bff','#6a35d8'],challenge:['#ff8a8a','#d6336c']};
 const HOMEI='<svg viewBox="0 0 48 48" fill="none"><path d="M6 23 24 8l18 15" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 21v18h10V28h6v11h10V21L24 11 11 21Z" fill="#fff"/></svg>';
 function navMenu(anchor){
   let m=document.getElementById('psNav');
   if(m){ m.remove(); return; }
   m=document.createElement('div'); m.id='psNav'; m.setAttribute('role','menu');
-  const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','studio','plus','challenge'].map(k=>[k,DEST[k].name,ICONS[k],NAVC[k]]));
+  const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','hall','studio','plus','challenge'].map(k=>[k,DEST[k].name,ICONS[k],NAVC[k]]));
   rows.forEach(([k,label,svg,c])=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitem'); const on=k==='home'?hub.classList.contains('on'):(!hub.classList.contains('on')&&cur===k); if(on) b.className='cur';
     b.innerHTML='<i style="background:linear-gradient(150deg,'+c[0]+','+c[1]+')">'+svg+'</i><span></span>'+(on?'<em>✓</em>':''); b.querySelector('span').textContent=label==='Studio+'?'Studio+ (Transcription)':label;
     b.onclick=()=>{ m.remove(); closeRooms(); if(k==='home') showHub(); else go(k); }; m.appendChild(b); });
@@ -312,7 +316,7 @@ function boot(){
   setInterval(()=>{ if(busyPlaying()) touchActive(); else idleCheck(); },60000);
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) idleCheck(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&hub.classList.contains('on')&&cur){ e.preventDefault(); go(cur); } },true);
-  const last=get(); if(last){ cur=null; document.body.dataset.dest=last; }
+  const last=get(); if(last){ cur=null; document.body.dataset.dest=last==='hall'?'class':last; }
   showHub();
 }
 // the menu bar is built by the main script on load; wait for it
