@@ -35,9 +35,19 @@ function studio(){ if(stDone) return; const stage=$('stage'), kbd=$('stageKbd');
   stage.parentNode.insertBefore(dp,stage); dp.querySelector('.ep-body').appendChild(stage); dp.after(kp); kp.after(cp);
   kp.querySelector('.ep-body').appendChild(kbd);
   const kb=$('kbdBtn'); if(kb&&kb.getAttribute('aria-pressed')!=='true'){ try{ kb.click(); }catch(_){} }   /* the keyboard is always shown now */
-  cp.querySelector('.ep-body').appendChild(menuConsole()); sync(); setInterval(()=>{ if(document.body.dataset.dest==='studio'&&!document.hidden) sync(); },1500);
+  /* the tempo, sync lights, chord/scale mode and the Projector / Hum / Ask Class buttons are console controls; the display keeps the chords, the beat lights, Play and Stop */
+  const ctl=el('div','s3-ctl'), q=s=>stage.querySelector(s);
+  [q('.stage-tempo:not(.stage-sync)'),q('.stage-sync'),$('smSeg'),$('smInfo')].forEach(x=>{ if(x) ctl.appendChild(x); });
+  const row=el('div','s3-row'); ['projBtn','humJump','askClassBtn'].forEach(id=>{ const b=$(id); if(b) row.appendChild(b); }); ctl.appendChild(row);
+  const tm=q('.top-mid'); if(tm) tm.remove();
+  cp.querySelector('.ep-body').append(ctl,menuConsole()); sync(); fit(); window.addEventListener('resize',fit); setInterval(()=>{ if(document.body.dataset.dest==='studio'&&!document.hidden) sync(); },1500);
 }
 
+/* the display and keyboard fit on the screen together without scrolling: the chord name shrinks until they do */
+let fitT=0; function fit(){ clearTimeout(fitT); fitT=setTimeout(()=>{ const dp=$('stDisp'), kp=$('stKbP'); if(!dp||!kp||document.body.dataset.dest!=='studio'||dp.classList.contains('float')||dp.classList.contains('max')) return;
+  const bot=()=>kp.getBoundingClientRect().bottom+(window.scrollY||0); let f=104, g=0; dp.style.setProperty('--s3now',f+'px');
+  while(g++<14&&bot()>window.innerHeight-8&&f>50){ f-=6; dp.style.setProperty('--s3now',f+'px'); } },80); }
+new MutationObserver(()=>fit()).observe(document.body,{attributes:true,attributeFilter:['data-dest']});
 /* ---------- Studio+ ---------- */
 let txDone=false;
 function plus(){ if(txDone) return; const card=$('txCard'), top=card&&card.querySelector('.txtop'), stg=card&&card.querySelector('.txstage'), menu=$('txMenu'); if(!card||!top||!stg||!menu) return; txDone=true;
@@ -52,7 +62,15 @@ function plus(){ if(txDone) return; const card=$('txCard'), top=card&&card.query
 const css=el('style'); css.textContent=`
 body:not([data-dest="studio"]) #stDisp,body:not([data-dest="studio"]) #stKbP,body:not([data-dest="studio"]) #stConP{display:none!important}
 .ep3{margin:0 0 14px} #stDisp>.ep-body{padding:0} #stDisp #stage{margin:0;border-radius:0 0 16px 16px} #stDisp .ep-h,#txDispP .ep-h{color:#3dff6e}
-#kbdBtn{display:none!important} #stKbP #stageKbd{display:block!important;margin:0} #stKbP .kbd-bar>span:first-child{visibility:hidden}
+#kbdBtn{display:none!important}
+#stDisp .tip,#stDisp .room-back{display:none!important}
+#stDisp .stage{gap:12px;padding:16px 22px 18px} #stDisp .stage-top{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+#stDisp .now{font-size:var(--s3now,104px)} #stDisp .next{font-size:clamp(20px,calc(var(--s3now,104px)*.34),36px)}
+#stDisp .beats{justify-content:center} #stDisp .beats:not(.many) i{width:clamp(36px,calc(var(--s3now,104px)*.56),58px);height:clamp(36px,calc(var(--s3now,104px)*.56),58px)} #stDisp .chart{justify-content:flex-start} #stDisp .chart>.bar:first-child{margin-left:auto} #stDisp .chart>.bar:last-child{margin-right:auto}
+#stDisp .transport{justify-content:center} #stDisp .corner-tools{position:static;justify-content:flex-end} #stDisp .meter{gap:4px} #stDisp .bpmbig{font-size:clamp(26px,calc(var(--s3now,104px)*.42),44px)}
+.s3-ctl{display:flex;flex-direction:column;gap:12px;padding:0 12px 16px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.s3-ctl .stage-tempo{justify-content:flex-start;flex-wrap:wrap} .s3-ctl .stage-tempo label{min-width:110px} .s3-ctl .stage-tempo input[type=range]{max-width:none}
+.s3-ctl #smSeg{align-self:flex-start} .s3-row{display:flex;gap:10px;flex-wrap:wrap} #stKbP #stageKbd{display:block!important;margin:0} #stKbP .kbd-bar>span:first-child{visibility:hidden}
 .s3-con{display:flex;flex-wrap:wrap;gap:10px 0;align-items:flex-start}
 .s3-ch{display:flex;flex-direction:column;gap:8px;padding:0 12px;border-right:1px solid rgba(255,255,255,.08);flex:1 1 180px;min-width:0} .s3-ch:last-child{border-right:0}
 .s3-t{font:800 10px var(--body);letter-spacing:.16em;text-transform:uppercase;color:#8d97b0}
