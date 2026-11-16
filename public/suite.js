@@ -9,12 +9,15 @@ const KEY='ps-dest';
 const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Consult HearandPlay, the world\'s leading music AI coach, about chords, scales, hymns and ear training. And meet a teacher.',panel:'teacher'},
   hall:{name:'Practice Hall',icon:'🎹',blurb:'Ear training, scales and chords. Practise on the keyboard with the fingering, the hands and the techniques.',panel:'teacher'},
-  studio:{name:'Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
-  plus:{name:'Studio+',icon:'🎧',blurb:'Transcription. Turn any recording into notes you can see and practice on the keyboard.',panel:'transcribe'},
+  studio:{name:'Backing Track Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
+  plus:{name:'Transcription Studio',icon:'🎧',blurb:'Turn any recording into notes you can see and practise on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
   challenge:{name:'Practice Arena',icon:'🏆',blurb:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.',panel:null}
 };
-const ORDER=['class','hall','studio','plus','challenge'];
+const ORDER=['class','hall','studio','challenge'];
+/* the Studio holds two studios: the Backing Track Studio (studio) and the Transcription Studio (plus). Its card on the home page opens a choice of the two. */
+const STUDIO_CARD={name:'Studio',blurb:'Two studios in one: the Backing Track Studio, to play along with a full band, and the Transcription Studio, to turn recordings into notes.'};
+let hubView='main';
 const get=()=>{ try{ const v=localStorage.getItem(KEY); return DEST[v]?v:null; }catch(_){ return null; } };
 const put=v=>{ try{ localStorage.setItem(KEY,v); }catch(_){} };
 let cur=null;
@@ -184,13 +187,16 @@ const ICONS={
  hall:'<svg viewBox="0 0 48 48" fill="none"><path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/><path d="M6 36h36" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>',
  plus:'<svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/><path d="M20 30v7M24 26v15M28 31v6" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/></svg>'};
 function renderHub(){
-  const last=get(), box=document.getElementById('psCards'); box.textContent='';
-  ORDER.forEach(k=>{ const d=DEST[k], b=document.createElement('button'); b.type='button'; b.className='dcard'+(k===last?' last':'');
+  const last0=get(), box=document.getElementById('psCards'); box.textContent='';
+  const SV=hubView==='studios', LIST=SV?['studio','plus']:ORDER, last=SV?last0:(last0==='plus'?'studio':last0); hub.dataset.view=SV?'studios':'main';
+  { const h=hub.querySelector('.in h1'), sb=hub.querySelector('.in .sub'); if(h) h.textContent=SV?'Studio':'HearandPlay Piano Suite'; if(sb){ if(!sb.dataset.orig) sb.dataset.orig=sb.innerHTML; sb.innerHTML=SV?'<span>Choose your studio</span><i>|</i><span>Play along with a backing track</span><i>|</i><span>Transcribe other musicians</span>':sb.dataset.orig; } }
+  { let sb=document.getElementById('psStBack'); if(!sb){ sb=document.createElement('button'); sb.id='psStBack'; sb.type='button'; sb.className='back'; sb.textContent='← Back to the whole suite'; box.parentNode.insertBefore(sb,box); } sb.hidden=!SV; sb.style.margin='0 0 18px'; sb.onclick=()=>{ hubView='main'; renderHub(); }; }
+  LIST.forEach(k=>{ const d=(!SV&&k==='studio')?Object.assign({},DEST[k],STUDIO_CARD):DEST[k], b=document.createElement('button'); b.type='button'; b.className='dcard'+(k===last?' last':'');
     b.innerHTML=(k===last?'<span class="badge">Continue where you left off</span>':'')+'<div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go"></div>';
     b.dataset.k=k; { const p=document.createElement('div'); p.className='ph'; { const im=document.createElement('i'); im.className='phi'; im.style.backgroundImage='url(card-'+k+'.webp)'; p.appendChild(im); const v=document.createElement('video'); v.className='phv'; v.muted=true; v.loop=true; v.playsInline=true; v.preload='none'; v.setAttribute('aria-hidden','true'); p.appendChild(v);
       let has=null; b.addEventListener('pointerenter',async()=>{ if(has===null){ try{ const r=await fetch('card-'+k+'.mp4',{method:'HEAD'}); has=r.ok&&/video/.test(r.headers.get('content-type')||''); }catch(_){ has=false; } if(has) v.src='card-'+k+'.mp4'; } if(has){ try{ v.currentTime=0; }catch(_){} v.play().catch(()=>{}); b.classList.add('vid'); } });
       b.addEventListener('pointerleave',()=>{ v.pause(); b.classList.remove('vid'); }); } b.insertBefore(p,b.firstChild); } b.querySelector('.ic').innerHTML=ICONS[k]||d.icon; b.querySelector('.nm').textContent=d.name; b.querySelector('.bl').textContent=d.blurb; b.querySelector('.go').textContent=(k===last?'Continue':'Open')+' →';
-    b.onclick=()=>go(k); box.appendChild(b); });
+    b.onclick=()=>{ if(!SV&&k==='studio'){ hubView='studios'; renderHub(); const f=box.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); return; } go(k); }; box.appendChild(b); });
 
   if(!matchMedia('(hover:none)').matches) box.querySelectorAll('.dcard').forEach(c=>{
     c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%'); c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%'); });
@@ -200,7 +206,7 @@ function renderHub(){
   try{ if(window.PSPROG) PSPROG.hub(); }catch(_){}
   try{ if(window.PSROLE) PSROLE.hub(); }catch(_){}
 }
-function showHub(){ if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.documentElement.classList.remove('ps-boot'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
+function showHub(o){ hubView=o&&o.studios?'studios':'main'; if(!hub.classList.contains('on')&&!navBack&&cur&&HIST[HIST.length-1]!==cur) HIST.push(cur); if(!hub.classList.contains('on')) stopEverything(); renderHub(); hub.classList.add('on'); document.documentElement.classList.remove('ps-boot'); document.body.style.overflow='hidden'; const f=hub.querySelector('.dcard.last')||hub.querySelector('.dcard'); if(f) f.focus({preventScroll:true}); hpush(); }
 function hideHub(){ hub.classList.remove('on'); document.body.style.overflow=''; }
 
 /* ---------- moving between destinations ---------- */
@@ -283,7 +289,7 @@ function addBackBtn(){
   const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psBackBtn')) return;
   const b=document.createElement('button'); b.id='psBackBtn'; b.type='button'; b.className='menu-btn'; b.textContent='←'; b.title='Back'; b.setAttribute('aria-label','Back'); b.style.cssText='font-size:18px;padding:0 10px'; b.onclick=back; mb.insertBefore(b,mb.firstChild);
 }
-window.SUITE={returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back,forward};
+window.SUITE={studios(){ if(hub.classList.contains('on')){ hubView='studios'; renderHub(); } else showHub({studios:true}); },returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back,forward};
 
 
 /* ---------- clear buttons + clear after an hour away ---------- */

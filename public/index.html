@@ -664,14 +664,14 @@ audio{width:100%}
         .tx .stp output,.tx .stpv{min-width:58px;text-align:center;font:800 17px var(--display);color:#ffd84d;font-variant-numeric:tabular-nums;letter-spacing:.02em}
         .tx .stpv{min-width:34px;display:inline-block}
         </style>
-        <div class="txtop"><button class="btn" id="txRoomBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Studio+ menu" aria-expanded="false" title="Menu">☰</button>
+        <div class="txtop"><button class="btn" id="txRoomBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Transcription Studio menu" aria-expanded="false" title="Menu">☰</button>
 <div id="txTitle"></div><span class="txkb" id="txKbSeg" role="group" aria-label="Keyboard size"><button type="button" data-k="88">88</button><button type="button" data-k="76">76</button><button type="button" data-k="61">61</button><button type="button" data-k="0">Fit</button></span></div>
         <p class="help" id="txMsg" aria-live="polite"></p>
         <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
           <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any audio or video into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Upload file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or use the Console below for more.</small></div></div>
         <div class="txrow"><button class="btn pri" id="txPlay" disabled>▶ Play</button><button class="btn sm" id="txBack" disabled title="Back to the loop start, or 5 seconds">⏮ Back</button><input type="range" id="txSeek" min="0" max="0" value="0" aria-label="Position"><span id="txTime" class="help">0:00 / 0:00</span></div>
-        <aside class="txmenu" id="txMenu" aria-label="Studio+ menu" aria-hidden="true">
-          <div class="txmh"><b>Studio+ menu</b><button class="btn" id="txMenuX" type="button" aria-label="Close menu">✕</button></div>
+        <aside class="txmenu" id="txMenu" aria-label="Transcription Studio menu" aria-hidden="true">
+          <div class="txmh"><b>Transcription Studio menu</b><button class="btn" id="txMenuX" type="button" aria-label="Close menu">✕</button></div>
           <h3 class="txmt">Recording</h3>
         <div class="txrow">
           <button class="btn pri" id="txFileBtn">Upload file</button><input type="file" id="txFile" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.oga,.aac,.flac,.caf,.aif,.aiff,.wma,.mp4,.m4v,.mov,.webm,.mkv,.3gp,.mpg,.mpeg,.avi" hidden>
@@ -2585,7 +2585,7 @@ function setupDrums(){
    Windows: everything but the stage lives in the menus.
    Draggable by the title bar, resizable from the corner, minimizable to a dock.
    ========================================================= */
-const PANELS={chart:'Chord chart',style:'Style',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Studio+ · Transcription',teacher:'Class',mixer:'Mixer',library:'Library',export:'Export audio'};
+const PANELS={chart:'Chord chart',style:'Style',tempo:'Tempo, key and practice',hum:'Hum a bass line',transcribe:'Transcription Studio',teacher:'Class',mixer:'Mixer',library:'Library',export:'Export audio'};
 const WIN_DEF={chart:[1000,560],library:[900,640],style:[560,620],tempo:[560,560],hum:[560,460],transcribe:[640,760],teacher:[520,640],mixer:[560,470],export:[520,300]};
 let panelOpen=null, winZ=90, openCount=0;
 const isSmall=()=>window.innerWidth<700;
@@ -2675,7 +2675,7 @@ const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Sto
 const MENUS=[
   {label:'Piano Suite',brand:true,items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
-    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has three places: Class, Studio (backing tracks) and Studio+ (transcription). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
+    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has four places: Class (consultation and meeting a teacher), the Practice Hall (ear training, scales and chords), the Studio (the Backing Track Studio and the Transcription Studio) and the Practice Arena (practice plans). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
     {sep:true},
     {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
   {label:'File',items:[
@@ -2736,8 +2736,8 @@ const MENUS=[
     {sep:true},
     {label:'Class',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
     {label:'Practice Hall',check:()=>SUITE.current()==='hall',run:()=>SUITE.go('hall')},
-    {label:'Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
-    {label:'Studio+ (Transcription)',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')},
+    {label:'Backing Track Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
+    {label:'Transcription Studio',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')},
     {label:'Practice Arena',check:()=>SUITE.current()==='challenge',run:()=>SUITE.go('challenge')}]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
@@ -3082,9 +3082,9 @@ init();
 <script src="auth.js?v=h1" defer></script>
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
-<script src="transcribe.js?v=3" defer></script>
-<script src="suite.js?v=11" defer></script>
-<script src="roles.js?v=3" defer></script>
+<script src="transcribe.js?v=4" defer></script>
+<script src="suite.js?v=12" defer></script>
+<script src="roles.js?v=4" defer></script>
 <script src="layout3.js?v=6" defer></script>
 <script src="class.js?v=z15" defer></script>
 <script src="progress.js?v=h1" defer></script>
@@ -3100,7 +3100,7 @@ init();
 <script src="themes.js" defer></script>
 <script src="account.js?v=h2" defer></script>
 <script src="challenge.js?v=h2" defer></script>
-<script src="tour.js?v=h2" defer></script>
+<script src="tour.js?v=h3" defer></script>
 <script src="install.js?v=2" defer></script>
 <script>
 /* keep each slider's filled part in step with its handle */

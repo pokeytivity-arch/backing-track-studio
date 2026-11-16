@@ -389,9 +389,9 @@ function askClass(){
   if(!ns.length){ say('I could not find notes there. Move to a spot where notes are falling, or set a loop around the part you want to ask about.',true); return; }
   const list=ns.map(name).join(' '), key=($('txKey').textContent||'').replace(/^Key:\s*/,'');
   const range=S.loopA!=null&&S.loopB!=null;
-  const q=range?`I'm breaking down "${S.title}" in Studio+ and I'm stuck on ${what}. The notes there, in order, are: ${list}. The key looks like ${key}. What chords or run is this, and how do I play and practice it?`
-               :`I'm breaking down "${S.title}" in Studio+. At ${fmt(t)} these notes sound together: ${list}. The key looks like ${key}. What chord or run is this, and how do I play it?`;
-  const heard='Studio+ transcription of "'+S.title+'" (notes found by software, so a few may be wrong). Key: '+key+'. '+what+': '+list;
+  const q=range?`I'm breaking down "${S.title}" in the Transcription Studio and I'm stuck on ${what}. The notes there, in order, are: ${list}. The key looks like ${key}. What chords or run is this, and how do I play and practice it?`
+               :`I'm breaking down "${S.title}" in the Transcription Studio. At ${fmt(t)} these notes sound together: ${list}. The key looks like ${key}. What chord or run is this, and how do I play it?`;
+  const heard='Transcription Studio transcription of "'+S.title+'" (notes found by software, so a few may be wrong). Key: '+key+'. '+what+': '+list;
   window.CLASS.askAbout(q,{heard,fresh:false});
 }
 function click(at,accent){ const ac=S.ac, o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=accent?1500:1000; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(accent?0.6:0.4,at+0.002); g.gain.exponentialRampToValueAtTime(0.0001,at+0.05); o.connect(g); g.connect(S.ac.destination); o.start(at); o.stop(at+0.06); }

@@ -7,7 +7,7 @@
    "We help both students and teachers succeed." */
 (function(){
 'use strict';
-const RK='ps-role', K={sp:'ps-t-spaces2',name:'ps-t-name',code:'ps-t-code',asg:'ps-t-asg',items:'ps-t-items',subs:'ps-s-subs',done:'ps-s-done'};
+const RK='ps-role', K={sp:'ps-t-spaces3',name:'ps-t-name',code:'ps-t-code',asg:'ps-t-asg',items:'ps-t-items',subs:'ps-s-subs',done:'ps-s-done'};
 const role=()=>{ try{ return localStorage.getItem(RK)==='teacher'?'teacher':'student'; }catch(_){ return 'student'; } };
 const jget=(k,d)=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?d:v; }catch(_){ return d; } };
 const jset=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(_){} };
@@ -18,8 +18,7 @@ const el=(t,c,h)=>{ const e=document.createElement(t); if(c) e.className=c; if(h
 const DEF_SPACES=[
   {id:'class',k:'class',name:'Class',blurb:'Consultation with HearandPlay beside you, and meet your students. Send them practice tracks.',go:'class'},
   {id:'hall',k:'hall',name:'Practice Hall',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
-  {id:'studio',k:'studio',name:'Studio',blurb:'Backing tracks for your students: type a chart, pick a style, set the key and tempo.',go:'studio'},
-  {id:'plus',k:'plus',name:'Studio+',blurb:'Transcribe recordings into notes your students can see and practise.',go:'plus'},
+  {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
   {id:'arena',k:'challenge',name:'Practice Arena',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
 const spaces=()=>{ const s=jget(K.sp,null); return Array.isArray(s)&&s.length?s:DEF_SPACES.map(x=>Object.assign({},x)); };
 const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
@@ -37,8 +36,8 @@ const SAMPLE_STUDENTS=[
   {n:'James M.',lv:'Intermediate',st:'3-day streak',last:'Yesterday',ok:true},
   {n:'Grace E.',lv:'Beginner',st:'No streak',last:'6 days ago',ok:false}];
 const REVIEW=[{n:'Ada O.',w:'sent a recording',t:'2-5-1 in all keys · Chords'},{n:'Tolu K.',w:'passed a playing check',t:'G major, 3+4 method · Scales'},{n:'James M.',w:'asked a question',t:'Hymn endings · Class'}];
-const ROOMS={chords:'Chords · Practice Hall',scales:'Scales · Practice Hall',ear:'Ear training · Practice Hall',hall:'Practice Hall',studio:'Studio',plus:'Studio+',challenge:'Practice Arena',class:'Class'};
-const DESTS={hall:['Practice Hall','Ear training, scales or chords'],studio:['Studio','A backing track to play along with'],plus:['Studio+','A transcription to see and practise'],challenge:['Practice Arena','A practice plan']};
+const ROOMS={chords:'Chords · Practice Hall',scales:'Scales · Practice Hall',ear:'Ear training · Practice Hall',hall:'Practice Hall',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Arena',class:'Class'};
+const DESTS={hall:['Practice Hall','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Arena','A practice plan']};
 
 /* ---------- styles ---------- */
 const css=el('style'); css.textContent=`
@@ -68,7 +67,7 @@ const css=el('style'); css.textContent=`
 #suiteHub .rl-stat span{display:block;font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#b4bdd0} #suiteHub .rl-stat b{display:block;font:900 32px var(--body);margin-top:4px}
 #suiteHub .rl-dot{width:9px;height:9px;border-radius:50%;flex:none} #suiteHub .rl-led{background:#2f9e44;box-shadow:0 0 6px #3dff6e} #suiteHub .rl-warn{background:#ff6b6b;box-shadow:0 0 6px #ff6b6b}
 #suiteHub .rl-tbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:-10px 0 22px}
-#suiteHub[data-role=teacher] #psCards{display:none}
+#suiteHub[data-role=teacher]:not([data-view=studios]) #psCards{display:none}
 #suiteHub .rl-cards .dcard{min-height:330px}
 #suiteHub .rl-cards .dcard[data-k=hall]{--c1:#3dd9c4;--c2:#0f8a7a;--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--pp:center 40%}
 #suiteHub .dcard[data-k=training]{--c1:#3dd9c4;--c2:#0f8a7a;--g1:#13a48f;--g2:#06302b;--gl:80,230,200}
@@ -118,6 +117,7 @@ function toggle(){ const w=el('div','rl-tog'); w.setAttribute('role','radiogroup
 
 /* ---------- opening a room (from a space or an assignment) ---------- */
 function openRoom(r,a){ const S=window.SUITE; if(!S) return; closePanel();
+  if(r==='studios'){ S.studios(); return; }
   if(['studio','class','challenge','plus','hall'].includes(r)){ S.go(r); return; }
   S.go('hall');
   setTimeout(()=>{ try{
@@ -154,7 +154,7 @@ function assignPanel(){ const b=panel('New assignment','Where will your students
   const g=el('div'); g.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px';
   Object.keys(DESTS).forEach(k=>{ const c=el('button','rl-btn'); c.type='button'; c.style.cssText='min-height:84px;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;text-align:left;padding:12px 16px';
     c.innerHTML='<span style="font-size:17px">'+DESTS[k][0]+'</span><span style="font:600 13px var(--body);color:#b4bdd0">'+DESTS[k][1]+'</span>';
-    c.onclick=()=>{ try{ sessionStorage.setItem('ps-assign','1'); }catch(_){} closePanel(); if(window.SUITE) SUITE.go(k); assignBar(); }; g.appendChild(c); });
+    c.onclick=()=>{ try{ sessionStorage.setItem('ps-assign','1'); }catch(_){} closePanel(); if(window.SUITE){ if(k==='studios') SUITE.studios(); else SUITE.go(k); } assignBar(); }; g.appendChild(c); });
   b.appendChild(g); }
 /* while a teacher sets up an assignment: a bar to name it and assign it from wherever they are */
 function where(){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden&&e.offsetWidth); };
@@ -172,14 +172,14 @@ function assignBar(){ let b=document.getElementById('rlAssign'); if(b) b.remove(
   b.append(t,go,cx); document.body.appendChild(b); }
 function endAssign(){ try{ sessionStorage.removeItem('ps-assign'); }catch(_){} const b=document.getElementById('rlAssign'); if(b) b.remove(); render(); }
 /* Meet a teacher (from the Class) */
-function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio, studio+ and practice arena, and the work they assign you.'); const box=el('div'); b.appendChild(box);
+function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio and practice arena, and the work they assign you.'); const box=el('div'); b.appendChild(box);
   const draw=()=>{ box.textContent=''; box.appendChild(teacherGrid(draw)); }; draw(); }
 /* ---------- teacher view ---------- */
 function spaceCard(sp,editing,on){ const b=el('button','dcard'); b.type='button'; b.dataset.k=sp.k;
   b.innerHTML='<div class="ph"><i class="phi"'+({class:'card-class.webp',studio:'card-studio.webp',plus:'card-plus.webp',hall:'class-chords.webp'}[sp.k]?' style="background-image:url('+({class:'card-class.webp',studio:'card-studio.webp',plus:'card-plus.webp',hall:'class-chords.webp'}[sp.k])+')"':'')+'></i>'+(BIG[sp.k]||'')+'</div><div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go">Open →</div>';
   b.querySelector('.ic').innerHTML=ICON[sp.k]||ICONS_SUITE(sp.k); b.querySelector('.nm').textContent=sp.name; b.querySelector('.bl').textContent=sp.blurb;
   if(editing){ const ed=el('div','rl-ed'); const rn=el('span',null,'Rename'); rn.setAttribute('role','button'); rn.tabIndex=0; rn.onclick=e=>{ e.stopPropagation(); on.rename(sp); }; ed.appendChild(rn);
-    if(!['class','hall','studio','plus','arena'].includes(sp.id)){ const rm=el('span',null,'✕'); rm.setAttribute('role','button'); rm.setAttribute('aria-label','Remove '+sp.name); rm.tabIndex=0; rm.onclick=e=>{ e.stopPropagation(); on.remove(sp); }; ed.appendChild(rm); } b.appendChild(ed); }
+    if(!['class','hall','studio','arena'].includes(sp.id)){ const rm=el('span',null,'✕'); rm.setAttribute('role','button'); rm.setAttribute('aria-label','Remove '+sp.name); rm.tabIndex=0; rm.onclick=e=>{ e.stopPropagation(); on.remove(sp); }; ed.appendChild(rm); } b.appendChild(ed); }
   b.onclick=()=>{ if(sp.go) openRoom(sp.go); else spacePanel(sp,true); };
   return b; }
 let editing=false;
@@ -246,7 +246,7 @@ function studentView(root){
       const un=el('button','rl-btn','Unsubscribe'); un.type='button'; un.style.alignSelf='flex-start'; un.onclick=()=>{ jset(K.subs,subs.filter(x=>x!==t.id)); render(); }; c.appendChild(un);
       s.appendChild(c); });
     root.appendChild(s); }
-  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice hall, studio, studio+ and practice arena, and the work they assign you. Until then, the whole suite is yours.</p>';
+  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice hall, studio and practice arena, and the work they assign you. Until then, the whole suite is yours.</p>';
   s.appendChild(teacherGrid(render));
   const jf=el('div'); jf.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center'; jf.appendChild(el('b',null,'Have an invite code?'));
   const ji=el('input','rl-in'); ji.placeholder='HP-T-XXXX'; ji.setAttribute('aria-label','Invite code'); ji.style.cssText='text-transform:uppercase;font-family:ui-monospace,Menlo,monospace;width:170px';
@@ -255,7 +255,7 @@ function studentView(root){
 function teacherGrid(after){ const subs=jget(K.subs,[])||[]; const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s studio on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
   const g=el('div','rl-grid'); T.forEach(t=>{ const c=el('div','rl-card'); const joined=subs.includes(t.id);
     c.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span class="rl-av" style="background:'+t.color+'">'+esc(t.ini)+'</span><div style="flex:1;min-width:0"><b style="font-size:17px">'+esc(t.name)+'</b>'+(t.id===ME?'':'<span class="rl-demo">Sample</span>')+'<div style="color:#b4bdd0;font-size:13px">'+esc(t.spec)+(t.students?' · '+esc(t.students):'')+'</div></div></div>';
-    const ch=el('div','rl-chips'); ['Class','Practice Hall','Studio','Studio+','Practice Arena'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
+    const ch=el('div','rl-chips'); ['Class','Practice Hall','Studio','Practice Arena'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
     const b=el('button','rl-btn'+(joined?' ok':' pri'),joined?'Subscribed ✓':'Subscribe'); b.type='button'; b.onclick=()=>{ let S=jget(K.subs,[])||[]; if(S.includes(t.id)) S=S.filter(x=>x!==t.id); else { S.push(t.id); toast('You joined '+t.name+'.'); } jset(K.subs,S); render(); if(after&&after!==render) after(); }; c.appendChild(b); g.appendChild(c); });
   return g; }
 function joinCode(v){ v=String(v||'').trim().toUpperCase(); let c=null; try{ c=localStorage.getItem(K.code); }catch(_){}
@@ -264,6 +264,7 @@ function joinCode(v){ v=String(v||'').trim().toUpperCase(); let c=null; try{ c=l
 
 /* ---------- on the home page ---------- */
 function render(){ const hub=document.getElementById('suiteHub'); if(!hub) return; const inn=hub.querySelector('.in'); if(!inn) return; const r=role(); hub.dataset.role=r;
+  if(hub.dataset.view==='studios'){ const bx=inn.querySelector('#rlBox'); if(bx) bx.remove(); const tg=inn.querySelector('.rl-tog'); if(tg) tg.remove(); inn.insertBefore(toggle(),inn.firstChild); return; }
   let tg=inn.querySelector('.rl-tog'); if(tg) tg.remove(); inn.insertBefore(toggle(),inn.firstChild);
   let tl=inn.querySelector('.rl-tagline'); if(!tl){ tl=el('div','rl-tagline','We help students and teachers succeed'); const sub=inn.querySelector('.sub'); if(sub&&sub.nextSibling) inn.insertBefore(tl,sub.nextSibling); else inn.appendChild(tl); }
   let box=inn.querySelector('#rlBox'); if(box) box.remove(); box=el('div'); box.id='rlBox';
