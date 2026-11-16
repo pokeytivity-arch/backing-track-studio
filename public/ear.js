@@ -46,8 +46,8 @@ const css=document.createElement('style'); css.textContent=`
 .ep-b.on{background:var(--hi,#ffd43b);color:#151b28;border-color:transparent}
 .ep-body{padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-width:0;overflow:auto}
 #earDisp{background:linear-gradient(180deg,#05080d,#020305);box-shadow:inset 0 0 30px rgba(0,0,0,.9),0 0 0 1px #2b3245,0 8px 22px rgba(0,0,0,.4)} #earDisp .ep-h{color:#3dff6e}
-#earConP .ep-body{padding:8px} #earConP .ec-con{border:0;box-shadow:none;background:none;padding:2px}
-#earKbP .e-kb{margin:0!important;position:static!important} #earKbP .e-kb>.e-lbl{display:none} #earKbP.max #earKbWrap svg{height:min(48vh,360px)!important;width:100%}
+#earDisp .e-big{font-size:clamp(34px,4.6vw,60px)!important;line-height:1.04!important} /* one fixed display size for every mode and test (sized to the tallest of them), so the console never moves; anything longer scrolls inside */ #earDisp:not(.max) .ep-body{height:clamp(260px,50vh,400px);overflow:auto;box-sizing:border-box} @media (max-width:700px),(max-height:520px){ #earDisp:not(.max) .ep-body{height:clamp(180px,48vh,300px)} } #earDisp.float .ep-body{height:auto;min-height:260px} #earConP .ep-body{padding:8px} #earConP .ec-con{border:0;box-shadow:none;background:none;padding:2px}
+#earKbP .e-kb{margin:0!important;position:static!important} #earKbP .e-kb>.e-lbl{display:none} #earKbP.max #earKbWrap svg{height:auto!important;width:100%} #earKbP.max .ep-body{justify-content:center;flex:1}
 .ep.float{position:absolute;z-index:40;resize:both;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.7),0 0 0 1px #3a4258}
 .ep.max{position:fixed;inset:44px 10px 10px;z-index:60;overflow:auto;box-shadow:0 0 0 100vmax rgba(3,5,10,.75),0 20px 50px rgba(0,0,0,.7)}
 .ep-voices{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end} .ep-voices .ec-key{min-height:22px;font-size:11px;letter-spacing:0;text-transform:none}
@@ -201,11 +201,12 @@ function panels(){
       const mv=ev=>{ const q=lptE(document.body,{clientX:ev.clientX,clientY:ev.clientY}), q0=lptE(document.body,{clientX:s0.x,clientY:s0.y}); p.style.left=(s0.l+q.x-q0.x)+'px'; p.style.top=Math.max(0,s0.t+q.y-q0.y)+'px'; };
       const up=()=>{ document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up); }; document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); }); }); }
 /* detach: the panel floats (drag it by its bar, resize from its corner); expand: it fills the room; press again to put it back */
+window.addEventListener('resize',()=>{ const kp=document.getElementById('earKbP'); if(kp&&kp.classList.contains('max')){ clearTimeout(drawKb.t); drawKb.t=setTimeout(()=>drawKb(...kbLast),120); } });
 function panelMode(p,a){ const was=p.classList.contains(a==='det'?'float':'max');
   p.classList.remove('float','max'); p.style.left=p.style.top=p.style.width=p.style.height='';
   if(!was){ if(a==='det'){ p.classList.add('float'); const W=Math.min(ov.clientWidth-40,a==='det'?Math.max(360,p.offsetWidth*.7):0); p.style.width=W+'px'; p.style.left=Math.round((ov.clientWidth-W)/2+ov.scrollLeft)+'px'; p.style.top=Math.round(ov.scrollTop+70)+'px'; } else p.classList.add('max'); }
   p.querySelector('[data-a=det]').classList.toggle('on',p.classList.contains('float')); p.querySelector('[data-a=max]').classList.toggle('on',p.classList.contains('max')); p.querySelector('[data-a=max]').textContent=p.classList.contains('max')?'⤡':'⤢';
-  if(p.id==='earKbP'){ const sv=p.querySelector('#earKbWrap svg'); if(sv){ if(p.classList.contains('max')) sv.setAttribute('preserveAspectRatio','none'); else sv.removeAttribute('preserveAspectRatio'); } }
+  if(p.id==='earKbP') setTimeout(()=>drawKb(...kbLast),30);
   window.dispatchEvent(new Event('resize')); }
 function render(){
   clr(); lit=[]; n=0; score=0; missed={}; stats={}; q=null; answered=false;
@@ -220,9 +221,12 @@ function render(){
 }
 
 /* ---------- the keyboard ---------- */
+let kbLast=[[],[],null];
 function drawKb(lh,rh,spell){
-  const wrap=$('#earKbWrap'); if(!wrap||typeof keyboardSVG!=='function') return;
-  const svg=keyboardSVG(lh||[],rh||[],{lo:21,hi:108,height:64,fingers:false,spell:spell||null}); { const kp=$('#earKbP'); if(kp&&kp.classList.contains('max')) svg.setAttribute('preserveAspectRatio','none'); }
+  const wrap=$('#earKbWrap'); if(!wrap||typeof keyboardSVG!=='function') return; kbLast=[lh,rh,spell];
+  /* expanded: longer keys (drawn taller, never stretched), sized to fill the panel */
+  let kh=64; { const kp=$('#earKbP'); if(kp&&kp.classList.contains('max')){ const body=kp.querySelector('.ep-body'), W=wrap.clientWidth||body.clientWidth, Hh=kp.clientHeight-kp.querySelector('.ep-h').offsetHeight-70; if(W>100&&Hh>100) kh=Math.max(64,Math.min(160,Math.round(Hh*(52*14+2)/W))); } }
+  const svg=keyboardSVG(lh||[],rh||[],{lo:21,hi:108,height:kh,fingers:false,spell:spell||null});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m; S(m,1.6,.85,0); if(cat==='note'&&mode==='aware'){ lit=[m]; $('#earBig').textContent=midiName(m); $('#earSub').textContent='Played '+midiName(m)+(m>=60?(m>=72?' (higher)':' (middle octave)'):' (lower)'); drawKb([],lit); } });
   wrap.replaceChildren(svg);
 }
