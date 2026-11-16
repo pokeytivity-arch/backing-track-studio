@@ -281,7 +281,7 @@ function back0(){
   if(!hub.classList.contains('on')){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden&&e.offsetWidth); };
     for(const [id,btn,ret] of [['vcRoom','.vc-x','__vcBack'],['earRoom','#earX','__earBack'],['prRoom','#prX','__prBack']]){ if(vis(id)){ const b=document.querySelector('#'+id+' '+btn); try{ if(b) b.click(); }catch(_){} const f=window[ret]; window[ret]=null; if(typeof f==='function'){ try{ f(); }catch(_){} } return; } } }
   if(RET&&!hub.classList.contains('on')&&cur===RET.from){ const f=RET.fn; RET=null; navBack=true; try{ f(); } finally{ navBack=false; } return; }
-  if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back(),plus:()=>window.TXMENU&&TXMENU.close()}[cur]; try{ if(h&&h()) return; }catch(_){} }
+  if(!hub.classList.contains('on')){ const h={class:()=>window.CLASS&&CLASS.back&&CLASS.back(),hall:()=>window.CLASS&&CLASS.back&&CLASS.back(),challenge:()=>window.CHALLENGE&&CHALLENGE.back&&CHALLENGE.back(),account:()=>window.ACCOUNT&&ACCOUNT.back&&ACCOUNT.back(),plus:()=>window.TXMENU&&TXMENU.close()}[cur]; try{ if(h&&h()) return; }catch(_){} }
   let t=HIST.pop(); if(t===place()) t=HIST.pop();
   navBack=true; try{ if(t==='hub'||!t) { if(!hub.classList.contains('on')) showHub(); } else go(t); } finally{ navBack=false; }
 }

@@ -621,7 +621,7 @@ function toStudio(){
   const HL={rh:'Right hand',lh:'Left hand',both:'Both hands'}, DL=(st.motion==='contrary'?CDIRS:DIRS).find(d=>d[0]===st.dir)[1];
   const info=(st.motion==='contrary'?'Both hands, contrary motion':HL[st.hand])+' · '+DL+' · '+(st.oct>1?st.oct+' octaves':'one octave')+' · 4/4';
   const title=SYMK(st.key)+' '+(st.type==='major'?'major':TL)+(st.oct>1?' · '+st.oct+' octaves':'')+(st.motion==='contrary'?' · contrary':'')+' scale';
-  const back=from||'class'; close(); if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if(back==='class'&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('scales'); else open('scales',{resume:true}); },260); }); };
+  const back=from||'class'; close(); if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if((back==='class'||back==='hall')&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('scales'); else open('scales',{resume:true}); },260); }); };
   window.STUDIO_SCALE({title,steps:list,rests,info,hand:st.hand,dir:st.dir,key:st.key,type:st.type});
 }
 function transport(ctl){
@@ -1389,7 +1389,7 @@ function chordsToStudio(){ if(st.cmode==='arp'||!window.STUDIO_CHORDS) return; c
   const slots=[]; toks.forEach(x=>{ const n=Math.max(1,Math.round(x.b)); slots.push(x.t); for(let i=1;i<n;i++) slots.push('.'); }); while(slots.length%4) slots.push('.');
   const bars=[]; for(let i=0;i<slots.length;i+=4) bars.push(slots.slice(i,i+4).join(' '));
   const title=st.cmode==='canvas'?'Chord progression':($('#prBig').textContent||'Chords'), back=from||'class'; close();
-  if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if(back==='class'&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('chords'); else open('chords',{resume:true}); },260); }); };
+  if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if((back==='class'||back==='hall')&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('chords'); else open('chords',{resume:true}); },260); }); };
   window.STUDIO_CHORDS({title,chords:'| '+bars.join(' | ')+' |',bpm:st.bpm,transpose:tr}); }
 /* a console strip of lit buttons, like the Scale room's */
 function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col);
