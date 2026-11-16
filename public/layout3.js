@@ -52,10 +52,12 @@ new MutationObserver(()=>fit()).observe(document.body,{attributes:true,attribute
 let txDone=false;
 function plus(){ if(txDone) return; const card=$('txCard'), top=card&&card.querySelector('.txtop'), stg=card&&card.querySelector('.txstage'), menu=$('txMenu'); if(!card||!top||!stg||!menu) return; txDone=true;
   const tr=stg.nextElementSibling&&stg.nextElementSibling.classList.contains('txrow')?stg.nextElementSibling:null, msg=$('txMsg');
-  const dp=mk('txDispP','Display'), kp=mk('txKbP','Keyboard'), cp=mk('txConP','Console');
+  /* the display and the keyboard are one: the coloured notes fall straight into the keys */
+  const dp=mk('txDispP','Display and keyboard'), cp=mk('txConP','Console');
   top.parentNode.insertBefore(dp,top); const db=dp.querySelector('.ep-body'); db.append(top); if(msg) db.append(msg); db.append(stg); if(tr) db.append(tr);
-  dp.after(kp); kp.after(cp); const kc=el('canvas'); kc.id='txKbCanvas'; kc.setAttribute('aria-label','Keyboard'); kp.querySelector('.ep-body').appendChild(kc);
-  menu.classList.add('tx3'); menu.setAttribute('aria-hidden','false'); cp.querySelector('.ep-body').appendChild(menu);
+  dp.after(cp); const cb=cp.querySelector('.ep-body'); const seg=$('txKbSeg');
+  if(seg){ const r=el('div','tx3-kb'); r.appendChild(el('span','s3-t','Keyboard')); r.appendChild(seg); cb.appendChild(r); }
+  menu.classList.add('tx3'); menu.setAttribute('aria-hidden','false'); cb.appendChild(menu);
   window.dispatchEvent(new Event('resize'));
 }
 
@@ -83,8 +85,8 @@ body:not([data-dest="studio"]) #stDisp,body:not([data-dest="studio"]) #stKbP,bod
 /* Studio+: the menu becomes the console, always open */
 #txCard{overflow:auto!important} #txCard .txmenu.tx3{position:static!important;transform:none!important;visibility:visible!important;width:auto!important;box-shadow:none!important;border:0!important;padding:0!important;background:none!important;display:block!important}
 #txCard .txmenu.tx3 .txmh,#txMenuBtn,#txMenuX{display:none!important}
-#txCard .ep3{flex:none} #txKbCanvas{display:block;width:100%;height:110px;border-radius:10px}
-#txDispP .txstage{overflow:hidden}
+#txCard .ep3{flex:none} .tx3-kb{display:flex;align-items:center;gap:14px;padding:0 4px 14px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+#txDispP .txstage{overflow:hidden} #txDispP .txtop:has(#txTitle:empty){display:none}
 #txCard .ep.max{position:fixed;inset:44px 10px 10px}
 `;
 document.head.appendChild(css);
