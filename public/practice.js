@@ -737,7 +737,7 @@ function mixOrder(panel){
    Press SAVE, then a number, to store; press a number to recall. A lit number holds a setting; green is the one in use. */
 const BKS='pr-banks', BKEYS=['family','type','key','motion','mode','oct','hand','dir','sys','bpm','loop','rhy','reps','kc','fa'];
 /* twelve memory banks in the Scale room and twelve in the Chord room (each room keeps its own) */
-const NBANK=12, CKEYS=['cmode','chords','cview','invs','vh','cg','vg','bline','ckey','cpick','ctr','coct','nstaff','nkb','nlab','akey','aq','aoct','ahand','alh','adir','bpm','loop'];
+const NBANK=12, CKEYS=['cmode','chords','cview','invs','vh','cg','vg','bline','riff','ckey','cpick','ctr','coct','nstaff','nkb','nlab','akey','aq','aoct','ahand','alh','adir','bpm','loop'];
 const bks=()=>kind==='chords'?'pr-cbanks':BKS, bkeys=()=>kind==='chords'?CKEYS:BKEYS, bcurK=()=>kind==='chords'?'pr-cbank-cur':'pr-bank-cur';
 let bankArm=false, bankDel=false;
 const bcur=()=>{ try{ return +(localStorage.getItem(bcurK())??-1); }catch(_){ return -1; } }, bcurSet=i=>{ try{ localStorage.setItem(bcurK(),String(i)); }catch(_){} };
@@ -1110,17 +1110,17 @@ function scStep(m,n,key){ let x=m, k=Math.abs(n); const d=Math.sign(n); while(k>
    Going down: 1 2 3 (4 5), the thumb passing under after 3 or 4. Going up: 5 4 3 2 1, finger 3 (or 2) crossing over the thumb.
    No thumb on a black key in a crossing. A leap opens the hand. The last finger leaves room for the notes above it in the chord it lands on. */
 const BLK=m=>[1,3,6,8,10].includes(((m%12)+12)%12);
-function walkFing(notes,prev,room){ const n=notes.length; if(!n) return [];
+function walkFing(notes,prev,room,rh,endMax){ const n=notes.length; if(!n) return [];
   const SPAN={'5,1':12,'5,2':9,'5,3':7,'5,4':4,'4,1':9,'4,2':6,'4,3':3,'3,1':8,'3,2':4,'2,1':7};
-  const cost=(a,fa,b,fb)=>{ const d=b-a; if(d===0) return fa===fb?0:1.5;
+  const cost=(a,fa,b,fb)=>{ const d=rh?a-b:b-a; if(d===0) return fa===fb?0:1.5;
     if(d>0){ if(fb<fa){ const mx=SPAN[fa+','+fb]; if(d>mx) return 99; return Math.abs(d-(fa-fb)*1.8)*.35; }
-      if(fa===1&&fb>1&&d<=2) return ({3:1,2:1.4,4:2})[fb]+(BLK(b)&&fb===2?.5:0); return 99; }
+      if(fa===1&&fb>1&&d<=3) return ({3:1,2:1.4,4:2})[fb]+(BLK(b)&&fb===2?.5:0)+(d===3?.4:0); return 99; }
     const u=-d; if(fb>fa){ const mx=SPAN[fb+','+fa]; if(u>mx) return 99; return Math.abs(u-(fb-fa)*1.8)*.35; }
-    if(fb===1&&fa>1&&u<=2) return ({3:1,4:1.4,2:2.2})[fa]+(BLK(b)?2.5:0); return 99; };
+    if(fb===1&&fa>1&&u<=3) return ({3:1,4:1.4,2:2.2})[fa]+(BLK(b)?2.5:0)+(u===3?.4:0); return 99; };
   const start=f=>{ let c=BLK(notes[0])&&f===1?1:0; if(prev){ const k=cost(prev.m,prev.f,notes[0],f); c+=k>=99?(Math.abs(notes[0]-prev.m)>9?0.6:3):k; } return c; };
   let D=[1,2,3,4,5].map(f=>({c:start(f),w:start(f),p:[f]}));
   for(let i=1;i<n;i++){ D=[1,2,3,4,5].map(f=>{ let best=null; D.forEach(o=>{ const fa=o.p[o.p.length-1], k=cost(notes[i-1],fa,notes[i],f)+(BLK(notes[i])&&f===1?2:0), c=o.c+k; if(!best||c<best.c) best={c,w:Math.max(o.w,k),p:[...o.p,f]}; }); return best; }); }
-  D.forEach(o=>{ const f=o.p[o.p.length-1]; if(room&&f<=room) o.c+=50; });
+  D.forEach(o=>{ const f=o.p[o.p.length-1]; if(room&&f<=room) o.c+=50; if(endMax&&f>endMax) o.c+=50; });
   D.sort((x,y)=>x.c-y.c); const r=D[0].p; r.cost=D[0].c; r.worst=D[0].w; return r; }
 function bassPlan(L,key,sure){ const S=L.map(x=>Object.assign({},x)), n=S.length, lo=s=>s&&s.lh&&s.lh.length?Math.min(...s.lh):null;
   const onRoot=s=>{ const b=lo(s), r=rootPc(s.name); return b!=null&&r!=null&&((b%12)+12)%12===r; };
@@ -1163,6 +1163,12 @@ function bassPick(s){ const g=s.bg, ids=s.bopts||['none'], last=BCH[g], W=s.bw||
   let c=draw(null); if(c===last&&ids.length>1&&Math.random()<.7) c=draw(last); BCH[g]=c; }
 function bassEff(s,ahead){ if(!s||s.bg==null) return s; if(s.bfirst){ if(ahead){ if(!BPEND[s.bg]){ bassPick(s); BPEND[s.bg]=true; } } else { if(BPEND[s.bg]) BPEND[s.bg]=false; else bassPick(s); } }
   const o=s.bov&&s.bov[BCH[s.bg]]; if(!o) return s; const e=Object.assign({},s,o); if(!o.lfm) e.lfm=null; if(!o.walk){ delete e.walk; } return e; }
+/* right-hand riffs (his): the major pentatonic is 1 2 3 5 6. On the 4th beat of the bar before, four sixteenths lead up to the next chord's highest tone:
+   highest tone the 3rd of the key: 5 6 1 2; the 2nd: 3 5 6 1; the 6th: 1 2 3 5; the 7th: 2 3 5 6. Not every time: now and then. */
+const PENT=[0,2,4,7,9]; let rfLast=false;
+function riffFor(nx,key){ if(!nx||!(nx.rh&&nx.rh.length)) return null; const top=Math.max(...nx.rh), d=degOf(top,key); if(![4,2,9,11].includes(d)) return null;
+  const out=[]; let m=top-1; while(out.length<4&&m>top-15){ if(PENT.includes(degOf(m,key))) out.unshift(m); m--; } if(out.length<4) return null;
+  out.f=walkFing(out,null,0,true,0); return out; }   /* fingering: scale logic, no crossing in four quick notes when the hand can reach them */
 function playChord(s0,len,nx0){ const C=CLASS.clock, bOn0=st.cmode==='canvas'&&st.vh==='v'&&!!st.bline, s=bOn0?bassEff(s0,false):s0, nx=bOn0?bassEff(nx0,true):nx0; C.ready().then(()=>{ if(!ov||ov.hidden) return;
   const b=C.bus(); if(b) chBus.push(b); const bt=60/st.bpm, beats=s.beats||(len?Math.max(1,Math.round(len/bt)):2), dur=len||Math.max(1.6,beats*bt), t0=C.now()+0.05, end=t0+dur;
   /* only the chord canvas uses the techniques; grace notes and the bass line go with Chords (together). Voicings can add grace notes. */
@@ -1171,6 +1177,9 @@ function playChord(s0,len,nx0){ const C=CLASS.clock, bOn0=st.cmode==='canvas'&&s
   /* bass runs are decided one chord ahead, so a lead-in from the chord before lands on the run's first note */
   const key=steps.key!=null?steps.key:0, gr=gOn?graceFor(s,key):null, brun=bOn&&!s.walk?((planNext&&planNext.step===s0)?planNext.plan:(Math.round(beats)===2?runPlan(s):null)):null;
   const nplan=bOn&&nx&&!nx.walk&&Math.round(nx.beats||2)===2?runPlan(nx):null; planNext=bOn&&nx?{step:nx0,plan:nplan}:null;
+  const rOn=md==='canvas'&&st.vh==='v'&&!!st.riff, onBar=s0.at!=null&&Math.abs(((s0.at+beats)%4))<.01;
+  let riff=null; if(rOn&&nx&&onBar&&dur>=bt*.99){ if(rfLast||Math.random()<.4) rfLast=false; else { riff=riffFor(nx,key); rfLast=!!riff; } }
+  const rhEnd=riff?end-bt:end;
   const run=!brun&&!s.walk&&bOn&&nx&&dur>=bt*.99?bassRun(s,nx,key,nplan?nplan[0]:null):null, lhEnd=run?end-bt/2:end;
   const FO={}; if(bassFO&&bassFO.step===s0){ FO[bassFO.m]=bassFO.f; } bassFO=null;
   const FM=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{},FO); vis={s:s0,on:new Set(),extra:{},fo:FO}; if(Object.keys(FO).length&&curS()===s0) show(); const V=vis; let rq=0; const redraw=()=>{ if(rq) return; rq=requestAnimationFrame(()=>{ rq=0; if(vis===V&&curS()===s0) drawKb(); }); };
@@ -1185,11 +1194,13 @@ function playChord(s0,len,nx0){ const C=CLASS.clock, bOn0=st.cmode==='canvas'&&s
       plan.forEach(([m,t])=>N(m,t,endOf(m),isL(m)?.75:.7)); }
     else [...s.lh,...s.rh].forEach(m=>N(m,t0,endOf(m),isL(m)?.75:.7)); }
   else if(tech==='h'){ const ns=[...s.lh,...s.rh].sort((a,b)=>a-b), gap=Math.min(.5,Math.max(.12,(dur-.3)/ns.length)); arpN=null; ns.forEach((m,i)=>N(m,t0+i*gap,endOf(m),.8)); }
-  else if(bOn&&s.walk){ arpN=null; drawKb(); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,end,.7));   /* the left hand walks in eighth notes */
+  else if(bOn&&s.walk){ arpN=null; drawKb(); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,rhEnd,.7));   /* the left hand walks in eighth notes */
     const e8=dur/4; s.walk.forEach((m,i)=>{ const t=t0+i*e8, e=t+e8*.95; C.note(m,t,e-t,i===0?.78:.72,b); lit(m,t,e,{h:'l',f:s.walkF?s.walkF[i]:null}); }); }
-  else if(brun){ arpN=null; drawKb(); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,end,.7));   /* the left hand plays the bass run instead of holding its notes */
+  else if(brun){ arpN=null; drawKb(); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,rhEnd,.7));   /* the left hand plays the bass run instead of holding its notes */
     const s16=bt/4; brun.forEach((m,i)=>{ const t=i<4?t0+i*s16:t0+bt, e=i<4?t+s16*.95:end; C.note(m,t,e-t,i===4?.78:.72,b); lit(m,t,e,{h:'l',f:brun.f?brun.f[i]:null}); }); }
-  else { arpN=null; drawKb(); s.lh.forEach((m,i)=>N(m,t0+i*.012,endOf(m),.75)); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,end,.7)); }
+  else { arpN=null; drawKb(); s.lh.forEach((m,i)=>N(m,t0+i*.012,endOf(m),.75)); s.rh.forEach((m,i)=>N(m,t0+.03+i*.018,rhEnd,.7)); }
+  /* the riff: four sixteenths on the last beat, in the right hand */
+  if(riff){ const s16=bt/4; riff.forEach((m,i)=>{ const t=end-bt+i*s16; C.note(m,t,s16*.95,.66+i*.03,b); lit(m,t,t+s16*.95,{h:'r',f:riff.f[i]}); }); }
   /* the bass line's two sixteenths show on the keys and in the left hand's fingers */
   if(run){ const s16=bt/4, FN=Object.assign(fingering(nx.lh||[],nx.rh||[]),nx.lfm||{}), T=Math.min(...(nx.lh&&nx.lh.length?nx.lh:nx.rh)), tf=FN[T]||5, up=run[0]<T;
     const fs=up?[3,2]:[1,2]; bassFO={step:nx0,m:T,f:up?1:3};   /* up: 3 2 1 (the bass note on 1); down: 1 2 3 (the bass note on 3) */
@@ -1207,7 +1218,7 @@ function loadChords(text,quiet){
   if(!base.length){ steps=[]; cur=-1; chips(); show(); $('#prMsg').textContent=st.chords?'I did not recognise those chords. Try names like Dm7, G7, Cmaj7, F#m7b5, or your own voicing like B / A D F.':'Type chords in the Chord canvas.'; chordTip([]); return; }
   const hf=base.map(x=>handFit(/^\[/.test(x.src||'')?x:invert(x,0))), pk=progKey(base), blOn=st.cmode==='canvas'&&st.vh==='v'&&!!st.bline;
   BCH={}; BPEND={}; const fitted=bassFing(blOn?bassPlan(hf,pk,keySure(base,pk)):hf);
-  steps=octShift(fitted); steps.key=pk; steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(P.length>base.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(P.map(x=>x.tok));
+  steps=octShift(fitted); steps.key=pk; { let a=0; steps.forEach(x=>{ x.at=a; a+=x.beats||2; }); } steps.multi=true; cur=0; chips(); show(); invBtn(); $('#prMsg').textContent=(P.length>base.length?'Some of those were not recognised and were skipped. ':'')+'Tap a chord to hear it, or press Play.'; if(!quiet) play1(steps[0]); chordTip(P.map(x=>x.tok));
 }
 /* voicing labels on the keys: letter, solfa and number (the chord tone). Solfa (his): major triad do mi sol, minor triad la do mi, diminished triad ti re fa,
    dominant seventh sol ti re fa (from the Mixolydian mode); so major ninth do mi sol ti re, minor ninth la do mi sol ti, dominant ninth sol ti re fa la */
@@ -1366,11 +1377,11 @@ function chordConsole(box){
     cStrip('Mode',[['canvas','Chord canvas','Type a progression: Dr. Onye plays it chord by chord'],['inv','Inversions','One chord at a time, in the inversions you choose'],['voice','Voicings','One chord at a time, and every way to play it'],['arp','Arpeggios','Chords played harp-like, with his fingering']],()=>[st.cmode],v=>{ if(st.cmode===v) return; st.cmode=v; save(); render(); }),
     cStrip('Inversion',[[0,'Root position'],[1,'1st inversion'],[2,'2nd inversion'],[3,'3rd inversion','For seventh chords']],()=>st.invs,v=>{ const a=new Set(st.invs); if(a.has(v)){ if(a.size===1) return; a.delete(v); } else a.add(v); st.invs=[...a].sort(); save(); render(); },{off:()=>st.cmode!=='inv',offWhy:'Turn on Inversions in Mode'}),
     /* only the chord canvas uses the techniques; grace notes and the bass line go with Chords and can each be switched off (bass line off by default). Voicings can use grace notes (off until you turn them on). */
-    cStrip('Technique',[['v','Chords','All the notes together. Turn on Broken chords too for the arpeggio'],['h','Broken chords','One note at a time. Turn on Chords too for the arpeggio'],['grace','Grace notes','A grace note on the middle or bottom note when the right hand has three notes'],['bline','Bass line','Two sixteenths now and then lead into the next bass note']],
-      ()=>cv?[...(st.vh==='a'?['v','h']:[st.vh]),st.cg!==false?'grace':'',st.bline?'bline':'']:vo?[st.vg?'grace':'']:[],
-      v=>{ if(vo){ if(v==='grace'){ st.vg=!st.vg; save(); render(); } return; } if(v==='grace') st.cg=st.cg===false; else if(v==='bline') st.bline=!st.bline;
+    cStrip('Technique',[['v','Chords','All the notes together. Turn on Broken chords too for the arpeggio'],['h','Broken chords','One note at a time. Turn on Chords too for the arpeggio'],['grace','Grace notes','A grace note on the middle or bottom note when the right hand has three notes'],['bline','Bass line','Two sixteenths now and then lead into the next bass note'],['riff','Riffs','Right-hand pentatonic riffs on beat 4, leading into the next bar']],
+      ()=>cv?[...(st.vh==='a'?['v','h']:[st.vh]),st.cg!==false?'grace':'',st.bline?'bline':'',st.riff?'riff':'']:vo?[st.vg?'grace':'']:[],
+      v=>{ if(vo){ if(v==='grace'){ st.vg=!st.vg; save(); render(); } return; } if(v==='grace') st.cg=st.cg===false; else if(v==='bline') st.bline=!st.bline; else if(v==='riff') st.riff=!st.riff;
         else { const on={v:st.vh==='v'||st.vh==='a',h:st.vh==='h'||st.vh==='a'}; on[v]=!on[v]; if(!on.v&&!on.h) return; st.vh=on.v&&on.h?'a':on.v?'v':'h'; } save(); render(); if(v!=='grace'&&st.chords) retune(); },
-      {two:true,off:()=>!cv&&!vo,offWhy:'For the chord canvas',cls:()=>cv&&st.vh==='a'?'p-arpon':'',dis:v=>vo?v!=='grace':(v==='grace'||v==='bline')&&st.vh!=='v',disWhy:vo?'Voicings can use grace notes':'Grace notes and the bass line go with Chords'}));
+      {two:true,off:()=>!cv&&!vo,offWhy:'For the chord canvas',cls:()=>cv&&st.vh==='a'?'p-arpon':'',dis:v=>vo?v!=='grace':(v==='grace'||v==='bline'||v==='riff')&&st.vh!=='v',disWhy:vo?'Voicings can use grace notes':'Grace notes, the bass line and riffs go with Chords'}));
   /* Notation (Voicings): Staff and Virtual keyboard; with the virtual keyboard on, its labels: Letter, Solfa, Number (any or all) */
   strips.append(cStrip('Notation',[['staff','Staff',XM?'Export the chords as sheet music (a grand staff)':'The voicing on a grand staff, in the Display'],['kb','Virtual keyboard',XM?'Export the chords as keyboard diagrams':'The virtual keyboard\'s sound (and its Letter / Solfa / Number labels)'],['code','Code','A unique code: anyone who enters it in the suite pulls up this progression']],
       ()=>XM?[]:[st.nstaff?'staff':'',st.nkb?'kb':''],v=>{ if(XM){ xmDo(v); return; } if(v==='code') return; if(v==='staff') st.nstaff=!st.nstaff; else st.nkb=!st.nkb; save(); render(); },
@@ -1493,5 +1504,5 @@ function prPanelMode(p,a){ const was=p.classList.contains(a==='det'?'float':'max
   if(!was){ if(a==='det'){ p.classList.add('float'); const W=Math.min(ov.clientWidth-40,Math.max(380,p.offsetWidth*.75)); p.style.width=W+'px'; p.style.left=Math.round((ov.clientWidth-W)/2+ov.scrollLeft)+'px'; p.style.top=Math.round(ov.scrollTop+70)+'px'; } else p.classList.add('max'); }
   p.querySelector('[data-a=det]').classList.toggle('on',p.classList.contains('float')); const mb=p.querySelector('[data-a=max]'); mb.classList.toggle('on',p.classList.contains('max')); mb.textContent=p.classList.contains('max')?'⤡':'⤢';
   setTimeout(()=>{ window.dispatchEvent(new Event('resize')); try{ if(p.id==='prKbP') show(); if(p.id==='prConP'&&!playing&&kind==='scales') render(); xrowPlace(); }catch(_){} },40); }
-window.PRACTICE={open,close,bg,openScale,_t:{steps:()=>steps,load:t=>loadChords(t,true),inv:()=>loadInv(true),st:()=>st,keySure,progKey,ch:()=>Object.assign({},BCH)}};
+window.PRACTICE={open,close,bg,openScale,_t:{steps:()=>steps,load:t=>loadChords(t,true),inv:()=>loadInv(true),st:()=>st,keySure,progKey,riffFor,walkFing,fingering:(a,b)=>fingering(a,b),ch:()=>Object.assign({},BCH)}};
 })();

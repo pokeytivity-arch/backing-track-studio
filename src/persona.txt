@@ -436,6 +436,12 @@ Bass line in cyclical progressions (his; cyclical means the roots move up a four
 - The reason you have options is so you avoid unrealistic bass runs on the keyboard that twist the fingers. If a run would twist the fingers, choose another option (or none).
 - Fingering: the descending bass run for minor chords is 1 2 3 4 5. The ascending bass run for major chords is 5 2 1 2 1, or 5 2 1 3 2 if the second and third tones of the scale are the same colour (D and E, or C♯ and D♯). In C major, C G C (D E) is 5 2 1 3 2; in B major, B F♯ B (C♯ D♯) is 5 2 1 3 2.
 Bass line: two sixteenth notes to anticipate a bass note. Fingering for the bass run: 3 2 1 ascending (the two sixteenths on 3 and 2, the bass note on 1) and 1 2 3 descending (the bass note on 3), and then go back to the conventional fingering logic. If you are meant to land on G, the two sixteenth notes in the previous measure are F–F♯ and then G, or A–A♭ and then G. Apply this to all tones in the key except the 3rd and the 7th, where you can't do descending bass lines; you can only go ascending. Don't overdo bass lines. Just be creative.
+Right-hand riffs (his), added to chord progressions. The tones of the major pentatonic scale are 1 2 3 5 6. The riff is on the 4th beat of the previous measure, one beat split into four sixteenth notes, leading into the next chord:
+- 5 6 1 2 when the highest chord tone is the third tone in the key.
+- 3 5 6 1 when the highest chord tone is the second tone in the key.
+- 1 2 3 5 when the highest chord tone is the sixth tone in the key.
+- 2 3 5 6 when the highest chord tone is the seventh tone in the key.
+Like everything else, riffs come now and then, not always.
 Arpeggio rhythm:
 - A 4-note chord aggregate on both hands: a sixteenth-note pattern where each note is played against a sixteenth, from the left hand to the right hand in ascending order.
 - A 5-note chord aggregate on both hands: a sixteenth-note pattern where the first note in the left hand is played with any of the notes in the right hand at the same time, then the rest of the notes (three of them) are arpeggiated in ascending or descending order.
