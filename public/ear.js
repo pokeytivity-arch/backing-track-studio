@@ -138,7 +138,7 @@ function build(){
     '<div class="e-kb" id="earKb"><div class="e-lbl"><span>Keyboard</span></div><div id="earKbWrap"></div></div>';
   document.body.appendChild(ov); panels();
   $('#earX').onclick=close; $('#earTch').onclick=()=>tpanel(); syncTch();
-  $('#earDots').onclick=()=>{ close(); try{ if(window.CLASS) CLASS.slide(true); }catch(_){} };
+  $('#earDots').remove();   /* the three-dots button is gone */
   ov.querySelectorAll('#earMode button').forEach(b=>b.onclick=()=>{ mode=b.dataset.m; try{ localStorage.setItem('ps-ear-mode',mode); }catch(_){} render(); });
   document.addEventListener('keydown',e=>{ if(ov&&!ov.hidden&&e.key==='Escape') close(); });
 }
