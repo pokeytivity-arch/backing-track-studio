@@ -82,6 +82,32 @@ const css=el('style'); css.textContent=`
 #suiteHub .rl-cards .dcard .rl-ed{position:absolute;top:12px;right:12px;display:flex;gap:6px;transform:translateZ(40px)}
 #suiteHub .rl-cards .dcard .rl-ed span{min-width:34px;height:34px;padding:0 10px;border-radius:999px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#fff;font:800 12px var(--body);display:grid;place-items:center;cursor:pointer}
 #suiteHub .rl-cards .dcard .rl-ed span:hover{background:var(--hi,#ffd43b);color:#151b28}
+#suiteHub .rl-dash{margin-top:30px;text-align:left;color:#eef2ff}
+#suiteHub .rl-dhead h2{margin:4px 0 0;font:900 30px var(--display,var(--body));letter-spacing:-.02em;color:#fff!important;text-transform:none!important}
+#suiteHub .rl-kick{font:800 11.5px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#aab4cf}
+#suiteHub .rl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:16px 0 18px}
+#suiteHub .rl-kpi{padding:16px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(22,29,49,.92),rgba(15,20,36,.92));border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#suiteHub .rl-kpi span{display:block;font:800 11.5px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#aab4cf} #suiteHub .rl-kpi b{display:block;font:900 34px var(--body);margin-top:6px} #suiteHub .rl-kpi small{color:#aab4cf;font-size:13px}
+#suiteHub .rl-dcols{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start} #suiteHub .rl-dl{flex:3 1 520px;min-width:0} #suiteHub .rl-dr{flex:2 1 300px;min-width:0} #suiteHub .rl-dcol{display:flex;flex-direction:column;gap:18px}
+#suiteHub .rl-dcard{border-radius:16px;background:rgba(15,20,36,.9);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:16px 18px;overflow:hidden}
+#suiteHub .rl-dch{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 6px} #suiteHub .rl-dch h3{margin:0;font:800 18px var(--body);color:#fff}
+#suiteHub .rl-lnk{border:0;background:none;color:#ffd43b;font:700 14px var(--body);cursor:pointer;min-height:36px} #suiteHub .rl-lnk:hover{text-decoration:underline}
+#suiteHub .rl-drow{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)} #suiteHub .rl-dch+.rl-drow{border-top:0}
+#suiteHub .rl-dt{flex:1 1 220px;min-width:0} #suiteHub .rl-dt b{display:block;font-size:15px;color:#fff} #suiteHub .rl-dt small{color:#aab4cf;font-size:13px} #suiteHub .rl-mutd{color:#aab4cf;font-weight:500;font-size:13.5px;line-height:1.45}
+#suiteHub .rl-ava{width:40px;height:40px;border-radius:50%;background:#23304f;color:#cfe0ff;display:grid;place-items:center;font:800 14px var(--body);flex:none}
+#suiteHub .rl-dbtns{display:flex;gap:8px}
+#suiteHub .rl-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px} #suiteHub .rl-tags span{padding:3px 9px;border-radius:999px;font:700 12px var(--body)} #suiteHub .rl-tags .t1{background:#1b2440;color:#b9c8ff} #suiteHub .rl-tags .t2{background:#2a2412;color:#ffd43b} #suiteHub .rl-tags .t3{background:#182a1e;color:#8ce99a}
+#suiteHub .rl-prog{flex:1 1 170px;min-width:0} #suiteHub .rl-pl{display:flex;justify-content:space-between;font-size:13px;color:#aab4cf} #suiteHub .rl-pl b{color:#fff}
+#suiteHub .rl-bar{margin-top:6px;height:8px;border-radius:99px;background:#1c2336;overflow:hidden} #suiteHub .rl-bar i{display:block;height:100%;border-radius:99px;box-shadow:0 0 8px currentColor}
+#suiteHub .rl-x2{width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#cfd6e6;cursor:pointer}
+#suiteHub .rl-pills{display:flex;flex-wrap:wrap;gap:6px} #suiteHub .rl-pills button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid #2b3550;background:#121a2e;color:#cfd6e6;font:700 13px var(--body);cursor:pointer} #suiteHub .rl-pills button[aria-pressed=true]{background:#ffd43b;color:#111;border-color:transparent}
+#suiteHub .rl-tbl{overflow-x:auto} #suiteHub .rl-tbl table{width:100%;min-width:640px;border-collapse:collapse;font-size:14px} #suiteHub .rl-tbl th{text-align:left;color:#aab4cf;font:800 11.5px var(--body);letter-spacing:.1em;text-transform:uppercase;padding:10px 8px} #suiteHub .rl-tbl td{padding:11px 8px;border-top:1px solid rgba(255,255,255,.08);color:#cfd6e6} #suiteHub .rl-tbl td b{color:#fff} #suiteHub .rl-tbl .stk{color:#ffd43b;font-weight:800} #suiteHub .rl-tbl td:last-child{width:150px}
+#suiteHub .rl-inv{background:linear-gradient(165deg,rgba(17,24,48,.95),rgba(10,14,28,.95));border-color:#263152} #suiteHub .rl-inv .rl-code{margin:8px 0 6px}
+#suiteHub .rl-lesson{display:flex;align-items:center;gap:12px;padding:10px;margin-top:8px;border-radius:12px;background:#141b2e;border:1px solid #222b42} #suiteHub .rl-when{width:54px;text-align:center;flex:none} #suiteHub .rl-when span{display:block;font:800 11px var(--body);letter-spacing:.1em;color:#aab4cf} #suiteHub .rl-when b{font:900 18px var(--body);color:#fff}
+#suiteHub .rl-plan{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;text-align:left;margin-top:8px;padding:12px 14px;border-radius:12px;background:#141b2e;border:1px solid #222b42;color:#fff;cursor:pointer;font-family:var(--body)} #suiteHub .rl-plan:hover{border-color:#ffd43b}
+#suiteHub .rl-plan b{display:block;font-size:15px} #suiteHub .rl-plan small{color:#aab4cf;font-size:13px} #suiteHub .rl-plan em{font:800 11.5px var(--body);font-style:normal} #suiteHub .rl-plan em.live{color:#8ce99a} #suiteHub .rl-plan em.draft{color:#ffd43b}
+#suiteHub .rl-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px} #suiteHub .rl-tool{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border-radius:12px;background:#141b2e;border:1px solid #222b42;color:#fff;cursor:pointer;font-family:var(--body)} #suiteHub .rl-tool:hover{border-color:#3dff6e}
+#suiteHub .rl-tool span{display:flex;align-items:center;gap:8px;font:800 14px var(--body)} #suiteHub .rl-tool i{width:8px;height:8px;border-radius:50%;background:#3dff6e;box-shadow:0 0 6px #3dff6e} #suiteHub .rl-tool small{color:#aab4cf;font-size:12px}
 #rlPanel{position:fixed;inset:0;z-index:200050;display:flex;align-items:flex-start;justify-content:center;overflow:auto;background:rgba(3,5,10,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:6vh 16px;color:#e6eaf2;font-family:var(--body)}
 #rlPanel .rl-box{width:min(760px,100%);border-radius:22px;background:linear-gradient(165deg,#1a2238,#0b0f1c 70%);border:1px solid rgba(255,255,255,.18);box-shadow:0 40px 80px -20px rgba(0,0,0,.8);padding:24px 26px;text-align:left}
 #rlPanel h2{margin:0 0 4px;font:800 28px var(--display,var(--body));color:#fff!important;text-transform:none!important;letter-spacing:-.01em!important;opacity:1!important} #rlPanel .rl-mut{color:#b4bdd0;font-size:14.5px;line-height:1.5;margin:0 0 16px}
@@ -205,7 +231,8 @@ function teacherView(root){ const in_=root;
   rn.onclick=()=>{ const b=panel('Rename your studio'); const f=el('div','rl-f'); const l=el('label',null,'<span>Studio name</span>'), i=el('input','rl-in'); i.value=studioName(); l.appendChild(i); f.appendChild(l); b.appendChild(f); const ok=el('button','rl-btn pri','Save'); ok.type='button'; ok.onclick=()=>{ try{ localStorage.setItem(K.name,i.value.trim()||'My HearandPlay Studio'); }catch(_){} closePanel(); render(); }; b.appendChild(ok); i.focus(); i.select(); };
   const ed=el('button','rl-btn'+(editing?' pri':''),editing?'Done customizing':'Customize spaces'); ed.type='button'; ed.onclick=()=>{ editing=!editing; render(); };
   const as=el('button','rl-btn pri','+ New assignment'); as.type='button'; as.onclick=assignPanel;
-  bar.append(as,ed,rn); in_.appendChild(bar);
+  const db=el('button','rl-btn','Dashboard ↓'); db.type='button'; db.onclick=()=>{ const d=document.getElementById('rlDash'); if(d) d.scrollIntoView({behavior:'smooth',block:'start'}); };
+  bar.append(as,db,ed,rn); in_.appendChild(bar);
   /* the spaces */
   const S=spaces(), cards=el('div','cards rl-cards');
   const on={ rename(sp){ const b=panel('Rename '+sp.name); const f=el('div','rl-f'); const l=el('label',null,'<span>Name</span>'), i=el('input','rl-in'); i.value=sp.name; l.appendChild(i); const l2=el('label',null,'<span>Description</span>'), i2=el('input','rl-in'); i2.value=sp.blurb; l2.appendChild(i2); f.append(l,l2); b.appendChild(f);
@@ -217,34 +244,69 @@ function teacherView(root){ const in_=root;
       const ok=el('button','rl-btn pri','Add space'); ok.type='button'; ok.onclick=()=>{ const n=i.value.trim(); if(!n){ i.focus(); return; } const A=spaces(); A.push({id:'c'+Date.now(),k:'custom',name:n,blurb:i2.value.trim()||'Your own space.'}); jset(K.sp,A); closePanel(); render(); }; b.appendChild(ok); i.focus(); };
     cards.appendChild(a); }
   in_.appendChild(cards);
-  /* numbers */
-  const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(jget(K.subs,[])||[]).includes(ME);
-  const stats=el('div','rl-stats'); [['Students',String(SAMPLE_STUDENTS.length+(joined?1:0))],['Waiting for review',String(REVIEW.length)],['Assignments',String(A.length)],['Practised today','3']].forEach(([l,v])=>stats.appendChild(el('div','rl-stat','<span>'+l+'</span><b>'+v+'</b>'))); in_.appendChild(stats);
-  const row=el('div','rl-row2');
+  dashboard(in_); }
+/* ---------- the teacher's dashboard (from the design) ---------- */
+const SAMPLE_DASH=[
+  {n:'Ada O.',lv:'Intermediate',grp:'Intermediate',plan:'Church Pianist 90',streak:12,last:'Today',pct:72},
+  {n:'Tolu K.',lv:'Beginner',grp:'Beginners',plan:'Foundations 90',streak:5,last:'Today',pct:38},
+  {n:'James M.',lv:'Intermediate',grp:'Intermediate',plan:'Play by Ear 90',streak:3,last:'Yesterday',pct:51},
+  {n:'Grace E.',lv:'Beginner',grp:'Beginners',plan:'Foundations 90',streak:0,last:'6 days ago',pct:14},
+  {n:'Samuel A.',lv:'Advanced',grp:'Church pianists',plan:'Church Pianist 90',streak:21,last:'Today',pct:88}];
+const SAMPLE_ASG=[{title:'2-5-1 in all 12 keys, with bass runs',room:'chords',due:'Fri',who:'Intermediate group',d:8,of:12},{title:'G, D, A, E, B major: the 3+4 method',room:'scales',due:'Thu',who:'Beginners',d:5,of:9},{title:'Hear the 1, 4 and 5 chords',room:'ear',due:'Sat',who:'Everyone',d:11,of:24}];
+const LESSONS=[{day:'TUE',time:'18:00',t:'Group class: passing chords',w:'Intermediate group · 9 students'},{day:'WED',time:'16:30',t:'One-to-one: Grace E.',w:'Beginner · catch-up'},{day:'SAT',time:'10:00',t:'Masterclass: hymn endings',w:'Open to all students'}];
+let dashGrp='All';
+function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(jget(K.subs,[])||[]).includes(ME);
+  const S=SAMPLE_DASH.slice(); if(joined) S.unshift({n:'You (this device)',lv:'Student',grp:'All',plan:'Your assignments',streak:1,last:'Today',pct:Math.round(100*Object.values(done).filter(Boolean).length/Math.max(1,A.length)),me:true});
+  const total=S.length, hr=new Date().getHours(), hi=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const D=el('section','rl-dash'); D.setAttribute('aria-label','Teacher dashboard');
+  D.id='rlDash'; D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your studio today.</h2></div></div>';
+  /* numbers at a glance */
+  const st=el('div','rl-kpis'); [['Active students',String(total),(joined?'Including you, on this device':'3 joined this week'),'#ffffff'],['To review',String(REVIEW.length),'Recordings, checks and questions','#ffd43b'],['Due this week',String(A.length+SAMPLE_ASG.length),'Assignments open','#8ce99a'],['Practised today',String(S.filter(x=>x.last==='Today').length),'of '+total+' students','#b9c8ff']]
+    .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+v+'</b><small>'+n+'</small>'))); D.appendChild(st);
+  const cols=el('div','rl-dcols'), L=el('div','rl-dcol rl-dl'), R=el('div','rl-dcol rl-dr'); cols.append(L,R); D.appendChild(cols);
+  const card=(title,extra)=>{ const c=el('section','rl-dcard'); const h=el('div','rl-dch','<h3>'+title+'</h3>'); if(extra) h.appendChild(extra); c.appendChild(h); return c; };
+  const link=(t,f)=>{ const b=el('button','rl-lnk',t); b.type='button'; b.onclick=f; return b; };
+  /* waiting for your review */
+  { const c=card('Waiting for your review <span class="rl-demo">Sample</span>');
+    REVIEW.forEach(r=>{ const row=el('div','rl-drow'); const ini=r.n.split(/\s+/).map(x=>x[0]).join('').slice(0,2);
+      row.innerHTML='<span class="rl-ava">'+esc(ini)+'</span><div class="rl-dt"><b>'+esc(r.n)+' <span class="rl-mutd">'+esc(r.w)+'</span></b><small>'+esc(r.t)+'</small></div>';
+      const bx=el('div','rl-dbtns'); const ls=el('button','rl-btn','Listen'); ls.type='button'; ls.onclick=()=>toast('Plays '+r.n+'\'s recording here.'); const fb=el('button','rl-btn ok','Give feedback'); fb.type='button'; fb.onclick=()=>toast('Write or record feedback, and it goes straight to '+r.n+'.'); bx.append(ls,fb); row.appendChild(bx); c.appendChild(row); });
+    L.appendChild(c); }
+  /* assignments this week, with how many are done */
+  { const c=card('Assignments this week',link('New assignment',assignPanel));
+    const rows=A.map(a=>({title:a.title,room:a.room,due:a.due,who:'Your students',d:done[a.id]?1:0,of:total,real:a}))
+      .concat(SAMPLE_ASG.map(x=>Object.assign({sample:true},x)));
+    rows.forEach(a=>{ const pct=Math.round(100*a.d/Math.max(1,a.of)); const row=el('div','rl-drow rl-arow');
+      row.innerHTML='<div class="rl-dt"><b>'+esc(a.title)+'</b><div class="rl-tags"><span class="t1">'+esc((ROOMS[a.room]||'').replace(/ ·.*/,''))+'</span><span class="t2">Due '+esc(a.due||'')+'</span><span class="t3">'+esc(a.who)+'</span>'+(a.sample?'<span class="rl-demo">Sample</span>':'')+'</div></div>'
+        +'<div class="rl-prog"><div class="rl-pl"><span>Done</span><b>'+a.d+' of '+a.of+'</b></div><div class="rl-bar"><i style="width:'+pct+'%;background:'+(pct>=50?'#3dff6e':'#ffd43b')+'"></i></div></div>';
+      if(a.real){ const rm=el('button','rl-x2','✕'); rm.type='button'; rm.setAttribute('aria-label','Remove '+a.title); rm.onclick=()=>{ const B=jget(K.asg,[]).filter(x=>x.id!==a.real.id); jset(K.asg,B); render(); }; row.appendChild(rm); }
+      c.appendChild(row); });
+    L.appendChild(c); }
+  /* my students, with group filters */
+  { const pills=el('div','rl-pills'); ['All','Beginners','Intermediate','Church pianists'].forEach(gp=>{ const b=el('button',null,gp); b.type='button'; b.setAttribute('aria-pressed',String(dashGrp===gp)); b.onclick=()=>{ dashGrp=gp; render(); }; pills.appendChild(b); });
+    const c=card('My students <span class="rl-demo">Sample</span>',pills); const wrap=el('div','rl-tbl');
+    const rows=S.filter(x=>dashGrp==='All'||x.grp===dashGrp||x.me);
+    wrap.innerHTML='<table><thead><tr><th>Student</th><th>Level</th><th>Practice plan</th><th>Streak</th><th>Last practice</th><th>Progress</th></tr></thead><tbody>'
+      +rows.map(x=>'<tr><td><b>'+esc(x.n)+'</b></td><td>'+esc(x.lv)+'</td><td>'+esc(x.plan)+'</td><td class="stk">'+x.streak+' day'+(x.streak===1?'':'s')+'</td><td style="color:'+(x.last==='Today'?'#8ce99a':/days/.test(x.last)?'#ff8787':'#cfd6e6')+'">'+esc(x.last)+'</td><td><div class="rl-bar"><i style="width:'+x.pct+'%;background:'+(x.pct<20?'#ff8787':'#3dff6e')+'"></i></div></td></tr>').join('')+'</tbody></table>';
+    c.appendChild(wrap); L.appendChild(c); }
   /* invite */
-  { const s=el('section','rl-sec'); s.innerHTML='<h2>Invite students</h2><p class="rl-mut">Students join your studio with your code or link, and subscribe to use your spaces.</p>';
-    const c=el('div','rl-code',esc(code())); s.appendChild(c);
-    const f=el('div'); f.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:12px';
-    const cp=el('button','rl-btn pri','Copy invite link'); cp.type='button'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); };
-    const em=el('input','rl-in'); em.type='email'; em.placeholder='student@email.com'; em.setAttribute('aria-label','Student email'); em.style.flex='1 1 180px';
-    const se=el('button','rl-btn','Send invite'); se.type='button'; se.onclick=()=>{ if(!/@/.test(em.value)){ em.focus(); return; } toast('Invite sent to '+em.value.trim()); em.value=''; };
-    f.append(cp,em,se); s.appendChild(f); row.appendChild(s); }
-  /* waiting for review */
-  { const s=el('section','rl-sec'); s.innerHTML='<h2>Waiting for your review<span class="rl-demo">Sample</span></h2>';
-    REVIEW.forEach(r=>{ const li=el('div','rl-li'); li.appendChild(el('div','rl-t','<b>'+esc(r.n)+' '+esc(r.w)+'</b><small>'+esc(r.t)+'</small>')); const g=el('button','rl-btn','Give feedback'); g.type='button'; g.onclick=()=>toast('Listen, write or record feedback, and it goes straight to '+r.n+'.'); li.appendChild(g); s.appendChild(li); });
-    row.appendChild(s); }
-  /* assignments */
-  { const s=el('section','rl-sec'); s.innerHTML='<h2>Assignments</h2>';
-    if(!A.length) s.appendChild(el('p','rl-mut','No assignments yet. Press New assignment to send your students something to practise.'));
-    A.forEach((a,i)=>{ const li=el('div','rl-li'); li.appendChild(el('div','rl-t','<b>'+esc(a.title)+'</b><small>'+esc(ROOMS[a.room]||'')+(a.due?' · due '+esc(a.due):'')+(done[a.id]?' · <span style="color:#8ce99a">done by a student ✓</span>':'')+'</small>'));
-      const rm=el('button','rl-btn','Remove'); rm.type='button'; rm.onclick=()=>{ A.splice(i,1); jset(K.asg,A); render(); }; li.appendChild(rm); s.appendChild(li); });
-    const nb=el('button','rl-btn pri','+ New assignment'); nb.type='button'; nb.style.marginTop='10px'; nb.onclick=assignPanel; s.appendChild(nb); row.appendChild(s); }
-  /* students */
-  { const s=el('section','rl-sec'); s.innerHTML='<h2>My students<span class="rl-demo">Sample</span></h2>';
-    const L=SAMPLE_STUDENTS.slice(); if(joined) L.unshift({n:'You (this device)',lv:'Student',st:'Just joined',last:'Today',ok:true});
-    L.forEach(p=>{ const li=el('div','rl-li'); li.appendChild(el('span','rl-dot '+(p.ok?'rl-led':'rl-warn'))); li.appendChild(el('div','rl-t','<b>'+esc(p.n)+'</b><small>'+esc(p.lv)+' · '+esc(p.st)+' · last practice '+esc(p.last)+'</small>')); s.appendChild(li); });
-    row.appendChild(s); }
-  in_.appendChild(row); }
+  { const c=el('section','rl-dcard rl-inv'); c.innerHTML='<div class="rl-kick">Your invite code</div><div class="rl-code">'+esc(code())+'</div><p class="rl-mutd">Students enter this code, or open your link, to join your studio.</p>';
+    const cp=el('button','rl-btn pri','Copy invite link'); cp.type='button'; cp.style.width='100%'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); }; c.appendChild(cp);
+    const f=el('div'); f.style.cssText='display:flex;gap:8px;margin-top:10px'; const em=el('input','rl-in'); em.type='email'; em.placeholder='student@email.com'; em.setAttribute('aria-label','Student email'); em.style.cssText='flex:1;min-width:0';
+    const se=el('button','rl-btn','Send'); se.type='button'; se.onclick=()=>{ if(!/@/.test(em.value)){ em.focus(); return; } toast('Invite sent to '+em.value.trim()); em.value=''; }; f.append(em,se); c.appendChild(f); R.appendChild(c); }
+  /* next live lessons */
+  { const c=card('Next live lessons <span class="rl-demo">Sample</span>');
+    LESSONS.forEach(l=>{ const row=el('div','rl-lesson'); row.innerHTML='<div class="rl-when"><span>'+l.day+'</span><b>'+l.time+'</b></div><div class="rl-dt"><b>'+esc(l.t)+'</b><small>'+esc(l.w)+'</small></div>'; const o=el('button','rl-btn','Open'); o.type='button'; o.onclick=()=>toast('Your live lesson opens here, with the Class keyboard and whiteboard.'); row.appendChild(o); c.appendChild(row); });
+    R.appendChild(c); }
+  /* practice plans (the Practice Plan Builder) */
+  { const c=card('Practice plans',link('Build a plan',()=>{ if(window.SUITE) SUITE.go('challenge'); }));
+    [['Foundations 90','Scales and chords first · 11 students','LIVE'],['Church Pianist 90','Progressions, endings and licks · 9 students','LIVE'],['Play by Ear 90','Modes and stylization · draft','DRAFT']].forEach(([t,m,stt])=>{ const row=el('button','rl-plan'); row.type='button'; row.innerHTML='<span><b>'+t+'</b><small>'+m+'</small></span><em class="'+(stt==='LIVE'?'live':'draft')+'">'+stt+'</em>'; row.onclick=()=>{ if(window.SUITE) SUITE.go('challenge'); }; c.appendChild(row); });
+    R.appendChild(c); }
+  /* from your tools */
+  { const c=card('From your tools'); c.appendChild(el('p','rl-mutd','Anything you set up in the suite can become an assignment.'));
+    const g=el('div','rl-tools'); [['hall','Practice Arena','Scales, chords, ear training'],['studios','Studio','Backing tracks, transcription'],['challenge','Practice Plan Builder','A practice plan']].forEach(([k,t,n])=>{ const b=el('button','rl-tool','<span><i></i>'+t+'</span><small>'+n+'</small>'); b.type='button';
+      b.onclick=()=>{ try{ sessionStorage.setItem('ps-assign','1'); }catch(_){} if(window.SUITE){ if(k==='studios') SUITE.studios(); else SUITE.go(k); } assignBar(); }; g.appendChild(b); }); c.appendChild(g); R.appendChild(c); }
+  root.appendChild(D); }
 
 /* ---------- student view ---------- */
 function studentView(root){
