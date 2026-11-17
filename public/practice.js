@@ -11,8 +11,11 @@ const MOTIONS=[['similar','Similar'],['contrary','Contrary']];
 const HANDS=[['rh','Right hand'],['lh','Left hand'],['both','Both hands']];
 let paused=false, waitL=false, pauseFn=null;
 let planNext=null; let RET=false, ov=null, kind='scales', steps=[], cur=-1, playing=false, timers=[], title='', sub='', chBus=[], vis=null, bassFO=null, chBeat=0;
-let st={sys:'letter',family:'regular',motion:'similar',mode:'practice',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'updown',bpm:80,loop:true,chords:'',vh:'v',ckey:'C'};
+/* his default progression for the chord canvas (Practice Hall › Chords) */
+const DEFPROG='[B / A D F] . [E / G# C D G] . | [A / G B C E] . [D / F# B C E] . | [G / F A Bb D] . [C / E A Bb D] . | [F / A C E] . . .';
+let st={sys:'letter',family:'regular',motion:'similar',mode:'practice',oct:1,type:'major',key:'C',hand:'rh',fa:'main',dir:'updown',bpm:80,loop:true,chords:DEFPROG,vh:'v',ckey:'C'};
 try{ Object.assign(st,JSON.parse(localStorage.getItem('ps-pr')||'{}')); if(st.family!=='exotic') st.family='regular'; if(!['letter','solfa','number'].includes(st.sys)) st.sys='letter'; }catch(_){}
+try{ if(!localStorage.getItem('pr-defprog1')){ if(!String(st.chords||'').trim()) st.chords=DEFPROG; localStorage.setItem('pr-defprog1','1'); } }catch(_){}   /* an empty canvas gets the default progression, once */
 try{ if(!localStorage.getItem('pr-loop-on')){ st.loop=true; localStorage.setItem('pr-loop-on','1'); } }catch(_){}   /* Loop is now on by default, once for everyone */
 const save=()=>{ try{ localStorage.setItem('ps-pr',JSON.stringify(st)); }catch(_){} };
 const $=s=>ov.querySelector(s);
@@ -1028,6 +1031,7 @@ function bassFing(st){
 #prRoom .p-cmix .p-c2{display:grid;grid-template-columns:repeat(2,auto);grid-auto-flow:column;grid-template-rows:repeat(3,auto);gap:5px 8px}
 #prRoom .p-cmix .p-ch.off{opacity:.4} #prRoom .p-lvl.off{opacity:.4;filter:grayscale(1)} #prRoom .p-cmix>.p-fill{flex:0 0 auto;min-width:64px} #prRoom .p-fill .p-cap{background:linear-gradient(180deg,#ffe28a,#c9a227)} #prRoom .p-lvl.off .p-fz,#prRoom .p-lvl.off button{pointer-events:none;cursor:not-allowed}
 #prRoom .p-cv{display:flex;flex-direction:column;gap:8px} #prRoom .p-cvh{display:flex;align-items:center;gap:12px}
+#prRoom .p-cvdef{margin-left:auto;min-height:32px;padding:0 12px;border-radius:999px;border:1.5px solid #3a4a74;background:#141b2e;color:#ffd43b;font:700 13px system-ui,sans-serif;cursor:pointer} #prRoom .p-cvdef:hover{border-color:#ffd43b} #prRoom .p-cvdef:disabled{opacity:.4;cursor:not-allowed}
 #prRoom .p-cvseg{display:inline-flex;border:1.5px solid #3a4a74;border-radius:999px;padding:2px} #prRoom .p-cvseg button{border:0;background:none;color:#aab4cf;font:700 13px system-ui,sans-serif;padding:5px 14px;border-radius:999px;cursor:pointer} #prRoom .p-cvseg button[aria-pressed=true]{background:#c8d0c8;color:#111}
 #prRoom .p-cvta{width:100%;min-height:86px;resize:vertical;background:#0c0f17;color:#eef2ff;border:1.5px solid #3a4a74;border-radius:12px;padding:12px 14px;font:700 17px/1.45 ui-monospace,Menlo,monospace;letter-spacing:.02em;box-sizing:border-box}
 #prRoom .p-cvhelp{margin:0;color:#8d97b0;font-size:12.5px;line-height:1.45}
@@ -1421,7 +1425,9 @@ function chordConsole(box){
 /* the chord canvas: Easy (type the chart) or Professional (a box for every beat), like the Studio's chord chart */
 function canvasUI(area,off){
   const w=el('div','p-cv'+(off?' p-dis':'')), hd=el('div','p-cvh'); hd.appendChild(el('span','p-cht','Chord canvas')); const seg=el('div','p-cvseg');
-  [['easy','Easy'],['pro','Professional']].forEach(([v,l])=>{ const b=el('button',null,l); b.type='button'; b.setAttribute('aria-pressed',String(st.cview===v)); b.onclick=()=>{ st.cview=v; save(); render(); }; seg.appendChild(b); }); hd.appendChild(seg); w.appendChild(hd);
+  [['easy','Easy'],['pro','Professional']].forEach(([v,l])=>{ const b=el('button',null,l); b.type='button'; b.setAttribute('aria-pressed',String(st.cview===v)); b.onclick=()=>{ st.cview=v; save(); render(); }; seg.appendChild(b); }); hd.appendChild(seg);
+  { const dp=el('button','p-cvdef','Default progression'); dp.type='button'; dp.title='Load the default progression: '+DEFPROG; dp.onclick=()=>{ st.chords=DEFPROG; st.cmode='canvas'; save(); render(); loadChords(DEFPROG,true); }; hd.appendChild(dp); }
+  w.appendChild(hd);
   let tm=0, last=st.chords; const upd=t=>{ clearTimeout(tm); tm=setTimeout(()=>{ if(t!==last||!steps.length){ last=t; loadChords(t,true); } },650); };
   if(st.cview==='easy'){ const ta=document.createElement('textarea'); ta.id='prIn'; ta.className='p-cvta'; ta.spellcheck=false; ta.autocomplete='off'; ta.value=st.chords||''; ta.placeholder='Dm7 G7 | Cmaj7 | B / A D F, E / G# C D G | A / G B C E'; ta.setAttribute('aria-label','Chord canvas');
     ta.oninput=()=>upd(ta.value); ta.onkeydown=e=>{ if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); loadChords(ta.value); } e.stopPropagation(); }; w.appendChild(ta);
