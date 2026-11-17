@@ -276,17 +276,63 @@ const SAMPLE_DASH=[
   {n:'Samuel A.',lv:'Advanced',grp:'Church pianists',plan:'Church Pianist 90',streak:21,last:'Today',pct:88}];
 const SAMPLE_ASG=[{title:'2-5-1 in all 12 keys, with bass runs',room:'chords',due:'Fri',who:'Intermediate group',d:8,of:12},{title:'G, D, A, E, B major: the 3+4 method',room:'scales',due:'Thu',who:'Beginners',d:5,of:9},{title:'Hear the 1, 4 and 5 chords',room:'ear',due:'Sat',who:'Everyone',d:11,of:24}];
 const LESSONS=[{day:'TUE',time:'18:00',t:'Group class: passing chords',w:'Intermediate group · 9 students'},{day:'WED',time:'16:30',t:'One-to-one: Grace E.',w:'Beginner · catch-up'},{day:'SAT',time:'10:00',t:'Masterclass: hymn endings',w:'Open to all students'}];
+
+/* ---------- a signed-in teacher's own dashboard: real students, results and assignments, fresh and empty to start ---------- */
+let REAL=null, realAt=0, realBusy=false;
+function realData(){ const AU=window.AUTH, u=AU&&AU.user&&AU.user(); if(!u||u.role!=='teacher') return null;
+  if(!realBusy&&(!REAL||Date.now()-realAt>20000)){ realBusy=true; realAt=Date.now(); (async()=>{ try{ await AU.post('mycode',{}); const [r,a]=await Promise.all([AU.post('results',{}),AU.post('alist',{})]);
+      REAL={students:r.students||[],items:r.items||[],code:r.code||u.tcode||'',asg:a.items||[],ok:true}; }catch(_){ REAL=REAL||{students:[],items:[],code:'',asg:[],ok:false}; } realBusy=false; render(); })(); }
+  return REAL||{students:[],items:[],code:'',asg:[],loading:true}; }
+window.addEventListener('ps-auth',()=>{ REAL=null; realAt=0; try{ const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')&&role()==='teacher') render(); }catch(_){} });
+function realDashboard(root,R){ const hr=new Date().getHours(), hi=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening', today=new Date().toDateString();
+  const act=R.students.filter(x=>x.status==='active'), pend=R.students.filter(x=>x.status==='pending'), h=window.PSSUITE&&PSSUITE.mineHandle();
+  const D=el('section','rl-dash'); D.id='rlDash'; D.setAttribute('aria-label','Teacher dashboard');
+  D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your suite today.</h2></div></div>';
+  const todays=new Set(R.items.filter(x=>new Date(x.at).toDateString()===today).map(x=>x.uid));
+  const st=el('div','rl-kpis'); [['Active students',String(act.length),pend.length?pend.length+' waiting for you to accept':(act.length?'In your suite':'Share your suite link'),'#ffffff'],['To review',String(R.items.length),'Results your students sent','#ffd43b'],['Assignments',String(R.asg.length),'Sent to your students','#8ce99a'],['Practised today',String(todays.size),'of '+act.length+' student'+(act.length===1?'':'s'),'#b9c8ff']]
+    .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+(R.loading?'…':v)+'</b><small>'+n+'</small>'))); D.appendChild(st);
+  D.appendChild(boardsEl());
+  const cols=el('div','rl-dcols'), L=el('div','rl-dcol rl-dl'), Rt=el('div','rl-dcol rl-dr'); cols.append(L,Rt); D.appendChild(cols);
+  const card=(title,extra)=>{ const c=el('section','rl-dcard'); const hd=el('div','rl-dch','<h3>'+title+'</h3>'); if(extra) hd.appendChild(extra); c.appendChild(hd); return c; };
+  const link=(t,f)=>{ const b=el('button','rl-lnk',t); b.type='button'; b.onclick=f; return b; };
+  const empty=(c,t)=>c.appendChild(el('p','rl-mutd',t));
+  /* waiting for your review: what students sent */
+  { const c=card('Waiting for your review'); if(!R.items.length) empty(c,R.loading?'Loading…':'Nothing to review yet. When your students send results, they show here.');
+    R.items.slice(0,8).forEach(x=>{ const r=x.result||{}, row=el('div','rl-drow'), ini=String(x.student||'?').split(/\s+/).map(y=>y[0]).join('').slice(0,2);
+      const what=r.title||r.area||r.mode||'a result', score=r.score!=null?(' · '+r.score+(r.total?' of '+r.total:'')):'';
+      row.innerHTML='<span class="rl-ava">'+esc(ini)+'</span><div class="rl-dt"><b>'+esc(x.student||'Student')+' <span class="rl-mutd">sent '+esc(what)+'</span></b><small>'+esc(new Date(x.at).toLocaleString())+esc(score)+'</small></div>'; c.appendChild(row); });
+    L.appendChild(c); }
+  /* assignments */
+  { const c=card('Assignments',link('New assignment',assignPanel)); if(!R.asg.length) empty(c,R.loading?'Loading…':'No assignments yet. Press New assignment to send your students something to practise.');
+    R.asg.forEach(a=>{ const sp=a.spec||{}, row=el('div','rl-drow');
+      row.innerHTML='<div class="rl-dt"><b>'+esc(a.title)+'</b><div class="rl-tags"><span class="t1">'+esc((ROOMS[sp.room]||a.kind||'').replace(/ ·.*/,''))+'</span><span class="t3">'+(a.to==='all'?'All your students':(Array.isArray(a.to)?a.to.length+' students':''))+'</span><span class="t2">'+esc(new Date(a.at).toLocaleDateString())+'</span></div></div>';
+      const rm=el('button','rl-x2','✕'); rm.type='button'; rm.setAttribute('aria-label','Remove '+a.title); rm.onclick=async()=>{ rm.disabled=true; await window.AUTH.post('adelete',{id:a.id}); REAL=null; render(); }; row.appendChild(rm); c.appendChild(row); });
+    L.appendChild(c); }
+  /* my students */
+  { const c=card('My students'); if(!R.students.length) empty(c,R.loading?'Loading…':'No students yet. Share your suite link'+(h?' (hearandplay.app/'+h+')':'')+' and they will show here when they subscribe.');
+    R.students.forEach(x=>{ const row=el('div','rl-drow'); const ini=String(x.name||'?').split(/\s+/).map(y=>y[0]).join('').slice(0,2);
+      row.innerHTML='<span class="rl-ava">'+esc(ini)+'</span><div class="rl-dt"><b>'+esc(x.name||'Student')+'</b><small style="color:'+(x.status==='active'?'#8ce99a':'#ffd43b')+'">'+(x.status==='active'?'In your suite':'Wants to join')+'</small></div>';
+      if(x.status==='pending'){ const bx=el('div','rl-dbtns'); const y=el('button','rl-btn ok','Accept'), n=el('button','rl-btn','Decline'); y.type=n.type='button';
+        y.onclick=async()=>{ y.disabled=true; await window.AUTH.post('respond',{id:x.id,accept:true}); REAL=null; render(); }; n.onclick=async()=>{ n.disabled=true; await window.AUTH.post('respond',{id:x.id,accept:false}); REAL=null; render(); }; bx.append(y,n); row.appendChild(bx); }
+      c.appendChild(row); });
+    L.appendChild(c); }
+  /* your suite link */
+  { const c=el('section','rl-dcard rl-inv');
+    if(h){ c.innerHTML='<div class="rl-kick">Your suite link</div><div class="rl-code" style="font-size:20px">hearandplay.app/'+esc(h)+'</div><p class="rl-mutd">Students open this link, subscribe and choose their PIN.</p>';
+      const cp=el('button','rl-btn pri','Copy suite link'); cp.type='button'; cp.style.width='100%'; cp.onclick=()=>{ const u=location.origin+'/'+h; try{ navigator.clipboard.writeText(u); }catch(_){} toast('Copied: '+u); }; c.appendChild(cp); }
+    else { c.innerHTML='<div class="rl-kick">Your suite link</div><p class="rl-mutd">Claim your link so students can find your suite, like hearandplay.app/yourname.</p>'; const cl=el('button','rl-btn pri','Claim your suite link'); cl.type='button'; cl.style.width='100%'; cl.onclick=()=>{ closeDash(); editing=true; if(window.SUITE) SUITE.home(); render(); }; c.appendChild(cl); }
+    if(R.code) c.appendChild(el('p','rl-mutd','Teacher code: <b style="color:#ffd43b;letter-spacing:.06em">'+esc(R.code)+'</b>')).style.marginTop='10px';
+    Rt.appendChild(c); }
+  /* live lessons */
+  { const c=card('Next live lessons'); empty(c,'No live lessons yet.'); Rt.appendChild(c); }
+  /* practice plans in the suite */
+  { const P=sitems().plans, c=card('Practice plans',link(P.length?'Edit':'Add a plan',()=>suiteEditor('challenge'))); if(!P.length) empty(c,'No practice plans in your suite yet.');
+    P.forEach(x=>{ const row=el('button','rl-plan'); row.type='button'; row.innerHTML='<span><b>'+esc(x.name)+'</b><small>'+esc(itemLine('plans',x))+'</small></span><em class="live">IN YOUR SUITE</em>'; row.onclick=()=>suiteEditor('challenge'); c.appendChild(row); });
+    Rt.appendChild(c); }
+  root.appendChild(D); }
 let dashGrp='All';
-function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(jget(K.subs,[])||[]).includes(ME);
-  const S=SAMPLE_DASH.slice(); if(joined) S.unshift({n:'You (this device)',lv:'Student',grp:'All',plan:'Your assignments',streak:1,last:'Today',pct:Math.round(100*Object.values(done).filter(Boolean).length/Math.max(1,A.length)),me:true});
-  const total=S.length, hr=new Date().getHours(), hi=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
-  const D=el('section','rl-dash'); D.setAttribute('aria-label','Teacher dashboard');
-  D.id='rlDash'; D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your suite today.</h2></div></div>';
-  /* numbers at a glance */
-  const st=el('div','rl-kpis'); [['Active students',String(total),(joined?'Including you, on this device':'3 joined this week'),'#ffffff'],['To review',String(REVIEW.length),'Recordings, checks and questions','#ffd43b'],['Due this week',String(A.length+SAMPLE_ASG.length),'Assignments open','#8ce99a'],['Practised today',String(S.filter(x=>x.last==='Today').length),'of '+total+' students','#b9c8ff']]
-    .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+v+'</b><small>'+n+'</small>'))); D.appendChild(st);
-  /* the suite's own parts, as boards the size of the numbers above (Practice Arena, Studio, Practice Plan Builder) */
-  { const I=(window.SUITE&&SUITE.icons)||{}, bd=el('div','rl-boards');
+/* the suite's own parts, as boards the size of the numbers above (Practice Arena, Studio, Practice Plan Builder) */
+function boardsEl(){ const I=(window.SUITE&&SUITE.icons)||{}, bd=el('div','rl-boards');
     [['hall','Practice Arena','Progressions, scales and ear training for your students.','class-chords.webp','--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--c1:#3dd9c4;--c2:#0f8a7a'],
      ['studio','Studio','Backing tracks your students play along with.','card-studio.webp','--g1:#e0911a;--g2:#2a1a05;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a'],
      ['challenge','Practice Plan Builder','Practice plans your students can start.','','--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c']].forEach(([k,t,b,img,vars])=>{
@@ -295,7 +341,16 @@ function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(
       x.innerHTML='<span class="bimg'+(img?'':' dots')+'"'+(img?' style="background-image:url('+img+')"':'')+'></span><i class="ic">'+(I[k]||'')+'</i><span class="bt"><b>'+esc(nm)+'</b><small>'+(n?n+' in your suite · ':'')+b+'</small></span><em class="go">Edit →</em>';
       x.setAttribute('aria-label','Edit your suite\'s '+nm); x.onclick=()=>suiteEditor(k);
       bd.appendChild(x); });
-    D.appendChild(bd); }
+    return bd; }
+function dashboard(root){ { const R=realData(); if(R){ realDashboard(root,R); return; } } const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(jget(K.subs,[])||[]).includes(ME);
+  const S=SAMPLE_DASH.slice(); if(joined) S.unshift({n:'You (this device)',lv:'Student',grp:'All',plan:'Your assignments',streak:1,last:'Today',pct:Math.round(100*Object.values(done).filter(Boolean).length/Math.max(1,A.length)),me:true});
+  const total=S.length, hr=new Date().getHours(), hi=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const D=el('section','rl-dash'); D.setAttribute('aria-label','Teacher dashboard');
+  D.id='rlDash'; D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your suite today.</h2></div></div>';
+  /* numbers at a glance */
+  const st=el('div','rl-kpis'); [['Active students',String(total),(joined?'Including you, on this device':'3 joined this week'),'#ffffff'],['To review',String(REVIEW.length),'Recordings, checks and questions','#ffd43b'],['Due this week',String(A.length+SAMPLE_ASG.length),'Assignments open','#8ce99a'],['Practised today',String(S.filter(x=>x.last==='Today').length),'of '+total+' students','#b9c8ff']]
+    .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+v+'</b><small>'+n+'</small>'))); D.appendChild(st);
+  D.appendChild(boardsEl());
   const cols=el('div','rl-dcols'), L=el('div','rl-dcol rl-dl'), R=el('div','rl-dcol rl-dr'); cols.append(L,R); D.appendChild(cols);
   const card=(title,extra)=>{ const c=el('section','rl-dcard'); const h=el('div','rl-dch','<h3>'+title+'</h3>'); if(extra) h.appendChild(extra); c.appendChild(h); return c; };
   const link=(t,f)=>{ const b=el('button','rl-lnk',t); b.type='button'; b.onclick=f; return b; };
@@ -506,7 +561,7 @@ const PSSUITE=(()=>{
   const api=async(body,q)=>{ const r=await fetch('/api/suite'+(q||''),{method:body?'POST':'GET',headers:Object.assign({'content-type':'application/json'},tok()?{authorization:'Bearer '+tok()}:{}),body:body?JSON.stringify(body):undefined}); let j={}; try{ j=await r.json(); }catch(_){} j._s=r.status; return j; };
   let mine=null, mineP=null; try{ mine=JSON.parse(localStorage.getItem('ps-t-suite')||'null'); }catch(_){}
   const keepMine=x=>{ mine=x; try{ localStorage.setItem('ps-t-suite',JSON.stringify(x)); }catch(_){} };
-  const loadMine=()=>{ if(!mineP) mineP=(async()=>{ if(!tok()) return null; const j=await api({action:'mine'}); if(j._s===200){ keepMine(j.suite); } return mine; })(); return mineP; };
+  const loadMine=()=>{ if(!mineP) mineP=(async()=>{ if(!tok()) return null; const j=await api({action:'mine'}); if(j._s===200){ keepMine(j.suite); if(j.suite&&j.suite.items){ try{ localStorage.setItem('ps-t-sitems',JSON.stringify(j.suite.items)); }catch(_){} } if(j.suite&&j.suite.name){ try{ localStorage.setItem('ps-t-name',j.suite.name); }catch(_){} } } return mine; })(); return mineP; };   /* the account's suite is the truth once signed in */
   const linkOf=h=>location.origin+'/'+h;
   let pt=0; const push=()=>{ clearTimeout(pt); pt=setTimeout(async()=>{ if(!mine||!mine.handle||!tok()) return; const j=await api({action:'save',handle:mine.handle,name:studioName(),spaces:spaces(),items:sitems()}); if(j._s===200) keepMine(j.suite); },700); };
   const ERR={bad_handle:'Use 3 to 30 letters and numbers, no spaces.',taken:'That name is taken. Try another.',role:'Only a Teacher account can have a suite.',auth:'Sign in first.'};
@@ -538,8 +593,8 @@ const PSSUITE=(()=>{
   async function viewAsStudent(){ const u=A()&&A().user(); if(!u){ toast('Sign in and claim your suite link first: Customize on your Teacher home.'); return; }
     await loadMine(); if(!mine||!mine.handle){ toast('Claim your suite link first: Customize on your Teacher home.'); return; }
     push(); setTimeout(()=>{ location.href='/'+mine.handle+'?preview=1'; },mine?50:0); }
-  async function assign(a){ if(!a) return; await loadMine(); if(!mine||!mine.handle||!tok()) return;
-    try{ await A().post('acreate',{kind:'exercise',title:a.title,note:a.note||'',spec:{room:a.room,prog:a.prog||'',bpm:a.bpm||0,key:a.key||'',type:a.type||''},to:'all'}); }catch(_){} }
+  async function assign(a){ if(!a||!tok()) return;
+    try{ await A().post('acreate',{kind:'exercise',title:a.title,note:a.note||'',spec:{room:a.room,prog:a.prog||'',bpm:a.bpm||0,key:a.key||'',type:a.type||''},to:'all'}); }catch(_){} try{ REAL=null; render(); }catch(_){} }
   /* ---------- the suite page ---------- */
   let pub=null, pubP=null, entered=null;
   try{ entered=handle?JSON.parse(sessionStorage.getItem('ps-in:'+handle)||'null'):null; }catch(_){}
