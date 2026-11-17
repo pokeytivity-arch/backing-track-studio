@@ -482,7 +482,7 @@ body[data-area=hall] .cl-box[data-k=dash]{display:none!important}
 #rlDashPage .rl-dptop{display:flex;flex-wrap:wrap;gap:10px;max-width:1280px;margin:0 auto}
 #rlDashPage .rl-dpin{max-width:1280px;margin:0 auto} #rlDashPage .rl-dash{margin-top:14px}
 body[data-area=hall] .cl-box[data-k=chat],body[data-area=hall] .cl-box[data-k=meet]{display:none!important}
-body[data-area=class] .cl-box[data-k=ear],body[data-area=class] .cl-box[data-k=scales],body[data-area=class] .cl-box[data-k=chords]{display:none!important}
+body[data-area=class] .cl-box[data-k=ear],body[data-area=class] .cl-box[data-k=scales],body[data-area=class] .cl-box[data-k=chords],body[data-area=class] .cl-box[data-k=styl]{display:none!important}
 body[data-area=class] .cl-four{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:880px;margin-left:auto;margin-right:auto}
 body[data-area=hall] .cl-four{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 @media(max-width:760px){ body[data-area=hall] .cl-four{grid-template-columns:repeat(2,minmax(0,1fr))!important} }

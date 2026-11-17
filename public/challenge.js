@@ -594,15 +594,18 @@ async function arenaCard(){ const four=document.querySelector('#clHome .cl-four'
     c.onclick=()=>{ if(window.SUITE) SUITE.go('challenge'); }; four.appendChild(c);
     c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); }); }
   const set=(t,s,g)=>{ c.querySelector('b').textContent=t; c.querySelector('span').textContent=s; c.querySelector('.go').textContent=g; };
-  if(!c.dataset.filled) set('Practice Plan Builder','Build a practice plan, then activate it here.','Open →');
+  if(!c.dataset.filled) c.hidden=true;
   if(arenaBusy) return; arenaBusy=true; const p=await peek(); arenaBusy=false; c.dataset.filled='1';
-  if(!p) set('Practice Plan Builder','Build a practice plan, then activate it to see it here every day.','Build a plan →');
+  c.hidden=!p; four.classList.toggle('has-plan',!!p); if(!p) return;   /* only an active practice plan shows here */
   else if(p.complete) set(p.name,'All 90 days done. Collect your certificate.','Open →');
   else set(p.name,'Day '+p.day+' of 90 · '+(p.done?'Today is done ✓':p.blocks?'Today: '+(p.mins?fmtMin(p.mins)+' session':p.blocks+' block'+(p.blocks===1?'':'s')):'Rest day'),p.done?'Open →':'Start today →'); }
 const arenaCss=document.createElement('style'); arenaCss.textContent=`
 body:not([data-area=hall]) .cl-box[data-k=plan]{display:none!important}
 body[data-area=hall] #clHome .cl-four{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-@media(max-width:1000px){ body[data-area=hall] #clHome .cl-four{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
+body[data-area=hall] #clHome .cl-four.has-plan{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.cl-box[data-k=plan][hidden]{display:none!important}
+@media(max-width:1200px){ body[data-area=hall] #clHome .cl-four.has-plan{grid-template-columns:repeat(3,minmax(0,1fr))!important} }
+@media(max-width:1000px){ body[data-area=hall] #clHome .cl-four,body[data-area=hall] #clHome .cl-four.has-plan{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
 .cl-box .plan-ph{background:radial-gradient(circle at 70% 30%,rgba(99,230,190,.55),transparent 60%),radial-gradient(circle,rgba(255,255,255,.75) 0 4px,transparent 5px) 0 0/22px 22px;opacity:.9}
 .cl-box[data-k=plan] .ic svg{width:33px;height:33px}`; document.head.appendChild(arenaCss);
 { let last=''; const chk=()=>{ const a=document.body.dataset.area||''; if(a==='hall'&&last!=='hall') arenaCard(); last=a; }; new MutationObserver(chk).observe(document.body,{attributes:true,attributeFilter:['data-area']}); window.addEventListener('ps-auth',()=>{ if(room&&room.classList.contains('on')) return; D=null; acct=null; tok=''; try{ tok=localStorage.getItem(TK)||''; }catch(_){} if(document.body.dataset.area==='hall') arenaCard(); }); setTimeout(chk,800); }
