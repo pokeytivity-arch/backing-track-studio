@@ -1406,7 +1406,7 @@ function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-
     k.onclick=()=>{ press(v); }; col.appendChild(k); });
   return strip; }
 /* ---------- Stylization Practice: stylization techniques, from his lessons. Built on the Chord Practice console.
-   Neighboring Chord Couples (4/4): a 4-bar phrase, one chord per bar; each beat shakes a chord against its neighbour in 8 even notes,
+   Neighboring Chord Couples (4/4): a 4-bar phrase, one chord per bar; beats 1 to 3 are two eighth notes, the chord then its neighbour,
    climbing (or coming down) an inversion a beat, landing on the chord as a quarter note on beat 4.
    Backtracking (3/4, major chords): beats 1 and 2 the chord over its root, beat 3 the backtrack chord. ---------- */
 const SQ={maj:[0,4,7],min:[0,3,7],dim:[0,3,6]}, SQN={maj:' major',min:' minor',dim:' diminished'};
@@ -1441,8 +1441,8 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
     const lhC=v.over?(st.sover==='cm6'?[48,51,55,57]:[41,51,57]).map(m=>m+tr+(tr>5?-12:0)):SQ[v.x[1]].map(i=>r-12+i);
     const dirs=st.sdir==='up'?['up','up','up','up']:st.sdir==='down'?['down','down','down','down']:['up','down','up','down'];
     dirs.forEach((d,b)=>{ const b0=b*4; const lh=st.slh!==false?lhC:[]; if(lh.length) ev.push({t:b0,d:3.9,n:lh,v:.5,h:'l'});
-      for(let k=0;k<3;k++){ const A=d==='up'?sInv(X,k):sInv(X,3-k), B=d==='up'?sInv(Y,k):sInv(Y,2-k); for(let j=0;j<8;j++){ const c=j%2?B:A; ev.push({t:b0+k+j/8,d:1/8,n:c,v:j%2?.56:.62}); fr.push({t:b0+k+j/8,rh:c,lh,beat:b0+k}); }
-        words[b0+k]=(d==='up'?'Ascending':'Descending')+' · '+sChord(A)+' to '+sChord(B)+' (eight notes)'; }
+      for(let k=0;k<3;k++){ const A=d==='up'?sInv(X,k):sInv(X,3-k), B=d==='up'?sInv(Y,k):sInv(Y,2-k); for(let j=0;j<2;j++){ const c=j?B:A; ev.push({t:b0+k+j/2,d:.48,n:c,v:j?.6:.66}); fr.push({t:b0+k+j/2,rh:c,lh,beat:b0+k}); }   /* two eighth notes: the chord, then its neighbour */
+        words[b0+k]=(d==='up'?'Ascending':'Descending')+' · '+sChord(A)+', then '+sChord(B)+' (eighth notes)'; }
       const L=d==='up'?sInv(X,3):X; ev.push({t:b0+3,d:.95,n:L,v:.7}); fr.push({t:b0+3,rh:L,lh,beat:b0+3}); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
     total=16; }
   else if(T.id==='back'){ let r=60+tr; const I=[r,r+4,r+7], A=sInv(I,v.rh), B=v.b3.map(i=>r+i); const sh=Math.max(...A,...B)>79?-12:0; const a=A.map(m=>m+sh), b=B.map(m=>m+sh), bass=[r-12+sh];
@@ -1492,7 +1492,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   $('#prChips').textContent='';   /* the varieties are on the console (Variety) */ const v0=T.vars?T.vars[syList()[0]]:null; syShow(T,v0);
   if(!T.vars){ steps=[]; cur=-1; $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; drawKb(); const pb=$('#prPlay'); if(pb){ pb.disabled=true; pb.style.opacity='.45'; } return; }
   const P=syPhrase(T,v0); steps=P.fr.slice(0,1).map(f=>({name:syName(T,v0),lh:f.lh,rh:f.rh,src:''})); cur=0; drawKb();
-  $('#prMsg').textContent=T.id==='ncc'?'Each beat: the chord and its neighbour, eight notes. Beat 4: the chord as a quarter note.':'3/4. Loops by default; All varieties goes from one to the next.'; }
+  $('#prMsg').textContent=T.id==='ncc'?'Beats 1 to 3: the chord, then its neighbour, as eighth notes. Beat 4: the chord as a quarter note.':'3/4. Loops by default; All varieties goes from one to the next.'; }
 function chordConsole(box){
   const strips=el('div','p-mix p-cmix'), cv=st.cmode==='canvas', vo=st.cmode==='voice'; box.appendChild(strips);
   strips.append(
