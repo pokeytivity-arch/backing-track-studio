@@ -238,7 +238,7 @@ function navMenu(anchor){
   let m=document.getElementById('psNav');
   if(m){ m.remove(); return; }
   m=document.createElement('div'); m.id='psNav'; m.setAttribute('role','menu');
-  const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','hall','studio','plus','challenge'].map(k=>[k,DEST[k].name,ICONS[k],NAVC[k]]));
+  const rows=[['home','Home',HOMEI,['#6b7a99','#2f3a52']]].concat(['class','hall','studio','plus','challenge'].map(k=>[k,DEST[k].name,(k==='class'&&window.PSROLE&&PSROLE.role()==='teacher'&&PSROLE.dashIcon)?PSROLE.dashIcon:ICONS[k],NAVC[k]]));
   rows.forEach(([k,label,svg,c])=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitem'); const on=k==='home'?hub.classList.contains('on'):(!hub.classList.contains('on')&&cur===k); if(on) b.className='cur';
     b.innerHTML='<i style="background:linear-gradient(150deg,'+c[0]+','+c[1]+')">'+svg+'</i><span></span>'+(on?'<em>✓</em>':''); b.querySelector('span').textContent=label==='Studio+'?'Studio+ (Transcription)':label;
     b.onclick=()=>{ m.remove(); closeRooms(); if(k==='home') showHub(); else go(k); }; m.appendChild(b); });

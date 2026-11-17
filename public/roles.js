@@ -133,6 +133,7 @@ const ICON={
  training:'<svg viewBox="0 0 48 48" fill="none"><path d="M8 12c6-3 11-3 16 1 5-4 10-4 16-1v24c-6-3-11-3-16 1-5-4-10-4-16-1V12Z" fill="#fff"/></svg>',
  workshop:'<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="6" fill="#fff"/><path d="M12 38c0-6.5 5-11 12-11s12 4.5 12 11" fill="#fff"/></svg>',
  custom:'<svg viewBox="0 0 48 48" fill="none"><path d="M24 10v28M10 24h28" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>'};
+const DASHICON='<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="7" width="15" height="19" rx="3.5" fill="#fff"/><rect x="26" y="7" width="15" height="11" rx="3.5" fill="#fff" opacity=".85"/><rect x="26" y="22" width="15" height="19" rx="3.5" fill="#fff"/><rect x="7" y="30" width="15" height="11" rx="3.5" fill="#fff" opacity=".85"/></svg>';   /* the teacher's Dashboard: tiles, not a graduation cap */
 const ICONS_SUITE=k=>{ const c=document.querySelector('#psCards .dcard[data-k="'+k+'"] .ic'); return c?c.innerHTML:''; };
 
 /* ---------- the switch ---------- */
@@ -218,7 +219,7 @@ function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to 
 /* ---------- teacher view ---------- */
 function spaceCard(sp,editing,on){ const b=el('button','dcard'); b.type='button'; b.dataset.k=sp.k;
   b.innerHTML='<div class="ph"><i class="phi"'+({class:'card-class.webp',studio:'card-studio.webp',plus:'card-plus.webp',hall:'class-chords.webp'}[sp.k]?' style="background-image:url('+({class:'card-class.webp',studio:'card-studio.webp',plus:'card-plus.webp',hall:'class-chords.webp'}[sp.k])+')"':'')+'></i>'+(BIG[sp.k]||'')+'</div><div class="ic"></div><div class="nm"></div><div class="bl"></div><div class="go">Open →</div>';
-  b.querySelector('.ic').innerHTML=ICON[sp.k]||ICONS_SUITE(sp.k); b.querySelector('.nm').textContent=sp.name; b.querySelector('.bl').textContent=sp.blurb;
+  b.querySelector('.ic').innerHTML=sp.k==='class'?DASHICON:(ICON[sp.k]||ICONS_SUITE(sp.k)); b.querySelector('.nm').textContent=sp.name; b.querySelector('.bl').textContent=sp.blurb;
   if(editing){ const ed=el('div','rl-ed'); const rn=el('span',null,'Rename'); rn.setAttribute('role','button'); rn.tabIndex=0; rn.onclick=e=>{ e.stopPropagation(); on.rename(sp); }; ed.appendChild(rn);
     if(!['class','hall','studio','arena'].includes(sp.id)){ const rm=el('span',null,'✕'); rm.setAttribute('role','button'); rm.setAttribute('aria-label','Remove '+sp.name); rm.tabIndex=0; rm.onclick=e=>{ e.stopPropagation(); on.remove(sp); }; ed.appendChild(rm); } b.appendChild(ed); }
   b.onclick=()=>{ if(sp.go) openRoom(sp.go); else spacePanel(sp,true); };
@@ -409,6 +410,6 @@ function myProgressions(){ let st={}, banks=[]; try{ st=JSON.parse(localStorage.
   const c=el('button','rl-btn pri','Copy'); c.type='button'; c.style.marginTop='12px'; c.onclick=()=>{ t.select(); let ok=false; try{ navigator.clipboard.writeText(t.value); ok=true; }catch(_){} try{ ok=document.execCommand('copy')||ok; }catch(_){} toast(ok?'Copied. Paste it into your chat with Claude.':'Select all the text and copy it.'); }; b.appendChild(c); }
 try{ if(/[?&#]myprogressions\b/.test(location.search+location.hash)) setTimeout(myProgressions,1500); }catch(_){}
 try{ if(role()==='teacher'&&window.SUITE&&SUITE.DEST&&SUITE.DEST.class){ SUITE.DEST.class.name='Dashboard'; SUITE.DEST.class.blurb='Your teacher dashboard, consultation with HearandPlay, and meet a student.'; } }catch(_){}
-window.PSROLE={hub:render,role,area,myProgressions,closeDash};
+window.PSROLE={hub:render,role,area,myProgressions,closeDash,dashIcon:DASHICON};
 { const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) render(); }
 })();
