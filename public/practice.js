@@ -438,7 +438,7 @@ function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales'||steps.arp) handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
   const V=kind==='chords'&&vis&&vis.s===s?vis:null, XL=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='l'):[], XR=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='r'):[];
-  if(kind==='chords'&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  if((kind==='chords'||kind==='styl')&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   /* while a chord plays, each note lights up as it sounds and dims when it stops */
   if(V) [...(s.lh||[]),...(s.rh||[]),...XL,...XR].forEach(m=>{ const r=svg.querySelector('rect[data-m="'+m+'"]'); if(!r) return; if(V.on.has(m)){ r.setAttribute('stroke','#fff'); r.setAttribute('stroke-width','2'); } else { const w=+r.getAttribute('width')>10, f=r.getAttribute('fill'); r.setAttribute('fill',f==='#f76707'?(w?'#ffd8bd':'#7a3a12'):f==='#1c7ed6'?(w?'#c4ddf6':'#163d63'):f); r.setAttribute('data-dim','1'); } });
@@ -1470,13 +1470,15 @@ function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').t
     P.ev.forEach(e=>e.n.forEach(m=>C.note(m,t0+e.t*spb,Math.max(.08,e.d*spb*(e.d<.2?1.15:1)),e.v,bus)));
     for(let b=0;b<P.total;b++) C.click(t0+b*spb,b%P.bpb===0,bus);
     const at=t=>Math.max(0,(t0+t*spb-C.now())*1000);
-    steps=P.fr.map(f=>({name:syName(T,v),lh:f.lh,rh:f.rh,src:''}));
+    steps=P.fr.map(f=>syStep(T,v,f));
     P.fr.forEach((f,i)=>timers.push(setTimeout(()=>{ if(!playing) return; cur=i; drawKb(); },at(f.t))));
     for(let b=0;b<P.total;b++) timers.push(setTimeout(()=>{ if(!playing) return; syShow(T,v,'Bar '+(Math.floor(b/P.bpb)+1)+' of '+(P.total/P.bpb)+' · beat '+(b%P.bpb+1)+' · '+(P.words[b]||'')); ov.querySelectorAll('.p-bch[data-ch=Variety] .p-key').forEach((c,ci)=>c.classList.toggle('p-now',st.svar==='all'&&ci===list[qi])); },at(b)));
     const end=t0+P.total*spb;
     timers.push(setTimeout(()=>{ if(!playing) return; qi++; if(qi>=list.length){ if(!st.loop){ timers.push(setTimeout(()=>{ clr(); syShow(T,v); },Math.max(0,(end-C.now())*1000))); return; } qi=0; } run(end); },Math.max(0,(end-C.now()-0.6)*1000))); };
   C.ready().then(()=>run(C.now()+0.15)); }
 { const cs=document.createElement('style'); cs.textContent='#prRoom .p-bch[data-ch=Variety] .p-key.p-now{box-shadow:0 0 0 2px #ffd43b inset}#prRoom[data-styl="1"] .p-trs{max-width:340px}'; document.head.appendChild(cs); }
+/* four-note right-hand chords are fingered 1 2 3 5 (his fingering) */
+function syStep(T,v,f){ const o={name:syName(T,v),lh:f.lh,rh:f.rh,src:''}; if(f.rh.length===4){ const a=f.rh.slice().sort((x,y)=>x-y); o.rfm={[a[0]]:1,[a[1]]:2,[a[2]]:3,[a[3]]:5}; } return o; }
 function syTrStrip(){ const strip=el('div','p-ch p-bch p-trs'); strip.dataset.ch='Transpose'; strip.appendChild(el('div','p-cht','Transpose')); const col=el('div','p-bcol'); strip.appendChild(col);
   const r=el('div','p-trr'); r.appendChild(el('span','p-trl','Key')); const mk=(t,fn,cls,ti)=>{ const k=el('button','p-key '+cls); k.type='button'; k.innerHTML='<span></span>'; k.firstChild.textContent=t; k.title=ti; k.onclick=fn; r.appendChild(k); return k; };
   const go=d=>{ const n=Math.max(-6,Math.min(5,(st.str||0)+d)); if(n===(st.str||0)) return; st.str=n; save(); const was=playing; render(); if(was) playAll(); };
@@ -1498,7 +1500,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   const ask=el('button','p-ubtn','Ask HearandPlay about this technique'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('Teach me the '+T.name+' stylization technique'+(v?': '+syName(T,v):'')+'. How do I practice it?',{fresh:true}); }; bar.appendChild(ask);
   $('#prChips').textContent='';   /* the varieties are on the console (Variety) */ const v0=T.vars?T.vars[syList()[0]]:null; syShow(T,v0);
   if(!T.vars){ steps=[]; cur=-1; $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; drawKb(); const pb=$('#prPlay'); if(pb){ pb.disabled=true; pb.style.opacity='.45'; } return; }
-  const P=syPhrase(T,v0); steps=P.fr.slice(0,1).map(f=>({name:syName(T,v0),lh:f.lh,rh:f.rh,src:''})); cur=0; drawKb();
+  const P=syPhrase(T,v0); steps=P.fr.slice(0,1).map(f=>syStep(T,v0,f)); cur=0; drawKb();
   $('#prMsg').textContent=T.id==='sixdim'?'Every beat: two eighth notes, the sixth chord then the diminished seventh chord. Up one bar, then down.':T.id==='ncc'?'Beats 1 to 3: the chord, then its neighbour, as eighth notes. Beat 4: the chord as a quarter note.':'3/4. Loops by default; All varieties goes from one to the next.'; }
 function chordConsole(box){
   const strips=el('div','p-mix p-cmix'), cv=st.cmode==='canvas', vo=st.cmode==='voice'; box.appendChild(strips);

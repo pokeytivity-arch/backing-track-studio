@@ -43,14 +43,19 @@ function pose3c(h){
   const cf=[1,2,3,4].filter(i=>own.includes(i+1)&&pos[i+1]!=null), cd=cf.map(i=>dep(i+1,pos[i+1])), avg=cd.length?cd.reduce((a,b)=>a+b,0)/cd.length:kbH*.8;
   /* across the keys: from the chord fingers' keys (the thumb, if it is in the chord, pulls the hand towards it) */
   let ax; if(cf.length){ ax=0; cf.forEach(i=>{ ax+=h.fx[i]-KN[i]*dir*kw; }); ax/=cf.length; } else { ax=0; for(let i=1;i<5;i++) ax+=h.fx[i]-KN[i]*dir*kw; ax/=4; }
-  if(own.includes(1)&&pos[1]!=null){ const tx=h.fx[0]+2.2*dir*kw; if(!cf.length) ax=tx; else if((ax-tx)*dir>0) ax=tb?ax*.3+tx*.7:ax*.45+tx*.55; }
+  /* the thumb spreads away from the fingers by up to a fourth (C to F) from the next chord finger: within that the hand stays over the fingers
+     and the thumb reaches; past it the hand is drawn towards the thumb */
+  if(own.includes(1)&&pos[1]!=null){ const tx=h.fx[0]+2.2*dir*kw; const nf=[2,3,4,5].find(f=>own.includes(f)&&pos[f]!=null), gap=nf?Math.abs(pos[nf]-pos[1]):99;
+    if(!cf.length) ax=tx; else if(gap>5&&(ax-tx)*dir>0) ax=tb?ax*.3+tx*.7:ax*.55+tx*.45; }
   /* how far back the knuckles sit: every chord finger keeps room to curve down onto its key; the thumb draws the hand in only as far as that allows */
   const mx=cd.length?Math.max(...cd):avg, mn=cd.length?Math.min(...cd):avg, lo=mx+(tb?.026:.032)*s;
   let az=Math.max(lo,Math.min(mx+.046*s,mn+.066*s)); if(own.includes(1)&&pos[1]!=null) az=Math.max(lo,Math.min(az,dep(1,pos[1])+.036*s));
   if(!h.cd) h.cd=[0,0,0,0,0]; let moving=false; const want=[], xs=[];
   for(let i=0;i<5;i++){ const inC=own.includes(i+1)&&pos[i+1]!=null;
     if(inC){ want.push(dep(i+1,pos[i+1])); xs.push(h.fx[i]); }
-    else { const kx=ax+KN[i]*dir*kw; xs.push(kx+(h.fx[i]-kx)*.3); want.push(i===0?Math.min(kbH*.9,avg+kw*.6):Math.min(az-.04*s,avg+kw*.2)); } }
+    else { const kx=ax+KN[i]*dir*kw, below=[0,1,2,3,4].some(j=>j<i&&own.includes(j+1)&&pos[j+1]!=null), above=[0,1,2,3,4].some(j=>j>i&&own.includes(j+1)&&pos[j+1]!=null);
+      /* a finger with no note, between two chord fingers, rests over its own key between theirs, so it never crosses the finger next to it */
+      xs.push(i>0&&below&&above?h.fx[i]:kx+(h.fx[i]-kx)*.3); want.push(i===0?Math.min(kbH*.9,avg+kw*.6):Math.min(az-.04*s,avg+kw*.2)); } }
   for(let i=0;i<5;i++){ if(!h.cinit) h.cd[i]=want[i]; else { h.cd[i]+=(want[i]-h.cd[i])*.3; if(Math.abs(want[i]-h.cd[i])>.4) moving=true; } }
   h.cinit=true;
   const tips=[], yl=[0]; for(let i=0;i<5;i++){ const m=pos[i+1], play=pr.includes(i+1), inC=own.includes(i+1), blk=m!=null&&!isW(m)&&inC;
