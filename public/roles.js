@@ -9,9 +9,11 @@
 'use strict';
 const RK='ps-role', K={sp:'ps-t-spaces3',name:'ps-t-name',code:'ps-t-code',asg:'ps-t-asg',items:'ps-t-items',subs:'ps-s-subs',done:'ps-s-done'};
 /* Student by default. The teacher wing is for signed-in Teacher accounts: their home is their dashboard, and only they can switch. */
+/* the Old Testament (app.pokeytivity.com) is the same suite without the teacher wing: student-wing changes reach both */
+const STUDENT_ONLY=/(^|\.)pokeytivity\.com$/i.test(location.hostname);
 /* for pitching: hearandplay.app/?demo=teacher opens the sample teacher wing in this tab */
 try{ if(new URLSearchParams(location.search).get('demo')==='teacher'){ sessionStorage.setItem('ps-demo-t','1'); localStorage.setItem('ps-role','teacher'); history.replaceState(null,'',location.pathname); } }catch(_){}
-const teacherAcct=()=>{ try{ const u=window.AUTH&&AUTH.user&&AUTH.user(); if(u) return u.role==='teacher'; if(sessionStorage.getItem('ps-demo-t')) return true; return !!localStorage.getItem('ps-tok')&&localStorage.getItem('ps-acct-role')==='teacher'; }catch(_){ return false; } };
+const teacherAcct=()=>{ if(STUDENT_ONLY) return false; try{ const u=window.AUTH&&AUTH.user&&AUTH.user(); if(u) return u.role==='teacher'; if(sessionStorage.getItem('ps-demo-t')) return true; return !!localStorage.getItem('ps-tok')&&localStorage.getItem('ps-acct-role')==='teacher'; }catch(_){ return false; } };
 const role=()=>{ try{ return teacherAcct()&&localStorage.getItem(RK)!=='student'?'teacher':'student'; }catch(_){ return 'student'; } };
 const jget=(k,d)=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?d:v; }catch(_){ return d; } };
 const jset=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(_){} if(k==='ps-t-spaces3'&&window.PSSUITE) PSSUITE.push(); };
@@ -151,7 +153,7 @@ const DASHICON='<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="7" width="15
 const ICONS_SUITE=k=>{ const c=document.querySelector('#psCards .dcard[data-k="'+k+'"] .ic'); return c?c.innerHTML:''; };
 
 /* ---------- the switch ---------- */
-function toggle(){ const w=el('div','rl-tog'); w.setAttribute('role','radiogroup'); w.setAttribute('aria-label','View the suite as');
+function toggle(){ if(STUDENT_ONLY){ const x=el('span','rl-tog'); x.hidden=true; x.style.display='none'; return x; } const w=el('div','rl-tog'); w.setAttribute('role','radiogroup'); w.setAttribute('aria-label','View the suite as');
   [['student','Student'],['teacher','Teacher']].forEach(([v,t])=>{ const b=el('button',null,'<i></i>'+t); b.type='button'; b.setAttribute('role','radio'); b.setAttribute('aria-checked',String(role()===v));
     const off=v==='teacher'&&!teacherAcct(); if(off){ b.disabled=true; b.setAttribute('aria-disabled','true'); b.title='The teacher wing opens for signed-in Teacher accounts'; }
     if(role()===v) b.style.cursor='default';
@@ -563,7 +565,7 @@ function itemsPanel(k,items,pub){ const part=PART[k], L=(items&&items[part])||[]
    From the dashboard, View my suite as a student opens the page as students see it, with a bar back to the dashboard. */
 const SUITE_RES=new Set('api admin www app index home suite suites teacher teachers student students dashboard settings account login signup signin logout help about class hall studio plus challenge arena practice hearandplay pokeytivity myprogressions privacy terms support'.split(' '));
 const PSSUITE=(()=>{
-  const m=/^\/([A-Za-z0-9]{3,30})\/?$/.exec(location.pathname), handle=m&&!SUITE_RES.has(m[1].toLowerCase())?m[1].toLowerCase():null;
+  const m=STUDENT_ONLY?null:/^\/([A-Za-z0-9]{3,30})\/?$/.exec(location.pathname), handle=m&&!SUITE_RES.has(m[1].toLowerCase())?m[1].toLowerCase():null;
   const qs=new URLSearchParams(location.search), preview=qs.get('preview')==='1';
   const A=()=>window.AUTH, tok=()=>{ try{ return A()&&A().token()||''; }catch(_){ return ''; } };
   const api=async(body,q)=>{ const r=await fetch('/api/suite'+(q||''),{method:body?'POST':'GET',headers:Object.assign({'content-type':'application/json'},tok()?{authorization:'Bearer '+tok()}:{}),body:body?JSON.stringify(body):undefined}); let j={}; try{ j=await r.json(); }catch(_){} j._s=r.status; return j; };
