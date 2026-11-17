@@ -628,7 +628,11 @@ function init(){
   S.merge=true;
   $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=String(Math.round(sensVal()*100)); };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
-  $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
+  /* the space bar plays and pauses the Transcription Studio while you are in it, and nothing else */
+  window.addEventListener('keydown',e=>{ if(e.code!=='Space'&&e.key!==' ') return; if(e.ctrlKey||e.metaKey||e.altKey) return;
+    const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) return; if(document.body.dataset.dest!=='plus') return;
+    const t=e.target, tg=t&&t.tagName; if(/INPUT|SELECT|TEXTAREA/.test(tg)||(t&&t.isContentEditable)||document.querySelector('dialog[open]')) return;
+    e.preventDefault(); e.stopImmediatePropagation(); if(tg==='BUTTON'&&t.blur) t.blur(); if(S.audio) S.playing?pausePlay():startPlay(); },true);
   tbInit(); new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
   draw(0);
 }

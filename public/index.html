@@ -639,7 +639,7 @@ audio{width:100%}
         .tx .tbprog{position:absolute;left:0;right:0;bottom:-6px;height:12px;cursor:pointer;z-index:2;touch-action:none}
         .tx .tbprog:before{content:"";position:absolute;left:0;right:0;top:5px;height:3px;background:#3a3a3e}
         .tx .tbprog b{position:absolute;left:0;top:5px;height:3px;width:0;background:#ffd43b;box-shadow:0 0 8px rgba(255,212,59,.6)}
-        .tx .txempty{top:46px}
+        .tx .txstage .txempty{top:46px}
         .tx .txstage.fs{position:fixed;inset:0;z-index:150000;border-radius:0;display:flex;flex-direction:column}
         body.tx-fs .tx .txmenu{position:fixed;top:0;bottom:0;z-index:150002}
         .tx .txstage.fs canvas{flex:1;height:auto!important;min-height:0!important}
@@ -3098,7 +3098,9 @@ function init(){
   $('shareLink').onclick=async()=>{ const u=location.origin+location.pathname+'#t='+encodeURIComponent(encode(current())); try{ await navigator.clipboard.writeText(u); toast('Share link copied. Anyone you send it to opens this track.'); }
     catch(_){ $('codeArea').hidden=false; $('codeIn').value=u; $('codeIn').select(); toast('Copy the link from the box'); } };
   { const m=location.hash.match(/^#t=(.+)$/); if(m){ let t=null; try{ t=decode(decodeURIComponent(m[1])); }catch(_){} if(t){ setTimeout(()=>{ try{ if(window.SUITE) SUITE.go('studio'); loadTrack(t); history.replaceState(null,'',location.pathname); }catch(_){} },900); } } }
-  document.addEventListener('keydown',e=>{ if(e.code==='Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)){ e.preventDefault(); toggle(); }
+  /* the space bar plays and pauses only the space you are in: here, only while the Backing Track Studio itself is on screen */
+  const inStudio=()=>{ const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) return false; const d=document.body.dataset.dest; if(d&&d!=='studio') return false; if(document.querySelector('dialog[open]')) return false; const pd=document.getElementById('rlDashPage'); if(pd&&pd.offsetParent) return false; return true; };
+  document.addEventListener('keydown',e=>{ if(e.code==='Space' && !/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName) && inStudio()){ e.preventDefault(); toggle(); }
     if(e.key==='Escape' && $('stage').classList.contains('projector')) $('projBtn').click(); });
   initShared();
 }
@@ -3107,7 +3109,7 @@ init();
 <script src="auth.js?v=h1" defer></script>
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
-<script src="transcribe.js?v=6" defer></script>
+<script src="transcribe.js?v=7" defer></script>
 <script src="suite.js?v=17" defer></script>
 <script src="roles.js?v=27" defer></script>
 <script src="layout3.js?v=6" defer></script>
