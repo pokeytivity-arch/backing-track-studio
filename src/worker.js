@@ -266,7 +266,7 @@ const cleanSpec = (kind, sp) => {
   sp = sp && typeof sp === 'object' ? sp : {};
   if (kind === 'chart') { const steps = (Array.isArray(sp.steps) ? sp.steps : []).slice(0, 64).map(x => ({ label: clip(x && x.label, 40), lh: clip(x && x.lh, 80), rh: clip(x && x.rh, 80) })).filter(x => x.lh || x.rh); return { steps }; }
   if (kind === 'ear') return { area: clip(sp.area, 20), mode: clip(sp.mode, 12) };
-  return { room: clip(sp.room, 12) };
+  return { room: clip(sp.room, 12), prog: clip(sp.prog, 600), bpm: Math.max(0, Math.min(300, +sp.bpm || 0)), key: clip(sp.key, 4), type: clip(sp.type, 30) };
 };
 async function teach(request, env, act) {
   if (request.method !== 'POST') return json({ error: 'method' }, 405);
@@ -395,6 +395,93 @@ async function teach(request, env, act) {
   return json({ error: 'unknown' }, 404);
 }
 
+
+/* ---------- teacher suites: hearandplay.app/<handle>. A teacher claims a handle (@name) for their suite and customizes it;
+   anyone can see a suite's front page; a signed-in student subscribes with a PIN of their choosing, and enters with that PIN.
+   KV: su:h:<handle> -> owner id · su:t:<owner> -> the suite · su:al:<old handle> -> new handle · su:p:<owner>:<student> -> PIN hash · su:e:<token> -> entry */
+const RESERVED = new Set('api admin www app index home suite suites teacher teachers student students dashboard settings account login signup signin logout help about class hall studio plus challenge arena practice hearandplay pokeytivity myprogressions privacy terms support'.split(' '));
+const HANDLE = /^[a-z0-9]{3,30}$/;
+const cleanItems = (o) => { o = o && typeof o === 'object' ? o : {}; const L = (x, n) => (Array.isArray(x) ? x : []).slice(0, n);
+  return { arena: L(o.arena, 40).map(x => ({ id: clip(x && x.id, 30), title: clip(x && x.title, 80), room: clip(x && x.room, 12), prog: clip(x && x.prog, 600), bpm: Math.max(0, Math.min(300, +(x && x.bpm) || 0)), key: clip(x && x.key, 4), type: clip(x && x.type, 30) })).filter(x => x.id && x.title),
+    studio: L(o.studio, 30).map(x => ({ id: clip(x && x.id, 30), title: clip(x && x.title, 80), chords: clip(x && x.chords, 3000), style: clip(x && x.style, 30), bpm: Math.max(0, Math.min(300, +(x && x.bpm) || 0)), transpose: Math.max(-12, Math.min(12, +(x && x.transpose) || 0)), meter: clip(x && x.meter, 6) })).filter(x => x.id && x.title),
+    plans: L(o.plans, 20).map(x => ({ id: clip(x && x.id, 30), name: clip(x && x.name, 60), week: (Array.isArray(x && x.week) ? x.week : []).slice(0, 7).map(d => (Array.isArray(d) ? d : []).slice(0, 30).map(v => clip(v, 24)).filter(Boolean)) })).filter(x => x.id && x.name) }; };
+const cleanSpaces = (L) => (Array.isArray(L) ? L : []).slice(0, 16).map(x => ({ id: clip(x && x.id, 30), k: clip(x && x.k, 12), name: clip(x && x.name, 40), blurb: clip(x && x.blurb, 200), go: clip(x && x.go, 12) })).filter(x => x.id && x.name);
+async function suiteOf(env, handle) {
+  let h = handle, owner = await env.LESSONS.get('su:h:' + h), moved = null;
+  if (!owner) { const to = await env.LESSONS.get('su:al:' + h); if (to) { moved = to; h = to; owner = await env.LESSONS.get('su:h:' + h); } }
+  if (!owner) return null;
+  const st = await env.LESSONS.get('su:t:' + owner, 'json'); if (!st || st.handle !== h) return null;
+  return { owner, st, moved };
+}
+async function ensureCode(env, id, a) {
+  if (a.tcode) return a.tcode;
+  let code = newCode(); for (let i = 0; i < 5 && await env.LESSONS.get('tch:' + code); i++) code = newCode();
+  a.tcode = code; await env.LESSONS.put('tch:' + code, JSON.stringify({ name: a.name || 'Teacher', owner: id, made: Date.now() }));
+  await env.LESSONS.put('acct:' + id, JSON.stringify(a)); return code;
+}
+async function suite(request, env, url) {
+  if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
+  _env = env;
+  if (request.method === 'GET') {
+    const c = url.searchParams.get('check');
+    if (c != null) { const h = String(c).toLowerCase(); if (!HANDLE.test(h) || RESERVED.has(h)) return json({ available: false, reason: 'bad' }, 200);
+      const o = await env.LESSONS.get('su:h:' + h), al = await env.LESSONS.get('su:al:' + h); const u = await sessionUser(request, env);
+      return json({ available: (!o && !al) || (!!u && (o === u.id || (al && (await env.LESSONS.get('su:h:' + al)) === u.id))) }, 200); }
+    const h = String(url.searchParams.get('h') || '').toLowerCase(); if (!HANDLE.test(h)) return json({ error: 'none' }, 404);
+    const f = await suiteOf(env, h); if (!f) return json({ error: 'none' }, 404);
+    const ta = await env.LESSONS.get('acct:' + f.owner, 'json');
+    return json({ handle: f.st.handle, moved: f.moved, name: f.st.name, spaces: f.st.spaces, teacher: ta ? (ta.name || 'Teacher') : 'Teacher', at: f.st.at }, 200);
+  }
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  let b = {}; try { b = await request.json(); } catch (_) {}
+  const u = await sessionUser(request, env); if (!u) return json({ error: 'auth' }, 401);
+  const a = u.acct, act = String(b.action || '');
+  if (act === 'mine') { const st = await env.LESSONS.get('su:t:' + u.id, 'json'); return json({ suite: st || null, role: a.role || 'none' }, 200); }
+  if (act === 'save') {
+    if (a.role !== 'teacher') return json({ error: 'role' }, 403);
+    const old = await env.LESSONS.get('su:t:' + u.id, 'json');
+    const h = String(b.handle || (old && old.handle) || '').toLowerCase().replace(/^@/, '');
+    if (!HANDLE.test(h) || RESERVED.has(h)) return json({ error: 'bad_handle' }, 400);
+    const o = await env.LESSONS.get('su:h:' + h); if (o && o !== u.id) return json({ error: 'taken' }, 409);
+    const al = await env.LESSONS.get('su:al:' + h); if (al && (await env.LESSONS.get('su:h:' + al)) !== u.id) return json({ error: 'taken' }, 409);
+    const code = await ensureCode(env, u.id, a);
+    const st = { handle: h, name: clip(b.name, 60) || (old && old.name) || (a.name ? a.name + "'s Suite" : 'My HearandPlay Suite'), spaces: b.spaces ? cleanSpaces(b.spaces) : ((old && old.spaces) || []), items: b.items ? cleanItems(b.items) : ((old && old.items) || cleanItems({})), code, at: Date.now() };
+    if (JSON.stringify(st).length > 90000) return json({ error: 'too_big' }, 413);
+    if (old && old.handle && old.handle !== h) { await env.LESSONS.delete('su:h:' + old.handle); await env.LESSONS.put('su:al:' + old.handle, h); }
+    if (al) await env.LESSONS.delete('su:al:' + h);
+    await env.LESSONS.put('su:h:' + h, u.id); await env.LESSONS.put('su:t:' + u.id, JSON.stringify(st));
+    return json({ suite: st }, 200);
+  }
+  const h = String(b.h || '').toLowerCase(), f = HANDLE.test(h) ? await suiteOf(env, h) : null; if (!f) return json({ error: 'none' }, 404);
+  const pk = 'su:p:' + f.owner + ':' + u.id;
+  if (act === 'status') { const p = await env.LESSONS.get(pk); return json({ subscribed: !!p, owner: f.owner === u.id }, 200); }
+  if (act === 'subscribe') {
+    if (f.owner === u.id) return json({ error: 'own' }, 400);
+    const pin = String(b.pin || ''); if (!/^\d{4,6}$/.test(pin)) return json({ error: 'bad_pin' }, 400);
+    const salt = rnd(8); await env.LESSONS.put(pk, JSON.stringify({ salt, hash: await sha(salt + ':' + pin), at: Date.now() }));
+    /* the student and the teacher are linked (active), so assignments and plans reach the student */
+    const ta = await env.LESSONS.get('acct:' + f.owner, 'json'); const code = f.st.code || (ta && ta.tcode);
+    if (ta && code) { ta.students = ta.students || []; const m = ta.students.find(x => x.id === u.id); if (m) { m.status = 'active'; m.name = who(a); } else ta.students.push({ id: u.id, name: who(a), status: 'active', suite: true });
+      a.teachers = a.teachers || []; const t = a.teachers.find(x => x.code === code); if (t) { t.status = 'active'; t.name = ta.name || 'Teacher'; } else a.teachers.push({ code, name: ta.name || 'Teacher', status: 'active' });
+      await putAcct(f.owner, ta); await putAcct(u.id, a); }
+    return json({ ok: true }, 200);
+  }
+  if (act === 'enter') {
+    const own = f.owner === u.id;
+    if (!own) { const p = await env.LESSONS.get(pk, 'json'); if (!p) return json({ error: 'not_subscribed' }, 403);
+      const lk = 'lim:pin:' + pk, tries = +(await env.LESSONS.get(lk)) || 0; if (tries >= 10) return json({ error: 'slow_down' }, 429);
+      if ((await sha(p.salt + ':' + String(b.pin || ''))) !== p.hash) { await env.LESSONS.put(lk, String(tries + 1), { expirationTtl: 900 }); return json({ error: 'wrong_pin' }, 401); }
+      await env.LESSONS.delete(lk); }
+    const code = f.st.code, items = [];
+    if (code) { const l = await env.LESSONS.list({ prefix: 'as:' + code + ':', limit: 1000 });
+      const vals = await Promise.all(l.keys.map(k => k.name).slice(-40).map(async n => { const v = await env.LESSONS.get(n, 'json'); return v && Object.assign({ id: n }, v); }));
+      vals.forEach(v => { if (v && (own || v.to === 'all' || (Array.isArray(v.to) && v.to.includes(u.id)))) items.push({ id: v.id, kind: v.kind, title: v.title, note: v.note, spec: v.spec, at: v.at }); }); }
+    items.sort((x, y) => y.at - x.at);
+    return json({ ok: true, preview: own, assignments: items.slice(0, 30), items: f.st.items || cleanItems({}) }, 200);
+  }
+  return json({ error: 'unknown' }, 404);
+}
+
 /* ---------- practice feed: who is practising right now ----------
    Students who switch the feed on send a heartbeat while they practise (nickname, what they are playing); the city comes from Cloudflare.
    One Durable Object keeps the list in memory; anyone silent for 75 seconds drops off. Nothing is stored. */
@@ -463,6 +550,9 @@ export default {
     if (url.pathname === '/api/acct') {
       try { return await account(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
+    if (url.pathname === '/api/suite') {
+      try { return await suite(request, env, url); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
     if (url.pathname === '/api/hot') {
       try { return await hotTopics(request, env); } catch (e) { console.log(e); return json({ counts: {} }, 200); }
     }
@@ -473,6 +563,13 @@ export default {
     if (url.pathname === '/api/transcribe') {
       try { if (request.method !== 'GET') { const g = await gate(request, env, 'transcribe'); if (g) return g; } else if (env.ACCESS_CODE && !same(request.headers.get('x-access'), env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(request.headers.get('x-access'), env.ADMIN_TOKEN))) return json({ error: 'access' }, 401); return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
+    /* a teacher's suite: hearandplay.app/<handle> (and /@handle) opens the suite page */
+    { const m = /^\/(@?)([A-Za-z0-9]{3,30})\/?$/.exec(url.pathname);
+      if (m && (request.method === 'GET' || request.method === 'HEAD') && !RESERVED.has(m[2].toLowerCase())) {
+        const h = m[2].toLowerCase(); if (m[1] || h !== m[2] || url.pathname.endsWith('/')) return Response.redirect(url.origin + '/' + h + url.search, 301);
+        const r = await env.ASSETS.fetch(new Request(url.origin + '/', { headers: request.headers }));
+        return new Response(r.body, { status: 200, headers: r.headers });
+      } }
     return env.ASSETS.fetch(request);
   },
 };

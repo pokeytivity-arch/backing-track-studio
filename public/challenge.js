@@ -358,5 +358,8 @@ function sheet(it){
 }
 window.addEventListener('pagehide',()=>{ if(D&&!tok){ try{ localStorage.setItem(GK,JSON.stringify({data:D,name:acct&&acct.name||''})); }catch(_){} } });
 function back(){ if(!room||!room.classList.contains('on')) return false; if(shade.classList.contains('on')){ shade.classList.remove('on'); return true; } if(view==='build'||view==='cert'){ view='home'; render(); return true; } return false; }
-window.CHALLENGE={open,close,back};
+/* for a teacher's suite: the plan open now, and starting a plan a teacher put in their suite */
+const planNow=()=>D&&D.plan?JSON.parse(JSON.stringify(D.plan)):null;
+async function startWith(p){ await open(); setTimeout(()=>{ try{ if(p&&p.week) startPlan(JSON.parse(JSON.stringify(p))); }catch(_){} },400); }
+window.CHALLENGE={open,close,back,planNow,startWith};
 })();
