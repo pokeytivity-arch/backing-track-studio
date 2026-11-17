@@ -1409,7 +1409,7 @@ function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-
    Neighboring Chord Couples (4/4): a 4-bar phrase, one chord per bar; beats 1 to 3 are two eighth notes, the chord then its neighbour,
    climbing (or coming down) an inversion a beat, landing on the chord as a quarter note on beat 4.
    Backtracking (3/4, major chords): beats 1 and 2 the chord over its root, beat 3 the backtrack chord. ---------- */
-const SQ={maj:[0,4,7],min:[0,3,7],dim:[0,3,6]}, SQN={maj:' major',min:' minor',dim:' diminished'};
+const SQ={maj:[0,4,7],min:[0,3,7],dim:[0,3,6],six:[0,4,7,9],dim7:[0,3,6,9]}, SQN={maj:' major',min:' minor',dim:' diminished',six:' major sixth',dim7:' diminished seventh'};
 const STY=[
   {id:'ncc',name:'Neighboring Chord Couples',bpb:4,vars:[
     {x:[0,'maj'],y:[2,'min'],s:'Hexatonic (no 7) scale'},
@@ -1425,27 +1425,30 @@ const STY=[
     {n:'Root position',rh:0,b3:[0,5,9],d:'Beats 1 and 2: 1 / 1 3 5 · Beat 3: C F A'},
     {n:'First inversion',rh:1,b3:[5,9,12],d:'Beats 1 and 2: 1 / 3 5 1 · Beat 3: F A C'},
     {n:'Second inversion',rh:2,b3:[9,12,17],d:'Beats 1 and 2: 1 / 5 1 3 · Beat 3: A C F'}]},
-  {id:'licks',name:'Licks'},{id:'riffs',name:'Riffs'},{id:'contra',name:'Contrapuntal (two-handed) movements'},{id:'drop2',name:'Drop-2 Movements'},{id:'sixdim',name:'Sixth Diminished Movements'},{id:'triad',name:'Triad Patterns'}];
+  {id:'licks',name:'Licks'},{id:'riffs',name:'Riffs'},{id:'contra',name:'Contrapuntal (two-handed) movements'},{id:'drop2',name:'Drop-2 Movements'},{id:'sixdim',name:'Sixth Diminished Movements',bpb:4,vars:[{x:[0,'six'],y:[2,'dim7'],s:'The major bebop scale as two chords'}]},{id:'triad',name:'Triad Patterns'}];
 const syT=()=>STY.find(t=>t.id===st.sty)||STY[0];
 const sFlat=()=>[1,3,5,8,10].includes(((st.str||0)%12+12)%12);
 const sNm=pc=>(sFlat()?FLAT_N:SHARP_N)[((pc%12)+12)%12];
 const sChord=a=>a.map(m=>sNm(m)).join(' ');
 const sInv=(c,k)=>{ const a=c.slice(); for(let i=0;i<k;i++) a.push(a.shift()+12); return a; };
-function syName(T,v){ const tr=st.str||0; if(T.id==='ncc'){ const n=sNm(v.x[0]+tr)+SQN[v.x[1]]+' + '+sNm(v.y[0]+tr)+SQN[v.y[1]]; return v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
+function syName(T,v){ const tr=st.str||0; if(T.id==='ncc'||T.id==='sixdim'){ const n=sNm(v.x[0]+tr)+SQN[v.x[1]]+' + '+sNm(v.y[0]+tr)+SQN[v.y[1]]; return v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
 function syOver(short){ const tr=st.str||0; return st.sover==='cm6'?(sNm(tr)+(short?'m6':' minor sixth')):(sNm(5+tr)+(short?'7 (no 5)':' dominant 7 (no 5)')); }
-function syChip(T,v){ const tr=st.str||0; if(T.id==='ncc'){ const ab=q=>q==='maj'?'':q==='min'?'m':'°'; return sNm(v.x[0]+tr)+ab(v.x[1])+' + '+sNm(v.y[0]+tr)+ab(v.y[1])+(v.over?' / '+syOver(true):''); } return v.n; }
+function syChip(T,v){ const tr=st.str||0; if(T.id==='ncc'||T.id==='sixdim'){ const ab=q=>({maj:'',min:'m',dim:'°',six:'6',dim7:'°7'})[q]; return sNm(v.x[0]+tr)+ab(v.x[1])+' + '+sNm(v.y[0]+tr)+ab(v.y[1])+(v.over?' / '+syOver(true):''); } return v.n; }
 /* one phrase of a variety: the notes (beats from the start), what to show on the keys, and the bar-by-bar words */
 function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
-  if(T.id==='ncc'){ let r=60-((60-v.x[0])%12+12)%12; const y=r+((v.y[0]-v.x[0])%12+12)%12;
-    let X=SQ[v.x[1]].map(i=>r+i), Y=SQ[v.y[1]].map(i=>y+i); const top=Math.max(...sInv(X,3))+tr, sh=top>79?-12:0, add=a=>a.map(m=>m+tr+sh); X=add(X); Y=add(Y); r+=tr+sh;
+  if(T.id==='ncc'||T.id==='sixdim'){ const six=T.id==='sixdim'; let r=60-((60-v.x[0])%12+12)%12; const y=r+((v.y[0]-v.x[0])%12+12)%12;
+    let X=SQ[v.x[1]].map(i=>r+i), Y=SQ[v.y[1]].map(i=>y+i); const top=Math.max(...(six?sInv(Y,4):sInv(X,3)))+tr, sh=top>79?-12:0, add=a=>a.map(m=>m+tr+sh); X=add(X); Y=add(Y); r+=tr+sh;
     const lhC=v.over?(st.sover==='cm6'?[48,51,55,57]:[41,51,57]).map(m=>m+tr+(tr>5?-12:0)):SQ[v.x[1]].map(i=>r-12+i);
     const dirs=st.sdir==='up'?['up','up','up','up']:st.sdir==='down'?['down','down','down','down']:['up','down','up','down'];
     dirs.forEach((d,b)=>{ const b0=b*4; const d2=st.slh==='drop2', lh=st.slh!==false&&!d2?lhC:[]; if(lh.length) ev.push({t:b0,d:3.9,n:lh,v:.5,h:'l'});
-      /* Drop-2: the middle tone of each chord drops an octave into the left hand; the right hand keeps the outer two */
-      const put=(t,dur,c,v,beat)=>{ if(d2){ const s3=c.slice().sort((x,y)=>x-y), r2=[s3[0],s3[2]], l2=[s3[1]-12]; ev.push({t,d:dur,n:r2,v},{t,d:dur,n:l2,v:v*.9,h:'l'}); fr.push({t,rh:r2,lh:l2,beat}); } else { ev.push({t,d:dur,n:c,v}); fr.push({t,rh:c,lh,beat}); } };
-      for(let k=0;k<3;k++){ const A=d==='up'?sInv(X,k):sInv(X,3-k), B=d==='up'?sInv(Y,k):sInv(Y,2-k); for(let j=0;j<2;j++){ const c=j?B:A; put(b0+k+j/2,.48,c,j?.6:.66,b0+k); }   /* two eighth notes: the chord, then its neighbour */
-        words[b0+k]=(d==='up'?'Ascending':'Descending')+' · '+sChord(A)+', then '+sChord(B)+' (eighth notes)'; }
-      const L=d==='up'?sInv(X,3):X; put(b0+3,.95,L,.7,b0+3); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
+      /* Drop-2: the second note from the top of each chord drops an octave into the left hand; the right hand keeps the rest */
+      const put=(t,dur,c,v,beat)=>{ if(d2){ const s3=c.slice().sort((x,y)=>x-y), k2=s3.length-2, l2=[s3[k2]-12], r2=s3.filter((_,i)=>i!==k2); ev.push({t,d:dur,n:r2,v},{t,d:dur,n:l2,v:v*.9,h:'l'}); fr.push({t,rh:r2,lh:l2,beat}); } else { ev.push({t,d:dur,n:c,v}); fr.push({t,rh:c,lh,beat}); } };
+      /* Neighboring Chord Couples: beats 1 to 3 the chord then its neighbour, beat 4 the chord as a quarter note.
+         Sixth Diminished: four beats, each the sixth chord then the diminished seventh chord (up: the one above; down: the one below) */
+      const beats=six?(d==='up'?[[1,1],[2,2],[3,3],[4,4]]:[[4,3],[3,2],[2,1],[1,0]]):(d==='up'?[[0,0],[1,1],[2,2]]:[[3,2],[2,1],[1,0]]);
+      beats.forEach(([xi,yi],k)=>{ const A=sInv(X,xi), B=sInv(Y,yi); for(let j=0;j<2;j++){ const c=j?B:A; put(b0+k+j/2,.48,c,j?.6:.66,b0+k); }
+        words[b0+k]=(d==='up'?'Ascending':'Descending')+' · '+sChord(A)+', then '+sChord(B)+' (eighth notes)'; });
+      if(!six){ const L=d==='up'?sInv(X,3):X; put(b0+3,.95,L,.7,b0+3); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; } });
     total=16; }
   else if(T.id==='back'){ let r=60+tr; const I=[r,r+4,r+7], A=sInv(I,v.rh), B=v.b3.map(i=>r+i); const sh=Math.max(...A,...B)>79?-12:0; const a=A.map(m=>m+sh), b=B.map(m=>m+sh), bass=[r-12+sh];
     for(let k=0;k<4;k++){ const b0=k*3;
@@ -1455,7 +1458,7 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
     total=12; }
   return {ev,fr,words,total,bpb:T.bpb}; }
 function syList(){ const T=syT(); if(!T.vars) return []; return st.svar==='all'?T.vars.map((v,i)=>i):[Math.min(+st.svar||0,T.vars.length-1)]; }
-function syShow(T,v,line){ $('#prLbl').textContent='Stylization practice · '+T.name; $('#prBig').textContent=v?syName(T,v):T.name; $('#prSub').textContent=line||(v?(T.id==='ncc'?v.s+' · 4 bars, one chord a bar'+(v.over?' · over '+syOver(false):''):syBackD(v)+' · 3/4'):''); }
+function syShow(T,v,line){ $('#prLbl').textContent='Stylization practice · '+T.name; $('#prBig').textContent=v?syName(T,v):T.name; $('#prSub').textContent=line||(v?(T.id==='sixdim'?v.s+' · each beat: the sixth chord, then the diminished seventh chord':T.id==='ncc'?v.s+' · 4 bars, one chord a bar'+(v.over?' · over '+syOver(false):''):syBackD(v)+' · 3/4'):''); }
 function syBackD(v){ const r=60+(st.str||0), I=[r,r+4,r+7]; return 'Beats 1 and 2: '+sNm(r)+' / '+sChord(sInv(I,v.rh))+' · Beat 3: '+sChord(v.b3.map(i=>r+i)); }
 function syChips(){ const box=$('#prChips'); box.textContent=''; const T=syT(); if(!T.vars) return;
   const mk=(lab,on,fn)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,lab)); b.setAttribute('aria-pressed',String(on)); b.onclick=fn; box.appendChild(b); };
@@ -1481,13 +1484,13 @@ function syTrStrip(){ const strip=el('div','p-ch p-bch p-trs'); strip.dataset.ch
   col.appendChild(el('p','p-cvhelp','Transposing the chord moves its neighbouring chord too.')); return strip; }
 function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&&st.svar!=='all'&&+st.svar>=T.vars.length) st.svar=0;
   const box=el('div','p-ccon'); ctl.appendChild(box); const strips=el('div','p-mix p-cmix'); box.appendChild(strips);
-  const ncc=T.id==='ncc', v=T.vars&&st.svar!=='all'?T.vars[+st.svar]:null, overOn=ncc&&(st.svar==='all'||(v&&v.over));
+  const ncc=T.id==='ncc', mv=ncc||T.id==='sixdim', v=T.vars&&st.svar!=='all'?T.vars[+st.svar]:null, overOn=ncc&&(st.svar==='all'||(v&&v.over));
   strips.append(
     cStrip('Technique',STY.map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true}),
     cStrip('Variety',(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[]),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:ncc,off:()=>!T.vars,offWhy:'Coming soon'}),
     cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>[st.sover||'f7'],k=>{ st.sover=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'For the varieties played over F dominant 7 (no 5) or C minor sixth'}),
-    cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!ncc,offWhy:'For Neighboring Chord Couples'}),
-    cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The middle tone of each chord drops an octave into the left hand; the right hand plays the other two']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!ncc,offWhy:'For Neighboring Chord Couples'}),
+    cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Neighboring Chord Couples and Sixth Diminished Movements'}),
+    cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Neighboring Chord Couples and Sixth Diminished Movements'}),
     syTrStrip());
   { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
   const r2=el('div','e-ctl p-ctr'); transport(r2); { const dt=$('#prDisp .pd-top'); if(dt){ r2.classList.add('p-ctop'); dt.appendChild(r2); } else box.appendChild(r2); }
@@ -1496,7 +1499,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   $('#prChips').textContent='';   /* the varieties are on the console (Variety) */ const v0=T.vars?T.vars[syList()[0]]:null; syShow(T,v0);
   if(!T.vars){ steps=[]; cur=-1; $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; drawKb(); const pb=$('#prPlay'); if(pb){ pb.disabled=true; pb.style.opacity='.45'; } return; }
   const P=syPhrase(T,v0); steps=P.fr.slice(0,1).map(f=>({name:syName(T,v0),lh:f.lh,rh:f.rh,src:''})); cur=0; drawKb();
-  $('#prMsg').textContent=T.id==='ncc'?'Beats 1 to 3: the chord, then its neighbour, as eighth notes. Beat 4: the chord as a quarter note.':'3/4. Loops by default; All varieties goes from one to the next.'; }
+  $('#prMsg').textContent=T.id==='sixdim'?'Every beat: two eighth notes, the sixth chord then the diminished seventh chord. Up one bar, then down.':T.id==='ncc'?'Beats 1 to 3: the chord, then its neighbour, as eighth notes. Beat 4: the chord as a quarter note.':'3/4. Loops by default; All varieties goes from one to the next.'; }
 function chordConsole(box){
   const strips=el('div','p-mix p-cmix'), cv=st.cmode==='canvas', vo=st.cmode==='voice'; box.appendChild(strips);
   strips.append(
