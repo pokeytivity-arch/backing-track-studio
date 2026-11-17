@@ -824,7 +824,7 @@ function render(){
   { const pk=$('#prPick'); if(pk) pk.hidden=false; }
   ov.querySelectorAll('.e-top .p-motop').forEach(x=>x.remove());
   clr(); const SC=window.SCALES, hand=$('#prHand'), cats=$('#prCats'), ctl=$('#prCtl'); { const top=$('#prRoom .e-top'); if(hand.parentNode!==top) top.insertBefore(hand,$('#prDots')); } ctl.textContent=''; cats.textContent=''; document.querySelectorAll('#prRoom .p-sels').forEach(n=>n.remove()); $('#prMsg').textContent='';
-  $('#prH').textContent=kind==='scales'?'Scale practice':'Chord practice'; ov.setAttribute('aria-label',$('#prH').textContent);
+  $('#prH').textContent=kind==='scales'?'Scale Practice':'Chord Practice'; ov.setAttribute('aria-label',$('#prH').textContent);
   ov.classList.toggle('p-ph',kind==='scales'&&MQM.matches);   /* phone: the room's title row folds into the first row of controls, so the console has room */
   if(kind==='scales'){
     hand.hidden=st.motion==='contrary'; seg(hand,HANDS,st.hand,k=>{ st.hand=k; save(); hand.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k))); loadScale(); render(); });

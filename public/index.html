@@ -2854,7 +2854,7 @@ function scaleChords(){
 }
 function setStudioMode(m){
   if(m===S.sm) return;
-  if(m==='scale'){ if(!S.scale){ toast('Open the Scale room and press Practice in Studio to bring a scale here.'); return; }
+  if(m==='scale'){ if(!S.scale){ toast('Open Scale Practice and press Practice in Studio to bring a scale here.'); return; }
     if(playing) stop(); S.chordBak={title:S.title,chords:S.chords,style:S.style,bpm:S.bpm,transpose:S.transpose,form:S.form,bassLine:S.bassLine,useHum:S.useHum}; S.sm='scale'; S.title=S.scale.title; }
   else { if(playing) stop(); S.sm='chord'; const b=S.chordBak; if(b){ S.title=b.title; S.chords=b.chords; S.transpose=b.transpose; S.form=b.form; S.bassLine=b.bassLine; S.useHum=b.useHum; $('chords').value=S.chords; } S.chordBak=null; }
   $('title').value=S.title; syncSm(); renderMix(); if(E) E.applyMix(S.mix,STYLES[S.style]); rebuild();
@@ -3084,13 +3084,13 @@ init();
 <script src="voicings.js?v=h1" defer></script>
 <script src="transcribe.js?v=4" defer></script>
 <script src="suite.js?v=15" defer></script>
-<script src="roles.js?v=9" defer></script>
+<script src="roles.js?v=10" defer></script>
 <script src="layout3.js?v=6" defer></script>
-<script src="class.js?v=z15" defer></script>
+<script src="class.js?v=z16" defer></script>
 <script src="progress.js?v=h1" defer></script>
 <script src="ear.js?v=zz16" defer></script>
 <script src="hands.js?v=69" defer></script>
-<script src="practice.js?v=j17" defer></script>
+<script src="practice.js?v=j18" defer></script>
 <script src="scale-library.js?v=5" defer></script>
 <script src="scales.js?v=12" defer></script>
 <script src="check.js?v=h1" defer></script>

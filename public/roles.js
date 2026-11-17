@@ -36,7 +36,7 @@ const SAMPLE_STUDENTS=[
   {n:'James M.',lv:'Intermediate',st:'3-day streak',last:'Yesterday',ok:true},
   {n:'Grace E.',lv:'Beginner',st:'No streak',last:'6 days ago',ok:false}];
 const REVIEW=[{n:'Ada O.',w:'sent a recording',t:'2-5-1 in all keys · Chords'},{n:'Tolu K.',w:'passed a playing check',t:'G major, 3+4 method · Scales'},{n:'James M.',w:'asked a question',t:'Hymn endings · Class'}];
-const ROOMS={chords:'Chords · Practice Arena',scales:'Scales · Practice Arena',ear:'Ear training · Practice Arena',hall:'Practice Arena',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Plan Builder',class:'Class'};
+const ROOMS={chords:'Chord Practice · Practice Arena',scales:'Scale Practice · Practice Arena',ear:'Ear training · Practice Arena',hall:'Practice Arena',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Plan Builder',class:'Class'};
 const DESTS={hall:['Practice Arena','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Plan Builder','A practice plan']};
 
 /* ---------- styles ---------- */
