@@ -283,6 +283,9 @@ async function account(request, env) {
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const newCode = () => { const a = crypto.getRandomValues(new Uint8Array(6)); return [...a].map(x => CODE_CHARS[x % CODE_CHARS.length]).join(''); };
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+/* a day of a practice plan: practice item ids (older plans) or session blocks {e: element, m: minutes, items, note} */
+const PEL = ['warmup', 'practice', 'rehearsal', 'breakdown', 'break', 'study', 'research', 'listening', 'ear', 'meditation'];
+const cleanDay = d => (Array.isArray(d) ? d : []).slice(0, 30).map(x => typeof x === 'string' ? clip(x, 24) : (x && typeof x === 'object' && PEL.includes(x.e)) ? { e: x.e, m: Math.max(0, Math.min(240, Math.round(+x.m || 0))), items: (Array.isArray(x.items) ? x.items : []).slice(0, 30).map(v => clip(v, 24)).filter(Boolean), note: clip(x.note, 200) } : null).filter(Boolean);
 let _env = null; const env_get = id => _env.LESSONS.get('acct:' + id, 'json');
 const putAcct = (id, a) => _env.LESSONS.put('acct:' + id, JSON.stringify(a));
 const who = (a, id) => (a.name || (a.email || '').split('@')[0] || 'Student');
@@ -376,7 +379,7 @@ async function teach(request, env, act) {
     await env.LESSONS.delete(id); return json({ ok: true }, 200);
   }
   /* ---------- practice plans: a teacher writes a week of scale/chord/progression ids for a student; a student can ask for one; the teacher can see the plan and the 90 Day Challenge progress ---------- */
-  const cleanWeek = w => (Array.isArray(w) ? w : []).slice(0, 7).concat([[], [], [], [], [], [], []]).slice(0, 7).map(d => (Array.isArray(d) ? d : []).slice(0, 30).map(x => clip(x, 24)).filter(Boolean));
+  const cleanWeek = w => (Array.isArray(w) ? w : []).slice(0, 7).concat([[], [], [], [], [], [], []]).slice(0, 7).map(cleanDay);
   if (act === 'plset') {
     if (!isT || !a.tcode) return json({ error: 'role' }, 403);
     const id = clip(b.id, 80); if (!(a.students || []).some(x => x.id === id && x.status === 'active')) return json({ error: 'none' }, 404);
@@ -522,7 +525,7 @@ const HANDLE = /^[a-z0-9]{3,30}$/;
 const cleanItems = (o) => { o = o && typeof o === 'object' ? o : {}; const L = (x, n) => (Array.isArray(x) ? x : []).slice(0, n);
   return { arena: L(o.arena, 40).map(x => ({ id: clip(x && x.id, 30), title: clip(x && x.title, 80), room: clip(x && x.room, 12), prog: clip(x && x.prog, 600), bpm: Math.max(0, Math.min(300, +(x && x.bpm) || 0)), key: clip(x && x.key, 4), type: clip(x && x.type, 30) })).filter(x => x.id && x.title),
     studio: L(o.studio, 30).map(x => ({ id: clip(x && x.id, 30), title: clip(x && x.title, 80), chords: clip(x && x.chords, 3000), style: clip(x && x.style, 30), bpm: Math.max(0, Math.min(300, +(x && x.bpm) || 0)), transpose: Math.max(-12, Math.min(12, +(x && x.transpose) || 0)), meter: clip(x && x.meter, 6) })).filter(x => x.id && x.title),
-    plans: L(o.plans, 20).map(x => ({ id: clip(x && x.id, 30), name: clip(x && x.name, 60), week: (Array.isArray(x && x.week) ? x.week : []).slice(0, 7).map(d => (Array.isArray(d) ? d : []).slice(0, 30).map(v => clip(v, 24)).filter(Boolean)) })).filter(x => x.id && x.name) }; };
+    plans: L(o.plans, 20).map(x => ({ id: clip(x && x.id, 30), name: clip(x && x.name, 60), week: (Array.isArray(x && x.week) ? x.week : []).slice(0, 7).map(cleanDay) })).filter(x => x.id && x.name) }; };
 const cleanSpaces = (L) => (Array.isArray(L) ? L : []).slice(0, 16).map(x => ({ id: clip(x && x.id, 30), k: clip(x && x.k, 12), name: clip(x && x.name, 40), blurb: clip(x && x.blurb, 200), go: clip(x && x.go, 12) })).filter(x => x.id && x.name);
 async function suiteOf(env, handle) {
   let h = handle, owner = await env.LESSONS.get('su:h:' + h), moved = null;
