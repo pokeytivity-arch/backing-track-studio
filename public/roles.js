@@ -298,7 +298,7 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
   const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':'Class Area';
   const w=r.querySelector('.cl-welcome'); if(w){ if(!w.dataset.orig) w.dataset.orig=w.innerHTML;
     w.innerHTML=k==='hall'?'Welcome to the Practice Arena. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
-      :'Welcome to class today. From consultation sessions to meeting a teacher, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
+      :'Welcome to class today. From consultation sessions to meeting a '+(role()==='teacher'?'student':'teacher')+', this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
 const css2=el('style'); css2.textContent=`
 body[data-area=hall] .cl-box[data-k=chat],body[data-area=hall] .cl-box[data-k=meet]{display:none!important}
 body[data-area=class] .cl-box[data-k=ear],body[data-area=class] .cl-box[data-k=scales],body[data-area=class] .cl-box[data-k=chords]{display:none!important}
