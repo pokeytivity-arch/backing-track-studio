@@ -1,8 +1,8 @@
 /* roles.js: Teacher and Student on the suite's home page (pitch demo; everything is kept on this device).
    A switch at the top of the home page: Student | Teacher. Switching saves the choice and refreshes the page.
-   Teacher: your studio. Its spaces (Class, Studio, Training Center, Workshop Room, Practice Arena, and any you add),
+   Teacher: your studio. Its spaces (Class, Studio, Training Center, Workshop Room, Practice Plan Builder, and any you add),
             invite students, students, assignments and what is waiting for review.
-   Student: the suite's Class, Studio, Studio+ and Practice Arena, plus teachers to subscribe to. Once you join a teacher,
+   Student: the suite's Class, Studio, Studio+ and Practice Plan Builder, plus teachers to subscribe to. Once you join a teacher,
             their studio and their assignments show here, and an assignment opens straight into the right room.
    "We help both students and teachers succeed." */
 (function(){
@@ -19,8 +19,8 @@ const DEF_SPACES=[
   {id:'class',k:'class',name:'Class',blurb:'Consultation with HearandPlay beside you, and meet your students. Send them practice tracks.',go:'class'},
   {id:'hall',k:'hall',name:'Practice Hall',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
   {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
-  {id:'arena',k:'challenge',name:'Practice Arena',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
-const spaces=()=>{ const s=jget(K.sp,null); return Array.isArray(s)&&s.length?s:DEF_SPACES.map(x=>Object.assign({},x)); };
+  {id:'arena',k:'challenge',name:'Practice Plan Builder',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
+const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
 const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
 const code=()=>{ let c=null; try{ c=localStorage.getItem(K.code); }catch(_){} if(!c){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c='HP-T-'; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; try{ localStorage.setItem(K.code,c); }catch(_){} } return c; };
 const ME='me';   /* the studio made on this device, as a teacher students can join */
@@ -36,8 +36,8 @@ const SAMPLE_STUDENTS=[
   {n:'James M.',lv:'Intermediate',st:'3-day streak',last:'Yesterday',ok:true},
   {n:'Grace E.',lv:'Beginner',st:'No streak',last:'6 days ago',ok:false}];
 const REVIEW=[{n:'Ada O.',w:'sent a recording',t:'2-5-1 in all keys · Chords'},{n:'Tolu K.',w:'passed a playing check',t:'G major, 3+4 method · Scales'},{n:'James M.',w:'asked a question',t:'Hymn endings · Class'}];
-const ROOMS={chords:'Chords · Practice Hall',scales:'Scales · Practice Hall',ear:'Ear training · Practice Hall',hall:'Practice Hall',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Arena',class:'Class'};
-const DESTS={hall:['Practice Hall','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Arena','A practice plan']};
+const ROOMS={chords:'Chords · Practice Hall',scales:'Scales · Practice Hall',ear:'Ear training · Practice Hall',hall:'Practice Hall',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Plan Builder',class:'Class'};
+const DESTS={hall:['Practice Hall','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Plan Builder','A practice plan']};
 
 /* ---------- styles ---------- */
 const css=el('style'); css.textContent=`
@@ -172,7 +172,7 @@ function assignBar(){ let b=document.getElementById('rlAssign'); if(b) b.remove(
   b.append(t,go,cx); document.body.appendChild(b); }
 function endAssign(){ try{ sessionStorage.removeItem('ps-assign'); }catch(_){} const b=document.getElementById('rlAssign'); if(b) b.remove(); render(); }
 /* Meet a teacher (from the Class) */
-function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio and practice arena, and the work they assign you.'); const box=el('div'); b.appendChild(box);
+function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
   const draw=()=>{ box.textContent=''; box.appendChild(teacherGrid(draw)); }; draw(); }
 /* ---------- teacher view ---------- */
 function spaceCard(sp,editing,on){ const b=el('button','dcard'); b.type='button'; b.dataset.k=sp.k;
@@ -246,7 +246,7 @@ function studentView(root){
       const un=el('button','rl-btn','Unsubscribe'); un.type='button'; un.style.alignSelf='flex-start'; un.onclick=()=>{ jset(K.subs,subs.filter(x=>x!==t.id)); render(); }; c.appendChild(un);
       s.appendChild(c); });
     root.appendChild(s); }
-  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice hall, studio and practice arena, and the work they assign you. Until then, the whole suite is yours.</p>';
+  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice hall, studio and practice plan builder, and the work they assign you. Until then, the whole suite is yours.</p>';
   s.appendChild(teacherGrid(render));
   const jf=el('div'); jf.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center'; jf.appendChild(el('b',null,'Have an invite code?'));
   const ji=el('input','rl-in'); ji.placeholder='HP-T-XXXX'; ji.setAttribute('aria-label','Invite code'); ji.style.cssText='text-transform:uppercase;font-family:ui-monospace,Menlo,monospace;width:170px';
@@ -255,7 +255,7 @@ function studentView(root){
 function teacherGrid(after){ const subs=jget(K.subs,[])||[]; const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s studio on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
   const g=el('div','rl-grid'); T.forEach(t=>{ const c=el('div','rl-card'); const joined=subs.includes(t.id);
     c.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span class="rl-av" style="background:'+t.color+'">'+esc(t.ini)+'</span><div style="flex:1;min-width:0"><b style="font-size:17px">'+esc(t.name)+'</b>'+(t.id===ME?'':'<span class="rl-demo">Sample</span>')+'<div style="color:#b4bdd0;font-size:13px">'+esc(t.spec)+(t.students?' · '+esc(t.students):'')+'</div></div></div>';
-    const ch=el('div','rl-chips'); ['Class','Practice Hall','Studio','Practice Arena'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
+    const ch=el('div','rl-chips'); ['Class','Practice Hall','Studio','Practice Plan Builder'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
     const b=el('button','rl-btn'+(joined?' ok':' pri'),joined?'Subscribed ✓':'Subscribe'); b.type='button'; b.onclick=()=>{ let S=jget(K.subs,[])||[]; if(S.includes(t.id)) S=S.filter(x=>x!==t.id); else { S.push(t.id); toast('You joined '+t.name+'.'); } jset(K.subs,S); render(); if(after&&after!==render) after(); }; c.appendChild(b); g.appendChild(c); });
   return g; }
 function joinCode(v){ v=String(v||'').trim().toUpperCase(); let c=null; try{ c=localStorage.getItem(K.code); }catch(_){}

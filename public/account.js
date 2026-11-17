@@ -50,7 +50,7 @@ function render(){
    +'<h2>Sign in</h2><div class="box" id="acAuth"></div>'
    +'<h2>Teachers &amp; assignments</h2><div class="box" id="acTeach"></div>'
    +'<h2>Your progress</h2><div id="acProg"></div>'
-   +'<h2>Keep going</h2><div class="box"><button class="btn pri" id="acPro">⭐ Get a professional practice plan</button><button class="btn" id="acCh">Practice Arena</button></div>';
+   +'<h2>Keep going</h2><div class="box"><button class="btn pri" id="acPro">⭐ Get a professional practice plan</button><button class="btn" id="acCh">Practice Plan Builder</button></div>';
   authBox(w.querySelector('#acAuth')); { const th=w.querySelector('#acTeach'); try{ if(window.ASSIGN) ASSIGN.mount(th); if(window.AUTH) AUTH.refresh().then(()=>{ if(room.classList.contains('on')&&document.body.contains(th)) ASSIGN.mount(th); }); }catch(_){} }
   const big=avatar(); big.classList.add('big'); big.onclick=()=>w.querySelector('#acFile').click(); w.querySelector('#acBig').appendChild(big);
   const nm=w.querySelector('#acName'); nm.value=get(NK); nm.oninput=()=>{ set(NK,nm.value.trim()); refresh(); }; nm.onchange=()=>{ try{ if(window.AUTH&&AUTH.user()) AUTH.api('PUT',{name:nm.value.trim()}); }catch(_){} };

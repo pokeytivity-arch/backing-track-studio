@@ -6,7 +6,7 @@ const STEPS=[
  {sel:'.dcard[data-k=class]',t:'Class',b:'Consult HearandPlay about chords, scales, hymns and ear training, and meet a teacher.'},
  {sel:'.dcard[data-k=hall]',t:'Practice Hall',b:'Ear training, scales and chords, on the keyboard with the fingering and the hands.'},
  {sel:'.dcard[data-k=studio]',t:'Studio',b:'Two studios in one: the Backing Track Studio, to play along with a full band, and the Transcription Studio, to turn any recording into notes you can practise.'},
- {sel:'.dcard[data-k=challenge]',t:'Practice Arena',b:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.'},
+ {sel:'.dcard[data-k=challenge]',t:'Practice Plan Builder',b:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.'},
  {sel:'#hubTop .thbtn',t:'Theme',b:'Change the look of the whole suite. Five themes to choose from.'},
  {sel:'#hubTop .ac-av',t:'Your account',b:'Tap your photo to open your Account: your photo, name, streak and progress.'},
  {t:'Moving around',b:'Inside any room, the arrow at the top left takes you back to where you came from, and the room name at the top opens a menu to jump anywhere.'}

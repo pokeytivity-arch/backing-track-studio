@@ -12,7 +12,7 @@ const DEST={
   studio:{name:'Backing Track Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Transcription Studio',icon:'🎧',blurb:'Turn any recording into notes you can see and practise on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
-  challenge:{name:'Practice Arena',icon:'🏆',blurb:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.',panel:null}
+  challenge:{name:'Practice Plan Builder',icon:'🏆',blurb:'Practice plans that keep you going every day. The 90 Day Challenge is one of them: check in daily and earn your certificate.',panel:null}
 };
 const ORDER=['class','hall','studio','challenge'];
 /* the Studio holds two studios: the Backing Track Studio (studio) and the Transcription Studio (plus). Its card on the home page opens a choice of the two. */
