@@ -66,7 +66,7 @@ const css=el('style'); css.textContent=`
 #suiteHub .rl-stat{border-radius:16px;background:rgba(10,14,28,.78);border:1px solid rgba(255,255,255,.16);padding:14px 18px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 #suiteHub .rl-stat span{display:block;font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#b4bdd0} #suiteHub .rl-stat b{display:block;font:900 32px var(--body);margin-top:4px}
 #suiteHub .rl-dot{width:9px;height:9px;border-radius:50%;flex:none} #suiteHub .rl-led{background:#2f9e44;box-shadow:0 0 6px #3dff6e} #suiteHub .rl-warn{background:#ff6b6b;box-shadow:0 0 6px #ff6b6b}
-#suiteHub .rl-tbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:-10px 0 22px}
+#suiteHub .rl-tbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:center;margin:-10px 0 22px} #suiteHub .rl-tbar .rl-mut{color:#cfd6e6;font-size:13.5px;text-shadow:0 1px 6px rgba(0,0,0,.7)}
 #suiteHub[data-role=teacher]:not([data-view=studios]) #psCards{display:none}
 #suiteHub .rl-cards .dcard{min-height:330px}
 #suiteHub .rl-cards .dcard[data-k=hall]{--c1:#3dd9c4;--c2:#0f8a7a;--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--pp:center 40%}
@@ -229,10 +229,11 @@ function teacherView(root){ const in_=root;
   const sub=document.querySelector('#suiteHub .in .sub'); if(sub){ sub.innerHTML='<span>All your teaching spaces in one place</span><i>|</i><span>Invite your students</span><i>|</i><span>Assign work and follow their progress</span>'; }
   const bar=el('div','rl-tbar'); const rn=el('button','rl-btn','Rename my studio'); rn.type='button';
   rn.onclick=()=>{ const b=panel('Rename your studio'); const f=el('div','rl-f'); const l=el('label',null,'<span>Studio name</span>'), i=el('input','rl-in'); i.value=studioName(); l.appendChild(i); f.appendChild(l); b.appendChild(f); const ok=el('button','rl-btn pri','Save'); ok.type='button'; ok.onclick=()=>{ try{ localStorage.setItem(K.name,i.value.trim()||'My HearandPlay Studio'); }catch(_){} closePanel(); render(); }; b.appendChild(ok); i.focus(); i.select(); };
-  const ed=el('button','rl-btn'+(editing?' pri':''),editing?'Done customizing':'Customize spaces'); ed.type='button'; ed.onclick=()=>{ editing=!editing; render(); };
+  /* one Customize button: it opens editing for the spaces and the studio's name */
+  const ed=el('button','rl-btn'+(editing?' pri':''),editing?'Done':'Customize'); ed.type='button'; ed.setAttribute('aria-pressed',String(editing)); ed.onclick=()=>{ editing=!editing; render(); };
   const as=el('button','rl-btn pri','+ New assignment'); as.type='button'; as.onclick=assignPanel;
   const db=el('button','rl-btn','Dashboard ↓'); db.type='button'; db.onclick=()=>{ const d=document.getElementById('rlDash'); if(d) d.scrollIntoView({behavior:'smooth',block:'start'}); };
-  bar.append(as,db,ed,rn); in_.appendChild(bar);
+  void as; void db; bar.append(ed); if(editing){ rn.textContent='Rename my studio'; bar.append(rn); bar.appendChild(el('span','rl-mut','Rename or remove a space on its card, add one with Add a space.')); } in_.appendChild(bar);
   /* the spaces */
   const S=spaces(), cards=el('div','cards rl-cards');
   const on={ rename(sp){ const b=panel('Rename '+sp.name); const f=el('div','rl-f'); const l=el('label',null,'<span>Name</span>'), i=el('input','rl-in'); i.value=sp.name; l.appendChild(i); const l2=el('label',null,'<span>Description</span>'), i2=el('input','rl-in'); i2.value=sp.blurb; l2.appendChild(i2); f.append(l,l2); b.appendChild(f);
@@ -244,7 +245,7 @@ function teacherView(root){ const in_=root;
       const ok=el('button','rl-btn pri','Add space'); ok.type='button'; ok.onclick=()=>{ const n=i.value.trim(); if(!n){ i.focus(); return; } const A=spaces(); A.push({id:'c'+Date.now(),k:'custom',name:n,blurb:i2.value.trim()||'Your own space.'}); jset(K.sp,A); closePanel(); render(); }; b.appendChild(ok); i.focus(); };
     cards.appendChild(a); }
   in_.appendChild(cards);
-  dashboard(in_); }
+  }
 /* the dashboard on a page of its own (from the teacher's Class) */
 function dashPage(){ closeDash(); const p=el('div'); p.id='rlDashPage'; p.setAttribute('role','dialog'); p.setAttribute('aria-label','Teacher dashboard');
   const top=el('div','rl-dptop'); const bk=el('button','rl-btn','← Back to the Class'); bk.type='button'; bk.onclick=closeDash; top.appendChild(bk);
