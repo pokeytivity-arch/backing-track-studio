@@ -1448,7 +1448,9 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
       const L=d==='up'?sInv(X,3):X; put(b0+3,.95,L,.7,b0+3); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
     total=16; }
   else if(T.id==='back'){ let r=60+tr; const I=[r,r+4,r+7], A=sInv(I,v.rh), B=v.b3.map(i=>r+i); const sh=Math.max(...A,...B)>79?-12:0; const a=A.map(m=>m+sh), b=B.map(m=>m+sh), bass=[r-12+sh];
-    for(let k=0;k<4;k++){ const b0=k*3; ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});   /* the left hand holds the whole bar */
+    for(let k=0;k<4;k++){ const b0=k*3;
+      if(k===3){ /* bar 4: the chord, held for the whole bar */ ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:2.9,n:a,v:.7}); fr.push({t:b0,rh:a,lh:bass,beat:b0}); words[b0]=words[b0+1]=words[b0+2]='Bar 4 · '+sNm(r)+' / '+sChord(a)+' held for the whole bar'; continue; }
+      ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});   /* the left hand holds the whole bar */
       fr.push({t:b0,rh:a,lh:bass,beat:b0},{t:b0+2,rh:b,lh:bass,beat:b0+2}); words[b0]=words[b0+1]='Beats 1 and 2 · '+sNm(r)+' / '+sChord(a); words[b0+2]='Beat 3 · '+sNm(r)+' / '+sChord(b); }
     total=12; }
   return {ev,fr,words,total,bpb:T.bpb}; }
