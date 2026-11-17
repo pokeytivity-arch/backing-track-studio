@@ -1446,8 +1446,8 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
       const L=d==='up'?sInv(X,3):X; ev.push({t:b0+3,d:.95,n:L,v:.7}); fr.push({t:b0+3,rh:L,lh,beat:b0+3}); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
     total=16; }
   else if(T.id==='back'){ let r=60+tr; const I=[r,r+4,r+7], A=sInv(I,v.rh), B=v.b3.map(i=>r+i); const sh=Math.max(...A,...B)>79?-12:0; const a=A.map(m=>m+sh), b=B.map(m=>m+sh), bass=[r-12+sh];
-    for(let k=0;k<4;k++){ const b0=k*3; ev.push({t:b0,d:1.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});
-      fr.push({t:b0,rh:a,lh:bass,beat:b0},{t:b0+2,rh:b,lh:[],beat:b0+2}); words[b0]=words[b0+1]='Beats 1 and 2 · '+sNm(r)+' / '+sChord(a); words[b0+2]='Beat 3 · '+sChord(b); }
+    for(let k=0;k<4;k++){ const b0=k*3; ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});   /* the left hand holds the whole bar */
+      fr.push({t:b0,rh:a,lh:bass,beat:b0},{t:b0+2,rh:b,lh:bass,beat:b0+2}); words[b0]=words[b0+1]='Beats 1 and 2 · '+sNm(r)+' / '+sChord(a); words[b0+2]='Beat 3 · '+sNm(r)+' / '+sChord(b); }
     total=12; }
   return {ev,fr,words,total,bpb:T.bpb}; }
 function syList(){ const T=syT(); if(!T.vars) return []; return st.svar==='all'?T.vars.map((v,i)=>i):[Math.min(+st.svar||0,T.vars.length-1)]; }
