@@ -16,11 +16,11 @@ const el=(t,c,h)=>{ const e=document.createElement(t); if(c) e.className=c; if(h
 
 /* ---------- the teacher's studio (on this device) ---------- */
 const DEF_SPACES=[
-  {id:'class',k:'class',name:'Dashboard',blurb:'Your teacher dashboard, consultation with HearandPlay, and meet a student.',go:'class'},
+  {id:'class',k:'class',name:'Dashboard',blurb:'Your teacher dashboard, and meet a student.',go:'class'},
   {id:'hall',k:'hall',name:'Practice Arena',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
   {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
   {id:'arena',k:'challenge',name:'Practice Plan Builder',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
-const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; if(x.id==='class'&&x.name==='Class'){ x.name='Dashboard'; x.blurb='Your teacher dashboard, consultation with HearandPlay, and meet a student.'; } }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
+const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; if(x.id==='class'&&x.name==='Class'){ x.name='Dashboard'; x.blurb='Your teacher dashboard, and meet a student.'; } }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
 const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
 const code=()=>{ let c=null; try{ c=localStorage.getItem(K.code); }catch(_){} if(!c){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c='HP-T-'; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; try{ localStorage.setItem(K.code,c); }catch(_){} } return c; };
 const ME='me';   /* the studio made on this device, as a teacher students can join */
@@ -368,7 +368,7 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
       d.innerHTML='<div class="ph rl-dph" aria-hidden="true"><svg viewBox="0 0 320 170" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="rlg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3dff6e"/><stop offset="1" stop-color="#13a48f"/></linearGradient><linearGradient id="rlg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#e0a800"/></linearGradient></defs><rect width="320" height="170" fill="#121a2e"/><g fill="#1c2540"><rect x="18" y="18" width="88" height="44" rx="8"/><rect x="116" y="18" width="88" height="44" rx="8"/><rect x="214" y="18" width="88" height="44" rx="8"/><rect x="18" y="72" width="186" height="84" rx="8"/><rect x="214" y="72" width="88" height="84" rx="8"/></g><g font-family="Inter,system-ui,sans-serif" font-weight="900"><text x="30" y="52" font-size="22" fill="#fff">24</text><text x="128" y="52" font-size="22" fill="#ffd43b">7</text><text x="226" y="52" font-size="22" fill="#8ce99a">6</text></g><g><rect x="32" y="128" width="16" height="20" rx="3" fill="url(#rlg1)"/><rect x="56" y="110" width="16" height="38" rx="3" fill="url(#rlg1)"/><rect x="80" y="118" width="16" height="30" rx="3" fill="url(#rlg2)"/><rect x="104" y="96" width="16" height="52" rx="3" fill="url(#rlg1)"/><rect x="128" y="104" width="16" height="44" rx="3" fill="url(#rlg1)"/><rect x="152" y="86" width="16" height="62" rx="3" fill="url(#rlg2)"/><rect x="176" y="92" width="16" height="56" rx="3" fill="url(#rlg1)"/></g><g fill="#2b3550"><rect x="226" y="86" width="64" height="8" rx="4"/><rect x="226" y="106" width="64" height="8" rx="4"/><rect x="226" y="126" width="64" height="8" rx="4"/></g><g><rect x="226" y="86" width="46" height="8" rx="4" fill="#3dff6e"/><rect x="226" y="106" width="34" height="8" rx="4" fill="#3dff6e"/><rect x="226" y="126" width="18" height="8" rx="4" fill="#ffd43b"/></g></svg></div><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><rect x="7" y="26" width="7" height="14" rx="2" fill="#fff"/><rect x="20" y="16" width="7" height="24" rx="2" fill="#fff"/><rect x="33" y="8" width="7" height="32" rx="2" fill="#fff"/></svg></i><b>Teacher dashboard</b><span>Your students, assignments, reviews and invite code at a glance.</span><em class="go">Open →</em></div>';
       d.setAttribute('aria-label','Teacher dashboard'); d.onclick=dashPage; four.insertBefore(d,four.querySelector('[data-k=meet]')||null); }
     if(d&&!T){ d.remove(); d=null; }
-    if(four) four.classList.toggle('rl-3',!!d); }
+    if(four) four.classList.remove('rl-3'); }   /* the teacher's Dashboard: no Consultation, so two cards */
   { const m=four&&four.querySelector('[data-k=meet]'); if(m){ const T=role()==='teacher';   /* a teacher meets students, a student meets teachers */
       m.querySelector('.tx b').textContent=T?'Meet a student':'Meet a teacher';
       m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your studio.':'Find a teacher, subscribe, and learn with them in the suite.';
@@ -377,8 +377,9 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
   const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':(role()==='teacher'?'Dashboard':'Class Area');
   const w=r.querySelector('.cl-welcome'); if(w){ if(!w.dataset.orig) w.dataset.orig=w.innerHTML;
     w.innerHTML=k==='hall'?'Welcome to the Practice Arena. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
-      :(role()==='teacher'?'Welcome to your dashboard today. From consultation sessions to meeting a student, this is':'Welcome to class today. From consultation sessions to meeting a teacher, this is')+' a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
+      :(role()==='teacher'?'Welcome to your dashboard today. From your teacher dashboard to meeting a student, this is':'Welcome to class today. From consultation sessions to meeting a teacher, this is')+' a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
 const css2=el('style'); css2.textContent=`
+body[data-role=teacher][data-area=class] .cl-box[data-k=chat]{display:none!important}
 body[data-area=class] .cl-four.rl-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-width:1280px}
 @media(max-width:900px){ body[data-area=class] .cl-four.rl-3{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
 body[data-area=hall] .cl-box[data-k=dash]{display:none!important}
@@ -409,7 +410,8 @@ function myProgressions(){ let st={}, banks=[]; try{ st=JSON.parse(localStorage.
   const b=panel('Your chord progressions','Everything saved in this browser. Press Copy, then paste it into your chat with Claude.'); const t=el('textarea'); t.value=L.join('\n'); t.readOnly=true; t.style.cssText='width:100%;min-height:340px;font:600 13px/1.5 ui-monospace,Menlo,monospace'; b.appendChild(t);
   const c=el('button','rl-btn pri','Copy'); c.type='button'; c.style.marginTop='12px'; c.onclick=()=>{ t.select(); let ok=false; try{ navigator.clipboard.writeText(t.value); ok=true; }catch(_){} try{ ok=document.execCommand('copy')||ok; }catch(_){} toast(ok?'Copied. Paste it into your chat with Claude.':'Select all the text and copy it.'); }; b.appendChild(c); }
 try{ if(/[?&#]myprogressions\b/.test(location.search+location.hash)) setTimeout(myProgressions,1500); }catch(_){}
-try{ if(role()==='teacher'&&window.SUITE&&SUITE.DEST&&SUITE.DEST.class){ SUITE.DEST.class.name='Dashboard'; SUITE.DEST.class.blurb='Your teacher dashboard, consultation with HearandPlay, and meet a student.'; } }catch(_){}
+try{ document.body.dataset.role=role(); }catch(_){}
+try{ if(role()==='teacher'&&window.SUITE&&SUITE.DEST&&SUITE.DEST.class){ SUITE.DEST.class.name='Dashboard'; SUITE.DEST.class.blurb='Your teacher dashboard, and meet a student.'; } }catch(_){}
 window.PSROLE={hub:render,role,area,myProgressions,closeDash,dashIcon:DASHICON};
 { const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) render(); }
 })();
