@@ -55,6 +55,7 @@ function plus(){ if(txDone) return; const card=$('txCard'), top=card&&card.query
   /* the display and the keyboard are one: the coloured notes fall straight into the keys */
   const dp=mk('txDispP','Display and keyboard'), cp=mk('txConP','Console');
   top.parentNode.insertBefore(dp,top); const db=dp.querySelector('.ep-body'); db.append(top); if(msg) db.append(msg); db.append(stg); if(tr) db.append(tr);
+  { const vs=$('txViewSeg'), x=dp.querySelector('.ep-x'); if(vs&&x){ vs.classList.add('tx3-view'); x.appendChild(vs); } }   /* New / Classic display switch, in the Display header */
   dp.after(cp); const cb=cp.querySelector('.ep-body'); const seg=$('txKbSeg');
   if(seg){ const r=el('div','tx3-kb'); r.appendChild(el('span','s3-t','Keyboard')); r.appendChild(seg); cb.appendChild(r); }
   menu.classList.add('tx3'); menu.setAttribute('aria-hidden','false'); cb.appendChild(menu);

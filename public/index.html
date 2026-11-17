@@ -626,6 +626,14 @@ audio{width:100%}
         .tx .txstage{border-radius:12px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.35)}
         .tx .txstage canvas{border-radius:0;background:#000}
         .tx .txstage + .txrow{display:none}
+        .tx .txstage.classic{border-radius:10px;background:transparent;box-shadow:none;overflow:visible}
+        .tx .txstage.classic .txbar{display:none}
+        .tx .txstage.classic + .txrow{display:flex}
+        .tx .txstage.classic canvas{border-radius:10px;background:var(--k0d0b07,#0c1222)}
+        .tx .txstage.classic .txempty{top:0}
+        .tx #txViewSeg{margin-right:2px}
+        @media(max-width:560px){#txDispP .ep-h>b{font-size:0!important;letter-spacing:0}#txDispP .ep-h>b:after{content:'Display';font-size:11px;letter-spacing:.12em}.tx .txkb.tx3-view button{padding:4px 9px}}
+        .tx .txkb.tx3-view{border-color:rgba(61,255,110,.35);margin-right:6px}.tx .txkb.tx3-view button{min-height:28px;padding:4px 12px;font-size:12px;color:#e8ecf5}.tx .txkb.tx3-view button[aria-pressed=true]{color:var(--hi-ink,#151b28)}
         .tx .txbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;height:46px;padding:0 10px;background:#1d1d1f;color:#f2f2f4;user-select:none;-webkit-user-select:none}
         .tx .txbar .tbl,.tx .txbar .tbr{display:flex;align-items:center;gap:4px;min-width:0}
         .tx .txbar button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:36px;height:36px;padding:0 6px;border:0;border-radius:10px;background:transparent;color:#f2f2f4;cursor:pointer}
@@ -687,7 +695,7 @@ audio{width:100%}
         .tx .stpv{min-width:34px;display:inline-block}
         </style>
         <div class="txtop"><button class="btn" id="txRoomBack" type="button" aria-label="Back" title="Back" onclick="window.SUITE&&SUITE.back()">←</button><button class="btn" id="txMenuBtn" type="button" aria-label="Open the Transcription Studio menu" aria-expanded="false" title="Menu">☰</button>
-<div id="txTitle"></div><span class="txkb" id="txKbSeg" role="group" aria-label="Keyboard size"><button type="button" data-k="88">88</button><button type="button" data-k="76">76</button><button type="button" data-k="61">61</button><button type="button" data-k="0">Fit</button></span></div>
+<div id="txTitle"></div><span class="txkb" id="txViewSeg" role="group" aria-label="Display" title="Compare the new display with the previous one"><button type="button" data-v="new">New</button><button type="button" data-v="classic">Classic</button></span><span class="txkb" id="txKbSeg" role="group" aria-label="Keyboard size"><button type="button" data-k="88">88</button><button type="button" data-k="76">76</button><button type="button" data-k="61">61</button><button type="button" data-k="0">Fit</button></span></div>
         <p class="help" id="txMsg" aria-live="polite"></p>
         <div class="txstage"><canvas id="txCanvas" aria-label="Notes falling onto a keyboard"></canvas>
           <div class="txempty" id="txEmpty"><b>Bring in a recording</b><span>Turn any audio or video into notes you can see and practice.</span><button class="btn pri" id="txQFile" type="button">Upload file</button><button class="btn rec" id="txQRec" type="button">● Record with the microphone</button><small>Or use the Console below for more.</small></div></div>
@@ -3109,10 +3117,10 @@ init();
 <script src="auth.js?v=h1" defer></script>
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
-<script src="transcribe.js?v=7" defer></script>
+<script src="transcribe.js?v=8" defer></script>
 <script src="suite.js?v=17" defer></script>
 <script src="roles.js?v=27" defer></script>
-<script src="layout3.js?v=6" defer></script>
+<script src="layout3.js?v=7" defer></script>
 <script src="class.js?v=z16" defer></script>
 <script src="progress.js?v=h1" defer></script>
 <script src="ear.js?v=zz16" defer></script>
