@@ -220,6 +220,47 @@ function poseThumbs(h, d, s) {
   h.root.updateMatrixWorld(true);
 }
 
+
+/* knuckle crack (on Pause), seen from the camera above: the hands come together, the fingers lace together, the joined hands turn the palms
+   away and push out, the knuckles crack, and the hands come back. Times in ms from the start. */
+const CR = { t0: 0, cx: 0, az: 0, pops: 0 };
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
+let crackAC = null;
+function crackSound() { try { const AC = window.AudioContext || window.webkitAudioContext; crackAC = crackAC || new AC(); const ac = crackAC; if (ac.state === 'suspended') ac.resume();
+  const len = Math.floor(ac.sampleRate * .03), b = ac.createBuffer(1, len, ac.sampleRate), x = b.getChannelData(0); for (let i = 0; i < len; i++) x[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 6);
+  const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); src.buffer = b; f.type = 'bandpass'; f.frequency.value = 2400 + Math.random() * 900; f.Q.value = 1.4; g.gain.value = .5;
+  src.connect(f).connect(g).connect(ac.destination); src.start(); } catch (_) {} }
+function poseCrack(h, side, s, ms) {
+  const { rest, n, fwd } = h, dir = side === 'rh' ? 1 : -1, kw = G.kw;
+  const join = ease(ms / 500), turn = ease((ms - 500) / 400) * (1 - ease((ms - 1550) / 400)), apart = 1 - ease((ms - 1900) / 400);
+  /* palms down, fingers pointing at the other hand; then the pair turns about the line across the screen so the backs face the player */
+  const fwdW = new THREE.Vector3(-dir, 0, 0), nW0 = new THREE.Vector3(0, 1, 0), th = turn * Math.PI * .3;
+  const nW = new THREE.Vector3(0, Math.cos(th), Math.sin(th));
+  const Mm = new THREE.Matrix4().makeBasis(fwd.clone(), n.clone(), new THREE.Vector3().crossVectors(fwd, n)), Mw = new THREE.Matrix4().makeBasis(fwdW, nW, new THREE.Vector3().crossVectors(fwdW, nW));
+  const Rq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().multiplyMatrices(Mw, Mm.clone().transpose()));
+  void nW0;
+  /* where the hand goes: from beside the keys to the middle, the right hand's knuckles to the right of the middle, the left's to the left;
+     the left hand sits half a finger further back so the fingers slot between each other */
+  const home = h.home || { ax: CR.cx + dir * kw * 4, az: CR.az };
+  const tx = CR.cx + dir * kw * 1.7, tz = CR.az + kw * 2.2 + (side === 'lh' ? kw * .32 : 0) - turn * kw * 1.1;
+  const ax = home.ax + (tx - home.ax) * join * apart, az = home.az + (tz - home.az) * join * apart, ay = kw * (1.6 + 1.2 * join * apart);
+  h.root.quaternion.copy(Rq); h.root.scale.setScalar(s);
+  const a = h.anchor.clone().applyQuaternion(Rq).multiplyScalar(s); h.root.position.set(ax - a.x, ay - a.y, az - a.z);
+  /* fingers: straight while they lace, pushed back (the stretch) while the palms face away, with a flick for each crack */
+  let pop = 0; [1100, 1250, 1420].forEach(t => { const d = ms - t; if (d > 0 && d < 120) pop = Math.max(pop, 1 - d / 120); });
+  const bend = -.12 * turn - .3 * pop;
+  ['index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'].forEach(f => {
+    const names = [f + '-phalanx-proximal', f + '-phalanx-intermediate', f + '-phalanx-distal'];
+    const f0 = rest[f + '-tip'].p.clone().sub(rest[names[0]].p); f0.sub(n.clone().multiplyScalar(f0.dot(n))).normalize();
+    const axis = new THREE.Vector3().crossVectors(n, f0).normalize(), fl = ang => new THREE.Quaternion().setFromAxisAngle(axis, ang);
+    const a1 = .15 + bend, a2 = .12 + bend * .3;
+    setChainWorld(h, [f + '-metacarpal'].concat(names), [rest[f + '-metacarpal'].q.clone(), fl(a1).multiply(rest[names[0]].q), fl(a1 + a2).multiply(rest[names[1]].q), fl(a1 + a2 + a2 * .7).multiply(rest[names[2]].q)]);
+  });
+  setChainWorld(h, ['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal'], ['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal'].map(nm => rest[nm].q.clone()));
+  h.root.updateMatrixWorld(true);
+  if (side === 'rh') { const want = [1100, 1250, 1420].filter(t => ms >= t).length; while (CR.pops < want) { CR.pops++; crackSound(); } }
+}
+
 let loading = null;
 export function init(wrapEl) {
   if (!SKIN && !loading) { loading = fetch('hands3d/skin.json?v=1').then(r => r.json()).then(j => { SKIN = j; loading = null; return init(wrapEl); }); return loading; }
@@ -256,7 +297,12 @@ export function show(b) { if (canvas) canvas.style.display = b ? 'block' : 'none
 /* d: { side, on, ax, ay, az (knuckle anchor), th (wrist turn), tips: [[x, y, height] x5] } in screen px */
 export function pose(d) {
   const h = hands[d.side]; if (!h) return;
+  const cr = window.__crack, now = performance.now(), sc = G.kw / (KEY_MM / 1000) * HAND_SIZE;
+  if (cr && now - cr < 2400) {   /* knuckle crack: both hands show, even one that was resting */
+    if (CR.t0 !== cr) { CR.t0 = cr; CR.pops = 0; const hs = Object.values(hands).filter(x => x.home); CR.cx = hs.length ? hs.reduce((a, x) => a + x.home.ax, 0) / hs.length : G.W / 2; CR.az = hs.length ? hs.reduce((a, x) => a + x.home.az, 0) / hs.length : G.HP + G.KH * .6; }
+    h.root.visible = true; h.arm.visible = false; poseCrack(h, d.side, sc, now - cr); return; }
   h.root.visible = !!d.on; h.arm.visible = false; if (!d.on) return;
+  h.home = { ax: d.ax, az: d.az };
   if (window.__thumbsUp && performance.now() < window.__thumbsUp) { poseThumbs(h, d, G.kw / (KEY_MM / 1000) * HAND_SIZE); return; }
   h.lastD = { f: d.f, az: Math.round(d.az), az3: d.az3, ax: d.ax, tips: d.tips.map(t => t.map(v => Math.round(v))) }; poseHand(h, d, G.kw / (KEY_MM / 1000) * HAND_SIZE);
 }

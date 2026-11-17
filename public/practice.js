@@ -561,7 +561,7 @@ function playRhythm(){
       if(k>=ev.length&&beatK>=beats){ const due=st.kc&&KC.rep+1>=(st.reps||1)&&kcNextKey(true); if(due){ if(C.now()>at(beats,cyc)-0.02){ rkill(); repDone(); } return; } if(st.loop||st.kc){ doneOnce=true; KC.rep++; cyc++; k=0; beatK=0; } else if(C.now()>at(beats,cyc)-0.02){ rkill(); clr(); show(); cheer(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } };
     loop=setInterval(pump,40); timers.push(loop); timers.push({clear:()=>{ live.forEach(clearTimeout); live.clear(); rkill(); }}); pump();
     pauseFn=()=>{ if(!playing) return;
-      if(!paused){ paused=true; pausedAt=C.now(); live.forEach(clearTimeout); live.clear(); rkill();   /* silence what was already scheduled */
+      if(!paused){ paused=true; pausedAt=C.now(); live.forEach(clearTimeout); live.clear(); rkill(); try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){}   /* silence what was already scheduled; the hands crack their knuckles */
         /* rewind to the first note and click that had not sounded yet */
         if(k===0&&beatK===0&&cyc>0&&at(beats-1,cyc-1)+spb>pausedAt){ cyc--; k=ev.length; beatK=beats; }
         while(k>0&&at(ev[k-1].b,cyc)>=pausedAt) k--; while(beatK>-4&&at(beatK-1,cyc)>=pausedAt) beatK--;
@@ -604,7 +604,7 @@ function playAll(){
     go(); };
   /* Pause keeps the place in the scale and freezes the hands; Resume carries on with the time that was left on the current note */
   pauseFn=()=>{ if(!playing||waitL) return;
-    if(!paused){ paused=true; if(kind==='chords') killCh(); timers.forEach(clearTimeout); timers=[]; rem=Math.max(0,rem-(Date.now()-t0)); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); }catch(_){} }
+    if(!paused){ paused=true; if(kind==='chords') killCh(); timers.forEach(clearTimeout); timers=[]; rem=Math.max(0,rem-(Date.now()-t0)); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} }
     else { paused=false; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} sched(rem); }
     updPause(); };
   updPause();
@@ -1489,7 +1489,7 @@ function syChips(){ const box=$('#prChips'); box.textContent=''; const T=syT(); 
   T.vars.forEach((v,i)=>mk(syChip(T,v),st.svar!=='all'&&+st.svar===i,()=>{ st.svar=i; save(); const was=playing; render(); if(was) playAll(); }));
   mk('All varieties',st.svar==='all',()=>{ st.svar='all'; save(); const was=playing; render(); if(was) playAll(); }); }
 function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; return; }
-  const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,T.vars[list[0]]); drawKb(); if(c) cheer(); }; updPause();
+  const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,T.vars[list[0]]); drawKb(); if(c) cheer(); else { try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} } }; updPause();
   let qi=0; const run=t0=>{ if(!playing) return; const v=T.vars[list[qi]], P=syPhrase(T,v), spb=60/st.bpm, bus=C.bus(); if(bus) chBus.push(bus); meterGo();
     P.ev.forEach(e=>e.n.forEach(m=>C.note(m,t0+e.t*spb,Math.max(.08,e.d*spb*(e.d<.2?1.15:1)),e.v,bus)));
     for(let b=0;b<P.total;b++) C.click(t0+b*spb,b%P.bpb===0,bus);
