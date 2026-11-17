@@ -225,6 +225,31 @@ const css=document.createElement('style'); css.textContent=`
 #chRoom .pcard.on:after{content:"Active";position:absolute;top:18px;right:18px;font:800 12px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--hi);color:var(--hi-ink)}
 #chRoom button.arena{margin-top:10px;background:linear-gradient(135deg,#3dd9c4,#0f8a7a);color:#fff;border-color:transparent;font-weight:800}
 #chRoom summary.gsum{display:flex;align-items:center;gap:10px}#chRoom summary.gsum>span{flex:1}#chRoom summary.gsum::before{content:'▸';font-size:12px;transition:transform .15s}#chRoom details[open]>summary.gsum::before{transform:rotate(90deg)}#chRoom summary.gsum::-webkit-details-marker{display:none}#chRoom summary.gsum{list-style:none}#chRoom summary.gsum button{flex:none}
+#chRoom .bmode{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border-radius:999px;border:1.5px solid var(--line);margin:0 0 12px}
+#chRoom .bmode button{border:0;border-radius:999px;padding:8px 14px;font-weight:700;opacity:.8}
+#chRoom .bmode button[aria-pressed=true]{background:var(--hi);color:var(--hi-ink);opacity:1}
+#chRoom .bcanvas{border:2px dashed transparent;border-radius:18px;padding:4px;transition:border-color .15s,background .15s;min-height:40px}
+#chRoom .bcanvas.empty{border-color:var(--line);padding:10px}
+#chRoom .bcanvas.over{border-color:var(--hi);background:color-mix(in srgb,var(--hi) 10%,transparent)}
+#chRoom .bdrop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:34px 14px;color:var(--muted)}
+#chRoom .bdrop b{color:var(--ink);font-size:16px}
+#chRoom .pelw{border-radius:16px;min-width:0}
+#chRoom .pelw.open{grid-column:1/-1;background:var(--surface);border:1px solid rgba(var(--gl),.5);overflow:hidden}
+#chRoom .pelw.open .pel{border-radius:16px 16px 0 0;border:0}
+#chRoom .pelw .bpick{padding:10px 14px 14px}
+#chRoom .pel{user-select:none;-webkit-user-select:none}
+#chRoom .pel[draggable=true]{cursor:grab}
+#chRoom .pel .chev{font-size:13px;opacity:.85;margin-left:4px}
+#chRoom .pel.in{border-color:rgba(var(--gl),1);box-shadow:0 0 0 2px rgba(var(--gl),.6),0 14px 30px -14px rgba(0,0,0,.7)}
+#chRoom .pal .pel .go{cursor:pointer;color:#fff}
+#chRoom .pal .pel .go:hover{background:var(--hi);color:var(--hi-ink);border-color:transparent}
+#chRoom .pal .pel .go.rm{background:rgba(255,255,255,.92);color:#b0213a;border-color:transparent}
+#chRoom button.rm{color:#c92a2a;border-color:color-mix(in srgb,#c92a2a 50%,var(--line))}
+#chRoom .opt.on span{font-weight:700}
+#chRoom .opt[draggable=true],#chRoom summary[draggable=true]{cursor:grab}
+#chRoom .bdropbar{display:none;position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:5;padding:18px 30px;border-radius:16px;border:2px dashed var(--hi);background:color-mix(in srgb,var(--hi) 18%,var(--surface));font:800 15px var(--body);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+#chRoom.dragging .bdropbar{display:block}
+#chRoom .bdropbar.over{background:var(--hi);color:var(--hi-ink)}
 #chShade{position:fixed;inset:0;z-index:160000;background:rgba(0,0,0,.6);display:none;place-items:center}
 #chShade.on{display:grid}
 #chShade .md{background:var(--surface,#fff);color:var(--ink,#111);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(560px,94vw);max-height:88vh;overflow:auto;font-family:var(--body)}
@@ -425,36 +450,73 @@ function certDraw(cv,name,pct,plan,start,id){
 }
 /* --- plan builder: each day is a session of timed blocks --- */
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-let addOpen=-1;
+let addOpen=-1, palOpen=null, dragData=null;
+/* all practice item ids under an element (Warm Up: scales and chords; Practice: techniques and progressions) */
+const idsOf=o=>{ const out=[]; (o.subs||o.groups||[]).forEach(x=>out.push(...idsOf(x))); (o.items||[]).forEach(it=>out.push(it.id)); return out; };
+const elIds=E=>E.cats?CAT.filter(c=>E.cats.includes(c.name)).reduce((a,c)=>a.concat(idsOf(c)),[]):[];
 function buildView(w){
   draft.week=normWeek(draft.week);
   head(w,'Plan builder'); const b=el('div','box'); b.innerHTML='<label>Plan name</label><input type="text" id="pn" maxlength="50" value="'+esc(draft.name)+'">'; w.appendChild(b);
   b.querySelector('#pn').oninput=e=>{ draft.name=e.target.value; };
   w.appendChild(el('h2','','1. Pick a day'));
-  const tabs=el('div','tabs'); DAYS.forEach((d,i)=>{ const dd=draft.week[i], m=mins(dd); const t=el('button',i===pick?'on':'',d+(dd.length?' <small>'+(m?fmtMin(m):dd.length+' block'+(dd.length===1?'':'s'))+'</small>':' <small>rest</small>')); t.onclick=()=>{ pick=i; addOpen=-1; render(); }; tabs.appendChild(t); }); w.appendChild(tabs);
-  const day=draft.week[pick], keepY=fn=>()=>{ const y=room.scrollTop; fn(); render(); room.scrollTop=y; };
+  const tabs=el('div','tabs'); DAYS.forEach((d,i)=>{ const dd=draft.week[i], m=mins(dd); const t=el('button',i===pick?'on':'',d+(dd.length?' <small>'+(m?fmtMin(m):dd.length+' block'+(dd.length===1?'':'s'))+'</small>':' <small>rest</small>')); t.onclick=()=>{ pick=i; render(); }; tabs.appendChild(t); }); w.appendChild(tabs);
+  const day=draft.week[pick];
+  const keep=fn=>()=>{ const y=room.scrollTop; fn(); render(); room.scrollTop=y; };
+  const find=e=>day.find(x=>x.e===e);
+  const addEl=(E,withItems)=>{ let bk=find(E.e); if(!bk){ bk={e:E.e,m:10,items:[],note:''}; day.push(bk); } if(withItems) elIds(E).forEach(i=>{ if(!bk.items.includes(i)) bk.items.push(i); }); return bk; };
+  const remEl=E=>{ const k=day.findIndex(x=>x.e===E.e); if(k>=0) day.splice(k,1); };
+  const addItems=(E,ids)=>{ const bk=addEl(E,false); ids.forEach(i=>{ if(!bk.items.includes(i)) bk.items.push(i); }); };
+  const remItems=(E,ids)=>{ const bk=find(E.e); if(!bk) return; bk.items=bk.items.filter(i=>!ids.includes(i)); };
+  const full=E=>{ const bk=find(E.e); if(!bk) return false; const ids=elIds(E); return !ids.length||ids.every(i=>bk.items.includes(i)); };
+  /* how to build: add what you want, or start with everything and remove what you don't */
   w.appendChild(el('h2','','2. Build '+({Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'})[DAYS[pick]]+'’s session'+(mins(day)?' <span class="mut" style="font-size:15px;font-weight:600">· '+fmtMin(mins(day))+'</span>':'')));
-  const cur=el('div','blks'); w.appendChild(cur);
-  if(!day.length) cur.appendChild(el('p','mut','Nothing yet, so this is a rest day. Add elements below.'));
+  { const md=el('div','bmode'); const a1=el('button','','➕ Start empty and add'), a2=el('button','','➖ Start with everything and remove'); const sub=day.length===ELS.length&&ELS.every(full);
+    a1.setAttribute('aria-pressed',String(!sub)); a2.setAttribute('aria-pressed',String(sub));
+    a1.onclick=keep(()=>{ if(day.length&&!confirm('Empty this day and start adding?')) return; draft.week[pick]=[]; });
+    a2.onclick=keep(()=>{ if(day.length&&!confirm('Fill this day with every element and item? You then remove what you don’t want.')) return; draft.week[pick]=ELS.map(E=>({e:E.e,m:10,items:elIds(E),note:''})); });
+    md.append(a1,a2); w.appendChild(md); }
+  /* the canvas: the day's session; drop elements or items here */
+  const cv=el('div','bcanvas'+(day.length?'':' empty')); w.appendChild(cv);
+  /* a drop bar also appears at the top while dragging, so the session does not need to be on screen */
+  const bar=el('div','bdropbar','⬇ Drop here to add it to '+({Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'})[DAYS[pick]]+'\u2019s session'); w.appendChild(bar);
+  [cv,bar].forEach(z=>{ z.addEventListener('dragover',e=>{ if(!dragData) return; e.preventDefault(); z.classList.add('over'); });
+    z.addEventListener('dragleave',e=>{ if(e.target===z) z.classList.remove('over'); });
+    z.addEventListener('drop',e=>{ e.preventDefault(); z.classList.remove('over'); room.classList.remove('dragging'); const d=dragData; dragData=null; if(!d) return; const E=ELM[d.e]; const y=room.scrollTop; if(d.ids) addItems(E,d.ids); else addEl(E,true); render(); room.scrollTop=y; }); });
+  if(!day.length) cv.appendChild(el('div','bdrop','<b>Nothing yet, so this is a rest day.</b><span>Drag an element or an item here, or use its Add button below.</span>'));
   day.forEach((bk,k)=>{ const E=ELM[bk.e]; const bx=el('div','blk'); bx.style.cssText=boardVars(E);
-    const hd=el('div','bh','<i class="bimg"></i><span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>'); 
+    const hd=el('div','bh','<i class="bimg"></i><span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>');
     const st=el('span','stp'); const dn=el('button','sm','−'), up=el('button','sm','+'), vv=el('span','bv',bk.m?fmtMin(bk.m):'No timer');
-    dn.setAttribute('aria-label','Less time'); up.setAttribute('aria-label','More time'); dn.onclick=keepY(()=>{ bk.m=Math.max(0,(+bk.m||0)-5); }); up.onclick=keepY(()=>{ bk.m=Math.min(240,(+bk.m||0)+5); }); st.append(dn,vv,up); hd.appendChild(st);
+    dn.setAttribute('aria-label','Less time'); up.setAttribute('aria-label','More time'); dn.onclick=keep(()=>{ bk.m=Math.max(0,(+bk.m||0)-5); }); up.onclick=keep(()=>{ bk.m=Math.min(240,(+bk.m||0)+5); }); st.append(dn,vv,up); hd.appendChild(st);
     const mv=el('span','mv'); const u=el('button','sm','↑'), d=el('button','sm','↓'), x=el('button','sm','✕'); u.title='Move up'; d.title='Move down'; x.title='Remove';
-    u.disabled=!k; d.disabled=k===day.length-1; u.onclick=keepY(()=>{ [day[k-1],day[k]]=[day[k],day[k-1]]; addOpen=-1; }); d.onclick=keepY(()=>{ [day[k+1],day[k]]=[day[k],day[k+1]]; addOpen=-1; }); x.onclick=keepY(()=>{ day.splice(k,1); addOpen=-1; }); mv.append(u,d,x); hd.appendChild(mv); bx.appendChild(hd);
-    if(E.cats){ const ch=el('div','bchips'); (bk.items||[]).forEach((id,i)=>{ const c=el('span','chip',esc(ITEMS[id]?ITEMS[id].name:id)+' '); const rm=el('button','xs','✕'); rm.title='Remove'; rm.onclick=keepY(()=>{ bk.items.splice(i,1); }); c.appendChild(rm); ch.appendChild(c); });
-      const ad=el('button','sm',addOpen===k?'Done adding':'+ Add '+(E.e==='warmup'?'scales and chords':'techniques and progressions')); ad.onclick=keepY(()=>{ addOpen=addOpen===k?-1:k; }); ch.appendChild(ad); bx.appendChild(ch);
-      if(addOpen===k){ const pickBox=el('div','bpick');
-        const idsOf=o=>{ const out=[]; (o.subs||o.groups||[]).forEach(x=>out.push(...idsOf(x))); (o.items||[]).forEach(it=>out.push(it.id)); return out; };
-        const redraw=()=>{ const y=room.scrollTop; const open=[...pickBox.querySelectorAll('details')].map(z=>z.open); render(); room.scrollTop=y; const pb=room.querySelector('.bpick'); if(pb) [...pb.querySelectorAll('details')].forEach((z,i)=>{ if(open[i]) z.open=true; }); };
-        const groupBtn=o=>{ const ids=idsOf(o); bk.items=bk.items||[]; const all=ids.length&&ids.every(i=>bk.items.includes(i)); const bt=el('button','sm'+(all?' pri':''),all?'Added ✓':'+ Add all '+ids.length); bt.type='button'; bt.title=all?'Remove all of these':'Add all of these';
-          bt.onclick=e=>{ e.preventDefault(); e.stopPropagation(); if(all) bk.items=bk.items.filter(z=>!ids.includes(z)); else ids.forEach(i=>{ if(!bk.items.includes(i)) bk.items.push(i); }); redraw(); }; return bt; }; CAT.filter(c=>E.cats.includes(c.name)).forEach(c=>{ const fill=(box,o)=>{ (o.subs||o.groups||[]).forEach(s2=>{ const dd=el('details'); const sm=el('summary','gsum','<span>'+esc(s2.name)+'</span>'); sm.appendChild(groupBtn(s2)); dd.appendChild(sm); fill(dd,s2); box.appendChild(dd); }); (o.items||[]).forEach(it=>{ const r=el('div','opt'); r.appendChild(el('span','',esc(it.name))); const on=(bk.items||[]).includes(it.id); const bt=el('button','sm'+(on?' pri':''),on?'Added ✓':'+ Add'); bt.onclick=()=>{ bk.items=bk.items||[]; const y=room.scrollTop; if(bk.items.includes(it.id)) bk.items=bk.items.filter(z=>z!==it.id); else bk.items.push(it.id); const open=[...pickBox.querySelectorAll('details')].map(z=>z.open); render(); room.scrollTop=y; const pb=room.querySelector('.bpick'); if(pb) [...pb.querySelectorAll('details')].forEach((z,i)=>{ if(open[i]) z.open=true; }); }; r.appendChild(bt); box.appendChild(r); }); };
-          if(E.cats.length>1){ const dd=el('details'); dd.open=true; const sm=el('summary','gsum','<span>'+esc(c.name)+'</span>'); sm.appendChild(groupBtn(c)); dd.appendChild(sm); fill(dd,c); pickBox.appendChild(dd); } else fill(pickBox,c); }); bx.appendChild(pickBox); } }
+    u.disabled=!k; d.disabled=k===day.length-1; u.onclick=keep(()=>{ [day[k-1],day[k]]=[day[k],day[k-1]]; }); d.onclick=keep(()=>{ [day[k+1],day[k]]=[day[k],day[k+1]]; }); x.onclick=keep(()=>{ day.splice(k,1); }); mv.append(u,d,x); hd.appendChild(mv); bx.appendChild(hd);
+    if(E.cats){ const ch=el('div','bchips'); (bk.items||[]).forEach((id,i)=>{ const c=el('span','chip',esc(ITEMS[id]?ITEMS[id].name:id)+' '); const rm=el('button','xs','✕'); rm.title='Remove'; rm.onclick=keep(()=>{ bk.items.splice(i,1); }); c.appendChild(rm); ch.appendChild(c); });
+      if(!(bk.items||[]).length) ch.appendChild(el('span','mut','No '+(E.e==='warmup'?'scales or chords':'techniques or progressions')+' yet.'));
+      const more=el('button','sm','+ Add more'); more.onclick=()=>{ palOpen=E.e; render(); const t=room.querySelector('.pelw[data-e="'+E.e+'"]'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }; ch.appendChild(more); bx.appendChild(ch); }
     else { const inp=el('input'); inp.type='text'; inp.maxLength=200; inp.className='bnote'; inp.placeholder=E.ph||'Notes (optional)'; inp.value=bk.note||''; inp.oninput=()=>{ bk.note=inp.value; }; bx.appendChild(inp); }
-    cur.appendChild(bx); });
-  w.appendChild(el('h3','addh','Add an element'));
-  const pal=el('div','pal'); ELS.forEach(E=>{ const bt=el('button','pel','<i class="bimg dots"></i><span class="ic">'+E.ic+'</span><span class="bt"><b>'+esc(E.name)+'</b><small>'+esc(E.bl)+'</small></span><em class="go">Add →</em>'); bt.type='button'; bt.style.cssText=boardVars(E); bt.onclick=keepY(()=>{ day.push({e:E.e,m:10,items:[],note:''}); addOpen=E.cats?day.length-1:-1; }); pal.appendChild(bt); }); w.appendChild(pal);
-  const cp=el('div','row'); cp.style.marginTop='12px'; const all=el('button','sm','Copy this day to every day'); all.onclick=keepY(()=>{ const src=JSON.stringify(day); draft.week=draft.week.map(()=>JSON.parse(src)); }); const clr=el('button','sm','Clear this day'); clr.onclick=keepY(()=>{ draft.week[pick]=[]; addOpen=-1; }); cp.append(all,clr); w.appendChild(cp);
+    cv.appendChild(bx); });
+  /* the elements: Add or Remove the whole element; open one to add or remove its items one by one; or drag either into the canvas */
+  w.appendChild(el('h3','addh','Elements <span class="mut" style="font-weight:500;font-size:14px">· add a whole element, open it to pick items, or drag into the session above</span>'));
+  const pal=el('div','pal'); ELS.forEach(E=>{ const inDay=!!find(E.e), isFull=full(E), open=palOpen===E.e&&!!E.cats;
+    const wr=el('div','pelw'+(open?' open':'')); wr.dataset.e=E.e; wr.style.cssText=boardVars(E);
+    const bt=el('div','pel'+(inDay?' in':''),'<i class="bimg dots"></i><span class="ic">'+E.ic+'</span><span class="bt"><b>'+esc(E.name)+(E.cats?' <span class="chev">'+(open?'▾':'▸')+'</span>':'')+'</b><small>'+esc(E.bl)+(inDay&&E.cats?' · '+((find(E.e).items||[]).length)+' added':'')+'</small></span>');
+    bt.draggable=true; bt.tabIndex=0; bt.setAttribute('role','button'); bt.addEventListener('dragstart',e=>{ dragData={e:E.e}; room.classList.add('dragging'); try{ e.dataTransfer.setData('text/plain',E.name); e.dataTransfer.effectAllowed='copy'; }catch(_){} });
+    bt.addEventListener('dragend',()=>{ dragData=null; room.classList.remove('dragging'); });
+    const go=el('button','go'+(isFull?' rm':''),isFull?'Remove ✕':(inDay?'Add all →':'Add →')); go.type='button';
+    go.onclick=e=>{ e.stopPropagation(); const y=room.scrollTop; if(isFull) remEl(E); else addEl(E,true); render(); room.scrollTop=y; };
+    bt.appendChild(go);
+    bt.onclick=()=>{ if(!E.cats){ go.click(); return; } const y=room.scrollTop; palOpen=open?null:E.e; render(); room.scrollTop=y; };
+    bt.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); bt.onclick(); } };
+    wr.appendChild(bt);
+    if(open){ const pk=el('div','bpick'); const bk=find(E.e), have=i=>!!(bk&&bk.items.includes(i));
+      const btn=(ids,label)=>{ const all=ids.length&&ids.every(have); const b2=el('button','sm'+(all?' rm':''),all?'Remove'+(label?' all':''):'+ Add'+(label?' all '+ids.length:'')); b2.type='button';
+        b2.onclick=e=>{ e.preventDefault(); e.stopPropagation(); const y=room.scrollTop; const op=[...pk.querySelectorAll('details')].map(z=>z.open); if(all) remItems(E,ids); else addItems(E,ids); render(); room.scrollTop=y; const p2=room.querySelector('.pelw.open .bpick'); if(p2) [...p2.querySelectorAll('details')].forEach((z,i)=>{ if(op[i]) z.open=true; }); }; return b2; };
+      const drag=(node,ids)=>{ node.draggable=true; node.addEventListener('dragstart',e=>{ e.stopPropagation(); dragData={e:E.e,ids}; room.classList.add('dragging'); try{ e.dataTransfer.setData('text/plain','items'); e.dataTransfer.effectAllowed='copy'; }catch(_){} }); node.addEventListener('dragend',()=>{ dragData=null; room.classList.remove('dragging'); }); };
+      const fill=(box,o)=>{ (o.subs||o.groups||[]).forEach(s2=>{ const dd=el('details'); const sm=el('summary','gsum','<span>'+esc(s2.name)+'</span>'); sm.appendChild(btn(idsOf(s2),true)); drag(sm,idsOf(s2)); dd.appendChild(sm); fill(dd,s2); box.appendChild(dd); });
+        (o.items||[]).forEach(it=>{ const r=el('div','opt'+(have(it.id)?' on':'')); r.appendChild(el('span','',esc(it.name))); r.appendChild(btn([it.id],false)); drag(r,[it.id]); box.appendChild(r); }); };
+      CAT.filter(c=>E.cats.includes(c.name)).forEach(c=>{ if(E.cats.length>1){ const dd=el('details'); dd.open=true; const sm=el('summary','gsum','<span>'+esc(c.name)+'</span>'); sm.appendChild(btn(idsOf(c),true)); drag(sm,idsOf(c)); dd.appendChild(sm); fill(dd,c); pk.appendChild(dd); } else fill(pk,c); });
+      wr.appendChild(pk); }
+    pal.appendChild(wr); }); w.appendChild(pal);
+  const cp=el('div','row'); cp.style.marginTop='12px'; const all=el('button','sm','Copy this day to every day'); all.onclick=keep(()=>{ const src=JSON.stringify(day); draft.week=draft.week.map(()=>JSON.parse(src)); }); const clr=el('button','sm','Clear this day'); clr.onclick=keep(()=>{ draft.week[pick]=[]; }); cp.append(all,clr); w.appendChild(cp);
   const r=el('div','row'); r.style.marginTop='22px';
   const total=draft.week.reduce((a,d)=>a+d.length,0);
   const go=el('button','pri',draft.target?'Send to '+draft.target.name:'Save plan'); go.disabled=!total;
