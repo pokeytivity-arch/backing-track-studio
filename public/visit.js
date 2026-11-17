@@ -47,8 +47,4 @@ setInterval(tick,1000); setInterval(()=>{ if(document.visibilityState==='visible
 addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ tick(); flush(true); } else lastT=now(); });
 addEventListener('pagehide',()=>{ tick(); flush(true); });
 setTimeout(()=>{ tick(); flush(); },4000);
-/* a short notice, once */
-try{ if(!localStorage.getItem('ps-vis-note')){ setTimeout(()=>{ const n=document.createElement('div'); n.setAttribute('role','status'); n.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:2147483000;max-width:min(560px,calc(100vw - 24px));display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:14px;background:rgba(18,22,34,.96);color:#e8ecf5;font:500 13px/1.4 system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12)';
-  n.innerHTML='<span>HearandPlay counts visits (country, the spaces you open and time spent) to make the suite better. No names unless you’re signed in.</span><button type="button" style="flex:none;border:0;border-radius:999px;padding:7px 14px;background:#ffd43b;color:#151b28;font:800 13px system-ui,sans-serif;cursor:pointer">OK</button>';
-  n.querySelector('button').onclick=()=>{ try{ localStorage.setItem('ps-vis-note','1'); }catch(_){} n.remove(); }; document.body.appendChild(n); },6000); } }catch(_){}
 })();
