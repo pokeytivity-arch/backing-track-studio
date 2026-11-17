@@ -8,7 +8,7 @@
 const KEY='ps-dest';
 const DEST={
   class:{name:'Class',icon:'🎓',blurb:'Consult HearandPlay, the world\'s leading music AI coach, about chords, scales, hymns and ear training. And meet a teacher.',panel:'teacher'},
-  hall:{name:'Practice Hall',icon:'🎹',blurb:'Ear training, scales and chords. Practise on the keyboard with the fingering, the hands and the techniques.',panel:'teacher'},
+  hall:{name:'Practice Arena',icon:'🎹',blurb:'Ear training, scales and chords. Practise on the keyboard with the fingering, the hands and the techniques.',panel:'teacher'},
   studio:{name:'Backing Track Studio',icon:'🎹',blurb:'Type a chord chart, pick a style and play along with a full band. Slow it down, change the key, loop a section.',panel:null},
   plus:{name:'Transcription Studio',icon:'🎧',blurb:'Turn any recording into notes you can see and practise on the keyboard.',panel:'transcribe'},
   account:{name:'Account',icon:'👤',blurb:'',panel:null},
@@ -220,7 +220,7 @@ function closeRooms(){ const vis=id=>{ const e=document.getElementById(id); retu
   try{ if(vis('vcRoom')&&window.VOICE&&VOICE.close) VOICE.close(); }catch(_){} try{ if(vis('earRoom')&&window.EAR) EAR.close(); }catch(_){} try{ if(vis('prRoom')&&window.PRACTICE) PRACTICE.close(); }catch(_){} window.__earBack=window.__prBack=null; }
 function go(k){
   if(!DEST[k]) return; if(!navBack&&!fwdNav&&!popping) FWD=[]; closeRooms(); if(RET&&k!==RET.from) RET=null; const prev=cur; { const from=place(); if(!navBack&&from&&from!==k&&HIST[HIST.length-1]!==from) HIST.push(from); } hideHub(); if(prev&&prev!==k) stopEverything();
-  cur=k; if(k!=='account') put(k); document.body.dataset.dest=k==='hall'?'class':k; document.body.dataset.area=k==='hall'?'hall':k==='class'?'class':'';   /* the Practice Hall shares the Class page: Class keeps consultation and meet a teacher, the Hall has ear training, scales and chords */
+  cur=k; if(k!=='account') put(k); document.body.dataset.dest=k==='hall'?'class':k; document.body.dataset.area=k==='hall'?'hall':k==='class'?'class':'';   /* the Practice Arena shares the Class page: Class keeps consultation and meet a teacher, the Hall has ear training, scales and chords */
   if(window.ACCOUNT&&k!=='account') ACCOUNT.close();
   ['teacher','transcribe'].forEach(p=>{ try{ closePanel(p); }catch(_){} });
   if(window.CHALLENGE&&k!=='challenge') CHALLENGE.close();

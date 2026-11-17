@@ -17,10 +17,10 @@ const el=(t,c,h)=>{ const e=document.createElement(t); if(c) e.className=c; if(h
 /* ---------- the teacher's studio (on this device) ---------- */
 const DEF_SPACES=[
   {id:'class',k:'class',name:'Class',blurb:'Consultation with HearandPlay beside you, and meet your students. Send them practice tracks.',go:'class'},
-  {id:'hall',k:'hall',name:'Practice Hall',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
+  {id:'hall',k:'hall',name:'Practice Arena',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
   {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
   {id:'arena',k:'challenge',name:'Practice Plan Builder',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
-const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
+const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
 const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
 const code=()=>{ let c=null; try{ c=localStorage.getItem(K.code); }catch(_){} if(!c){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c='HP-T-'; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; try{ localStorage.setItem(K.code,c); }catch(_){} } return c; };
 const ME='me';   /* the studio made on this device, as a teacher students can join */
@@ -36,8 +36,8 @@ const SAMPLE_STUDENTS=[
   {n:'James M.',lv:'Intermediate',st:'3-day streak',last:'Yesterday',ok:true},
   {n:'Grace E.',lv:'Beginner',st:'No streak',last:'6 days ago',ok:false}];
 const REVIEW=[{n:'Ada O.',w:'sent a recording',t:'2-5-1 in all keys · Chords'},{n:'Tolu K.',w:'passed a playing check',t:'G major, 3+4 method · Scales'},{n:'James M.',w:'asked a question',t:'Hymn endings · Class'}];
-const ROOMS={chords:'Chords · Practice Hall',scales:'Scales · Practice Hall',ear:'Ear training · Practice Hall',hall:'Practice Hall',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Plan Builder',class:'Class'};
-const DESTS={hall:['Practice Hall','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Plan Builder','A practice plan']};
+const ROOMS={chords:'Chords · Practice Arena',scales:'Scales · Practice Arena',ear:'Ear training · Practice Arena',hall:'Practice Arena',studio:'Backing Track Studio',plus:'Transcription Studio',challenge:'Practice Plan Builder',class:'Class'};
+const DESTS={hall:['Practice Arena','Ear training, scales or chords'],studios:['Studio','Backing Track Studio or Transcription Studio'],challenge:['Practice Plan Builder','A practice plan']};
 
 /* ---------- styles ---------- */
 const css=el('style'); css.textContent=`
@@ -187,7 +187,7 @@ function meetStudents(){ const b=panel('Meet a student','Students looking for a 
     const cp=el('button','rl-btn','Copy invite link'); cp.type='button'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); }; f.appendChild(cp); box.appendChild(f); };
   draw(); }
 /* Meet a teacher (from the Class) */
-function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
+function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice arena, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
   const draw=()=>{ box.textContent=''; box.appendChild(teacherGrid(draw)); }; draw(); }
 /* ---------- teacher view ---------- */
 function spaceCard(sp,editing,on){ const b=el('button','dcard'); b.type='button'; b.dataset.k=sp.k;
@@ -261,7 +261,7 @@ function studentView(root){
       const un=el('button','rl-btn','Unsubscribe'); un.type='button'; un.style.alignSelf='flex-start'; un.onclick=()=>{ jset(K.subs,subs.filter(x=>x!==t.id)); render(); }; c.appendChild(un);
       s.appendChild(c); });
     root.appendChild(s); }
-  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice hall, studio and practice plan builder, and the work they assign you. Until then, the whole suite is yours.</p>';
+  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice arena, studio and practice plan builder, and the work they assign you. Until then, the whole suite is yours.</p>';
   s.appendChild(teacherGrid(render));
   const jf=el('div'); jf.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center'; jf.appendChild(el('b',null,'Have an invite code?'));
   const ji=el('input','rl-in'); ji.placeholder='HP-T-XXXX'; ji.setAttribute('aria-label','Invite code'); ji.style.cssText='text-transform:uppercase;font-family:ui-monospace,Menlo,monospace;width:170px';
@@ -270,7 +270,7 @@ function studentView(root){
 function teacherGrid(after){ const subs=jget(K.subs,[])||[]; const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s studio on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
   const g=el('div','rl-grid'); T.forEach(t=>{ const c=el('div','rl-card'); const joined=subs.includes(t.id);
     c.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span class="rl-av" style="background:'+t.color+'">'+esc(t.ini)+'</span><div style="flex:1;min-width:0"><b style="font-size:17px">'+esc(t.name)+'</b>'+(t.id===ME?'':'<span class="rl-demo">Sample</span>')+'<div style="color:#b4bdd0;font-size:13px">'+esc(t.spec)+(t.students?' · '+esc(t.students):'')+'</div></div></div>';
-    const ch=el('div','rl-chips'); ['Class','Practice Hall','Studio','Practice Plan Builder'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
+    const ch=el('div','rl-chips'); ['Class','Practice Arena','Studio','Practice Plan Builder'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
     const b=el('button','rl-btn'+(joined?' ok':' pri'),joined?'Subscribed ✓':'Subscribe'); b.type='button'; b.onclick=()=>{ let S=jget(K.subs,[])||[]; if(S.includes(t.id)) S=S.filter(x=>x!==t.id); else { S.push(t.id); toast('You joined '+t.name+'.'); } jset(K.subs,S); render(); if(after&&after!==render) after(); }; c.appendChild(b); g.appendChild(c); });
   return g; }
 function joinCode(v){ v=String(v||'').trim().toUpperCase(); let c=null; try{ c=localStorage.getItem(K.code); }catch(_){}
@@ -295,9 +295,9 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
       m.querySelector('.tx b').textContent=T?'Meet a student':'Meet a teacher';
       m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your studio.':'Find a teacher, subscribe, and learn with them in the suite.';
       m.setAttribute('aria-label',T?'Meet a student':'Meet a teacher'); m.onclick=T?meetStudents:meetPanel; } }
-  const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Hall':'Class Area';
+  const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':'Class Area';
   const w=r.querySelector('.cl-welcome'); if(w){ if(!w.dataset.orig) w.dataset.orig=w.innerHTML;
-    w.innerHTML=k==='hall'?'Welcome to the Practice Hall. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
+    w.innerHTML=k==='hall'?'Welcome to the Practice Arena. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
       :'Welcome to class today. From consultation sessions to meeting a teacher, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
 const css2=el('style'); css2.textContent=`
 body[data-area=hall] .cl-box[data-k=chat],body[data-area=hall] .cl-box[data-k=meet]{display:none!important}
@@ -312,6 +312,17 @@ body[data-area=hall] .cl-four{grid-template-columns:repeat(3,minmax(0,1fr))!impo
 #rlAssign button.pri{background:#ffd43b;color:#151b28;border-color:transparent}
 `; document.head.appendChild(css2);
 try{ if(sessionStorage.getItem('ps-assign')&&role()==='teacher') setTimeout(assignBar,800); }catch(_){}
-window.PSROLE={hub:render,role,area};
+/* hearandplay.app/?myprogressions : shows every chord progression saved in this browser (the chord room's canvas and its memory banks), to copy and send */
+function myProgressions(){ let st={}, banks=[]; try{ st=JSON.parse(localStorage.getItem('ps-pr')||'{}'); }catch(_){} try{ banks=JSON.parse(localStorage.getItem('pr-cbanks')||'[]')||[]; }catch(_){}
+  const L=['HearandPlay chord progressions saved in this browser',''];
+  const info=x=>[x.cmode?'mode '+x.cmode:'',x.bpm?x.bpm+' BPM':'',x.ctr?'transpose '+x.ctr:'',x.coct?'octave '+x.coct:'',x.vh?'technique '+x.vh:'',x.bline?'bass line on':'',x.riff?'riffs on':''].filter(Boolean).join(' · ');
+  banks.forEach((b,i)=>{ if(!b||!b.s) return; L.push('Bank '+(i+1)+(b.name?' · '+b.name:'')); L.push(String(b.s.chords||'(no canvas text)')); L.push('('+info(b.s)+')',''); });
+  if(st.chords){ L.push('On the canvas now'); L.push(String(st.chords)); L.push('('+info(st)+')',''); }
+  if(L.length<=2) L.push('No chord progressions were found in this browser. If you entered them on another computer, phone or browser, open this same link there.');
+  L.push('','----- full data -----',JSON.stringify({banks,canvas:{chords:st.chords||'',cmode:st.cmode,bpm:st.bpm,ctr:st.ctr,coct:st.coct}}));
+  const b=panel('Your chord progressions','Everything saved in this browser. Press Copy, then paste it into your chat with Claude.'); const t=el('textarea'); t.value=L.join('\n'); t.readOnly=true; t.style.cssText='width:100%;min-height:340px;font:600 13px/1.5 ui-monospace,Menlo,monospace'; b.appendChild(t);
+  const c=el('button','rl-btn pri','Copy'); c.type='button'; c.style.marginTop='12px'; c.onclick=()=>{ t.select(); let ok=false; try{ navigator.clipboard.writeText(t.value); ok=true; }catch(_){} try{ ok=document.execCommand('copy')||ok; }catch(_){} toast(ok?'Copied. Paste it into your chat with Claude.':'Select all the text and copy it.'); }; b.appendChild(c); }
+try{ if(/[?&#]myprogressions\b/.test(location.search+location.hash)) setTimeout(myProgressions,1500); }catch(_){}
+window.PSROLE={hub:render,role,area,myProgressions};
 { const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) render(); }
 })();

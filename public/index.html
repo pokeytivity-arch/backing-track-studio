@@ -2675,7 +2675,7 @@ const SHORTCUTS=[['E','Edit the chord chart'],['Space','Play / Pause'],['S','Sto
 const MENUS=[
   {label:'Piano Suite',brand:true,items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
-    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has four places: Class (consultation and meeting a teacher), the Practice Hall (ear training, scales and chords), the Studio (the Backing Track Studio and the Transcription Studio) and the Practice Plan Builder (practice plans). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
+    {label:'About Piano Suite',run:()=>infoDialog('Piano Suite',`<p>Piano Suite has four places: Class (consultation and meeting a teacher), the Practice Arena (ear training, scales and chords), the Studio (the Backing Track Studio and the Transcription Studio) and the Practice Plan Builder (practice plans). Built for music class.</p><p class="help">${document.querySelector('.credits')?.innerHTML||''}</p>`)},
     {sep:true},
     {label:'Keyboard shortcuts',run:()=>MENUS_HELP_SHORTCUTS()}]},
   {label:'File',items:[
@@ -2735,7 +2735,7 @@ const MENUS=[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
     {sep:true},
     {label:'Class',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
-    {label:'Practice Hall',check:()=>SUITE.current()==='hall',run:()=>SUITE.go('hall')},
+    {label:'Practice Arena',check:()=>SUITE.current()==='hall',run:()=>SUITE.go('hall')},
     {label:'Backing Track Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
     {label:'Transcription Studio',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')},
     {label:'Practice Plan Builder',check:()=>SUITE.current()==='challenge',run:()=>SUITE.go('challenge')}]},
@@ -3083,8 +3083,8 @@ init();
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
 <script src="transcribe.js?v=4" defer></script>
-<script src="suite.js?v=14" defer></script>
-<script src="roles.js?v=7" defer></script>
+<script src="suite.js?v=15" defer></script>
+<script src="roles.js?v=8" defer></script>
 <script src="layout3.js?v=6" defer></script>
 <script src="class.js?v=z15" defer></script>
 <script src="progress.js?v=h1" defer></script>
@@ -3100,7 +3100,7 @@ init();
 <script src="themes.js" defer></script>
 <script src="account.js?v=h3" defer></script>
 <script src="challenge.js?v=h3" defer></script>
-<script src="tour.js?v=h4" defer></script>
+<script src="tour.js?v=h5" defer></script>
 <script src="install.js?v=2" defer></script>
 <script>
 /* keep each slider's filled part in step with its handle */
