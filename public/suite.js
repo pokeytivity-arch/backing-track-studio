@@ -277,6 +277,7 @@ window.addEventListener('keydown',e=>{ if(e.key!=='ArrowLeft'&&e.key!=='ArrowRig
   const t=e.target; if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||(t.closest&&t.closest('[role=slider],[role=radiogroup],[role=menu],.menubar,dialog[open],#psNav')))) return;
   if(document.getElementById('psTour')) return; e.preventDefault(); if(e.key==='ArrowLeft') back(); else forward(); });
 function back0(){
+  try{ if(window.PSROLE&&PSROLE.closeDash&&PSROLE.closeDash()) return; }catch(_){}   /* the teacher dashboard page closes first */
   /* rooms open on top of the Class: close the top one with its own back action; if it was opened from another room, go back to that room */
   if(!hub.classList.contains('on')){ const vis=id=>{ const e=document.getElementById(id); return !!(e&&!e.hidden&&e.offsetWidth); };
     for(const [id,btn,ret] of [['vcRoom','.vc-x','__vcBack'],['earRoom','#earX','__earBack'],['prRoom','#prX','__prBack']]){ if(vis(id)){ const b=document.querySelector('#'+id+' '+btn); try{ if(b) b.click(); }catch(_){} const f=window[ret]; window[ret]=null; if(typeof f==='function'){ try{ f(); }catch(_){} } return; } } }
