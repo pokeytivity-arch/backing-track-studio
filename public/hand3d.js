@@ -8,6 +8,7 @@ import { GLTFLoader } from './vendor/three/GLTFLoader.js';
 
 const FINGERS = ['thumb', 'index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'];
 const KEY_MM = 23.5;                     /* a white key is 23.5 mm wide */
+const HAND_SIZE = 1.15;                  /* the hands are drawn 15% bigger than life against the keys, so they read well on screen */
 let renderer, scene, cam, canvas, wrap, plane, key, ready = false, failed = false, G = { W: 600, H: 200, kw: 20, KH: 120, HP: 36 };
 const hands = {};                        /* rh / lh: { root, arm, bones, rest, chains, anchor, mat } */
 let skinCol = '#c8916f';
@@ -230,7 +231,7 @@ export function show(b) { if (canvas) canvas.style.display = b ? 'block' : 'none
 export function pose(d) {
   const h = hands[d.side]; if (!h) return;
   h.root.visible = !!d.on; h.arm.visible = false; if (!d.on) return;
-  h.lastD = { f: d.f, az: Math.round(d.az), az3: d.az3, ax: d.ax, tips: d.tips.map(t => t.map(v => Math.round(v))) }; poseHand(h, d, G.kw / (KEY_MM / 1000));
+  h.lastD = { f: d.f, az: Math.round(d.az), az3: d.az3, ax: d.ax, tips: d.tips.map(t => t.map(v => Math.round(v))) }; poseHand(h, d, G.kw / (KEY_MM / 1000) * HAND_SIZE);
 }
 export function dbg() { return { t3: hands.rh && hands.rh.dbg3, t2: { rh: hands.rh && hands.rh.dbg2, lh: hands.lh && hands.lh.dbg2 }, rh: hands.rh && hands.rh.dbg, d: hands.rh && hands.rh.lastD, frames: nR }; }
 let nR = 0;
