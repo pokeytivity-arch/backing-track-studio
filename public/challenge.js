@@ -87,7 +87,7 @@ async function api(method,body){
   const r=await fetch('/api/acct',{method,headers:Object.assign({'content-type':'application/json'},tok?{authorization:'Bearer '+tok}:{}),body:body?JSON.stringify(body):undefined});
   let j={}; try{ j=await r.json(); }catch(_){} j._s=r.status; return j;
 }
-function emptyData(){ return {v:1,plan:null,start:null,checks:{},history:[],done:[]}; }
+function emptyData(){ return {v:1,plan:null,start:null,checks:{},history:[],done:[],plans:[]}; }
 async function loadAcct(){
   if(!tok) return false; const j=await api('GET'); if(j._s!==200){ if(j._s===401){ tok=''; try{ localStorage.removeItem(TK); }catch(_){} } return false; }
   acct={name:j.name,email:j.email,role:j.role}; D=Object.assign(emptyData(),j.data||{}); return true;
@@ -220,6 +220,10 @@ const css=document.createElement('style'); css.textContent=`
 #chShade .tm .tm-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
 #chShade .tm .tm-done{font-size:54px}
 #chShade .tm .mut{color:var(--muted)}
+#chRoom .pcard .pem{font-size:34px;line-height:1}
+#chRoom .pcard.on{border-color:rgba(var(--gl),1);box-shadow:0 0 0 2px rgba(var(--gl),.8),0 0 50px 2px rgba(var(--gl),.45)}
+#chRoom .pcard.on:after{content:"Active";position:absolute;top:18px;right:18px;font:800 12px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--hi);color:var(--hi-ink)}
+#chRoom button.arena{margin-top:10px;background:linear-gradient(135deg,#3dd9c4,#0f8a7a);color:#fff;border-color:transparent;font-weight:800}
 #chShade{position:fixed;inset:0;z-index:160000;background:rgba(0,0,0,.6);display:none;place-items:center}
 #chShade.on{display:grid}
 #chShade .md{background:var(--surface,#fff);color:var(--ink,#111);border:1px solid var(--line);border-radius:18px;padding:20px;width:min(560px,94vw);max-height:88vh;overflow:auto;font-family:var(--body)}
@@ -241,7 +245,7 @@ async function open(){
   if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||(window.ACCOUNT&&ACCOUNT.name())||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); ok=true; }
   view=ok?'home':'auth'; render();
 }
-function close(){ if(room) room.classList.remove('on'); shade.classList.remove('on'); }
+function close(){ if(room) room.classList.remove('on'); shade.classList.remove('on'); try{ const c=document.querySelector('.cl-box[data-k=plan]'); if(c) setTimeout(arenaCard,50); }catch(_){} }
 function render(){
   if(!room) return; room.textContent=''; const w=el('div','w'); room.appendChild(w);
   if(msg){ const m=el('div','msg',esc(msg)); w.appendChild(m); msg=''; }
@@ -257,6 +261,7 @@ function head(w,sub){
   const h=el('div','row'); h.style.justifyContent='space-between';
   const l=el('div'); l.innerHTML='<h1><button id="chBk" aria-label="Back" title="Back" style="margin-right:10px;padding:2px 12px">←</button>Practice Plan Builder</h1><div class="mut">'+esc(sub||'Practice plans to keep you going. The 90 Day Challenge is one of them.')+'</div>'; h.appendChild(l);
   l.querySelector('#chBk').onclick=()=>{ if(window.SUITE) SUITE.back(); };
+  { const ar=el('button','sm arena','🎹 Practice Arena →'); ar.title='Go to the Practice Arena'; ar.onclick=()=>{ close(); if(window.SUITE) SUITE.go('hall'); }; l.appendChild(ar); }
   const r=el('div','row'); r.innerHTML='<span class="mut">'+esc(acct.name||(tok?acct.email:''))+'</span>'; const o=el('button','sm',tok?'Sign out':'Sign in'); if(!tok&&!BYPASS) o.hidden=false; o.onclick=async()=>{ if(tok) await AUTH.signOut(); tok=''; acct=null; D=null; try{ localStorage.removeItem(TK); }catch(_){} view='auth'; render(); }; if(tok) r.appendChild(o); h.appendChild(r); w.appendChild(h);
 }
 /* --- sign in --- */
@@ -270,24 +275,49 @@ function authView(w){
 /* --- choose a plan --- */
 function planLen(p){ return normWeek(p.week).reduce((a,d)=>a+d.length,0); }
 function planMeta(p){ const w=normWeek(p.week), n=w.reduce((a,d)=>a+d.length,0), m=w.reduce((a,d)=>a+mins(d),0); return n+' session block'+(n===1?'':'s')+' a week'+(m?' · '+fmtMin(m)+' a week':''); }
+/* --- your plans: plans you build are kept as cards; activate one and it shows in the Practice Arena --- */
+const newPid=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function planDesc(p){ const seen=[]; normWeek(p.week).forEach(d=>d.forEach(b=>{ const n=ELM[b.e]&&ELM[b.e].name; if(n&&!seen.includes(n)) seen.push(n); })); return seen.length?seen.join(' · '):'No elements yet.'; }
+function activeId(){ return D&&D.plan&&status()==='run'?(D.plan.sid||D.plan.id):null; }
+function activate(p){ const cur=activeId();
+  if(cur&&cur!==p.id&&!confirm('Activate "'+p.name+'"? Your current plan, '+D.plan.name+' (Day '+Math.min(dayNum(),90)+' of 90), moves to your history.')) return;
+  if(D.plan&&status()==='run'&&cur!==p.id) endAttempt('stopped');
+  if(activeId()===p.id){ msg='"'+p.name+'" is already your active plan.'; render(); return; }
+  startPlan({id:p.official?p.id:'mine',sid:p.id,name:p.name,official:!!p.official,week:JSON.parse(JSON.stringify(p.week))});
+  msg='"'+p.name+'" is active. You will find it in the Practice Arena.'; render(); }
+function plansSection(w){
+  const act=activeId();
+  w.appendChild(el('h2','','Your plans'));
+  const g=el('div','pgrid'); w.appendChild(g);
+  const mk=(p,vars,ic,blurb,meta)=>{ const c=el('div','pcard'); c.style.cssText=vars; c.innerHTML='<i class="pic">'+ic+'</i><b class="pnm"></b><p class="pbl"></p><p class="pmt"></p>'; c.querySelector('.pnm').textContent=p.name; c.querySelector('.pbl').textContent=blurb; c.querySelector('.pmt').textContent=meta; return c; };
+  (D.plans||[]).forEach(p=>{ const w0=normWeek(p.week), first=w0.flat()[0], E=first?ELM[first.e]:ELS[0];
+    const c=mk(p,boardVars(E),'<span class="pem">'+E.ic+'</span>',planDesc(p),planMeta(p)+'.'); if(act===p.id) c.classList.add('on');
+    const r=el('div','row prow'); const a=el('button','pri',act===p.id?'Active ✓':'Activate'); a.disabled=act===p.id; a.onclick=()=>activate(p);
+    const e=el('button','','Edit'); e.onclick=()=>{ draft={sid:p.id,name:p.name,official:false,week:normWeek(JSON.parse(JSON.stringify(p.week)))}; pick=0; addOpen=-1; view='build'; render(); };
+    const x=el('button','','Delete'); x.onclick=()=>{ if(!confirm('Delete "'+p.name+'"?'+(act===p.id?' It stays active until you finish or stop it.':''))) return; D.plans=D.plans.filter(q=>q.id!==p.id); queueSave(); render(); };
+    r.append(a,e,x); c.appendChild(r); g.appendChild(c); });
+  const nb=mk({name:'Build a plan'},'--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c','<svg viewBox="0 0 48 48" fill="none"><path d="M24 8v32M8 24h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>','Build each day as a timed session: Warm Up, Practice, Rehearsal, Song Breakdown, Break, Study, Research, Active Listening, Ear-training and Meditation. It is kept here as a card; activate it and it shows in the Practice Arena.','');
+  const nr=el('div','row prow'); const nbtn=el('button','pri','Open the plan builder'); nbtn.onclick=()=>{ draft={sid:null,name:'My plan',official:false,week:[[],[],[],[],[],[],[]]}; pick=0; addOpen=-1; view='build'; render(); }; nr.appendChild(nbtn); nb.appendChild(nr); g.appendChild(nb);
+  w.appendChild(el('h2','','Ready-made plans'));
+  const g2=el('div','pgrid'); w.appendChild(g2);
+  const TONES=[['--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9','<svg viewBox="0 0 48 48" fill="none"><path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/></svg>'],
+    ['--g1:#e0911a;--g2:#3b2205;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a','<svg viewBox="0 0 48 48" fill="none"><rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/></svg>'],
+    ['--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255;--c1:#b78bff;--c2:#6a35d8','<svg viewBox="0 0 48 48" fill="none"><path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/></svg>']];
+  PLANS.forEach((p,k)=>{ const c=mk(p,TONES[k%3][0],TONES[k%3][1],p.blurb||'',planMeta(p)+'. Earns a certificate.'); if(act===p.id) c.classList.add('on');
+    const r=el('div','row prow'); const st=el('button','pri',act===p.id?'Active ✓':'Activate'); st.disabled=act===p.id; st.onclick=()=>activate({id:p.id,name:p.name,official:true,week:p.week});
+    const v=el('button','','Customize'); v.onclick=()=>{ draft={sid:null,name:p.name+' (my version)',official:false,week:normWeek(JSON.parse(JSON.stringify(p.week)))}; pick=0; addOpen=-1; view='build'; render(); };
+    r.append(st,v); c.appendChild(r); g2.appendChild(c); });
+  w.appendChild(el('p','mut','Rules: check in every day. Miss one day and you carry on. Miss two days in a row and the challenge starts again from Day 1.'));
+}
+function saveDraft(andActivate){ const name=(draft.name||'').trim()||'My plan', week=normWeek(draft.week); D.plans=D.plans||[];
+  let p=draft.sid&&D.plans.find(q=>q.id===draft.sid); if(p){ p.name=name; p.week=week; p.at=Date.now(); } else { p={id:newPid(),name,week,at:Date.now()}; D.plans.unshift(p); }
+  if(activeId()===p.id){ D.plan.name=name; D.plan.week=JSON.parse(JSON.stringify(week)); }   /* editing the active plan keeps its progress */
+  queueSave(); draft=null; view='home';
+  if(andActivate) activate(p); else { msg='"'+name+'" is saved in Your plans.'+(activeId()===p.id?' Your active plan is updated.':' Activate it to start.'); render(); } }
 function chooseView(w){
   head(w,'Pick a plan, then check in every day for 90 days.');
   const tb=el('div'); w.appendChild(tb); teachBox(tb);
-  w.appendChild(el('h2','','Ready-made plans'));
-  const g=el('div','pgrid'); w.appendChild(g);
-  const TONES=[['--g1:#3a62e0;--g2:#0c1650;--gl:91,140,255;--c1:#5b8cff;--c2:#2a45c9','<path d="M6 36h5v-5h5v-5h5v-5h5v-5h5v-5h6v26H6Z" fill="#fff"/>'],
-    ['--g1:#e0911a;--g2:#3b2205;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a','<rect x="5" y="9" width="38" height="30" rx="4" fill="#fff"/><path d="M14.5 9v30M24 9v30M33.5 9v30" stroke="#c9ccd6" stroke-width="1.6"/><rect x="11" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="20.5" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/><rect x="30" y="9" width="7" height="18" rx="1.6" fill="#1b2036"/>'],
-    ['--g1:#8a52f0;--g2:#1c0f4a;--gl:170,120,255;--c1:#b78bff;--c2:#6a35d8','<path d="M9 28v-4a15 15 0 0 1 30 0v4" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><rect x="5.5" y="26" width="9" height="15" rx="4" fill="#fff"/><rect x="33.5" y="26" width="9" height="15" rx="4" fill="#fff"/>'],
-    ['--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c','<path d="M24 8v32M8 24h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>']];
-  const card=(t,name,blurb,meta)=>{ const c=el('div','pcard'); c.style.cssText=t[0]; c.innerHTML='<i class="pic"><svg viewBox="0 0 48 48" fill="none">'+t[1]+'</svg></i><b class="pnm"></b><p class="pbl"></p><p class="pmt"></p>'; c.querySelector('.pnm').textContent=name; c.querySelector('.pbl').textContent=blurb; c.querySelector('.pmt').textContent=meta; return c; };
-  PLANS.forEach((p,k)=>{
-    const c=card(TONES[k%3],p.name,p.blurb||'',planMeta(p)+'. Earns a certificate.');
-    const r=el('div','row prow'); const st=el('button','pri','Start this plan'); st.onclick=()=>startPlan({id:p.id,name:p.name,official:true,week:p.week});
-    const v=el('button','','Customize'); v.onclick=()=>{ draft={id:'mine',name:p.name+' (my version)',official:false,week:normWeek(JSON.parse(JSON.stringify(p.week)))}; pick=0; view='build'; render(); };
-    r.append(st,v); c.appendChild(r); g.appendChild(c); });
-  const mine=card(TONES[3],'Build my own plan','Build each day as a timed session: Warm Up, Practice, Rehearsal, Song Breakdown, Break, Study, Research, Active Listening, Ear-training and Meditation. Your progress is tracked, but certificates are for the ready-made plans.','');
-  const mr=el('div','row prow'); const mb=el('button','pri','Open the plan builder'); mb.onclick=()=>{ draft={id:'mine',name:'My plan',official:false,week:[[],[],[],[],[],[],[]]}; pick=0; view='build'; render(); }; mr.appendChild(mb); mine.appendChild(mr); g.appendChild(mine);
-  const note2=el('p','mut','Rules: check in every day. Miss one day and you carry on. Miss two days in a row and the challenge starts again from Day 1.'); w.appendChild(note2);
+  plansSection(w);
   if(D.history.length){ w.appendChild(el('h2','','Past attempts')); const b=el('div','box'); b.innerHTML=D.history.slice(0,8).map(h=>'<div class="item"><span class="nm">'+esc(h.plan)+'</span><span class="mut">'+esc(h.start)+' · '+(h.reason==='missed'?'restarted after missed days':h.reason==='stopped'?'stopped':'completed')+' · '+h.pct+'%</span></div>').join(''); w.appendChild(b); }
 }
 function startPlan(p){ p.week=normWeek(p.week); D.plan=p; D.start=todayStr(); D.checks={}; queueSave(); view='home'; render(); }
@@ -319,7 +349,8 @@ function runView(w){
   w.appendChild(el('h2','','Your 90 days'));
   const cal=el('div','box'); const grid=el('div','cal'); for(let k=1;k<=90;k++){ const it=dayItems(k), cc=D.checks[k]; let cls=''; if(!it.length) cls='rest'; else if(cc&&cc.done) cls=cc.items.length>=it.length?'ok':'part'; else if(k<n) cls='miss'; const b=el('b',cls+(k===n?' now':''),String(k)); b.title='Day '+k; grid.appendChild(b); } cal.appendChild(grid);
   cal.appendChild(el('p','mut','<span style="font-size:13px">Filled = all items done · lighter = checked in with some items missed · red = missed · dashed = rest day</span>')); w.appendChild(cal);
-  const r2=el('div','row'); const sp=el('button','sm','Stop and start over'); sp.onclick=()=>{ if(confirm('Stop this challenge? It will be saved in your history and you can start again.')){ endAttempt('stopped'); render(); } }; r2.appendChild(sp); w.appendChild(r2);
+  { const r2=el('div','row'); const sp=el('button','sm','Stop and start over'); sp.onclick=()=>{ if(confirm('Stop this challenge? It will be saved in your history and you can start again.')){ endAttempt('stopped'); render(); } }; r2.appendChild(sp); w.appendChild(r2); }
+  plansSection(w);
 }
 /* --- the session timer: runs through the day's timed blocks in order; when a block's time is up it is ticked off --- */
 let TMR=null, TMT=0;
@@ -421,10 +452,11 @@ function buildView(w){
   const cp=el('div','row'); cp.style.marginTop='12px'; const all=el('button','sm','Copy this day to every day'); all.onclick=keepY(()=>{ const src=JSON.stringify(day); draft.week=draft.week.map(()=>JSON.parse(src)); }); const clr=el('button','sm','Clear this day'); clr.onclick=keepY(()=>{ draft.week[pick]=[]; addOpen=-1; }); cp.append(all,clr); w.appendChild(cp);
   const r=el('div','row'); r.style.marginTop='22px';
   const total=draft.week.reduce((a,d)=>a+d.length,0);
-  const go=el('button','pri',draft.target?'Send to '+draft.target.name:'Start my 90 days'); go.disabled=!total;
-  go.onclick=draft.target?async()=>{ go.disabled=true; const j=await apiT('plset',{id:draft.target.id,name:draft.name.trim()||'Practice plan',week:draft.week}); if(j._s===200){ msg='Plan sent to '+draft.target.name+'.'; draft=null; view='home'; render(); } else { go.disabled=false; alert('Could not send the plan. Try again.'); } }:()=>{ startPlan({id:'mine',name:draft.name.trim()||'My plan',official:false,week:draft.week}); };
-  const cn=el('button','','Cancel'); cn.onclick=()=>{ view='home'; render(); }; r.append(go,cn); w.appendChild(r);
-  if(!total) w.appendChild(el('p','mut','Add at least one element to a day to start.'));
+  const go=el('button','pri',draft.target?'Send to '+draft.target.name:'Save plan'); go.disabled=!total;
+  go.onclick=draft.target?async()=>{ go.disabled=true; const j=await apiT('plset',{id:draft.target.id,name:draft.name.trim()||'Practice plan',week:draft.week}); if(j._s===200){ msg='Plan sent to '+draft.target.name+'.'; draft=null; view='home'; render(); } else { go.disabled=false; alert('Could not send the plan. Try again.'); } }:()=>saveDraft(false);
+  const cn=el('button','','Cancel'); cn.onclick=()=>{ view='home'; render(); }; r.append(go);
+  if(!draft.target){ const ga=el('button','',activeId()&&draft.sid===activeId()?'Save (stays active)':'Save and activate'); ga.disabled=!total; ga.onclick=()=>saveDraft(true); r.appendChild(ga); } r.appendChild(cn); w.appendChild(r);
+  if(!total) w.appendChild(el('p','mut','Add at least one element to a day to save the plan.'));
   w.appendChild(el('p','mut','Plans you build or change are tracked like any other, but only the ready-made plans earn a certificate.'));
 }
 /* --- teachers and students: practice plans --- */
@@ -483,5 +515,29 @@ function back(){ if(!room||!room.classList.contains('on')) return false; if(shad
 /* for a teacher's suite: the plan open now, and starting a plan a teacher put in their suite */
 const planNow=()=>D&&D.plan?JSON.parse(JSON.stringify(D.plan)):null;
 async function startWith(p){ await open(); setTimeout(()=>{ try{ if(p&&p.week) startPlan(JSON.parse(JSON.stringify(p))); }catch(_){} },400); }
-window.CHALLENGE={open,close,back,planNow,startWith};
+/* --- the active plan as a card in the Practice Arena (next to Ear training, Scale Practice and Chord Practice) --- */
+async function peek(){ try{ if(!D||!acct){ let ok=false; try{ tok=localStorage.getItem(TK)||tok; }catch(_){} if(tok) ok=await loadAcct(); if(!ok&&BYPASS){ let g={}; try{ g=JSON.parse(localStorage.getItem(GK)||'{}'); }catch(_){} acct={name:g.name||'',email:'guest'}; D=Object.assign(emptyData(),g.data||{}); } }
+  if(!D||!D.plan||!D.start) return null; const st=status(); if(st!=='run') return st==='complete'?{name:D.plan.name,complete:true}:null;
+  const n=dayNum(), bl=dayBlocks(n), c=D.checks[n]; return {name:D.plan.name,day:Math.min(n,90),mins:mins(bl),blocks:bl.length,done:!!(c&&c.done)}; }catch(_){ return null; } }
+let arenaBusy=false;
+async function arenaCard(){ const four=document.querySelector('#clHome .cl-four'); if(!four) return;
+  let c=four.querySelector('.cl-box[data-k=plan]');
+  if(!c){ c=document.createElement('button'); c.type='button'; c.className='cl-box'; c.dataset.k='plan'; c.style.cssText='--g1:#12b886;--g2:#06302a;--gl:60,220,170;--c1:#63e6be;--c2:#0ca678';
+    c.innerHTML='<div class="ph plan-ph"></div><div class="tx"><i class="ic">'+((window.SUITE&&SUITE.icons&&SUITE.icons.challenge)||'🏆')+'</i><b></b><span></span><em class="go">Open →</em></div>';
+    c.onclick=()=>{ if(window.SUITE) SUITE.go('challenge'); }; four.appendChild(c);
+    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect(); c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); }); }
+  const set=(t,s,g)=>{ c.querySelector('b').textContent=t; c.querySelector('span').textContent=s; c.querySelector('.go').textContent=g; };
+  if(!c.dataset.filled) set('Practice Plan Builder','Build a practice plan, then activate it here.','Open →');
+  if(arenaBusy) return; arenaBusy=true; const p=await peek(); arenaBusy=false; c.dataset.filled='1';
+  if(!p) set('Practice Plan Builder','Build a practice plan, then activate it to see it here every day.','Build a plan →');
+  else if(p.complete) set(p.name,'All 90 days done. Collect your certificate.','Open →');
+  else set(p.name,'Day '+p.day+' of 90 · '+(p.done?'Today is done ✓':p.blocks?'Today: '+(p.mins?fmtMin(p.mins)+' session':p.blocks+' block'+(p.blocks===1?'':'s')):'Rest day'),p.done?'Open →':'Start today →'); }
+const arenaCss=document.createElement('style'); arenaCss.textContent=`
+body:not([data-area=hall]) .cl-box[data-k=plan]{display:none!important}
+body[data-area=hall] #clHome .cl-four{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media(max-width:1000px){ body[data-area=hall] #clHome .cl-four{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
+.cl-box .plan-ph{background:radial-gradient(circle at 70% 30%,rgba(99,230,190,.55),transparent 60%),radial-gradient(circle,rgba(255,255,255,.75) 0 4px,transparent 5px) 0 0/22px 22px;opacity:.9}
+.cl-box[data-k=plan] .ic svg{width:33px;height:33px}`; document.head.appendChild(arenaCss);
+{ let last=''; const chk=()=>{ const a=document.body.dataset.area||''; if(a==='hall'&&last!=='hall') arenaCard(); last=a; }; new MutationObserver(chk).observe(document.body,{attributes:true,attributeFilter:['data-area']}); window.addEventListener('ps-auth',()=>{ if(room&&room.classList.contains('on')) return; D=null; acct=null; tok=''; try{ tok=localStorage.getItem(TK)||''; }catch(_){} if(document.body.dataset.area==='hall') arenaCard(); }); setTimeout(chk,800); }
+window.CHALLENGE={open,close,back,planNow,startWith,peek,arenaCard};
 })();
