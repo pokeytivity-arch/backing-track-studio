@@ -171,6 +171,21 @@ function assignBar(){ let b=document.getElementById('rlAssign'); if(b) b.remove(
   cx.onclick=endAssign; t.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter') go.click(); };
   b.append(t,go,cx); document.body.appendChild(b); }
 function endAssign(){ try{ sessionStorage.removeItem('ps-assign'); }catch(_){} const b=document.getElementById('rlAssign'); if(b) b.remove(); render(); }
+/* Meet a student (the teacher's Class): students looking for a teacher */
+const SEEK=[
+  {n:'Chidi N.',lv:'Beginner',want:'Play hymns for my church in six months',when:'Evenings, Lagos time'},
+  {n:'Maria L.',lv:'Intermediate',want:'Gospel chords and passing chords',when:'Weekends'},
+  {n:'Daniel K.',lv:'Beginner',want:'Learn to play by ear',when:'Mornings'},
+  {n:'Esther O.',lv:'Advanced',want:'Jazz reharmonization and voicings',when:'Weekday afternoons'}];
+function meetStudents(){ const b=panel('Meet a student','Students looking for a teacher. Invite the ones you would like to teach, or share your code so they can find you.');
+  const inv=jget('ps-t-invited',{}); const box=el('div'); b.appendChild(box);
+  const draw=()=>{ box.textContent=''; const tag=el('div','rl-mut','<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(255,212,59,.14);color:#ffd43b;font:800 10px var(--body);letter-spacing:.1em;text-transform:uppercase">Sample</span>'); tag.style.margin='0 0 6px'; box.appendChild(tag);
+    SEEK.forEach(p=>{ const r=el('div','rl-li'); r.appendChild(el('div','rl-t','<b>'+esc(p.n)+' · '+esc(p.lv)+'</b><small>'+esc(p.want)+' · '+esc(p.when)+'</small>'));
+      const done=!!inv[p.n], bt=el('button','rl-btn'+(done?'':' pri'),done?'Invited ✓':'Invite'); bt.type='button';
+      bt.onclick=()=>{ inv[p.n]=!inv[p.n]; jset('ps-t-invited',inv); if(inv[p.n]) toast('Invite sent to '+p.n+(/\.$/.test(p.n)?'':'.')+' They see it in their Class.'); draw(); }; r.appendChild(bt); box.appendChild(r); });
+    const f=el('div','rl-li'); f.appendChild(el('div','rl-t','<b>Your invite code</b><small>Students type it under "Have an invite code?"</small>')); f.appendChild(el('span','rl-code',esc(code()))); f.querySelector('.rl-code').style.cssText='font:900 22px ui-monospace,Menlo,monospace;color:#ffd43b;letter-spacing:.06em';
+    const cp=el('button','rl-btn','Copy invite link'); cp.type='button'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); }; f.appendChild(cp); box.appendChild(f); };
+  draw(); }
 /* Meet a teacher (from the Class) */
 function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice hall, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
   const draw=()=>{ box.textContent=''; box.appendChild(teacherGrid(draw)); }; draw(); }
@@ -274,8 +289,12 @@ function render(){ const hub=document.getElementById('suiteHub'); if(!hub) retur
 try{ const q=new URLSearchParams(location.search).get('join'); if(q){ localStorage.setItem(RK,'student'); setTimeout(()=>joinCode(q),1200); history.replaceState(null,'',location.pathname); } }catch(_){}
 function area(k){ const r=document.getElementById('clRoot'); if(!r) return; const four=r.querySelector('.cl-four');
   if(four&&!four.querySelector('[data-k=meet]')){ const m=el('button','cl-box'); m.type='button'; m.dataset.go='meet'; m.dataset.k='meet'; m.style.cssText='--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--c1:#3dd9c4;--c2:#0f8a7a';
-    m.innerHTML='<img class="ph" src="card-class.webp" alt="" style="object-position:center 28%" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><circle cx="17" cy="16" r="6" fill="#fff"/><circle cx="33" cy="18" r="5" fill="#fff" opacity=".85"/><path d="M5 38c0-7 5.5-12 12-12s12 5 12 12" fill="#fff"/><path d="M27 38c0-5 3-9 7-9s9 3 9 9" fill="#fff" opacity=".85"/></svg></i><b>Meet a teacher</b><span>Find a teacher, subscribe, and learn with them in the suite.</span></div>';
-    m.onclick=meetPanel; four.appendChild(m); }
+    m.innerHTML='<img class="ph" src="card-class.webp" alt="" style="object-position:center 28%" decoding="async"><div class="tx"><i class="ic"><svg viewBox="0 0 48 48" fill="none"><circle cx="17" cy="16" r="6" fill="#fff"/><circle cx="33" cy="18" r="5" fill="#fff" opacity=".85"/><path d="M5 38c0-7 5.5-12 12-12s12 5 12 12" fill="#fff"/><path d="M27 38c0-5 3-9 7-9s9 3 9 9" fill="#fff" opacity=".85"/></svg></i><b></b><span></span></div>';
+    four.appendChild(m); }
+  { const m=four&&four.querySelector('[data-k=meet]'); if(m){ const T=role()==='teacher';   /* a teacher meets students, a student meets teachers */
+      m.querySelector('.tx b').textContent=T?'Meet a student':'Meet a teacher';
+      m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your studio.':'Find a teacher, subscribe, and learn with them in the suite.';
+      m.setAttribute('aria-label',T?'Meet a student':'Meet a teacher'); m.onclick=T?meetStudents:meetPanel; } }
   const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Hall':'Class Area';
   const w=r.querySelector('.cl-welcome'); if(w){ if(!w.dataset.orig) w.dataset.orig=w.innerHTML;
     w.innerHTML=k==='hall'?'Welcome to the Practice Hall. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
