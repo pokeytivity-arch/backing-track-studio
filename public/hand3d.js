@@ -194,6 +194,30 @@ function addArm(mat) {
   const g = new THREE.CylinderGeometry(1.05, 1.0, 1, 40, 1, true); const m = new THREE.Mesh(g, mat); m.castShadow = true; m.visible = false; m.userData.off = true; scene.add(m); return m;
 }
 
+
+/* thumbs up, seen from the camera above: the fingers curl into a fist, the thumb stays out, and the hand turns so the thumb points up the screen
+   with the curled fingers facing the camera. Shown for a moment after a practice finishes. */
+function poseThumbs(h, d, s) {
+  const { rest, n, fwd } = h;
+  const wr = rest['wrist'].p, tt = rest['thumb-tip'].p, t0 = tt.clone().sub(wr);
+  const u = t0.sub(fwd.clone().multiplyScalar(t0.dot(fwd))).normalize(), third = new THREE.Vector3().crossVectors(u, fwd).normalize();
+  const upW = new THREE.Vector3(0, 0, -1), frontW = new THREE.Vector3(0, 1, 0), thirdW = new THREE.Vector3().crossVectors(upW, frontW).normalize();
+  const Mm = new THREE.Matrix4().makeBasis(u, fwd.clone(), third), Mw = new THREE.Matrix4().makeBasis(upW, frontW, thirdW);
+  const Rq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().multiplyMatrices(Mw, Mm.clone().transpose()));
+  h.root.quaternion.copy(Rq); h.root.scale.setScalar(s);
+  const a = h.anchor.clone().applyQuaternion(Rq).multiplyScalar(s);
+  h.root.position.set(d.ax - a.x, G.kw * 2.2 - a.y, d.az - G.kw * .6 - a.z);
+  ['index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'].forEach(f => {
+    const names = [f + '-phalanx-proximal', f + '-phalanx-intermediate', f + '-phalanx-distal'];
+    const f0 = rest[f + '-tip'].p.clone().sub(rest[names[0]].p); f0.sub(n.clone().multiplyScalar(f0.dot(n))).normalize();
+    const axis = new THREE.Vector3().crossVectors(n, f0).normalize(), fl = ang => new THREE.Quaternion().setFromAxisAngle(axis, ang);   /* the same bend the chords use to take a finger down */
+    const a1 = 1.45, a2 = 1.65, a3 = 1.0;
+    setChainWorld(h, [f + '-metacarpal'].concat(names), [rest[f + '-metacarpal'].q.clone(), fl(a1).multiply(rest[names[0]].q), fl(a1 + a2).multiply(rest[names[1]].q), fl(a1 + a2 + a3).multiply(rest[names[2]].q)]);
+  });
+  setChainWorld(h, ['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal'], ['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal'].map(nm => rest[nm].q.clone()));
+  h.root.updateMatrixWorld(true);
+}
+
 let loading = null;
 export function init(wrapEl) {
   if (!SKIN && !loading) { loading = fetch('hands3d/skin.json?v=1').then(r => r.json()).then(j => { SKIN = j; loading = null; return init(wrapEl); }); return loading; }
@@ -231,6 +255,7 @@ export function show(b) { if (canvas) canvas.style.display = b ? 'block' : 'none
 export function pose(d) {
   const h = hands[d.side]; if (!h) return;
   h.root.visible = !!d.on; h.arm.visible = false; if (!d.on) return;
+  if (window.__thumbsUp && performance.now() < window.__thumbsUp) { poseThumbs(h, d, G.kw / (KEY_MM / 1000) * HAND_SIZE); return; }
   h.lastD = { f: d.f, az: Math.round(d.az), az3: d.az3, ax: d.ax, tips: d.tips.map(t => t.map(v => Math.round(v))) }; poseHand(h, d, G.kw / (KEY_MM / 1000) * HAND_SIZE);
 }
 export function dbg() { return { t3: hands.rh && hands.rh.dbg3, t2: { rh: hands.rh && hands.rh.dbg2, lh: hands.lh && hands.lh.dbg2 }, rh: hands.rh && hands.rh.dbg, d: hands.rh && hands.rh.lastD, frames: nR }; }

@@ -27,7 +27,7 @@ let real=mode!=='drawn';
 /* 3D hands (hand3d.js): loaded only when chosen */
 let P3=null, p3skin=null;
 function g3(){ return {W:geo.W,kw:geo.kw,KH:geo.kbH,HP:geo.HP}; }
-function load3d(){ if(P3||!host) return; import('./hand3d.js?v=19').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
+function load3d(){ if(P3||!host) return; import('./hand3d.js?v=20').then(m=>m.init(host._hw).then(()=>{ P3=m; m.resize(g3()); m.show(mode==='3d'); window.addEventListener('ps3d-tex',()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); }); last=0; if(!raf) raf=requestAnimationFrame(tick); })).catch(e=>{ console.warn('3D hands unavailable',e); if(mode==='3d'){ mode='real'; real=true; } }); }
 /* chords: a hand of its own, separate from the scale hand. Every chord finger lands on its key (black keys near their front end, and when
    the chord uses black keys the white-key fingers play further in, between them), the fingers the chord doesn't use wait just above
    their keys, the knuckles sit across the chord and the hand sits back just far enough that every finger reaches down onto its key. */
@@ -335,5 +335,7 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
   set(n.n,{cx:bx,cy:by,rx:r,ry:r,fill:act?'#ffd43b':'rgba(18,26,48,.82)',stroke:act?'#b8860b':'rgba(255,255,255,.7)','stroke-width':1,transform:''});
   const y2=by-kw*.15; set(n.t,{x:bx,y:y2,'font-size':Math.max(9,Math.min(13,kw*.55)),fill:act?'#2a1a0d':'#fff',transform:'translate('+bx+' '+y2+') scale(1 -1) translate('+(-bx)+' '+(-y2)+')'}); n.t.textContent=String(num); set(n.n,{display:'none'}); set(n.t,{display:'none'});
 }
-window.PSHANDS={lead,pause,sync,tones:TONES,isOn:()=>on,dbg:()=>P3&&P3.dbg&&P3.dbg()};
+/* a thumbs up from each hand on the keys, for a moment, after a practice finishes */
+function thumbsUp(ms){ if(mode!=='3d'||!P3) return; const end=performance.now()+(ms||2400); window.__thumbsUp=end; const loop=()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); if(performance.now()<end+150) setTimeout(loop,90); }; loop(); }
+window.PSHANDS={lead,pause,sync,thumbsUp,tones:TONES,isOn:()=>on,dbg:()=>P3&&P3.dbg&&P3.dbg()};
 })();

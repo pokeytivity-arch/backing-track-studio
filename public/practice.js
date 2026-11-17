@@ -147,6 +147,8 @@ function watchSync(){ if(!ov) return; const sc=kind==='scales';
   if(!SES.on) return;
   const run=!paused, was=!!SES.t0; if(run&&!SES.t0) SES.t0=Date.now(); if(!run&&SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } if(run!==was){ if(run){ feedRun(true); pmClear(); } else { feedRun(false); if(FD.on) feedBeat(true); pmIdle(); } }
   if(SWITCHING) return; const show=run||['prompt','count','break','recover'].includes(PM.mode); const w=watchEl(); if(w){ w.hidden=!show; watchPlace(w); } ov.classList.toggle('p-locked',show); { const bk=$('#prBreak'); if(bk) bk.hidden=run||PM.mode==='break'||PM.mode==='count'||PM.mode==='recover'; } watchDraw(); if(run) meterGo(); }
+/* a thumbs up from the hands when a practice is finished (it played to the end, or was stopped after at least one full time through) */
+let doneOnce=false; const cheer=()=>{ doneOnce=false; try{ if(window.PSHANDS&&PSHANDS.thumbsUp) setTimeout(()=>PSHANDS.thumbsUp(2600),250); }catch(_){} };
 const playPause=()=>{ if(!playing){ playAll(); updPause(); return; } if(waitL) return; if(pauseFn) pauseFn(); };
 const killCh=()=>{ try{ chBus.forEach(b=>CLASS.clock.kill(b)); }catch(_){} chBus=[]; bassFO=null; chBeat=0; planNext=null; BPEND={}; lastEv=null; };
 const clr=()=>{ curDesc=false; killCh(); timers.forEach(x=>{ if(x&&x.clear) x.clear(); else clearTimeout(x); }); timers=[]; playing=false; paused=false; waitL=false; pauseFn=null; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} updPause(); const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent='▶ Play'; };
@@ -556,7 +558,7 @@ function playRhythm(){
       while(k<ev.length&&at(ev[k].b,cyc)<hz){ const e=ev[k], t=at(e.b,cyc), s0=steps[e.i], s=e.desc&&s0.alt?s0.alt:s0, k0=k; C.step(s,t,Math.max(.25,e.d*spb*1.15),b);
         vis(()=>{ if(!playing||paused) return; cur=e.i; curDesc=e.desc; show(); tally(s);
           const nx=ev[k0+1]; if(nx&&window.PSHANDS&&PSHANDS.lead){ const c=curS(), n0=steps[nx.i], ns=nx.desc&&n0.alt?n0.alt:n0; if(c&&ns&&((c.lfing==='1'&&ns.lfing&&ns.lfing!=='1')||(c.fing==='1'&&ns.fing&&ns.fing!=='1'&&+ns.fing>=2))) vis(()=>{ if(playing&&!paused) PSHANDS.lead(ns); },e.d*spb*450); } },Math.max(0,(t-C.now())*1000)); k++; }
-      if(k>=ev.length&&beatK>=beats){ const due=st.kc&&KC.rep+1>=(st.reps||1)&&kcNextKey(true); if(due){ if(C.now()>at(beats,cyc)-0.02){ rkill(); repDone(); } return; } if(st.loop||st.kc){ KC.rep++; cyc++; k=0; beatK=0; } else if(C.now()>at(beats,cyc)-0.02){ rkill(); clr(); show(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } };
+      if(k>=ev.length&&beatK>=beats){ const due=st.kc&&KC.rep+1>=(st.reps||1)&&kcNextKey(true); if(due){ if(C.now()>at(beats,cyc)-0.02){ rkill(); repDone(); } return; } if(st.loop||st.kc){ doneOnce=true; KC.rep++; cyc++; k=0; beatK=0; } else if(C.now()>at(beats,cyc)-0.02){ rkill(); clr(); show(); cheer(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } };
     loop=setInterval(pump,40); timers.push(loop); timers.push({clear:()=>{ live.forEach(clearTimeout); live.clear(); rkill(); }}); pump();
     pauseFn=()=>{ if(!playing) return;
       if(!paused){ paused=true; pausedAt=C.now(); live.forEach(clearTimeout); live.clear(); rkill();   /* silence what was already scheduled */
@@ -589,8 +591,8 @@ function playAll(){
   if(rhyN()){ playRhythm(); return; }
   const order=kind==='scales'?seq():(kind==='chords'&&st.cmode==='voice'&&!st.loop)?[cur>=0?cur:0]:[...Array(steps.length).keys()], gap0=(60/st.bpm)*(kind==='scales'?1:(steps.length>1?2:4))*1000;
   /* chords: each one lasts as many beats as the chord canvas gives it */ const gapOf=i=>kind==='chords'&&steps[i]&&steps[i].beats?steps[i].beats*60000/st.bpm:gap0;
-  playing=true; let p=0, t0=0, rem=0; paused=false; waitL=false;
-  const adv=()=>{ if(!playing||paused) return; p++; if(p>=order.length){ if(kind==='scales'&&repDone()) return; if(st.loop||(kind==='scales'&&st.kc)){ p=0; if(kind==='chords'&&steps.arp&&order.length>1){ const a=steps[order[0]], z=steps[order[order.length-1]]; if(a&&z&&String(a.rh)===String(z.rh)) p=1; } } else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } tick(); };
+  playing=true; doneOnce=false; let p=0, t0=0, rem=0; paused=false; waitL=false;
+  const adv=()=>{ if(!playing||paused) return; p++; if(p>=order.length){ doneOnce=true; if(kind==='scales'&&repDone()) return; if(st.loop||(kind==='scales'&&st.kc)){ p=0; if(kind==='chords'&&steps.arp&&order.length>1){ const a=steps[order[0]], z=steps[order[order.length-1]]; if(a&&z&&String(a.rh)===String(z.rh)) p=1; } } else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} cheer(); return; } } tick(); };
   const sched=ms=>{ rem=ms; t0=Date.now(); timers.push(setTimeout(adv,ms)); };
   const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); tally(curS()); const gap=gapOf(order[p]); const nxi=order[p+1]!=null?order[p+1]:(st.loop?order[0]:null);
     play1(curS(),gap/1000*(kind==='scales'?1.6:1.0),kind==='chords'&&nxi!=null?steps[nxi]:null); sched(gap);
@@ -632,7 +634,7 @@ function toStudio(){
 }
 function transport(ctl){
   const b=el('button','e-btn pri','▶ Play'); b.id='prPlay'; b.type='button'; b.onclick=playPause; ctl.appendChild(b);
-  { const pb=el('button','e-btn','■ Stop'); pb.id='prPause'; pb.type='button'; pb.onclick=()=>{ if(!playing) return; clr(); show(); }; ctl.appendChild(pb); updPause(); }
+  { const pb=el('button','e-btn','■ Stop'); pb.id='prPause'; pb.type='button'; pb.onclick=()=>{ if(!playing) return; const c=doneOnce; clr(); show(); if(kind==='styl'){ const T=syT(); if(T.vars) syShow(T,T.vars[syList()[0]]); } if(c) cheer(); }; ctl.appendChild(pb); updPause(); }
   if(kind==='scales'){ const sb=el('button','e-btn','Practice in Studio'); sb.id='prStudio'; sb.type='button'; sb.onclick=toStudio; { const w=studioWhy(); sb.disabled=!!w; sb.title=w||'Practice this scale with a backing track in the Studio'; if(w) sb.style.opacity='.45'; } ctl.appendChild(sb); }
   const t=el('label','p-rng p-tempo'); t.innerHTML='Tempo <input type="range" min="40" max="200" step="2" aria-label="Tempo"><span class="p-bpm"></span>'; const r=t.querySelector('input'), o=t.querySelector('span'); r.value=st.bpm; o.textContent=st.bpm; const blink=()=>{ const l=tp.querySelector('.p-led'); if(!l) return; l.style.animation='none'; void l.offsetWidth; l.style.animation='pTap '+(60/st.bpm).toFixed(3)+'s steps(1) infinite'; };
   r.oninput=()=>{ st.bpm=+r.value; o.textContent=r.value; save(); blink(); }; ctl.appendChild(t);
@@ -1476,7 +1478,7 @@ function syChips(){ const box=$('#prChips'); box.textContent=''; const T=syT(); 
   T.vars.forEach((v,i)=>mk(syChip(T,v),st.svar!=='all'&&+st.svar===i,()=>{ st.svar=i; save(); const was=playing; render(); if(was) playAll(); }));
   mk('All varieties',st.svar==='all',()=>{ st.svar='all'; save(); const was=playing; render(); if(was) playAll(); }); }
 function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; return; }
-  const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ clr(); syShow(T,T.vars[list[0]]); drawKb(); }; updPause();
+  const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,T.vars[list[0]]); drawKb(); if(c) cheer(); }; updPause();
   let qi=0; const run=t0=>{ if(!playing) return; const v=T.vars[list[qi]], P=syPhrase(T,v), spb=60/st.bpm, bus=C.bus(); if(bus) chBus.push(bus); meterGo();
     P.ev.forEach(e=>e.n.forEach(m=>C.note(m,t0+e.t*spb,Math.max(.08,e.d*spb*(e.d<.2?1.15:1)),e.v,bus)));
     for(let b=0;b<P.total;b++) C.click(t0+b*spb,b%P.bpb===0,bus);
@@ -1485,8 +1487,8 @@ function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').t
     P.fr.forEach((f,i)=>timers.push(setTimeout(()=>{ if(!playing) return; cur=i; drawKb(); },at(f.t))));
     for(let b=0;b<P.total;b++) timers.push(setTimeout(()=>{ if(!playing) return; syShow(T,v,'Bar '+(Math.floor(b/P.bpb)+1)+' of '+(P.total/P.bpb)+' · beat '+(b%P.bpb+1)+' · '+(P.words[b]||'')); ov.querySelectorAll('.p-bch[data-ch=Variety] .p-key').forEach((c,ci)=>c.classList.toggle('p-now',st.svar==='all'&&ci===list[qi])); },at(b)));
     const end=t0+P.total*spb;
-    timers.push(setTimeout(()=>{ if(!playing) return; qi++; if(qi>=list.length){ if(!st.loop){ timers.push(setTimeout(()=>{ clr(); syShow(T,v); },Math.max(0,(end-C.now())*1000))); return; } qi=0; } run(end); },Math.max(0,(end-C.now()-0.6)*1000))); };
-  C.ready().then(()=>run(C.now()+0.15)); }
+    timers.push(setTimeout(()=>{ if(!playing) return; qi++; if(qi>=list.length){ if(!st.loop){ timers.push(setTimeout(()=>{ clr(); syShow(T,v); cheer(); },Math.max(0,(end-C.now())*1000))); return; } qi=0; } timers.push(setTimeout(()=>{ doneOnce=true; },Math.max(0,(end-C.now())*1000))); run(end); },Math.max(0,(end-C.now()-0.6)*1000))); };
+  doneOnce=false; C.ready().then(()=>run(C.now()+0.15)); }
 { const cs=document.createElement('style'); cs.textContent='#prRoom .p-bch[data-ch=Variety] .p-key.p-now{box-shadow:0 0 0 2px #ffd43b inset}#prRoom[data-styl="1"] .p-trs{max-width:340px}'; document.head.appendChild(cs); }
 /* four-note right-hand chords are fingered 1 2 3 5 (his fingering) */
 function syStep(T,v,f){ const o={name:syName(T,v),lh:f.lh,rh:f.rh,src:''}; if(f.rh.length===4){ const a=f.rh.slice().sort((x,y)=>x-y); o.rfm={[a[0]]:1,[a[1]]:2,[a[2]]:3,[a[3]]:5}; } return o; }
