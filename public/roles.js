@@ -1,6 +1,6 @@
 /* roles.js: Teacher and Student on the suite's home page (pitch demo; everything is kept on this device).
    A switch at the top of the home page: Student | Teacher. Switching saves the choice and refreshes the page.
-   Teacher: your studio. Its spaces (Class, Studio, Training Center, Workshop Room, Practice Plan Builder, and any you add),
+   Teacher: your suite. Its spaces (Practice Arena, Studio, Practice Plan Builder, and any you add),
             invite students, students, assignments and what is waiting for review.
    Student: the suite's Class, Studio, Studio+ and Practice Plan Builder, plus teachers to subscribe to. Once you join a teacher,
             their studio and their assignments show here, and an assignment opens straight into the right room.
@@ -16,12 +16,11 @@ const el=(t,c,h)=>{ const e=document.createElement(t); if(c) e.className=c; if(h
 
 /* ---------- the teacher's studio (on this device) ---------- */
 const DEF_SPACES=[
-  {id:'class',k:'class',name:'Dashboard',blurb:'Your teacher dashboard, and meet a student.',go:'class'},
   {id:'hall',k:'hall',name:'Practice Arena',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
   {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
   {id:'arena',k:'challenge',name:'Practice Plan Builder',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
-const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; if(x.id==='class'&&x.name==='Class'){ x.name='Dashboard'; x.blurb='Your teacher dashboard, and meet a student.'; } }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
-const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
+const spaces=()=>{ let s=jget(K.sp,null); if(Array.isArray(s)) s=s.filter(x=>x.id!=='class'); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; if(x.id==='class'&&x.name==='Class'){ x.name='Dashboard'; x.blurb='Your teacher dashboard, and meet a student.'; } }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
+const studioName=()=>{ try{ const v=localStorage.getItem(K.name); return v&&v!=='My HearandPlay Studio'?v:'My HearandPlay Suite'; }catch(_){ return 'My HearandPlay Suite'; } };
 const code=()=>{ let c=null; try{ c=localStorage.getItem(K.code); }catch(_){} if(!c){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c='HP-T-'; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; try{ localStorage.setItem(K.code,c); }catch(_){} } return c; };
 const ME='me';   /* the studio made on this device, as a teacher students can join */
 
@@ -225,7 +224,7 @@ function meetStudents(){ const b=panel('Meet a student','Students looking for a 
     const cp=el('button','rl-btn','Copy invite link'); cp.type='button'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); }; f.appendChild(cp); box.appendChild(f); };
   draw(); }
 /* Meet a teacher (from the Class) */
-function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their class, practice arena, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
+function meetPanel(){ const b=panel('Meet a teacher','Subscribe to a teacher to get their suite: the practice arena, studio and practice plan builder, and the work they assign you.'); const box=el('div'); b.appendChild(box);
   const draw=()=>{ box.textContent=''; box.appendChild(teacherGrid(draw)); }; draw(); }
 /* ---------- teacher view ---------- */
 function spaceCard(sp,editing,on){ const b=el('button','dcard'); b.type='button'; b.dataset.k=sp.k;
@@ -239,13 +238,13 @@ let editing=false;
 function teacherView(root){ const in_=root;
   const h1=document.querySelector('#suiteHub .in h1'); if(h1) h1.textContent=studioName();
   const sub=document.querySelector('#suiteHub .in .sub'); if(sub){ const h=window.PSSUITE&&PSSUITE.mineHandle(); sub.innerHTML=h?'<span>Your suite: hearandplay.app/'+esc(h)+'</span><i>|</i><span>Your dashboard</span>':'<span>Your dashboard</span><i>|</i><span>Claim your suite link under Customize</span>'; }
-  const bar=el('div','rl-tbar'); const rn=el('button','rl-btn','Rename my studio'); rn.type='button';
-  rn.onclick=()=>{ const b=panel('Rename your studio'); const f=el('div','rl-f'); const l=el('label',null,'<span>Studio name</span>'), i=el('input','rl-in'); i.value=studioName(); l.appendChild(i); f.appendChild(l); b.appendChild(f); const ok=el('button','rl-btn pri','Save'); ok.type='button'; ok.onclick=()=>{ try{ localStorage.setItem(K.name,i.value.trim()||'My HearandPlay Studio'); }catch(_){} if(window.PSSUITE) PSSUITE.push(); closePanel(); render(); }; b.appendChild(ok); i.focus(); i.select(); };
+  const bar=el('div','rl-tbar'); const rn=el('button','rl-btn','Rename my suite'); rn.type='button';
+  rn.onclick=()=>{ const b=panel('Rename your suite'); const f=el('div','rl-f'); const l=el('label',null,'<span>Suite name</span>'), i=el('input','rl-in'); i.value=studioName(); l.appendChild(i); f.appendChild(l); b.appendChild(f); const ok=el('button','rl-btn pri','Save'); ok.type='button'; ok.onclick=()=>{ try{ localStorage.setItem(K.name,i.value.trim()||'My HearandPlay Suite'); }catch(_){} if(window.PSSUITE) PSSUITE.push(); closePanel(); render(); }; b.appendChild(ok); i.focus(); i.select(); };
   /* one Customize button: it opens editing for the spaces and the studio's name */
   const ed=el('button','rl-btn'+(editing?' pri':''),editing?'Done':'Customize'); ed.type='button'; ed.setAttribute('aria-pressed',String(editing)); ed.onclick=()=>{ editing=!editing; render(); };
   const as=el('button','rl-btn pri','+ New assignment'); as.type='button'; as.onclick=assignPanel;
   const db=el('button','rl-btn','Dashboard ↓'); db.type='button'; db.onclick=()=>{ const d=document.getElementById('rlDash'); if(d) d.scrollIntoView({behavior:'smooth',block:'start'}); };
-  void as; void db; const vs=el('button','rl-btn','View my suite as a student'); vs.type='button'; vs.onclick=()=>{ if(window.PSSUITE) PSSUITE.viewAsStudent(); }; bar.append(ed,vs); if(editing){ rn.textContent='Rename my studio'; bar.append(rn); bar.appendChild(el('span','rl-mut','Your studio name, your suite link and your spaces.')); } in_.appendChild(bar);
+  void as; void db; const vs=el('button','rl-btn','View my suite as a student'); vs.type='button'; vs.onclick=()=>{ if(window.PSSUITE) PSSUITE.viewAsStudent(); }; bar.append(ed,vs); if(editing){ rn.textContent='Rename my suite'; bar.append(rn); bar.appendChild(el('span','rl-mut','Your suite name, your suite link and your spaces.')); } in_.appendChild(bar);
   if(editing&&window.PSSUITE) in_.appendChild(PSSUITE.linkBox());
   /* the spaces (under Customize) */
   if(!editing){ dashboard(in_); return; }
@@ -255,7 +254,7 @@ function teacherView(root){ const in_=root;
     remove(sp){ jset(K.sp,spaces().filter(q=>q.id!==sp.id)); render(); } };
   S.forEach(sp=>cards.appendChild(spaceCard(sp,editing,on)));
   { const a=el('button','dcard'); a.type='button'; a.dataset.k='add'; a.innerHTML='<div class="plus">+</div><div class="nm">Add a space</div><div class="bl">A listening room, a repertoire library, a theory corner: whatever your students need.</div>';
-    a.onclick=()=>{ const b=panel('Add a space','Name it and describe it. It appears in your studio for your students.'); const f=el('div','rl-f'); const l=el('label',null,'<span>Name</span>'), i=el('input','rl-in'); i.placeholder='Repertoire Library'; l.appendChild(i); const l2=el('label',null,'<span>Description</span>'), i2=el('input','rl-in'); i2.placeholder='Songs and hymns we are learning this term'; l2.appendChild(i2); f.append(l,l2); b.appendChild(f);
+    a.onclick=()=>{ const b=panel('Add a space','Name it and describe it. It appears in your suite for your students.'); const f=el('div','rl-f'); const l=el('label',null,'<span>Name</span>'), i=el('input','rl-in'); i.placeholder='Repertoire Library'; l.appendChild(i); const l2=el('label',null,'<span>Description</span>'), i2=el('input','rl-in'); i2.placeholder='Songs and hymns we are learning this term'; l2.appendChild(i2); f.append(l,l2); b.appendChild(f);
       const ok=el('button','rl-btn pri','Add space'); ok.type='button'; ok.onclick=()=>{ const n=i.value.trim(); if(!n){ i.focus(); return; } const A=spaces(); A.push({id:'c'+Date.now(),k:'custom',name:n,blurb:i2.value.trim()||'Your own space.'}); jset(K.sp,A); closePanel(); render(); }; b.appendChild(ok); i.focus(); };
     cards.appendChild(a); }
   in_.appendChild(cards);
@@ -282,7 +281,7 @@ function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(
   const S=SAMPLE_DASH.slice(); if(joined) S.unshift({n:'You (this device)',lv:'Student',grp:'All',plan:'Your assignments',streak:1,last:'Today',pct:Math.round(100*Object.values(done).filter(Boolean).length/Math.max(1,A.length)),me:true});
   const total=S.length, hr=new Date().getHours(), hi=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   const D=el('section','rl-dash'); D.setAttribute('aria-label','Teacher dashboard');
-  D.id='rlDash'; D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your studio today.</h2></div></div>';
+  D.id='rlDash'; D.innerHTML='<div class="rl-dhead"><div><div class="rl-kick">'+new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'})+' · '+esc(studioName())+' · Dashboard</div><h2>'+hi+'. Here is your suite today.</h2></div></div>';
   /* numbers at a glance */
   const st=el('div','rl-kpis'); [['Active students',String(total),(joined?'Including you, on this device':'3 joined this week'),'#ffffff'],['To review',String(REVIEW.length),'Recordings, checks and questions','#ffd43b'],['Due this week',String(A.length+SAMPLE_ASG.length),'Assignments open','#8ce99a'],['Practised today',String(S.filter(x=>x.last==='Today').length),'of '+total+' students','#b9c8ff']]
     .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+v+'</b><small>'+n+'</small>'))); D.appendChild(st);
@@ -324,7 +323,7 @@ function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(
       +rows.map(x=>'<tr><td><b>'+esc(x.n)+'</b></td><td>'+esc(x.lv)+'</td><td>'+esc(x.plan)+'</td><td class="stk">'+x.streak+' day'+(x.streak===1?'':'s')+'</td><td style="color:'+(x.last==='Today'?'#8ce99a':/days/.test(x.last)?'#ff8787':'#cfd6e6')+'">'+esc(x.last)+'</td><td><div class="rl-bar"><i style="width:'+x.pct+'%;background:'+(x.pct<20?'#ff8787':'#3dff6e')+'"></i></div></td></tr>').join('')+'</tbody></table>';
     c.appendChild(wrap); L.appendChild(c); }
   /* invite */
-  { const c=el('section','rl-dcard rl-inv'); c.innerHTML='<div class="rl-kick">Your invite code</div><div class="rl-code">'+esc(code())+'</div><p class="rl-mutd">Students enter this code, or open your link, to join your studio.</p>';
+  { const c=el('section','rl-dcard rl-inv'); c.innerHTML='<div class="rl-kick">Your invite code</div><div class="rl-code">'+esc(code())+'</div><p class="rl-mutd">Students enter this code, or open your link, to join your suite.</p>';
     const cp=el('button','rl-btn pri','Copy invite link'); cp.type='button'; cp.style.width='100%'; cp.onclick=()=>{ const u=location.origin+'/?join='+code(); try{ navigator.clipboard.writeText(u); }catch(_){} toast('Invite link copied: '+u); }; c.appendChild(cp);
     const f=el('div'); f.style.cssText='display:flex;gap:8px;margin-top:10px'; const em=el('input','rl-in'); em.type='email'; em.placeholder='student@email.com'; em.setAttribute('aria-label','Student email'); em.style.cssText='flex:1;min-width:0';
     const se=el('button','rl-btn','Send'); se.type='button'; se.onclick=()=>{ if(!/@/.test(em.value)){ em.focus(); return; } toast('Invite sent to '+em.value.trim()); em.value=''; }; f.append(em,se); c.appendChild(f); R.appendChild(c); }
@@ -345,7 +344,7 @@ function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(
 /* ---------- student view ---------- */
 function studentView(root){
   const subs=jget(K.subs,[])||[], A=jget(K.asg,[]), done=jget(K.done,{});
-  const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s studio on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
+  const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s suite on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
   const mine=T.filter(t=>subs.includes(t.id));
   if(mine.length){ const s=el('section','rl-sec'); s.innerHTML='<h2>My teachers</h2><p class="rl-mut">Their spaces and the work they send you.</p>';
     mine.forEach(t=>{ const c=el('div','rl-card'); c.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span class="rl-av" style="background:'+t.color+'">'+esc(t.ini)+'</span><div style="flex:1"><b style="font-size:17px">'+esc(t.name)+'</b><div style="color:#b4bdd0;font-size:13px">'+esc(t.spec)+'</div></div></div>';
@@ -357,16 +356,16 @@ function studentView(root){
       const un=el('button','rl-btn','Unsubscribe'); un.type='button'; un.style.alignSelf='flex-start'; un.onclick=()=>{ jset(K.subs,subs.filter(x=>x!==t.id)); render(); }; c.appendChild(un);
       s.appendChild(c); });
     root.appendChild(s); }
-  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their class, practice arena, studio and practice plan builder, and the work they assign you. Until then, the whole suite is yours.</p>';
+  const s=el('section','rl-sec'); s.innerHTML='<h2>Learn with a teacher</h2><p class="rl-mut">Subscribe to a teacher to get their suite: the practice arena, studio and practice plan builder, and the work they assign you. Until then, the whole HearandPlay suite is yours.</p>';
   s.appendChild(teacherGrid(render));
   const jf=el('div'); jf.style.cssText='display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center'; jf.appendChild(el('b',null,'Have an invite code?'));
   const ji=el('input','rl-in'); ji.placeholder='HP-T-XXXX'; ji.setAttribute('aria-label','Invite code'); ji.style.cssText='text-transform:uppercase;font-family:ui-monospace,Menlo,monospace;width:170px';
   const jb=el('button','rl-btn','Join'); jb.type='button'; jb.onclick=()=>joinCode(ji.value);
   jf.append(ji,jb); s.appendChild(jf); root.appendChild(s); }
-function teacherGrid(after){ const subs=jget(K.subs,[])||[]; const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s studio on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
+function teacherGrid(after){ const subs=jget(K.subs,[])||[]; const T=[{id:ME,name:studioName(),ini:'HP',spec:'Your teacher\'s suite on this device',students:'',color:'#2f9e44'}].concat(SAMPLE);
   const g=el('div','rl-grid'); T.forEach(t=>{ const c=el('div','rl-card'); const joined=subs.includes(t.id);
     c.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span class="rl-av" style="background:'+t.color+'">'+esc(t.ini)+'</span><div style="flex:1;min-width:0"><b style="font-size:17px">'+esc(t.name)+'</b>'+(t.id===ME?'':'<span class="rl-demo">Sample</span>')+'<div style="color:#b4bdd0;font-size:13px">'+esc(t.spec)+(t.students?' · '+esc(t.students):'')+'</div></div></div>';
-    const ch=el('div','rl-chips'); ['Class','Practice Arena','Studio','Practice Plan Builder'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
+    const ch=el('div','rl-chips'); ['Practice Arena','Studio','Practice Plan Builder'].forEach(n=>ch.appendChild(el('span','rl-chip',n))); c.appendChild(ch);
     const b=el('button','rl-btn'+(joined?' ok':' pri'),joined?'Subscribed ✓':'Subscribe'); b.type='button'; b.onclick=()=>{ let S=jget(K.subs,[])||[]; if(S.includes(t.id)) S=S.filter(x=>x!==t.id); else { S.push(t.id); toast('You joined '+t.name+'.'); } jset(K.subs,S); render(); if(after&&after!==render) after(); }; c.appendChild(b); g.appendChild(c); });
   return g; }
 function joinCode(v){ v=String(v||'').trim().toUpperCase(); let c=null; try{ c=localStorage.getItem(K.code); }catch(_){}
@@ -397,7 +396,7 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
     if(four) four.classList.remove('rl-3'); }   /* the teacher's Dashboard: no Consultation, so two cards */
   { const m=four&&four.querySelector('[data-k=meet]'); if(m){ const T=role()==='teacher';   /* a teacher meets students, a student meets teachers */
       m.querySelector('.tx b').textContent=T?'Meet a student':'Meet a teacher';
-      m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your studio.':'Find a teacher, subscribe, and learn with them in the suite.';
+      m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your suite.':'Find a teacher, subscribe, and learn with them in the suite.';
       if(!m.querySelector('.tx .go')) m.querySelector('.tx').appendChild(el('em','go','Open →'));
       m.setAttribute('aria-label',T?'Meet a student':'Meet a teacher'); m.onclick=T?meetStudents:meetPanel; } }
   const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':(role()==='teacher'?'Dashboard':'Class Area');
@@ -512,7 +511,7 @@ const PSSUITE=(()=>{
   let pt=0; const push=()=>{ clearTimeout(pt); pt=setTimeout(async()=>{ if(!mine||!mine.handle||!tok()) return; const j=await api({action:'save',handle:mine.handle,name:studioName(),spaces:spaces(),items:sitems()}); if(j._s===200) keepMine(j.suite); },700); };
   const ERR={bad_handle:'Use 3 to 30 letters and numbers, no spaces.',taken:'That name is taken. Try another.',role:'Only a Teacher account can have a suite.',auth:'Sign in first.'};
   /* under Customize: claim or change the link */
-  function linkBox(){ const s=el('section','rl-sec rl-link'); s.innerHTML='<h2>Your suite link</h2><p class="rl-mut">Students open this link to see your suite. Your studio name and spaces show there; they subscribe and enter with their own PIN.</p>';
+  function linkBox(){ const s=el('section','rl-sec rl-link'); s.innerHTML='<h2>Your suite link</h2><p class="rl-mut">Students open this link to see your suite. Your suite name and spaces show there; they subscribe and enter with their own PIN.</p>';
     const body=el('div'); s.appendChild(body);
     const draw=async()=>{ body.textContent=''; const u=A()&&A().user();
       if(!u){ const b=el('button','rl-btn pri','Sign in to claim your suite link'); b.type='button'; b.onclick=async()=>{ await A().open({title:'Sign in as a teacher',why:'Your suite is saved to your account, so students can open it from any phone or computer.',role:'teacher',mode:'up'}); mineP=null; await loadMine(); draw(); }; body.appendChild(b); return; }
@@ -562,7 +561,7 @@ const PSSUITE=(()=>{
     const u=A()&&A().user&&A().user();
     if(preview&&u){ const j=await api({action:'enter',h:handle}); if(j._s===200) setIn({assignments:j.assignments,items:j.items,preview:true}); }
     /* the teacher's spaces */
-    const cards=el('div','cards rl-cards'); (pub.spaces&&pub.spaces.length?pub.spaces:DEF_SPACES).forEach(sp=>{ const c=spaceCard(sp,false,{});
+    const cards=el('div','cards rl-cards'); (pub.spaces&&pub.spaces.length?pub.spaces:DEF_SPACES).filter(sp=>sp.k!=='class').forEach(sp=>{ const c=spaceCard(sp,false,{});
       if(sp.k==='class'){ c.querySelector('.nm').textContent=sp.name==='Dashboard'?'Class':sp.name; c.querySelector('.bl').textContent=sp.name==='Dashboard'?'Consultation with HearandPlay, and meet your teacher.':sp.blurb; const ph=c.querySelector('.phi'); if(ph) ph.style.backgroundImage='url(card-class.webp)'; c.querySelector('.ic').innerHTML=ICONS_SUITE('class')||c.querySelector('.ic').innerHTML; }
       { const STB={hall:'Ear training, scales and chords, with the fingering and the hands.',studio:'Backing tracks to play along with, and the Transcription Studio.',challenge:'Practice plans with daily check-ins and certificates.'}; const bl=c.querySelector('.bl'); if(bl&&STB[sp.k]&&(/your students|for your/i.test(sp.blurb||'')||!sp.blurb)) bl.textContent=STB[sp.k]; }
       if(entered&&['hall','studios','challenge'].includes(sp.go)){ const kk=sp.go==='studios'?'studio':sp.go; const n=((entered.items||{})[PART[kk]]||[]).length; if(n) c.querySelector('.go').textContent=n+' from '+pub.teacher+' →'; c.onclick=()=>itemsPanel(kk,entered.items||{},pub); }
