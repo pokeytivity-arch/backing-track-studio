@@ -201,12 +201,14 @@ function poseThumbs(h, d, s) {
   const { rest, n, fwd } = h;
   const wr = rest['wrist'].p, tt = rest['thumb-tip'].p, t0 = tt.clone().sub(wr);
   const u = t0.sub(fwd.clone().multiplyScalar(t0.dot(fwd))).normalize(), third = new THREE.Vector3().crossVectors(u, fwd).normalize();
-  const upW = new THREE.Vector3(0, 0, -1), frontW = new THREE.Vector3(0, 1, 0), thirdW = new THREE.Vector3().crossVectors(upW, frontW).normalize();
+  /* as a thumbs up looks from above (his photo): the fist stands on its side, the thumb points up at the camera, leaning a little away from the player,
+     and the knuckles face forward (up the screen) */
+  const upW = new THREE.Vector3(0, .8, -.6).normalize(), mz = new THREE.Vector3(0, 0, -1), frontW = mz.sub(upW.clone().multiplyScalar(mz.dot(upW))).normalize(), thirdW = new THREE.Vector3().crossVectors(upW, frontW).normalize();
   const Mm = new THREE.Matrix4().makeBasis(u, fwd.clone(), third), Mw = new THREE.Matrix4().makeBasis(upW, frontW, thirdW);
   const Rq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().multiplyMatrices(Mw, Mm.clone().transpose()));
   h.root.quaternion.copy(Rq); h.root.scale.setScalar(s);
   const a = h.anchor.clone().applyQuaternion(Rq).multiplyScalar(s);
-  h.root.position.set(d.ax - a.x, G.kw * 2.2 - a.y, d.az - G.kw * .6 - a.z);
+  h.root.position.set(d.ax - a.x, G.kw * 2.6 - a.y, d.az + G.kw * .4 - a.z);
   ['index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'].forEach(f => {
     const names = [f + '-phalanx-proximal', f + '-phalanx-intermediate', f + '-phalanx-distal'];
     const f0 = rest[f + '-tip'].p.clone().sub(rest[names[0]].p); f0.sub(n.clone().multiplyScalar(f0.dot(n))).normalize();

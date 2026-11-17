@@ -1431,7 +1431,8 @@ const STY=[
     {x:[0,'six'],y:[2,'dim7'],ord:'main',n:'Main exercise',s:'Every note of the major bebop scale, up and back down'},
     {x:[0,'six'],y:[2,'dim7'],ord:'pairs',n:'Variation #1',s:'Alternates between sixth chord tones and diminished chord tones'},
     {x:[0,'six'],y:[2,'dim7'],ord:'six',n:'Variation #2',s:'Inverts only sixth chord tones'},
-    {x:[0,'six'],y:[2,'dim7'],ord:'dim',n:'Variation #3',s:'Inverts only diminished chord tones'}]},{id:'triad',name:'Triad Patterns'}];
+    {x:[0,'six'],y:[2,'dim7'],ord:'dim',n:'Variation #3',s:'Inverts only diminished chord tones'},
+    {x:[0,'six'],y:[2,'dim7'],ord:'step',n:'Variation #4',s:'Up, each note then a step down; down, each note then a step up'}]},{id:'triad',name:'Triad Patterns'}];
 const syT=()=>STY.find(t=>t.id===st.sty)||STY[0];
 const sFlat=()=>[1,3,5,8,10].includes(((st.str||0)%12+12)%12);
 const sNm=pc=>(sFlat()?FLAT_N:SHARP_N)[((pc%12)+12)%12];
@@ -1501,6 +1502,9 @@ function sdTops(v){ const tr=st.str||0, oc=Math.max(1,Math.min(3,+st.soct||1)), 
   let U=[]; if(v.ord==='main'){ for(let k=0;k<=8*oc;k++) U.push(S(k)); }
   else if(v.ord==='pairs'){ for(let k=0;k<8*oc;k++) U.push(S(k),S(k+2)); }   /* Variation #1: each note, then the note two steps up: C E, D F, E G, F G#, G A, G# B, A C, B D */
   else { const per=v.ord==='six'?[0,4,7,9]:[2,5,8,11]; for(let o=0;o<oc;o++) per.forEach(d=>U.push(base+o*12+d)); U.push(base+oc*12+per[0]); }
+  if(v.ord==='step'){   /* Variation #4: up, each note then the note a step below (C B, D C … C B, D C); down from the octave, each note then the note a step above (C D, B C … C D, B C) */
+    const up=[], dn=[]; for(let k=0;k<=8*oc+1;k++) up.push(S(k),S(k-1)); for(let k=8*oc;k>=-1;k--) dn.push(S(k),S(k+1));
+    return st.sdir==='up'?up:st.sdir==='down'?dn:up.concat(dn); }
   const D=U.slice().reverse(); return st.sdir==='up'?U:st.sdir==='down'?D:U.concat(D.slice(1)); }
 function sdPhrase(v){ const tr=st.str||0, S6=[0,4,7,9], D7=[2,5,8,11];
   const chordOf=p=>{ const pc=((p-tr)%12+12)%12, set=S6.includes(pc)?S6:D7, c=[p]; let m=p-1; while(c.length<4){ if(set.includes(((m-tr)%12+12)%12)) c.unshift(m); m--; } return c; };
