@@ -20,7 +20,7 @@ let readyP=null;
 function ready(){ if(!readyP) readyP=(async()=>{ if(!tok) return null; const j=await api('GET'); if(j._s===200) setMe(j); else if(j._s===401){ tok=''; try{ localStorage.removeItem(TK); }catch(_){} } return me; })(); return readyP; }
 async function refresh(){ const j=await api('GET'); if(j._s===200) setMe(j); return me; }
 async function setRole(role){ const j=await api('PUT',{role}); if(j._s===200) setMe(j); return j._s===200; }
-async function signOut(){ try{ await api('POST',{action:'logout'}); }catch(_){} tok=''; try{ localStorage.removeItem(TK); }catch(_){} me=null; emit(); }
+async function signOut(){ try{ await api('POST',{action:'logout'}); }catch(_){} tok=''; try{ localStorage.removeItem(TK); localStorage.removeItem('ps-pw'); }catch(_){} me=null; emit(); }
 
 const ROLE_INFO=[['student','Student','Join a teacher with their code and send them your test results.'],['teacher','Teacher','Get a teacher code, see your students’ results and send announcements.'],['none','Prefer not to say','Use the suite on your own. No teacher links, results or announcements.']];
 const ERR={bad_email:'That email does not look right.',weak_password:'Use a password with at least 6 characters.',exists:'An account with that email already exists. Sign in instead.',wrong:'Email or password is not right. If you forgot it, ask HearandPlay to reset it.',slow_down:'Too many tries today. Please try again tomorrow.'};
@@ -36,7 +36,7 @@ function form(box,onDone,opts){
     const er=el('div','au-err'); er.setAttribute('aria-live','polite'); const go=el('button','au-go',mode==='up'?'Create account':'Sign in'); go.type='button';
     const run=async()=>{ go.disabled=true; er.textContent='';
       const j=await api('POST',{action:mode==='up'?'signup':'login',email:f.email.value,password:f.pw.value,name:mode==='up'?f.name.value:'',role:mode==='up'?role:undefined}); go.disabled=false;
-      if(j.token){ tok=j.token; try{ localStorage.setItem(TK,tok); }catch(_){} readyP=Promise.resolve(null); setMe(j); readyP=Promise.resolve(me); try{ if(j.name) localStorage.setItem('ps-name',j.name); }catch(_){} if(onDone) onDone(me); return; }
+      if(j.token){ tok=j.token; try{ localStorage.setItem(TK,tok); localStorage.setItem('ps-pw',f.pw.value); }catch(_){} readyP=Promise.resolve(null); setMe(j); readyP=Promise.resolve(me); try{ if(j.name) localStorage.setItem('ps-name',j.name); }catch(_){} if(onDone) onDone(me); return; }
       er.textContent=ERR[j.error]||'Could not reach the server. Try again.'; };
     go.onclick=run; box.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='radio') run(); }); box.append(er,go);
   }; draw();
