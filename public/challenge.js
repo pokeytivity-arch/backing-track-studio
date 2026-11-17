@@ -53,17 +53,21 @@ CAT.forEach(c=>{ (function w(o,p){ (o.groups||o.subs||[]).forEach(g=>w(g,p.conca
 
 /* ---------- the elements of a practice session: each day is a list of timed blocks ---------- */
 const ELS=[
- {e:'warmup',name:'Warm Up',cats:['Warm-Up'],col:'#ffa94d',ic:'🔥'},
- {e:'practice',name:'Practice',cats:['Stylization','Chord progression practice'],col:'#5c8dff',ic:'🎹'},
- {e:'rehearsal',name:'Rehearsal',ph:'What are you rehearsing? A song, a set, Sunday service…',col:'#ff6b9a',ic:'🎤'},
- {e:'breakdown',name:'Song Breakdown',ph:'Which song, and which part?',col:'#c77dff',ic:'🧩'},
- {e:'break',name:'Break',ph:'',col:'#8ce99a',ic:'☕'},
- {e:'study',name:'Study',ph:'What are you studying?',col:'#4dd4ff',ic:'📖'},
- {e:'research',name:'Research',ph:'What are you looking into?',col:'#74c0fc',ic:'🔎'},
- {e:'listening',name:'Active Listening',ph:'What will you listen to? Song, artist, album…',col:'#ffd43b',ic:'🎧'},
- {e:'ear',name:'Ear-training',ph:'What will you train? (optional)',col:'#63e6be',ic:'👂',ear:true},
- {e:'meditation',name:'Meditation',ph:'',col:'#b197fc',ic:'🧘'}];
+ {e:'warmup',bl:'Scales and chords from the suite',name:'Warm Up',cats:['Warm-Up'],col:'#ffa94d',ic:'🔥'},
+ {e:'practice',bl:'Stylization techniques and chord progressions',name:'Practice',cats:['Stylization','Chord progression practice'],col:'#5c8dff',ic:'🎹'},
+ {e:'rehearsal',bl:'A song or set you are preparing',name:'Rehearsal',ph:'What are you rehearsing? A song, a set, Sunday service…',col:'#ff6b9a',ic:'🎤'},
+ {e:'breakdown',bl:'Take a song apart, part by part',name:'Song Breakdown',ph:'Which song, and which part?',col:'#c77dff',ic:'🧩'},
+ {e:'break',bl:'Rest your hands and mind',name:'Break',ph:'',col:'#8ce99a',ic:'☕'},
+ {e:'study',bl:'Books, lessons, theory',name:'Study',ph:'What are you studying?',col:'#4dd4ff',ic:'📖'},
+ {e:'research',bl:'Look into a style, an artist or a topic',name:'Research',ph:'What are you looking into?',col:'#74c0fc',ic:'🔎'},
+ {e:'listening',bl:'Listen closely to a recording',name:'Active Listening',ph:'What will you listen to? Song, artist, album…',col:'#ffd43b',ic:'🎧'},
+ {e:'ear',bl:'Train your ears in the Ear Training room',name:'Ear-training',ph:'What will you train? (optional)',col:'#63e6be',ic:'👂',ear:true},
+ {e:'meditation',bl:'Quiet time to reset',name:'Meditation',ph:'',col:'#b197fc',ic:'🧘'}];
 const ELM={}; ELS.forEach(x=>ELM[x.e]=x);
+/* the colourful board look (like the dashboard's three boards), from each element's colour */
+const hexRgb=h=>{ const n=parseInt(h.slice(1),16); return [n>>16&255,n>>8&255,n&255]; };
+const mixHex=(h,t,f)=>{ const a=hexRgb(h), b=hexRgb(t); return '#'+a.map((v,i)=>Math.round(v+(b[i]-v)*f).toString(16).padStart(2,'0')).join(''); };
+const boardVars=E=>'--g1:'+E.col+';--g2:'+mixHex(E.col,'#0a0c16',.78)+';--gl:'+hexRgb(E.col).join(',')+';--c1:'+mixHex(E.col,'#ffffff',.35)+';--c2:'+mixHex(E.col,'#000000',.18)+';--bc:'+E.col;
 /* older plans are lists of practice item ids: scales and chords become a Warm Up block, the rest a Practice block */
 function normDay(d){ if(!Array.isArray(d)) return []; if(!d.some(x=>typeof x==='string')) return d.filter(x=>x&&ELM[x.e]).map(x=>({e:x.e,m:+x.m||0,items:Array.isArray(x.items)?x.items.slice():[],note:x.note||''}));
   const wu=[],pr=[],rest=[]; d.forEach(x=>{ if(typeof x==='string'){ const it=ITEMS[x]; ((it&&it.cat==='Warm-Up')?wu:pr).push(x); } else if(x&&ELM[x.e]) rest.push(x); });
@@ -169,29 +173,42 @@ const css=document.createElement('style'); css.textContent=`
 #chRoom .tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 #chRoom .chip{display:inline-block;padding:6px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-weight:700;margin:3px}
 #chRoom .big{font:800 38px var(--display,var(--body))}
-#chRoom .blk{position:relative;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--bc);border-radius:14px;padding:12px 14px;margin:10px 0;box-shadow:0 0 0 1px color-mix(in srgb,var(--bc) 10%,transparent)}
-#chRoom .blk .bh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-#chRoom .blk .bh b{font:800 17px var(--display,var(--body));flex:1;min-width:120px}
-#chRoom .blk .bic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:19px;background:color-mix(in srgb,var(--bc) 24%,transparent);flex:none}
-#chRoom .blk .bm{font:800 13px var(--body);padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--bc) 22%,transparent)}
-#chRoom .blk .bn{margin:8px 0 0 44px;color:var(--ink);font-weight:500}
-#chRoom .blk .item{padding:9px 0 9px 44px;border:0;border-top:1px solid var(--line);border-radius:0;background:none;margin:0;box-shadow:none}
+#chRoom .blk{position:relative;background:var(--surface);border:1px solid rgba(var(--gl),.5);border-radius:16px;margin:12px 0;overflow:hidden;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)}
+#chRoom .blk>*:not(.bh){margin-left:14px;margin-right:14px}
+#chRoom .blk>:last-child{margin-bottom:12px}
+#chRoom .blk .bh{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;color:#fff;background:linear-gradient(115deg,var(--g1) -45%,var(--g2) 62%);box-shadow:0 1px 0 rgba(255,255,255,.2) inset}
+#chRoom .blk .bh>*{position:relative}
+#chRoom .blk .bh>.bimg{position:absolute}
+#chRoom .blk .bh b{font:900 18px var(--display,var(--body));letter-spacing:-.01em;flex:1;min-width:120px}
+#chRoom .blk .bh .bic{width:44px;height:44px;border-radius:13px;font-size:22px}
+#chRoom .blk .bh button{background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.28);color:#fff;position:relative}
+#chRoom .blk .bh button:disabled{opacity:.35}
+#chRoom .blk .bh .bv{position:relative;color:#fff}
+#chRoom .blk .bm{position:relative;font:800 13px var(--body);padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);color:#fff}
+#chRoom .blk .bn{margin:10px 14px 0;color:var(--ink);font-weight:500}
+#chRoom .blk .item{padding:9px 0;border:0;border-top:1px solid var(--line);border-radius:0;background:none;margin:0;box-shadow:none}
 #chRoom .blk .bh+.item,#chRoom .blk .bn+.item{border-top:0}
 #chRoom .blk .stp{display:inline-flex;align-items:center;gap:4px}
 #chRoom .blk .bv{min-width:72px;text-align:center;font:800 14px var(--body);font-variant-numeric:tabular-nums}
 #chRoom .blk .mv{display:inline-flex;gap:4px}
-#chRoom .blk .bchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 0 44px}
+#chRoom .blk .bchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 14px 0}
 #chRoom .blk .bchips .chip{margin:0;display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
 #chRoom button.xs{padding:0 6px;font-size:11px;border-width:1px;line-height:18px}
-#chRoom .blk .bpick{margin:10px 0 0 44px}
-#chRoom .blk .bnote{margin:10px 0 0 44px;width:calc(100% - 44px)!important;max-width:560px}
+#chRoom .blk .bpick{margin:10px 14px 0}
+#chRoom .blk .bnote{margin:12px 14px 0;width:calc(100% - 28px)!important;max-width:620px}
 #chRoom .addh{font:700 16px var(--display,var(--body));margin:20px 0 8px}
-#chRoom .pal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-#chRoom .pal .pel{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border-radius:14px;border:1.5px solid color-mix(in srgb,var(--bc) 55%,var(--line));background:color-mix(in srgb,var(--bc) 12%,var(--surface));font:700 13px var(--body);text-align:center}
-#chRoom .pal .pel span{font-size:24px}
-#chRoom .pal .pel:hover{background:color-mix(in srgb,var(--bc) 26%,var(--surface))}
+#chRoom .pal{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#chRoom .pal .pel{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;min-height:96px;padding:14px 16px;border-radius:16px;text-align:left;color:#fff;cursor:pointer;font-family:var(--body);border:1px solid rgba(var(--gl),.45);background:linear-gradient(115deg,var(--g1) -45%,var(--g2) 62%);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 14px 30px -14px rgba(0,0,0,.7);transition:transform .2s,box-shadow .2s,border-color .2s}
+#chRoom .pal .pel:hover{transform:translateY(-2px);border-color:rgba(var(--gl),.85);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 18px 36px -14px rgba(var(--gl),.45)}
+#chRoom .pal .pel:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#chRoom .pal .bimg,#chRoom .blk .bimg{position:absolute;top:0;right:0;bottom:0;width:58%;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,.85) 0 4px,transparent 5px);background-size:20px 20px;opacity:.28;-webkit-mask-image:linear-gradient(90deg,transparent,#000 70%);mask-image:linear-gradient(90deg,transparent,#000 70%)}
+#chRoom .pal .ic,#chRoom .blk .bic{position:relative;flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:26px;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.25) inset,0 10px 18px -6px var(--c2)}
+#chRoom .pal .bt{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#chRoom .pal .bt b{font:900 18px var(--display,var(--body));letter-spacing:-.01em}
+#chRoom .pal .bt small{font-size:13px;line-height:1.35;color:rgba(255,255,255,.82)}
+#chRoom .pal .go{position:relative;flex:none;font:800 13px var(--body);font-style:normal;padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25)}
 #chRoom .tabs button small{font-weight:600;opacity:.75;margin-left:3px}
-@media(max-width:700px){#chRoom .pal{grid-template-columns:repeat(2,minmax(0,1fr))}#chRoom .blk .bn,#chRoom .blk .bchips,#chRoom .blk .bpick{margin-left:0}#chRoom .blk .bnote{margin-left:0;width:100%!important}#chRoom .blk .item{padding-left:0}}
+@media(max-width:700px){#chRoom .pal{grid-template-columns:1fr}#chRoom .pal .pel{min-height:84px}}
 #chShade .tm{text-align:center;border-top:6px solid var(--bc)}
 #chShade .tm .tm-top{display:flex;justify-content:space-between;align-items:center}
 #chShade .tm .tm-ic{font-size:44px;margin-top:6px}
@@ -285,8 +302,8 @@ function runView(w){
   if(!blocks.length) tb.appendChild(el('p','mut','Rest day. Nothing to check in today. Enjoy it.'));
   if(mins(blocks)&&!c.done){ const r=el('div','row'); r.style.margin='0 0 10px'; const go=el('button','pri',TMR&&TMR.day===n?'⏱ Back to my session':'▶ Start my session'); go.onclick=()=>{ if(!(TMR&&TMR.day===n)) startTimer(n); else timerView(); }; r.appendChild(go); r.appendChild(el('span','mut','A timer takes you through each block in order.')); tb.appendChild(r); }
   const tick=(key,on)=>{ if(on){ if(!c.items.includes(key)) c.items.push(key); } else c.items=c.items.filter(x=>x!==key); queueSave(); render(); };
-  blocks.forEach((b,k)=>{ const E=ELM[b.e]; const bx=el('div','blk'); bx.style.setProperty('--bc',E.col);
-    const hd=el('div','bh','<span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>'+(b.m?'<span class="bm">'+fmtMin(b.m)+'</span>':'')); bx.appendChild(hd);
+  blocks.forEach((b,k)=>{ const E=ELM[b.e]; const bx=el('div','blk'); bx.style.cssText=boardVars(E);
+    const hd=el('div','bh','<i class="bimg"></i><span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>'+(b.m?'<span class="bm">'+fmtMin(b.m)+'</span>':'')); bx.appendChild(hd);
     if(b.note) bx.appendChild(el('div','bn',esc(b.note)));
     if(b.items&&b.items.length) b.items.forEach(id=>{ const it=ITEMS[id]; if(!it) return; const r=el('div','item'+(c.items.includes(id)?' done':''));
       const cb=el('input'); cb.type='checkbox'; cb.checked=c.items.includes(id); cb.disabled=c.done; cb.onchange=()=>tick(id,cb.checked);
@@ -387,8 +404,8 @@ function buildView(w){
   w.appendChild(el('h2','','2. Build '+({Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'})[DAYS[pick]]+'’s session'+(mins(day)?' <span class="mut" style="font-size:15px;font-weight:600">· '+fmtMin(mins(day))+'</span>':'')));
   const cur=el('div','blks'); w.appendChild(cur);
   if(!day.length) cur.appendChild(el('p','mut','Nothing yet, so this is a rest day. Add elements below.'));
-  day.forEach((bk,k)=>{ const E=ELM[bk.e]; const bx=el('div','blk'); bx.style.setProperty('--bc',E.col);
-    const hd=el('div','bh','<span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>'); 
+  day.forEach((bk,k)=>{ const E=ELM[bk.e]; const bx=el('div','blk'); bx.style.cssText=boardVars(E);
+    const hd=el('div','bh','<i class="bimg"></i><span class="bic">'+E.ic+'</span><b>'+esc(E.name)+'</b>'); 
     const st=el('span','stp'); const dn=el('button','sm','−'), up=el('button','sm','+'), vv=el('span','bv',bk.m?fmtMin(bk.m):'No timer');
     dn.setAttribute('aria-label','Less time'); up.setAttribute('aria-label','More time'); dn.onclick=keepY(()=>{ bk.m=Math.max(0,(+bk.m||0)-5); }); up.onclick=keepY(()=>{ bk.m=Math.min(240,(+bk.m||0)+5); }); st.append(dn,vv,up); hd.appendChild(st);
     const mv=el('span','mv'); const u=el('button','sm','↑'), d=el('button','sm','↓'), x=el('button','sm','✕'); u.title='Move up'; d.title='Move down'; x.title='Remove';
@@ -400,7 +417,7 @@ function buildView(w){
     else { const inp=el('input'); inp.type='text'; inp.maxLength=200; inp.className='bnote'; inp.placeholder=E.ph||'Notes (optional)'; inp.value=bk.note||''; inp.oninput=()=>{ bk.note=inp.value; }; bx.appendChild(inp); }
     cur.appendChild(bx); });
   w.appendChild(el('h3','addh','Add an element'));
-  const pal=el('div','pal'); ELS.forEach(E=>{ const bt=el('button','pel','<span>'+E.ic+'</span>'+esc(E.name)); bt.style.setProperty('--bc',E.col); bt.onclick=keepY(()=>{ day.push({e:E.e,m:10,items:[],note:''}); addOpen=E.cats?day.length-1:-1; }); pal.appendChild(bt); }); w.appendChild(pal);
+  const pal=el('div','pal'); ELS.forEach(E=>{ const bt=el('button','pel','<i class="bimg dots"></i><span class="ic">'+E.ic+'</span><span class="bt"><b>'+esc(E.name)+'</b><small>'+esc(E.bl)+'</small></span><em class="go">Add →</em>'); bt.type='button'; bt.style.cssText=boardVars(E); bt.onclick=keepY(()=>{ day.push({e:E.e,m:10,items:[],note:''}); addOpen=E.cats?day.length-1:-1; }); pal.appendChild(bt); }); w.appendChild(pal);
   const cp=el('div','row'); cp.style.marginTop='12px'; const all=el('button','sm','Copy this day to every day'); all.onclick=keepY(()=>{ const src=JSON.stringify(day); draft.week=draft.week.map(()=>JSON.parse(src)); }); const clr=el('button','sm','Clear this day'); clr.onclick=keepY(()=>{ draft.week[pick]=[]; addOpen=-1; }); cp.append(all,clr); w.appendChild(cp);
   const r=el('div','row'); r.style.marginTop='22px';
   const total=draft.week.reduce((a,d)=>a+d.length,0);
