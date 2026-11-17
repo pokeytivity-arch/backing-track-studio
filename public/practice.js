@@ -1382,7 +1382,7 @@ function xmPrint(kind2){ const list=steps.slice(0,48), title=(kind2==='staff'?'S
         const tv=new VF.Voice({num_beats:4*T.length,beat_value:4}).setStrict(false).addTickables(T), bv=new VF.Voice({num_beats:4*B.length,beat_value:4}).setStrict(false).addTickables(B); VF.Accidental.applyAccidentals([tv],'C'); VF.Accidental.applyAccidentals([bv],'C');
         new VF.Formatter().joinVoices([tv]).joinVoices([bv]).format([tv,bv],660); tv.draw(c,tr); bv.draw(c,bs); body+=d.innerHTML; } }catch(e){ console.log(e); } box.remove(); }
   const w=window.open('','_blank'); if(!w){ const m=$('#prMsg'); if(m) m.textContent='Allow pop-ups for this site to export.'; return; }
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:20px} figure{display:inline-block;margin:10px;width:300px;vertical-align:top} figcaption{font-weight:700;margin-bottom:4px} svg{max-width:100%;height:auto} @media print{button{display:none}}</style></head><body><h1>'+title+'</h1>'+body+'<p style="color:#666;font-size:12px">Made with HearandPlay Piano Suite · hearandplay.app</p><button onclick="print()">Print / Save as PDF</button></body></html>'); w.document.close(); }
+  w.document.write((window.BR||String)('<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}h1{font-size:20px} figure{display:inline-block;margin:10px;width:300px;vertical-align:top} figcaption{font-weight:700;margin-bottom:4px} svg{max-width:100%;height:auto} @media print{button{display:none}}</style></head><body><h1>'+title+'</h1>'+body+'<p style="color:#666;font-size:12px">Made with HearandPlay Piano Suite · hearandplay.app</p><button onclick="print()">Print / Save as PDF</button></body></html>')); w.document.close(); }
 function xmPrep(){ if(XM&&!window.Vex&&typeof loadVex==='function') loadVex().catch(()=>{}); }
 /* Studio: the progression goes to the Studio's Chord mode, bar by bar (4/4), so it can be practised with a backing track; the menu bar's back arrow returns here */
 function chordsToStudio(){ if(st.cmode==='arp'||!window.STUDIO_CHORDS) return; const NM=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'], nn=m=>NM[((m%12)+12)%12]+(Math.floor(m/12)-1);
@@ -1467,7 +1467,7 @@ function scaleMenus(){ const S0=window.PSMENU&&PSMENU.studio||[]; const brand=S0
   return [brand,
   {label:'File',items:[
     {label:'Practice in Studio',enabled:()=>{ const b=$('#prStudio'); return !!b&&!b.disabled; },run:()=>{ const b=$('#prStudio'); if(b) b.click(); }},
-    {label:'Ask HearandPlay about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask HearandPlay/.test(x.textContent)); if(b) b.click(); }},
+    {label:'Ask HearandPlay about this scale…',run:()=>{ const b=[...ov.querySelectorAll('#prRoom button')].find(x=>/^Ask (HearandPlay|Pokey)/.test(x.textContent)); if(b) b.click(); }},
     {sep:true},
     {label:'Reset to default settings',run:()=>{ clr(); Object.assign(st,JSON.parse(JSON.stringify(DEF))); save(); open('scales'); }},
     {label:'Close scale practice',run:()=>{ const b=$('#prX'); if(b) b.click(); else close(); }}]},

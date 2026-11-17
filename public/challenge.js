@@ -256,7 +256,7 @@ function certView(w){
   const draw=()=>{ const nm=b.querySelector('#cn').value.trim()||'Pianist'; certDraw(cv,nm,st.pct,D.plan.name,D.start,D.cert.id); };
   b.querySelector('#cn').oninput=()=>{ draw(); }; b.querySelector('#cn').onchange=()=>{ acct.name=b.querySelector('#cn').value.trim(); queueSave(); }; draw();
   const r=el('div','row'); r.style.marginTop='12px';
-  const dl=el('button','pri','Download (PNG)'); dl.onclick=()=>{ const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download='HearandPlay-Certificate-of-Consistency.png'; a.click(); };
+  const dl=el('button','pri','Download (PNG)'); dl.onclick=()=>{ const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download=(window.BRAND?BRAND.name:'HearandPlay')+'-Certificate-of-Consistency.png'; a.click(); };
   const pr=el('button','','Print'); pr.onclick=()=>{ const w2=window.open('','_blank'); if(!w2) return; w2.document.write('<title>Certificate</title><style>@page{size:landscape;margin:0}body{margin:0}img{width:100vw;display:block}</style><img src="'+cv.toDataURL('image/png')+'" onload="setTimeout(()=>print(),200)">'); w2.document.close(); };
   const bk=el('button','','Back'); bk.onclick=()=>{ view='home'; render(); }; const fin=el('button','','Finish and start a new challenge'); fin.onclick=()=>{ D.cert=null; finishRun(); };
   r.append(dl,pr,bk,fin); w.appendChild(r);
@@ -267,7 +267,7 @@ function certDraw(cv,name,pct,plan,start,id){
   const gold=g.createLinearGradient(0,0,W,0); gold.addColorStop(0,'#b8892a'); gold.addColorStop(.5,'#f3d77a'); gold.addColorStop(1,'#b8892a');
   g.strokeStyle=gold; g.lineWidth=10; g.strokeRect(40,40,W-80,H-80); g.lineWidth=2; g.strokeRect(64,64,W-128,H-128);
   g.textAlign='center'; g.fillStyle=gold;
-  g.font='800 92px Georgia,serif'; g.fillText('HearandPlay Piano Suite',W/2,215);
+  g.font='800 92px Georgia,serif'; g.fillText((window.BRAND?BRAND.name:'HearandPlay')+' Piano Suite',W/2,215);
   g.font='600 26px system-ui,sans-serif'; g.fillStyle='#c9d3ea'; g.fillText('P I A N O   ·   C H O R D S   ·   E A R   T R A I N I N G',W/2,262);
   g.fillStyle=gold; g.fillRect(W/2-120,300,240,3);
   g.fillStyle='#ffffff'; g.font='700 64px Georgia,serif'; g.fillText('Certificate of Consistency',W/2,395);
@@ -280,8 +280,8 @@ function certDraw(cv,name,pct,plan,start,id){
   g.fillStyle='#c9d3ea'; g.font='600 26px system-ui,sans-serif'; g.fillText('DEDICATION',W/2,942);
   const end=addDays(start,89), f=d=>d.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
   g.font='24px system-ui,sans-serif'; g.fillText(f(mid(start))+'  to  '+f(end),W/2,1000);
-  g.textAlign='left'; g.font='20px system-ui,sans-serif'; g.fillStyle='#8f9bb8'; g.fillText('Certificate '+id,110,1050); g.textAlign='right'; g.fillText('hearandplay.app',W-110,1050);
-  g.textAlign='center'; g.fillStyle=gold; g.font='italic 40px Georgia,serif'; g.fillText('HearandPlay',W-330,1000); g.fillRect(W-470,1010,280,2);
+  g.textAlign='left'; g.font='20px system-ui,sans-serif'; g.fillStyle='#8f9bb8'; g.fillText('Certificate '+id,110,1050); g.textAlign='right'; g.fillText(window.BRAND?BRAND.site:'hearandplay.app',W-110,1050);
+  g.textAlign='center'; g.fillStyle=gold; g.font='italic 40px Georgia,serif'; g.fillText(window.BRAND?BRAND.coach:'HearandPlay',W-330,1000); g.fillRect(W-470,1010,280,2);
 }
 /* --- plan builder --- */
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
