@@ -203,6 +203,14 @@ async function sessionUser(request, env) {
 }
 const ROLES = ['student', 'teacher', 'none'];
 const pub = (a, token) => Object.assign(token ? { token } : {}, { name: a.name || '', email: a.email, role: a.role || 'none', teachers: a.teachers || [], tcode: a.tcode || null, pending: (a.students || []).filter(x => x.status === 'pending').length, data: a.data || null });
+/* an account is stored under the hash of the email it was made with; after an email change, "mail:<hash of new email>" points to it */
+async function findAcct(env, email) {
+  const h = await sha(email); const a = await env.LESSONS.get('acct:' + h, 'json');
+  if (a && a.email === email) return { id: h, acct: a };
+  const al = await env.LESSONS.get('mail:' + h);
+  if (al) { const b = await env.LESSONS.get('acct:' + al, 'json'); if (b && b.email === email) return { id: al, acct: b }; }
+  return { id: h, acct: null, taken: !!a };
+}
 async function account(request, env) {
   if (!env.LESSONS) return json({ error: 'no_kv_binding' }, 503);
   if (request.method === 'GET') {
@@ -216,6 +224,22 @@ async function account(request, env) {
     if (b.data !== undefined) u.acct.data = b.data;
     if (typeof b.name === 'string') u.acct.name = b.name.slice(0, 60);
     if (typeof b.role === 'string' && ROLES.includes(b.role)) { u.acct.role = b.role; }
+    /* email and password can be changed from the Account page while signed in */
+    if (typeof b.email === 'string') {
+      const ne = b.email.trim().toLowerCase();
+      if (ne !== u.acct.email) {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ne) || ne.length > 120) return json({ error: 'bad_email' }, 400);
+        const f = await findAcct(env, ne); if ((f.acct || f.taken) && f.id !== u.id) return json({ error: 'email_taken' }, 409);
+        const oh = await sha(u.acct.email), nh = await sha(ne);
+        if (oh !== u.id) await env.LESSONS.delete('mail:' + oh);
+        if (nh !== u.id) await env.LESSONS.put('mail:' + nh, u.id);
+        u.acct.email = ne;
+      }
+    }
+    if (typeof b.password === 'string' && b.password.length) {
+      if (b.password.length < 6 || b.password.length > 100) return json({ error: 'weak_password' }, 400);
+      u.acct.salt = rnd(16); u.acct.hash = await pbk(b.password, u.acct.salt);
+    }
     await env.LESSONS.put('acct:' + u.id, JSON.stringify(u.acct));
     return json(pub(u.acct, null), 200);
   }
@@ -232,7 +256,7 @@ async function account(request, env) {
   }
   if (action === 'adminreset') {
     if (!env.ADMIN_TOKEN || !same(b.adminToken, env.ADMIN_TOKEN)) return json({ error: 'auth' }, 401);
-    const id = await sha(email), acct = await env.LESSONS.get('acct:' + id, 'json'); if (!acct) return json({ error: 'no_account' }, 404);
+    const { id, acct } = await findAcct(env, email); if (!acct) return json({ error: 'no_account' }, 404);
     if (pw.length < 6) return json({ error: 'weak_password' }, 400);
     acct.salt = rnd(16); acct.hash = await pbk(pw, acct.salt); await env.LESSONS.put('acct:' + id, JSON.stringify(acct)); return json({ ok: true }, 200);
   }
@@ -241,9 +265,9 @@ async function account(request, env) {
   const ip = request.headers.get('cf-connecting-ip') || 'x', day = new Date().toISOString().slice(0, 10), lk = 'lim:acct:' + day + ':' + ip;
   const tries = +(await env.LESSONS.get(lk)) || 0; if (tries >= 40) return json({ error: 'slow_down' }, 429);
   await env.LESSONS.put(lk, String(tries + 1), { expirationTtl: 172800 });
-  const id = await sha(email); let acct = await env.LESSONS.get('acct:' + id, 'json');
+  const f = await findAcct(env, email), id = f.id; let acct = f.acct;
   if (action === 'signup') {
-    if (acct) return json({ error: 'exists' }, 409);
+    if (acct || f.taken) return json({ error: 'exists' }, 409);
     const salt = rnd(16); acct = { email, name: String(b.name || '').trim().slice(0, 60), role: ROLES.includes(b.role) ? b.role : 'none', salt, hash: await pbk(pw, salt), made: Date.now(), data: null };
     await env.LESSONS.put('acct:' + id, JSON.stringify(acct));
   } else if (action === 'login') {

@@ -27,6 +27,7 @@ const css=document.createElement('style'); css.textContent=`
 #acRoom .btn{font:600 14px var(--body);border-radius:999px;padding:9px 16px;border:1.5px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;margin:4px 6px 0 0}
 #acRoom .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 #acRoom .mut{color:var(--muted);font-size:14px}
+#acRoom .ac-cred{margin:14px 0 6px;padding:14px 0 0;border-top:1px solid var(--line)}#acRoom .ac-cred label{margin-top:10px}#acRoom input[type=email],#acRoom input[type=password],#acRoom .ac-pw input{font:inherit;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);width:min(340px,100%)}#acRoom .ac-pw{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#acRoom .ac-pw .btn{margin:0}#acRoom #acSaveMsg{margin-left:6px}
 #acProg{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;margin:0}
 #acProg .pp-st,#acProg .pp-dr{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;color:var(--ink);display:grid;gap:2px;text-align:left;font-family:inherit;flex:1 1 200px}
 #acProg b{font-size:17px}#acProg span{font-size:13px;color:var(--muted)}
@@ -40,6 +41,16 @@ function authBox(box){
   const who=document.createElement('p'); who.innerHTML='<b></b> <span class="mut"></span>'; who.firstChild.textContent=u.name||'Signed in'; who.lastChild.textContent=u.email; box.appendChild(who);
   const lab=document.createElement('label'); lab.textContent='Account type'; box.appendChild(lab);
   const g=document.createElement('div'); g.className='au-roles'; AUTH.ROLE_INFO.forEach(([k,t,d])=>{ const l=document.createElement('label'); l.className='au-role'; const r=document.createElement('input'); r.type='radio'; r.name='ac_role'; r.value=k; r.checked=(u.role||'none')===k; r.onchange=async()=>{ await AUTH.setRole(k); }; const s=document.createElement('span'); const b=document.createElement('b'); b.textContent=t; const sm=document.createElement('small'); sm.textContent=d; s.append(b,sm); l.append(r,s); g.appendChild(l); }); box.appendChild(g);
+  { const f=document.createElement('div'); f.className='ac-cred';
+    f.innerHTML='<label for="acEmail">Email</label><input type="email" id="acEmail" autocomplete="email" maxlength="120"><label for="acPw">New password</label><div class="ac-pw"><input type="password" id="acPw" autocomplete="new-password" maxlength="100" placeholder="Leave empty to keep your password"><button type="button" class="btn" id="acPwShow">Show</button></div><div><button type="button" class="btn pri" id="acSave">Save email and password</button><span class="mut" id="acSaveMsg" role="status"></span></div>';
+    box.appendChild(f); const em=f.querySelector('#acEmail'), pw=f.querySelector('#acPw'), msg=f.querySelector('#acSaveMsg'); em.value=u.email||'';
+    f.querySelector('#acPwShow').onclick=e=>{ const sh=pw.type==='password'; pw.type=sh?'text':'password'; e.target.textContent=sh?'Hide':'Show'; };
+    f.querySelector('#acSave').onclick=async e=>{ const b={}, ne=em.value.trim().toLowerCase(), ce=((window.AUTH&&AUTH.user())||u).email; if(ne&&ne!==ce) b.email=ne; if(pw.value) b.password=pw.value;
+      if(!b.email&&!b.password){ msg.textContent='Nothing to change.'; return; }
+      if(b.password&&b.password.length<6){ msg.textContent='The password needs at least 6 characters.'; return; }
+      e.target.disabled=true; msg.textContent='Saving…'; const j=await AUTH.api('PUT',b); e.target.disabled=false;
+      if(j._s===200){ pw.value=''; await AUTH.refresh(); msg.textContent=(b.email&&b.password?'Email and password saved.':b.email?'Email saved. Sign in with '+ne+' from now on.':'Password saved.'); const w=box.querySelector('p b'); if(w&&w.nextElementSibling) w.nextElementSibling.textContent=(AUTH.user()||u).email; }
+      else msg.textContent=j.error==='email_taken'?'Another account already uses that email.':j.error==='bad_email'?'That email does not look right.':j.error==='weak_password'?'The password needs at least 6 characters.':j._s===401?'You were signed out. Sign in again.':'Could not save. Try again.'; }; }
   const out=document.createElement('button'); out.type='button'; out.className='btn'; out.textContent='Sign out'; out.onclick=async()=>{ await AUTH.signOut(); render(); }; box.appendChild(out); try{ if(window.VISIT) VISIT.mount(box); }catch(_){}
 }
 
