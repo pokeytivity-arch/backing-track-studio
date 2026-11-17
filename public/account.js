@@ -40,7 +40,7 @@ function authBox(box){
   const who=document.createElement('p'); who.innerHTML='<b></b> <span class="mut"></span>'; who.firstChild.textContent=u.name||'Signed in'; who.lastChild.textContent=u.email; box.appendChild(who);
   const lab=document.createElement('label'); lab.textContent='Account type'; box.appendChild(lab);
   const g=document.createElement('div'); g.className='au-roles'; AUTH.ROLE_INFO.forEach(([k,t,d])=>{ const l=document.createElement('label'); l.className='au-role'; const r=document.createElement('input'); r.type='radio'; r.name='ac_role'; r.value=k; r.checked=(u.role||'none')===k; r.onchange=async()=>{ await AUTH.setRole(k); }; const s=document.createElement('span'); const b=document.createElement('b'); b.textContent=t; const sm=document.createElement('small'); sm.textContent=d; s.append(b,sm); l.append(r,s); g.appendChild(l); }); box.appendChild(g);
-  const out=document.createElement('button'); out.type='button'; out.className='btn'; out.textContent='Sign out'; out.onclick=async()=>{ await AUTH.signOut(); render(); }; box.appendChild(out);
+  const out=document.createElement('button'); out.type='button'; out.className='btn'; out.textContent='Sign out'; out.onclick=async()=>{ await AUTH.signOut(); render(); }; box.appendChild(out); try{ if(window.VISIT) VISIT.mount(box); }catch(_){}
 }
 
 function render(){

@@ -11,6 +11,9 @@
     "bindings": [ { "name": "PRESENCE", "class_name": "Presence" } ]
   },
   "migrations": [ { "tag": "v1", "new_sqlite_classes": ["Presence"] } ],
+  "d1_databases": [
+    { "binding": "VDB", "database_name": "visitors", "database_id": "1f9db029-d0fc-4aff-99f6-4f284cf914a1" }
+  ],
   "kv_namespaces": [
     { "binding": "LESSONS", "id": "00c6361654234e1796f62d789486342c" }
   ],

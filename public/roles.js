@@ -14,7 +14,7 @@ const STUDENT_ONLY=/(^|\.)pokeytivity\.com$/i.test(location.hostname);
 /* for pitching: hearandplay.app/?demo=teacher opens the sample teacher wing in this tab */
 try{ if(new URLSearchParams(location.search).get('demo')==='teacher'){ sessionStorage.setItem('ps-demo-t','1'); localStorage.setItem('ps-role','teacher'); history.replaceState(null,'',location.pathname); } }catch(_){}
 const teacherAcct=()=>{ if(STUDENT_ONLY) return false; try{ const u=window.AUTH&&AUTH.user&&AUTH.user(); if(u) return u.role==='teacher'; if(sessionStorage.getItem('ps-demo-t')) return true; return !!localStorage.getItem('ps-tok')&&localStorage.getItem('ps-acct-role')==='teacher'; }catch(_){ return false; } };
-const role=()=>{ try{ return teacherAcct()&&localStorage.getItem(RK)!=='student'?'teacher':'student'; }catch(_){ return 'student'; } };
+const role=()=>{ if(STUDENT_ONLY) return 'student'; try{ const v=localStorage.getItem(RK); if(v==='teacher'||v==='student') return v; return teacherAcct()?'teacher':'student'; }catch(_){ return 'student'; } };   /* the Student|Teacher switch is open to everyone on hearandplay.app; app.pokeytivity.com stays student-only */
 const jget=(k,d)=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?d:v; }catch(_){ return d; } };
 const jset=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(_){} if(k==='ps-t-spaces3'&&window.PSSUITE) PSSUITE.push(); };
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -155,7 +155,7 @@ const ICONS_SUITE=k=>{ const c=document.querySelector('#psCards .dcard[data-k="'
 /* ---------- the switch ---------- */
 function toggle(){ if(STUDENT_ONLY){ const x=el('span','rl-tog'); x.hidden=true; x.style.display='none'; return x; } const w=el('div','rl-tog'); w.setAttribute('role','radiogroup'); w.setAttribute('aria-label','View the suite as');
   [['student','Student'],['teacher','Teacher']].forEach(([v,t])=>{ const b=el('button',null,'<i></i>'+t); b.type='button'; b.setAttribute('role','radio'); b.setAttribute('aria-checked',String(role()===v));
-    const off=v==='teacher'&&!teacherAcct(); if(off){ b.disabled=true; b.setAttribute('aria-disabled','true'); b.title='The teacher wing opens for signed-in Teacher accounts'; }
+    const off=false; if(off){ b.disabled=true; b.setAttribute('aria-disabled','true'); b.title='The teacher wing opens for signed-in Teacher accounts'; }
     if(role()===v) b.style.cursor='default';
     b.onclick=()=>{ if(off||role()===v) return; try{ localStorage.setItem(RK,v); sessionStorage.setItem('ps-role-sw','1'); }catch(_){} location.reload(); }; w.appendChild(b); });
   return w; }

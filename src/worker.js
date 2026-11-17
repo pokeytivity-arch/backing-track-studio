@@ -399,7 +399,100 @@ async function teach(request, env, act) {
 /* ---------- teacher suites: hearandplay.app/<handle>. A teacher claims a handle (@name) for their suite and customizes it;
    anyone can see a suite's front page; a signed-in student subscribes with a PIN of their choosing, and enters with that PIN.
    KV: su:h:<handle> -> owner id · su:t:<owner> -> the suite · su:al:<old handle> -> new handle · su:p:<owner>:<student> -> PIN hash · su:e:<token> -> entry */
-const RESERVED = new Set('api admin www app index home suite suites teacher teachers student students dashboard settings account login signup signin logout help about class hall studio plus challenge arena practice hearandplay pokeytivity myprogressions privacy terms support'.split(' '));
+/* ---------- visitors: who came, from where, which spaces they opened and for how long (D1 database "visitors") ----------
+   Only the owner's account can read it. An account becomes an owner once, by entering the owner key while signed in. */
+const VIS_KEY_HASH = '3fb277d6135889e11628fd63c66d1b71115dae6c9b03dc033cfd9256e7bb3d75';
+let VDB_READY = false;
+async function vdb(env) {
+  if (!env.VDB) return null;
+  if (!VDB_READY) {
+    await env.VDB.batch([
+      env.VDB.prepare('CREATE TABLE IF NOT EXISTS visits(id TEXT PRIMARY KEY, vid TEXT, host TEXT, path TEXT, started INTEGER, last INTEGER, dur INTEGER DEFAULT 0, pages INTEGER DEFAULT 0, country TEXT, region TEXT, city TEXT, ref TEXT, device TEXT, os TEXT, browser TEXT, lang TEXT, uname TEXT, urole TEXT, back INTEGER DEFAULT 0)'),
+      env.VDB.prepare('CREATE INDEX IF NOT EXISTS visits_started ON visits(started)'),
+      env.VDB.prepare('CREATE INDEX IF NOT EXISTS visits_vid ON visits(vid)'),
+      env.VDB.prepare('CREATE TABLE IF NOT EXISTS views(visit TEXT, seq INTEGER, space TEXT, at INTEGER, dur INTEGER, PRIMARY KEY(visit, seq))'),
+      env.VDB.prepare('CREATE TABLE IF NOT EXISTS owners(id TEXT PRIMARY KEY, at INTEGER)')
+    ]);
+    VDB_READY = true;
+  }
+  return env.VDB;
+}
+const cut = (s, n) => (s == null ? null : String(s).slice(0, n));
+function uaInfo(ua) {
+  ua = ua || '';
+  const device = /iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(ua) ? 'Tablet' : /Mobi|iPhone|iPod|Android/i.test(ua) ? 'Phone' : 'Computer';
+  const os = /iPhone|iPad|iPod/i.test(ua) ? 'iOS' : /Android/i.test(ua) ? 'Android' : /Windows/i.test(ua) ? 'Windows' : /CrOS/i.test(ua) ? 'ChromeOS' : /Mac OS X|Macintosh/i.test(ua) ? 'Mac' : /Linux/i.test(ua) ? 'Linux' : 'Other';
+  const browser = /FBAN|FBAV/i.test(ua) ? 'Facebook app' : /Instagram/i.test(ua) ? 'Instagram app' : /WhatsApp/i.test(ua) ? 'WhatsApp' : /Edg\//i.test(ua) ? 'Edge' : /OPR\/|Opera/i.test(ua) ? 'Opera' : /SamsungBrowser/i.test(ua) ? 'Samsung Internet' : /CriOS|Chrome\//i.test(ua) ? 'Chrome' : /FxiOS|Firefox\//i.test(ua) ? 'Firefox' : /Safari\//i.test(ua) ? 'Safari' : 'Other';
+  return { device, os, browser };
+}
+async function isOwner(request, env, db) {
+  const u = await sessionUser(request, env); if (!u) return { u: null, owner: false };
+  const r = await db.prepare('SELECT 1 FROM owners WHERE id=?').bind(u.id).first();
+  return { u, owner: !!r };
+}
+async function visits(request, env) {
+  const db = await vdb(env); if (!db) return json({ error: 'nodb' }, 503);
+  if (request.method !== 'POST') return json({ error: 'method' }, 405);
+  let b; try { b = JSON.parse(await request.text()); } catch (_) { return json({ error: 'bad' }, 400); }
+  const a = b && b.a;
+  if (a === 'log') {
+    const ua = request.headers.get('user-agent') || '';
+    if (/bot|crawl|spider|slurp|headless|lighthouse|preview|facebookexternalhit|whatsapp\/\d/i.test(ua) && !/WhatsApp\/\d.*Mobile/i.test(ua)) return json({ ok: true });
+    const id = String(b.sid || ''), vid = String(b.vid || '');
+    if (!/^[a-z0-9]{8,32}$/.test(id) || !/^[a-z0-9]{8,32}$/.test(vid)) return json({ error: 'bad' }, 400);
+    const now = Date.now(), cf = request.cf || {}, inf = uaInfo(ua);
+    const dur = Math.max(0, Math.min(86400, Math.round(+b.total || 0)));
+    const views = Array.isArray(b.views) ? b.views.slice(0, 40) : [];
+    const pages = Math.max(0, Math.min(10000, Math.round(+b.seq || views.length)));
+    const st = [db.prepare(`INSERT INTO visits(id,vid,host,path,started,last,dur,pages,country,region,city,ref,device,os,browser,lang,uname,urole,back)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,(SELECT COUNT(*)>0 FROM visits WHERE vid=?))
+        ON CONFLICT(id) DO UPDATE SET last=excluded.last, dur=MAX(visits.dur,excluded.dur), pages=MAX(visits.pages,excluded.pages), uname=COALESCE(excluded.uname,visits.uname), urole=COALESCE(excluded.urole,visits.urole)`)
+      .bind(id, vid, cut(new URL(request.url).hostname, 60), cut(b.path, 80), now - dur * 1000, now, dur, pages, cut(cf.country, 4), cut(cf.region, 60), cut(cf.city, 60), cut(b.ref, 80) || 'Direct', inf.device, inf.os, inf.browser, cut(b.lang, 16), cut(b.uname, 60) || null, cut(b.urole, 12) || null, vid)];
+    for (const v of views) {
+      const seq = Math.round(+v.seq), d = Math.max(0, Math.min(86400, Math.round(+v.dur || 0))), at = Math.round(+v.at || now);
+      if (!(seq >= 1 && seq <= 10000) || typeof v.space !== 'string') continue;
+      st.push(db.prepare('INSERT INTO views(visit,seq,space,at,dur) VALUES(?,?,?,?,?) ON CONFLICT(visit,seq) DO UPDATE SET dur=MAX(views.dur,excluded.dur)').bind(id, seq, cut(v.space, 60), Math.min(at, now), d));
+    }
+    await db.batch(st);
+    return json({ ok: true });
+  }
+  const { u, owner } = await isOwner(request, env, db);
+  if (a === 'me') return json({ owner });
+  if (a === 'claim') {
+    if (!u) return json({ error: 'auth' }, 401);
+    const ip = request.headers.get('cf-connecting-ip') || 'x'; if (limited('vk' + ip)) return json({ error: 'slow' }, 429);
+    if (!same(await sha(String(b.key || '').trim().toLowerCase()), VIS_KEY_HASH)) return json({ error: 'key' }, 403);
+    await db.prepare('INSERT OR IGNORE INTO owners(id,at) VALUES(?,?)').bind(u.id, Date.now()).run();
+    return json({ ok: true, owner: true });
+  }
+  if (!u) return json({ error: 'auth' }, 401);
+  if (!owner) return json({ error: 'owner' }, 403);
+  if (a === 'board') {
+    const days = Math.max(1, Math.min(365, Math.round(+b.days || 7))), since = Date.now() - days * 86400000;
+    const host = ['hearandplay.app', 'app.pokeytivity.com'].includes(b.host) ? b.host : null;
+    const tz = Math.max(-840, Math.min(840, Math.round(+b.tz || 0))) * 60000; // minutes east of UTC, for the day chart
+    const W = 'started>=?' + (host ? ' AND host=?' : ''), P = host ? [since, host] : [since];
+    const q = (sql, ...extra) => db.prepare(sql).bind(...P, ...extra);
+    if (Math.random() < 0.05) await db.batch([db.prepare('DELETE FROM views WHERE visit IN (SELECT id FROM visits WHERE started<?)').bind(Date.now() - 400 * 86400000), db.prepare('DELETE FROM visits WHERE started<?').bind(Date.now() - 400 * 86400000)]);
+    const r = await db.batch([
+      q(`SELECT COUNT(*) n, COUNT(DISTINCT vid) people, COALESCE(SUM(dur),0) total, COALESCE(AVG(dur),0) avg, COALESCE(SUM(back),0) back FROM visits WHERE ${W}`),
+      q(`SELECT country k, COUNT(*) n, SUM(dur) t FROM visits WHERE ${W} GROUP BY country ORDER BY n DESC LIMIT 20`),
+      q(`SELECT city k, country c, COUNT(*) n FROM visits WHERE ${W} AND city IS NOT NULL GROUP BY city, country ORDER BY n DESC LIMIT 20`),
+      q(`SELECT ref k, COUNT(*) n FROM visits WHERE ${W} GROUP BY ref ORDER BY n DESC LIMIT 20`),
+      q(`SELECT device||' · '||os k, COUNT(*) n FROM visits WHERE ${W} GROUP BY k ORDER BY n DESC LIMIT 12`),
+      q(`SELECT space k, COUNT(*) n, SUM(dur) t, AVG(dur) a, COUNT(DISTINCT visit) v FROM views WHERE visit IN (SELECT id FROM visits WHERE ${W}) GROUP BY space ORDER BY t DESC LIMIT 40`),
+      q(`SELECT CAST((started+?)/86400000 AS INTEGER) d, COUNT(*) n, COUNT(DISTINCT vid) p FROM visits WHERE ${W} GROUP BY d ORDER BY d`.replace('(started+?)', '(started+' + tz + ')')),
+      q(`SELECT host k, COUNT(*) n FROM visits WHERE ${W} GROUP BY host`),
+      q(`SELECT * FROM visits WHERE ${W} ORDER BY started DESC LIMIT 150`),
+      q(`SELECT visit, seq, space, dur FROM views WHERE visit IN (SELECT id FROM visits WHERE ${W} ORDER BY started DESC LIMIT 150) ORDER BY visit, seq`)
+    ]);
+    const R = i => r[i].results || [];
+    return json({ days, host, totals: R(0)[0] || {}, countries: R(1), cities: R(2), refs: R(3), devices: R(4), spaces: R(5), byDay: R(6), hosts: R(7), recent: R(8), views: R(9), now: Date.now() });
+  }
+  return json({ error: 'action' }, 400);
+}
+
+const RESERVED = new Set('api admin www app index home suite suites teacher teachers student students dashboard settings account login signup signin logout help about class hall studio plus challenge arena practice hearandplay pokeytivity myprogressions privacy terms support visitors visit'.split(' '));
 const HANDLE = /^[a-z0-9]{3,30}$/;
 const cleanItems = (o) => { o = o && typeof o === 'object' ? o : {}; const L = (x, n) => (Array.isArray(x) ? x : []).slice(0, n);
   return { arena: L(o.arena, 40).map(x => ({ id: clip(x && x.id, 30), title: clip(x && x.title, 80), room: clip(x && x.room, 12), prog: clip(x && x.prog, 600), bpm: Math.max(0, Math.min(300, +(x && x.bpm) || 0)), key: clip(x && x.key, 4), type: clip(x && x.type, 30) })).filter(x => x.id && x.title),
@@ -554,6 +647,9 @@ export default {
     }
     if (url.pathname === '/api/suite') {
       try { return await suite(request, env, url); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
+    }
+    if (url.pathname === '/api/visit') {
+      try { return await visits(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     if (url.pathname === '/api/hot') {
       try { return await hotTopics(request, env); } catch (e) { console.log(e); return json({ counts: {} }, 200); }
