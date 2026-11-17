@@ -290,7 +290,7 @@ function addBackBtn(){
   const mb=document.querySelector('.menubar'); if(!mb||document.getElementById('psBackBtn')) return;
   const b=document.createElement('button'); b.id='psBackBtn'; b.type='button'; b.className='menu-btn'; b.textContent='←'; b.title='Back'; b.setAttribute('aria-label','Back'); b.style.cssText='font-size:18px;padding:0 10px'; b.onclick=back; mb.insertBefore(b,mb.firstChild);
 }
-window.SUITE={studios(){ if(hub.classList.contains('on')){ hubView='studios'; renderHub(); } else showHub({studios:true}); },returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back,forward};
+window.SUITE={icons:ICONS,studios(){ if(hub.classList.contains('on')){ hubView='studios'; renderHub(); } else showHub({studios:true}); },returnTo(from,fn){ RET={from,fn}; },clear:()=>clearRoom(cur||'studio',false),go,home:showHub,current:()=>cur,DEST,ORDER,back,forward};
 
 
 /* ---------- clear buttons + clear after an hour away ---------- */

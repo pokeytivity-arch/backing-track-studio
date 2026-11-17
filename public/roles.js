@@ -88,6 +88,16 @@ const css=el('style'); css.textContent=`
 :is(#suiteHub,#rlDashPage) .rl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:16px 0 18px}
 :is(#suiteHub,#rlDashPage) .rl-kpi{padding:16px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(22,29,49,.92),rgba(15,20,36,.92));border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 :is(#suiteHub,#rlDashPage) .rl-kpi span{display:block;font:800 11.5px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#aab4cf} :is(#suiteHub,#rlDashPage) .rl-kpi b{display:block;font:900 34px var(--body);margin-top:6px} :is(#suiteHub,#rlDashPage) .rl-kpi small{color:#aab4cf;font-size:13px}
+:is(#suiteHub,#rlDashPage) .rl-boards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:0 0 18px}
+:is(#suiteHub,#rlDashPage) .rl-board{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;min-height:112px;padding:16px 18px;border-radius:16px;text-align:left;color:#fff;cursor:pointer;font-family:var(--body,Inter,system-ui,sans-serif);border:1px solid rgba(var(--gl),.45);background:linear-gradient(115deg,var(--g1) -45%,var(--g2) 62%);box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 14px 30px -14px rgba(0,0,0,.7);transition:transform .2s,box-shadow .2s,border-color .2s}
+:is(#suiteHub,#rlDashPage) .rl-board:hover{transform:translateY(-2px);border-color:rgba(var(--gl),.85);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 18px 36px -14px rgba(var(--gl),.45)}
+:is(#suiteHub,#rlDashPage) .rl-board:focus-visible{outline:2px solid #fff;outline-offset:2px}
+:is(#suiteHub,#rlDashPage) .rl-board .bimg{position:absolute;top:0;right:0;bottom:0;width:58%;background-size:cover;background-position:center;opacity:.55;-webkit-mask-image:linear-gradient(90deg,transparent,#000 70%);mask-image:linear-gradient(90deg,transparent,#000 70%);pointer-events:none}
+:is(#suiteHub,#rlDashPage) .rl-board .bimg.dots{background-image:radial-gradient(circle,rgba(255,255,255,.85) 0 4px,transparent 5px);background-size:20px 20px;opacity:.35}
+:is(#suiteHub,#rlDashPage) .rl-board .ic{position:relative;flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(150deg,var(--c1),var(--c2));box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 -6px 10px rgba(0,0,0,.25) inset,0 10px 18px -6px var(--c2)}
+:is(#suiteHub,#rlDashPage) .rl-board .ic svg{width:28px;height:28px}
+:is(#suiteHub,#rlDashPage) .rl-board .bt{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} :is(#suiteHub,#rlDashPage) .rl-board .bt b{font:900 19px var(--display,var(--body,Inter));letter-spacing:-.01em} :is(#suiteHub,#rlDashPage) .rl-board .bt small{font-size:13px;line-height:1.35;color:rgba(255,255,255,.82)}
+:is(#suiteHub,#rlDashPage) .rl-board .go{position:relative;flex:none;font-style:normal;font:800 13px var(--body,Inter);padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25)}
 :is(#suiteHub,#rlDashPage) .rl-dcols{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start} :is(#suiteHub,#rlDashPage) .rl-dl{flex:3 1 520px;min-width:0} :is(#suiteHub,#rlDashPage) .rl-dr{flex:2 1 300px;min-width:0} :is(#suiteHub,#rlDashPage) .rl-dcol{display:flex;flex-direction:column;gap:18px}
 :is(#suiteHub,#rlDashPage) .rl-dcard{border-radius:16px;background:rgba(15,20,36,.9);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:16px 18px;overflow:hidden}
 :is(#suiteHub,#rlDashPage) .rl-dch{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:-2px 0 6px} :is(#suiteHub,#rlDashPage) .rl-dch h3{margin:0;font:800 18px var(--body);color:#fff}
@@ -272,6 +282,16 @@ function dashboard(root){ const A=jget(K.asg,[]), done=jget(K.done,{}), joined=(
   /* numbers at a glance */
   const st=el('div','rl-kpis'); [['Active students',String(total),(joined?'Including you, on this device':'3 joined this week'),'#ffffff'],['To review',String(REVIEW.length),'Recordings, checks and questions','#ffd43b'],['Due this week',String(A.length+SAMPLE_ASG.length),'Assignments open','#8ce99a'],['Practised today',String(S.filter(x=>x.last==='Today').length),'of '+total+' students','#b9c8ff']]
     .forEach(([l,v,n,c])=>st.appendChild(el('div','rl-kpi','<span>'+l+'</span><b style="color:'+c+'">'+v+'</b><small>'+n+'</small>'))); D.appendChild(st);
+  /* the suite's own parts, as boards the size of the numbers above (Practice Arena, Studio, Practice Plan Builder) */
+  { const I=(window.SUITE&&SUITE.icons)||{}, bd=el('div','rl-boards');
+    [['hall','Practice Arena','Ear training, scales and chords for your students.','class-chords.webp','--g1:#13a48f;--g2:#06302b;--gl:80,230,200;--c1:#3dd9c4;--c2:#0f8a7a'],
+     ['studio','Studio','Backing tracks and transcription, to play along and see the notes.','card-studio.webp','--g1:#e0911a;--g2:#2a1a05;--gl:255,190,70;--c1:#ffd24d;--c2:#e0911a'],
+     ['challenge','Practice Plan Builder','Practice plans for your students, with daily check-ins.','','--g1:#d6336c;--g2:#3d0a1f;--gl:255,130,170;--c1:#ff8a8a;--c2:#d6336c']].forEach(([k,t,b,img,vars])=>{
+      const x=el('button','rl-board'); x.type='button'; x.style.cssText=vars; x.dataset.k=k;
+      x.innerHTML='<span class="bimg'+(img?'':' dots')+'"'+(img?' style="background-image:url('+img+')"':'')+'></span><i class="ic">'+(I[k]||'')+'</i><span class="bt"><b>'+t+'</b><small>'+b+'</small></span><em class="go">Open →</em>';
+      x.onclick=()=>{ closeDash(); if(!window.SUITE) return; if(k==='studio') SUITE.studios(); else SUITE.go(k); };
+      bd.appendChild(x); });
+    D.appendChild(bd); }
   const cols=el('div','rl-dcols'), L=el('div','rl-dcol rl-dl'), R=el('div','rl-dcol rl-dr'); cols.append(L,R); D.appendChild(cols);
   const card=(title,extra)=>{ const c=el('section','rl-dcard'); const h=el('div','rl-dch','<h3>'+title+'</h3>'); if(extra) h.appendChild(extra); c.appendChild(h); return c; };
   const link=(t,f)=>{ const b=el('button','rl-lnk',t); b.type='button'; b.onclick=f; return b; };
