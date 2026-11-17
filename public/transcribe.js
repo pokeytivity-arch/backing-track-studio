@@ -427,7 +427,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&S.playin
 
 
 /* ---------- left and right hand (two colours, like the Studio keyboard) ---------- */
-const LH_COL='#1c7ed6', RH_COL='#f76707';
+const LH_COL='#4fc6e0', RH_COL='#ec6ce0';
 function assignHands(){
   const N=S.notes; if(!N.length) return;
   if(S.hands==='c4'){ N.forEach(n=>n.h=n.p<60?0:1); return; }
@@ -450,80 +450,122 @@ function hsl2hex(h,sat,l){ sat/=100; l/=100; const k=n=>(n+h/30)%12, a=sat*Math.
 /* lighter or darker of a #rrggbb colour (f>0 toward white, f<0 toward black) */
 function shade(hex,f){ const n=parseInt(hex.slice(1),16); let r=n>>16&255, gg=n>>8&255, b=n&255; const m=v=>Math.round(f>=0?v+(255-v)*f:v*(1+f)); return '#'+[m(r),m(gg),m(b)].map(v=>Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join(''); }
 function noteFill(n){ if(S.hands==='note') return hsl2hex(noteHue(n),85,55); return n.h===0?LH_COL:RH_COL; }
+/* ---------- chord name for the toolbar pill ---------- */
+const CHQ=[['',[0,4,7]],['m',[0,3,7]],['7',[0,4,7,10]],['maj7',[0,4,7,11]],['m7',[0,3,7,10]],['m7♭5',[0,3,6,10]],['dim',[0,3,6]],['dim7',[0,3,6,9]],['aug',[0,4,8]],['sus2',[0,2,7]],['sus4',[0,5,7]],['7sus4',[0,5,7,10]],['7sus2',[0,2,7,10]],['6',[0,4,7,9]],['m6',[0,3,7,9]],['add9',[0,2,4,7]],['9',[0,2,4,7,10]],['maj9',[0,2,4,7,11]],['m9',[0,2,3,7,10]],['m(maj7)',[0,3,7,11]]];
+function chordAt(t){ const w=new Array(12).fill(0); let bass=null;
+  for(const n of S.notes){ if(n.t>t+0.06) break; if(n.t+n.d<t-0.05) continue; const p=n.p+S.tr; w[((p%12)+12)%12]+=0.5+(n.a||0)/(S.aNorm||1); if(bass==null||p<bass) bass=p; }
+  const pcs=[]; for(let i=0;i<12;i++) if(w[i]>0) pcs.push(i); if(pcs.length<3) return null;
+  const b=((bass%12)+12)%12; let best=null;
+  for(const r of pcs) for(const [q,iv] of CHQ){ const set=iv.map(x=>(x+r)%12); let s=0; for(const pc of set){ if(w[pc]>0) s+=2; else s-=(pc===(r+7)%12?0.4:1.6); } for(const pc of pcs) if(!set.includes(pc)) s-=1.2; if(r===b) s+=0.8; s-=iv.length*0.05; if(!best||s>best.s) best={s,r,q}; }
+  if(!best||best.s<4) return null; const fl=!!S.flats; return nm(best.r,fl)+best.q+(b!==best.r?'/'+nm(b,fl):''); }
+/* ---------- the slim toolbar over the falling notes ---------- */
+const TB={};
+function tbUpd(t){ const bar=$('txBar'); if(!bar) return;
+  const time=fmt(t)+'<span class="tbtot"> / '+fmt(S.dur)+'</span>'; if(TB.time!==time){ TB.time=time; $('tbTime').innerHTML=time; }
+  const pct=S.dur?Math.max(0,Math.min(100,t/S.dur*100)):0; if(Math.abs((TB.pct||0)-pct)>0.05||!S.dur){ TB.pct=pct; $('tbProg').style.width=pct+'%'; }
+  const pl=!!S.playing; if(TB.pl!==pl){ TB.pl=pl; $('tbPlay').innerHTML=pl?ICON.pause:ICON.play; $('tbPlay').setAttribute('aria-label',pl?'Pause':'Play'); }
+  $('tbPlay').disabled=!S.audio;
+  let ch=S.notes.length?chordAt(t):null; if(ch) TB.lastCh=ch; else if(!S.notes.length||!S.playing&&t<0.05) TB.lastCh=null; ch=TB.lastCh||'–'; if(TB.ch!==ch){ TB.ch=ch; $('tbChord').textContent=ch; }
+  const kt=($('txKey')&&$('txKey').textContent||'').replace(/^Key:\s*/,''), km=/^(\S+)\s+(major|minor)/.exec(kt), key='Key: '+(km?km[1]+(km[2]==='minor'?'m':''):'–'); if(TB.key!==key){ TB.key=key; $('tbKey').textContent=key; }
+  const lp=S.loopA!=null; $('tbLoop').setAttribute('aria-pressed',String(lp)); $('tbLoop').title=S.loopA==null?'Loop: set the start here':S.loopB==null?'Loop: set the end here':'Loop on (tap to clear)';
+  const sp=Math.round(S.rate*100); $('tbSpeedV').textContent=sp===100?'':sp+'%';
+  const mx=+(($('txMix')||{}).value||100); $('tbMixV').textContent=mx>=99?'':mx<=1?'Rec':'Mix';
+  const kb=S.kbd===0?'Fit':String(S.kbd||88); $('tbKbdV').textContent=kb;
+}
+const ICON={
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" class="f"/><circle cx="15" cy="12" r="2.2" class="f"/><circle cx="8" cy="18" r="2.2" class="f"/></svg>',
+  speed:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 12l4.5-4.5"/><path d="M12 5v1.5M5 12h1.5M17.5 12H19M7 7l1 1"/></svg>',
+  wave:'<svg viewBox="0 0 24 24"><path d="M3 12h1M6.5 8v8M10 4v16M13.5 7v10M17 9.5v5M20.5 11v2"/></svg>',
+  loop:'<svg viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 12V9a3 3 0 013-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 12v3a3 3 0 01-3 3H4"/></svg>',
+  kbd:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M8.2 4v16M12 4v16M15.8 4v16"/><rect x="6.6" y="4" width="3.2" height="9" rx=".6" class="f"/><rect x="14.2" y="4" width="3.2" height="9" rx=".6" class="f"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" class="f"/></svg>',
+  pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1.2" class="f"/><rect x="14" y="4.5" width="4" height="15" rx="1.2" class="f"/></svg>',
+  full:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  close:'<svg viewBox="0 0 24 24"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg>'
+};
+function tbInit(){ const st=document.querySelector('#txCard .txstage'); if(!st||$('txBar')) return;
+  const bar=document.createElement('div'); bar.className='txbar'; bar.id='txBar';
+  bar.innerHTML='<div class="tbl"><button type="button" id="tbMenu" aria-label="Menu" title="Menu">'+ICON.menu+'</button><button type="button" id="tbSpeed" aria-label="Speed" title="Speed: 100%, 75%, 50%">'+ICON.speed+'<small id="tbSpeedV"></small></button><button type="button" id="tbMix" aria-label="Sound" title="Sound: piano notes, both, or the recording">'+ICON.wave+'<small id="tbMixV"></small></button><button type="button" id="tbLoop" aria-label="Loop" aria-pressed="false">'+ICON.loop+'</button><button type="button" id="tbKbd" aria-label="Keyboard size" title="Keyboard: 88, 76, 61 keys or fit the notes">'+ICON.kbd+'<small id="tbKbdV"></small></button></div>'
+    +'<div class="tbr"><span class="tbpill tbch" id="tbChord" title="Chord now">–</span><span class="tbpill" id="tbKey">Key: –</span><button type="button" id="tbPlay" aria-label="Play" disabled>'+ICON.play+'</button><span class="tbtime" id="tbTime">0:00 / 0:00</span><button type="button" id="tbFull" aria-label="Full screen" title="Full screen">'+ICON.full+'</button></div>'
+    +'<div class="tbprog" id="tbSeek" role="slider" aria-label="Position" tabindex="0"><b id="tbProg"></b></div>';
+  st.insertBefore(bar,st.firstChild);
+  $('tbMenu').onclick=()=>$('txMenuBtn').click();
+  $('tbPlay').onclick=()=>{ if(S.audio) S.playing?pausePlay():startPlay(); };
+  $('tbSpeed').onclick=()=>{ const sp=Math.round(S.rate*100), nx=sp>75?75:sp>50?50:100; if(S.setRate) S.setRate(nx); tbUpd(cur()); };
+  $('tbMix').onclick=()=>{ const m=$('txMix'); const v=+m.value, nx=v>=99?50:v>1?0:100; m.value=String(nx); m.dispatchEvent(new Event('input')); tbUpd(cur()); };
+  $('tbLoop').onclick=()=>{ if(S.loopA==null) $('txSetA').click(); else if(S.loopB==null) $('txSetB').click(); else $('txClearLoop').click(); tbUpd(cur()); };
+  $('tbKbd').onclick=()=>{ const order=[88,76,61,0], i=order.indexOf(S.kbd), nx=order[(i+1)%order.length]; $('txKbd').value=String(nx); $('txKbd').dispatchEvent(new Event('change')); tbUpd(cur()); };
+  $('tbFull').onclick=()=>fullView(!st.classList.contains('fs'));
+  const sk=$('tbSeek'); let drag=false; const at=e=>{ const r=sk.getBoundingClientRect(); if(S.dur) seek((e.clientX-r.left)/r.width*S.dur); tbUpd(cur()); };
+  sk.addEventListener('pointerdown',e=>{ if(!S.audio) return; drag=true; try{ sk.setPointerCapture(e.pointerId); }catch(_){} at(e); }); sk.addEventListener('pointermove',e=>{ if(drag) at(e); }); sk.addEventListener('pointerup',()=>drag=false); sk.addEventListener('pointercancel',()=>drag=false);
+  sk.addEventListener('keydown',e=>{ if(!S.audio) return; if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); e.stopPropagation(); seek(cur()+(e.key==='ArrowRight'?5:-5)); tbUpd(cur()); } });
+  document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement&&st.classList.contains('fs')) fullView(false,true); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&st.classList.contains('fs')) fullView(false); });
+  tbUpd(cur());
+}
+function fullView(on,fromBrowser){ const st=document.querySelector('#txCard .txstage'); if(!st) return; st.classList.toggle('fs',on); document.body.classList.toggle('tx-fs',on);
+  $('tbFull').innerHTML=on?ICON.close:ICON.full; $('tbFull').setAttribute('aria-label',on?'Close full screen':'Full screen'); $('tbFull').title=on?'Close full screen':'Full screen';
+  try{ if(on){ if(st.requestFullscreen&&!document.fullscreenElement) st.requestFullscreen().then(()=>{ try{ screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{}); }catch(_){} }).catch(()=>{}); } else if(!fromBrowser&&document.fullscreenElement){ document.exitFullscreen().catch(()=>{}); } }catch(_){}
+  setTimeout(()=>draw(cur()),60); }
 /* ---------- falling notes ---------- */
 const HUES=[210,255,300,345,25,50,95,150,175,190,230,280];
+const STARS=Array.from({length:140},(_,i)=>{ const r=k=>{ const x=Math.sin(i*127.1+k*311.7)*43758.5453; return x-Math.floor(x); }; return [r(1),r(2),0.35+r(3)*1.05,0.12+r(4)*0.45,0.4+r(5)*1.2]; });
 function draw(t){
   { const em=$('txEmpty'); if(em) em.hidden=!!(S.audio||(S.notes&&S.notes.length)); }
   const cv=$('txCanvas'); if(!cv) return; const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1)), H=cv.clientHeight; let W=cv.clientWidth; if(!W||!H) return;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
   const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
   const snap=v=>Math.round(v*dpr)/dpr;
-  const bgG=g.createLinearGradient(0,0,0,H); bgG.addColorStop(0,'#070b1c'); bgG.addColorStop(.55,'#0d1433'); bgG.addColorStop(1,'#151d44'); g.fillStyle=bgG; g.fillRect(0,0,W,H);
-  { const ph=(t||0)*0.07; [[.22,'91,140,255',.20],[.72,'255,120,60',.13],[.5,'190,90,255',.10]].forEach(([fx,rgb,a],i)=>{ const cx=W*(fx+0.08*Math.sin(ph*6.28+i*2.1)), cy=H*(0.18+0.06*Math.cos(ph*6.28+i)), R=Math.max(W,H)*0.55; const rg=g.createRadialGradient(cx,cy,0,cx,cy,R); rg.addColorStop(0,'rgba('+rgb+','+a+')'); rg.addColorStop(1,'rgba('+rgb+',0)'); g.fillStyle=rg; g.fillRect(0,0,W,H); }); }
-  const PAD=0, W0=W;
   const whites=[]; for(let p=S.lo;p<=S.hi;p++) if(!isBlack(p)) whites.push(p);
-  const kw=W/whites.length, KH=Math.max(70,Math.min(kw*5.2,H*0.3)), fallH=snap(H-KH), lo=S.lo, hi=S.hi;
+  const kw=W/whites.length, KH=Math.max(70,Math.min(kw*5.4,H*0.3)), fallH=snap(H-KH), lo=S.lo, hi=S.hi;
+  /* a black night sky with faint, slowly drifting stars */
+  g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  for(const [sx,sy,sr,sa,sv] of STARS){ const y=((sy*fallH+(t||0)*sv*6)%fallH); g.globalAlpha=sa; g.fillStyle='#fff'; g.beginPath(); g.arc(sx*W,y,sr,0,6.3); g.fill(); } g.globalAlpha=1;
   const pos={}; whites.forEach((p,i)=>{ const x0=snap(i*kw), x1=snap((i+1)*kw); pos[p]={x:x0,w:x1-x0}; });
-  for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.62; const cx=left?left.x+left.w:0; pos[p]={x:snap(cx-bw/2),w:snap(bw)}; }
+  for(let p=lo;p<=hi;p++) if(isBlack(p)){ const left=pos[p-1]; const bw=kw*0.6; const cx=left?left.x+left.w:0; pos[p]={x:snap(cx-bw/2),w:snap(bw)}; }
   const rr=(x,y,w,h,r)=>{ g.beginPath(); if(g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
-  // octave guide lines (a faint line at every C)
-  g.lineWidth=1; for(const p of whites){ g.strokeStyle=p%12===0?'rgba(255,255,255,.10)':'rgba(255,255,255,.035)'; const x=pos[p].x+0.5; g.beginPath(); g.moveTo(x,0); g.lineTo(x,fallH); g.stroke(); }
+  // a thin line at every C
+  g.lineWidth=1; g.strokeStyle='rgba(255,255,255,.17)'; for(const p of whites){ if(p%12) continue; const x=pos[p].x+0.5; g.beginPath(); g.moveTo(x,0); g.lineTo(x,fallH); g.stroke(); }
   const look=S.look, pps=fallH/look, active=new Map();
   // loop band
-  if(S.loopA!=null){ const ya=fallH-(S.loopA-t)*pps, yb=S.loopB!=null?fallH-(S.loopB-t)*pps:null; g.fillStyle='rgba(255,212,59,.14)'; if(yb!=null){ g.fillRect(0,Math.min(ya,yb),W,Math.abs(ya-yb)); } g.fillStyle='rgba(255,212,59,.9)'; g.fillRect(0,ya-1,W,2); if(yb!=null) g.fillRect(0,yb-1,W,2); }
+  if(S.loopA!=null){ const ya=fallH-(S.loopA-t)*pps, yb=S.loopB!=null?fallH-(S.loopB-t)*pps:null; g.fillStyle='rgba(255,212,59,.12)'; if(yb!=null){ g.fillRect(0,Math.min(ya,yb),W,Math.abs(ya-yb)); } g.fillStyle='rgba(255,212,59,.9)'; g.fillRect(0,ya-1,W,2); if(yb!=null) g.fillRect(0,yb-1,W,2); }
   // beat lines when metronome is on
-  if(S.met){ const sp=60/S.bpm; let k=Math.ceil((t-S.metOrigin)/sp); for(;;k++){ const bt=S.metOrigin+k*sp; if(bt>t+look) break; const y=snap(fallH-(bt-t)*pps)+0.5; g.strokeStyle=k%S.bpb===0?'rgba(255,255,255,.28)':'rgba(255,255,255,.09)'; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
+  if(S.met){ const sp=60/S.bpm; let k=Math.ceil((t-S.metOrigin)/sp); for(;;k++){ const bt=S.metOrigin+k*sp; if(bt>t+look) break; const y=snap(fallH-(bt-t)*pps)+0.5; g.strokeStyle=k%S.bpb===0?'rgba(255,255,255,.22)':'rgba(255,255,255,.07)'; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
   const flats=!!S.flats;
-  // find the notes sounding now first, so their glow sits behind the bars
   for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t) break; if(n.t+n.d<t) continue; const p=n.p+S.tr; if(pos[p]) active.set(p,n); }
-  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); const gl=g.createRadialGradient(b.x+b.w/2,fallH,0,b.x+b.w/2,fallH,Math.max(60,kw*5)); gl.addColorStop(0,c+'99'); gl.addColorStop(1,c+'00'); g.fillStyle=gl; g.fillRect(b.x-kw*5,fallH-Math.max(60,kw*5),kw*10+b.w,Math.max(60,kw*5)); }
-  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); const bm=g.createLinearGradient(0,fallH,0,fallH*0.15); bm.addColorStop(0,c+'55'); bm.addColorStop(1,c+'00'); g.fillStyle=bm; g.fillRect(b.x,fallH*0.15,b.w,fallH*0.85); }
-  // the falling notes: glossy, rounded 3D bars
+  // a faint coloured beam rising from each key that sounds
+  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); const bm=g.createLinearGradient(0,fallH,0,0); bm.addColorStop(0,c+'40'); bm.addColorStop(.5,c+'12'); bm.addColorStop(1,c+'00'); g.fillStyle=bm; g.fillRect(b.x-b.w*0.6,0,b.w*2.2,fallH); }
+  // the falling notes: slim neon bars with a soft glow
   for(let i=0;i<S.notes.length;i++){ const n=S.notes[i]; if(n.t>t+look) break; const end=n.t+n.d; if(end<t) continue; const p=n.p+S.tr; if(p<lo||p>hi||!pos[p]) continue;
-    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], h=Math.max(6,y2-y1), on=n.t<=t&&end>=t, c=noteFill(n), black=isBlack(p);
-    const w=Math.max(4,bx.w-(black?2:3)), x=bx.x+(bx.w-w)/2, r=Math.min(w/2,10), yy=Math.min(y1,fallH-6);
-    const hh=Math.min(h,fallH-yy), cB=on?shade(c,.18):c;
-    g.save();
-    /* a soft shadow under the bar and a coloured glow round it */
-    g.shadowColor='rgba(0,0,0,.55)'; g.shadowBlur=10; g.shadowOffsetY=4; rr(x,yy,w,hh,r); g.fillStyle=shade(cB,-.35); g.fill();
-    g.shadowColor=c; g.shadowBlur=on?30:14; g.shadowOffsetY=0; rr(x,yy,w,hh,r); g.fill();
-    g.shadowBlur=0;
-    /* the body: rounded like a tube, dark at the edges and bright down the middle */
-    const body=g.createLinearGradient(x,0,x+w,0); body.addColorStop(0,shade(cB,-.38)); body.addColorStop(.22,cB); body.addColorStop(.45,shade(cB,.32)); body.addColorStop(.62,cB); body.addColorStop(1,shade(cB,-.45));
-    rr(x,yy,w,hh,r); g.fillStyle=body; g.fill();
-    /* light from above, fading down the bar */
-    const top=g.createLinearGradient(0,yy,0,yy+Math.min(hh,40)); top.addColorStop(0,'rgba(255,255,255,.38)'); top.addColorStop(1,'rgba(255,255,255,0)'); rr(x,yy,w,hh,r); g.fillStyle=top; g.fill();
-    /* a glassy shine down the left side */
-    if(w>6&&hh>8){ const sw=Math.max(2,w*0.22); rr(x+w*0.16,yy+Math.min(4,hh*0.15),sw,Math.max(2,hh-Math.min(8,hh*0.3)),sw/2); const sh=g.createLinearGradient(0,yy,0,yy+hh); sh.addColorStop(0,'rgba(255,255,255,.75)'); sh.addColorStop(.6,'rgba(255,255,255,.28)'); sh.addColorStop(1,'rgba(255,255,255,.05)'); g.fillStyle=sh; g.fill(); }
-    /* a crisp rim */
-    rr(x+.5,yy+.5,w-1,hh-1,Math.max(0,r-.5)); g.strokeStyle=on?'rgba(255,255,255,.85)':'rgba(255,255,255,.35)'; g.lineWidth=on?1.6:1; g.stroke();
-    g.restore();
-    if(S.names&&h>15&&w>13){ g.fillStyle='#fff'; g.font=`700 ${Math.min(12,w*0.6)}px Inter,system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2-4,fallH-4)); } }
-  // sparks where a note meets its key
-  for(const [p,n] of active){ const b=pos[p], c=noteFill(n); for(let k=0;k<7;k++){ const ph=((t*1.7+k*0.37+p*0.13)%1), a=1-ph, sx=b.x+b.w/2+Math.sin(k*2.3+p+t*3)*b.w*0.9, sy=fallH-ph*Math.max(26,kw*3.2); g.fillStyle=c; g.globalAlpha=a*0.9; g.beginPath(); g.arc(sx,sy,1.1+1.2*a,0,6.3); g.fill(); } g.globalAlpha=1; }
-  // keyboard: clean white keys with soft shading, short black keys, pressed keys take the note colour
-  const fs=Math.max(8,Math.min(12,kw*0.5));
-  for(const p of whites){ const b=pos[p], on=active.has(p); const x=b.x+0.5, w=b.w-1;
-    const kg=g.createLinearGradient(0,fallH,0,fallH+KH); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,shade(c,.25)); kg.addColorStop(.6,c); kg.addColorStop(1,shade(c,-.25)); } else { kg.addColorStop(0,'#dfe4ee'); kg.addColorStop(0.08,'#ffffff'); kg.addColorStop(0.8,'#f4f6fa'); kg.addColorStop(1,'#c9cfdb'); }
-    const dy=on?2:0; g.beginPath(); if(g.roundRect) g.roundRect(x,fallH+4+dy,w,KH-4-dy,[0,0,5,5]); else g.rect(x,fallH+4+dy,w,KH-4-dy); g.fillStyle=kg; g.fill(); g.strokeStyle=on?'rgba(0,0,0,.3)':'#aab1c0'; g.lineWidth=1; g.stroke();
-    if(on){ g.save(); g.globalCompositeOperation='lighter'; const ig=g.createRadialGradient(b.x+b.w/2,fallH+KH*0.35,0,b.x+b.w/2,fallH+KH*0.35,b.w); ig.addColorStop(0,'rgba(255,255,255,.35)'); ig.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=ig; g.fillRect(x,fallH+4,w,KH-4); g.restore(); }
-    else { g.fillStyle='rgba(0,0,0,.06)'; g.fillRect(x+w-2,fallH+4,2,KH-6); }
-    g.textAlign='center'; if(on){ g.fillStyle='#fff'; g.font=`700 ${fs}px Inter,Arial,sans-serif`; g.fillText(nm(p,flats),b.x+b.w/2,fallH+KH-7); }
-    if(p%12===0){ g.fillStyle=on?'#fff':'#8a93a6'; g.font=`600 ${Math.max(8,fs-2)}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText('C'+oct(p),b.x+b.w/2,fallH+KH-(on?fs+10:7)); } }
-  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.62;
-    g.save(); g.shadowColor='rgba(0,0,0,.55)'; g.shadowBlur=6; g.shadowOffsetX=1.5; g.shadowOffsetY=3;
-    const kg=g.createLinearGradient(0,fallH,0,fallH+bh); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,shade(c,.2)); kg.addColorStop(1,shade(c,-.3)); } else { kg.addColorStop(0,'#3a4054'); kg.addColorStop(.75,'#141824'); kg.addColorStop(1,'#05070c'); }
-    g.beginPath(); if(g.roundRect) g.roundRect(b.x,fallH+4,b.w,bh,[0,0,4,4]); else g.rect(b.x,fallH+4,b.w,bh); g.fillStyle=kg; g.fill(); g.restore(); g.strokeStyle='#05070c'; g.lineWidth=1; g.stroke();
-    { const gl=g.createLinearGradient(0,fallH+4,0,fallH+4+bh*0.7); gl.addColorStop(0,on?'rgba(255,255,255,.45)':'rgba(255,255,255,.28)'); gl.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gl; if(g.roundRect){ g.beginPath(); g.roundRect(b.x+2,fallH+5,b.w-4,bh*0.7,[0,0,3,3]); g.fill(); } else g.fillRect(b.x+2,fallH+5,b.w-4,bh*0.7);
-      g.fillStyle=on?'rgba(255,255,255,.35)':'rgba(255,255,255,.14)'; g.fillRect(b.x+3,fallH+4+bh-7,b.w-6,3); }
-    if(on){ g.fillStyle='#fff'; g.font=`700 ${Math.max(7,fs-2)}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,fallH+bh-5); } }
-  // the line where notes land
-  { const lg=g.createLinearGradient(0,fallH-6,0,fallH+1); lg.addColorStop(0,'rgba(255,255,255,0)'); lg.addColorStop(1,'rgba(255,255,255,.75)'); g.fillStyle=lg; g.fillRect(0,fallH-6,W,7);
-    const felt=g.createLinearGradient(0,fallH,0,fallH+4); felt.addColorStop(0,'#8b1a2b'); felt.addColorStop(1,'#3a0812'); g.fillStyle=felt; g.fillRect(0,fallH,W,4);
-    for(const [p,n] of active){ const b=pos[p], c=noteFill(n); g.save(); g.shadowColor=c; g.shadowBlur=22; g.fillStyle=shade(c,.45); g.fillRect(b.x-2,fallH-2,b.w+4,4); g.restore(); } }
-  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.72)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Upload a file or record with the microphone',W0/2,fallH/2); }
-  /* three-part layout: the keyboard strip is shown in its own Keyboard panel, and the Display shows only the falling notes */
-  /* the falling notes run straight into the keyboard: one picture */
+    const y2=fallH-(n.t-t)*pps, y1=fallH-(end-t)*pps, bx=pos[p], black=isBlack(p), on=n.t<=t&&end>=t, c=noteFill(n);
+    const w=Math.max(3,bx.w*(black?0.92:0.74)), x=bx.x+(bx.w-w)/2, r=Math.min(w/2,7), yy=Math.max(-10,y1), hh=Math.max(5,Math.min(y2,fallH)-yy);
+    if(hh<=0) continue;
+    g.save(); g.shadowColor=c; g.shadowBlur=on?22:11; rr(x,yy,w,hh,r);
+    const body=g.createLinearGradient(x,0,x+w,0); body.addColorStop(0,shade(c,-.12)); body.addColorStop(.5,on?shade(c,.28):shade(c,.1)); body.addColorStop(1,shade(c,-.12)); g.fillStyle=body; g.fill(); g.restore();
+    if(on){ rr(x+.5,yy+.5,w-1,hh-1,Math.max(0,r-.5)); g.strokeStyle='rgba(255,255,255,.7)'; g.lineWidth=1; g.stroke(); }
+    if(S.names&&hh>15&&w>11){ g.fillStyle='rgba(0,0,0,.72)'; g.font=`800 ${Math.min(11,w*0.62)}px Inter,system-ui,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),x+w/2,Math.min(y2,fallH)-4); } }
+  // keyboard: white keys, slim dark keys, the key being played lights up in its note colour
+  const ky=fallH+2;
+  g.fillStyle='#0b0b0d'; g.fillRect(0,fallH,W,KH);
+  const fs=Math.max(8,Math.min(13,kw*0.52));
+  for(const p of whites){ const b=pos[p], on=active.has(p); const x=b.x+0.5, w=Math.max(1,b.w-1);
+    const kg=g.createLinearGradient(0,ky,0,H); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,shade(c,.15)); kg.addColorStop(1,shade(c,.32)); } else { kg.addColorStop(0,'#e4e5ea'); kg.addColorStop(.06,'#f7f7f9'); kg.addColorStop(1,'#ececef'); }
+    g.beginPath(); if(g.roundRect) g.roundRect(x,ky,w,H-ky,[0,0,4,4]); else g.rect(x,ky,w,H-ky); g.fillStyle=kg; g.fill();
+    if(p%12===0&&kw>=9){ g.fillStyle=on?'rgba(255,255,255,.95)':'#5d626e'; g.font=`800 ${Math.max(7,fs-1)}px Inter,Arial,sans-serif`; g.textAlign='left'; g.fillText('C'+oct(p),b.x+Math.max(2,kw*0.14),H-Math.max(6,KH*0.07)); }
+    else if(on&&S.names){ g.fillStyle='#fff'; g.font=`800 ${fs}px Inter,Arial,sans-serif`; g.textAlign='center'; g.fillText(nm(p,flats),b.x+b.w/2,H-8); } }
+  for(let p=lo;p<=hi;p++){ if(!isBlack(p)) continue; const b=pos[p], on=active.has(p), bh=KH*0.6;
+    const kg=g.createLinearGradient(0,ky,0,ky+bh); if(on){ const c=noteFill(active.get(p)); kg.addColorStop(0,shade(c,.05)); kg.addColorStop(1,shade(c,-.2)); } else { kg.addColorStop(0,'#2a2b30'); kg.addColorStop(.85,'#17181c'); kg.addColorStop(1,'#0c0c0f'); }
+    g.save(); g.shadowColor='rgba(0,0,0,.45)'; g.shadowBlur=4; g.shadowOffsetY=2; g.beginPath(); if(g.roundRect) g.roundRect(b.x,ky-1,b.w,bh,[0,0,3,3]); else g.rect(b.x,ky-1,b.w,bh); g.fillStyle=kg; g.fill(); g.restore();
+    if(!on){ g.fillStyle='rgba(255,255,255,.07)'; g.fillRect(b.x+b.w*0.18,ky,Math.max(1,b.w*0.16),bh*0.85); } }
+  // the bright line where notes land, with a glowing cap and sparks on each key that sounds
+  { const hz=g.createLinearGradient(0,fallH-22,0,fallH); hz.addColorStop(0,'rgba(255,255,255,0)'); hz.addColorStop(1,'rgba(220,235,255,.22)'); g.fillStyle=hz; g.fillRect(0,fallH-22,W,22);
+    g.save(); g.shadowColor='rgba(225,240,255,.95)'; g.shadowBlur=12; g.fillStyle='#f4f8ff'; g.fillRect(0,fallH-1,W,2.2); g.restore(); }
+  for(const [p,n] of active){ const b=pos[p], c=noteFill(n), cx=b.x+b.w/2;
+    g.save(); g.shadowColor=c; g.shadowBlur=26; g.fillStyle=shade(c,.35); rr(b.x+b.w*0.08,fallH-Math.max(8,kw*0.8),b.w*0.84,Math.max(8,kw*0.8)+2,Math.min(6,b.w/2)); g.fill(); g.restore();
+    const fl=g.createRadialGradient(cx,fallH-2,0,cx,fallH-2,Math.max(10,kw*1.3)); fl.addColorStop(0,'rgba(255,255,255,.95)'); fl.addColorStop(.35,c+'aa'); fl.addColorStop(1,c+'00'); g.fillStyle=fl; g.fillRect(cx-kw*1.5-10,fallH-kw*1.5-12,kw*3+20,kw*1.5+16);
+    for(let k=0;k<6;k++){ const ph=((t*1.9+k*0.41+p*0.13)%1), a=1-ph, sx=cx+Math.sin(k*2.3+p+t*3)*b.w*0.7, sy=fallH-3-ph*Math.max(18,kw*2.4); g.fillStyle='#fff'; g.globalAlpha=a*0.85; g.beginPath(); g.arc(sx,sy,0.7+0.9*a,0,6.3); g.fill(); } g.globalAlpha=1; }
+  if(!S.notes.length){ g.fillStyle='rgba(255,255,255,.6)'; g.font='600 15px Inter,system-ui,sans-serif'; g.textAlign='center'; g.fillText('Upload a file or record with the microphone',W/2,fallH/2); }
+  tbUpd(t);
 }
 
 /* ---------- MIDI export (format 0) ---------- */
@@ -553,7 +595,7 @@ function init(){
   $('txBack').onclick=()=>seek(S.loopA!=null?S.loopA:cur()-5);
   $('txSeek').oninput=e=>seek(+e.target.value/100);
   const setRate=p=>{ p=Math.max(25,Math.min(150,Math.round(p/5)*5)); S.rate=p/100; $('txSpeed').textContent=p+'%'; if(S.audio) S.audio.playbackRate=S.rate; resetSched(); };
-  $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
+  S.setRate=setRate; $('txSpDn').onclick=()=>setRate(S.rate*100-5); $('txSpUp').onclick=()=>setRate(S.rate*100+5); setRate(100);
   try{ const raw=localStorage.getItem('tx-kbd5'), k=+raw; if(raw!==null&&(KB[k]||k===0)){ S.kbd=k; } }catch(_){}
   $('txKbd').value=String(S.kbd); syncKb();
   fitRange();
@@ -587,7 +629,7 @@ function init(){
   $('txSens').onchange=applySens; $('txSens').oninput=()=>{ $('txSensV').textContent=String(Math.round(sensVal()*100)); };
   $('txCanvas').addEventListener('click',()=>{ if(S.audio) S.playing?pausePlay():startPlay(); });
   $('txCard').addEventListener('keydown',e=>{ if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&S.audio){ e.preventDefault(); e.stopPropagation(); S.playing?pausePlay():startPlay(); } },true);
-  new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
+  tbInit(); new ResizeObserver(()=>draw(cur())).observe($('txCanvas')); renderLib();
   draw(0);
 }
 async function restoreLast(){ if(S.audio) return; let id=null; try{ id=localStorage.getItem('tx-last'); }catch(_){} if(!id) return; try{ const it=await tx('readonly',st=>st.get(id)); if(it){ showResult({pro:it.pro,blob:it.blob,notes:it.notes,dur:it.dur,title:it.title}); say('Welcome back. I opened "'+it.title+'", where you left off.'); } }catch(_){} }

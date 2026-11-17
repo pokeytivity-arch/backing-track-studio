@@ -623,6 +623,28 @@ audio{width:100%}
         .tx .txkb{display:inline-flex;gap:2px;padding:3px;border-radius:999px;border:1.5px solid var(--k6b5826,#34446c);flex:none}.tx .txkb button{border:0;background:transparent;color:inherit;font:700 13px var(--body);padding:7px 12px;border-radius:999px;cursor:pointer;min-height:34px;opacity:.8}.tx .txkb button[aria-pressed=true]{background:var(--hi,#ffd43b);color:var(--hi-ink,#151b28);opacity:1}
         #txRoomBack{font-size:18px;line-height:1;padding:6px 14px;margin-right:8px}
         .tx .txstage{position:relative}
+        .tx .txstage{border-radius:12px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+        .tx .txstage canvas{border-radius:0;background:#000}
+        .tx .txstage + .txrow{display:none}
+        .tx .txbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:8px;height:46px;padding:0 10px;background:#1d1d1f;color:#f2f2f4;user-select:none;-webkit-user-select:none}
+        .tx .txbar .tbl,.tx .txbar .tbr{display:flex;align-items:center;gap:4px;min-width:0}
+        .tx .txbar button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:36px;height:36px;padding:0 6px;border:0;border-radius:10px;background:transparent;color:#f2f2f4;cursor:pointer}
+        .tx .txbar button:hover:not(:disabled){background:rgba(255,255,255,.08)}.tx .txbar button:disabled{opacity:.35;cursor:default}
+        .tx .txbar button[aria-pressed=true]{color:#ffd43b;background:rgba(255,212,59,.12)}
+        .tx .txbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.tx .txbar svg .f{fill:currentColor;stroke:none}
+        .tx .txbar small{font:800 10px var(--body);color:#ffd43b;letter-spacing:.02em}
+        .tx .tbpill{padding:6px 12px;border-radius:999px;background:#2c2c2f;font:800 13px var(--body);white-space:nowrap;color:#d9d9de}
+        .tx .tbpill.tbch{color:#ffd43b;font-size:15px;min-width:44px;text-align:center}
+        .tx .tbtime{font:600 14px var(--body);color:#bdbdc4;font-variant-numeric:tabular-nums;white-space:nowrap;padding:0 2px}
+        .tx .tbprog{position:absolute;left:0;right:0;bottom:-6px;height:12px;cursor:pointer;z-index:2;touch-action:none}
+        .tx .tbprog:before{content:"";position:absolute;left:0;right:0;top:5px;height:3px;background:#3a3a3e}
+        .tx .tbprog b{position:absolute;left:0;top:5px;height:3px;width:0;background:#ffd43b;box-shadow:0 0 8px rgba(255,212,59,.6)}
+        .tx .txempty{top:46px}
+        .tx .txstage.fs{position:fixed;inset:0;z-index:150000;border-radius:0;display:flex;flex-direction:column}
+        body.tx-fs .tx .txmenu{position:fixed;top:0;bottom:0;z-index:150002}
+        .tx .txstage.fs canvas{flex:1;height:auto!important;min-height:0!important}
+        .tx .txstage.fs .txbar{padding-top:env(safe-area-inset-top);height:calc(46px + env(safe-area-inset-top));padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+        @media(max-width:560px){.tx .txbar{padding:0 3px;gap:0}.tx .txbar .tbl,.tx .txbar .tbr{gap:0}.tx .tbtot{display:none}.tx .tbpill.tbch{max-width:96px;overflow:hidden;text-overflow:ellipsis}.tx .txbar button{min-width:30px;padding:0 3px}.tx .txbar svg{width:19px;height:19px}.tx #tbKey{display:none}.tx .tbtime{font-size:12px}.tx .tbpill.tbch{font-size:13px;padding:5px 8px}.tx .txbar small{display:none}}
         .tx .txempty{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center;padding:20px;background:#070b14;border-radius:10px 10px 0 0;bottom:27%}
         .tx .txempty[hidden]{display:none}
         .tx .txempty b{font:800 26px var(--display);color:var(--stage-ink,#fff)}
@@ -636,7 +658,7 @@ audio{width:100%}
         @media(max-width:700px){.tx .txmenu{position:fixed;top:36px;width:100%;border-right:0;z-index:150001}}
         .tx .txrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
         .tx .txrow label{font:600 12px var(--body);color:var(--muted);display:flex;gap:6px;align-items:center}
-        .tx canvas{width:100%;height:250px;display:block;border-radius:10px;background:var(--k0d0b07,#0c1222);cursor:pointer}
+        .tx canvas{width:100%;height:300px;display:block;border-radius:10px;background:var(--k0d0b07,#0c1222);cursor:pointer}
         .tx .btn.on{background:var(--danger);color:#fff}
         .tx #txSeek{flex:1;min-width:140px}
         .tx #txLegend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin:0 3px 0 8px;vertical-align:-1px}
@@ -3085,7 +3107,7 @@ init();
 <script src="auth.js?v=h1" defer></script>
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
-<script src="transcribe.js?v=5" defer></script>
+<script src="transcribe.js?v=6" defer></script>
 <script src="suite.js?v=17" defer></script>
 <script src="roles.js?v=27" defer></script>
 <script src="layout3.js?v=6" defer></script>
