@@ -534,6 +534,15 @@ async function progCode(request, env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    /* two suites from one worker: app.pokeytivity.com serves the Old Testament (public/ot, the suite before teachers),
+       hearandplay.app serves the New Testament. The API is shared. */
+    if (url.hostname === 'app.pokeytivity.com' && !url.pathname.startsWith('/api/')) {
+      const u2 = new URL(url); u2.pathname = '/ot' + url.pathname;
+      const r = await env.ASSETS.fetch(new Request(u2, request));
+      if (r.status >= 300 && r.status < 400) { const loc = r.headers.get('location'); if (loc) { const L = new URL(loc, u2); const p = L.pathname.startsWith('/ot') ? (L.pathname.slice(3) || '/') : L.pathname; return Response.redirect(url.origin + p + L.search, r.status); } }
+      return r;
+    }
+    if (url.pathname === '/ot' || url.pathname.startsWith('/ot/')) return new Response('Not found', { status: 404 });
     if (url.pathname === '/api/code') {
       try { return await progCode(request, env, url); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
@@ -563,13 +572,15 @@ export default {
     if (url.pathname === '/api/transcribe') {
       try { if (request.method !== 'GET') { const g = await gate(request, env, 'transcribe'); if (g) return g; } else if (env.ACCESS_CODE && !same(request.headers.get('x-access'), env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(request.headers.get('x-access'), env.ADMIN_TOKEN))) return json({ error: 'access' }, 401); return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
-    /* a teacher's suite: hearandplay.app/<handle> (and /@handle) opens the suite page */
+    /* the site's own files first; then a teacher's suite: hearandplay.app/<handle> (and /@handle) opens the suite page */
+    const res = await env.ASSETS.fetch(request);
+    if (res.status !== 404) return res;
     { const m = /^\/(@?)([A-Za-z0-9]{3,30})\/?$/.exec(url.pathname);
       if (m && (request.method === 'GET' || request.method === 'HEAD') && !RESERVED.has(m[2].toLowerCase())) {
         const h = m[2].toLowerCase(); if (m[1] || h !== m[2] || url.pathname.endsWith('/')) return Response.redirect(url.origin + '/' + h + url.search, 301);
         const r = await env.ASSETS.fetch(new Request(url.origin + '/', { headers: request.headers }));
         return new Response(r.body, { status: 200, headers: r.headers });
       } }
-    return env.ASSETS.fetch(request);
+    return res;
   },
 };

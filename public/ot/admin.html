@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="icon" type="image/png" sizes="32x32" href="hp-fav-32.png"><link rel="icon" type="image/png" sizes="96x96" href="hp-fav-96.png"><link rel="apple-touch-icon" href="hp-apple-180.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Owner tools · HearandPlay Piano Suite</title>
+<style>
+body{margin:0;background:#0f1729;color:#fff;font:16px/1.45 system-ui,-apple-system,sans-serif;padding:20px}main{max-width:900px;margin:0 auto;display:grid;gap:12px}h1{margin:0 0 4px;font-size:26px}p{margin:0;color:#9aa6c0;font-size:14px}
+label{font-weight:600;font-size:13px}input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid #34446c;background:transparent;color:inherit;font:600 16px inherit}
+button{min-height:48px;border-radius:999px;border:0;background:#ffd43b;color:#151b28;font:800 16px inherit;cursor:pointer}.m{min-height:1.4em;color:#ffd43b;font-size:14px}
+</style></head><body><main>
+<h1>Owner tools</h1>
+<p>Reset a student's or teacher's password. Your admin token is typed here only. It is sent to the server to check, and it is never saved on this device.</p>
+<label for="t">Admin token</label><input id="t" type="password" autocomplete="off">
+<h2 style="margin:10px 0 0;font-size:20px">All accounts</h2><p>Everyone who has signed up: name, email, type, when they joined, and how many teacher or student links they have.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="ls" type="button" style="padding:0 22px">Show all accounts</button><input id="q" placeholder="Search name or email" style="flex:1 1 220px;width:auto"><button id="csv" type="button" style="padding:0 22px;background:transparent;color:#fff;border:1.5px solid #34446c">Download CSV</button></div><div class="m" id="lm" aria-live="polite"></div><div style="overflow:auto"><table id="tb" style="border-collapse:collapse;width:100%;font-size:14px"></table></div>
+<h2 style="margin:14px 0 0;font-size:20px">Reset a password</h2>
+<label for="e">Account email</label><input id="e" type="email" autocomplete="off">
+<label for="p">New password (at least 6 characters)</label><input id="p" type="text" autocomplete="off">
+<button id="go" type="button">Reset password</button><div class="m" id="m" aria-live="polite"></div>
+<script>
+let ROWS=[]; const roleName={student:'Student',teacher:'Teacher',none:'Prefer not to say'};
+function draw(){ const q=document.getElementById('q').value.trim().toLowerCase(), tb=document.getElementById('tb'); tb.textContent=''; const th=tb.insertRow(); ['Name','Email','Type','Joined','Teachers','Students','Code'].forEach(x=>{ const c=document.createElement('th'); c.textContent=x; c.style.cssText='text-align:left;padding:8px;border-bottom:1.5px solid #34446c;color:#9aa6c0'; th.appendChild(c); });
+  ROWS.filter(r=>!q||(r.name+' '+r.email).toLowerCase().includes(q)).forEach(r=>{ const tr=tb.insertRow(); [r.name,r.email,roleName[r.role]||r.role,r.made?new Date(r.made).toLocaleDateString():'',r.teachers||'',r.students||'',r.code].forEach(v=>{ const c=tr.insertCell(); c.textContent=v; c.style.cssText='padding:8px;border-bottom:1px solid #243256'; }); }); }
+document.getElementById('q').oninput=draw;
+document.getElementById('ls').onclick=async()=>{ const m=document.getElementById('lm'); m.textContent='Loading…'; try{ const r=await fetch('/api/acct',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'adminlist',adminToken:document.getElementById('t').value})}); const j=await r.json().catch(()=>({})); if(!r.ok){ m.textContent=j.error==='auth'?'The admin token is not right.':'Something went wrong.'; return; } ROWS=j.rows; const n=k=>ROWS.filter(x=>x.role===k).length; m.textContent=j.total+' accounts: '+n('student')+' students, '+n('teacher')+' teachers, '+n('none')+' prefer not to say.'; draw(); }catch(_){ m.textContent='Could not reach the server.'; } };
+document.getElementById('csv').onclick=()=>{ if(!ROWS.length) return; const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"'; const L=[['Name','Email','Type','Joined','Teachers','Students','Code'].map(q).join(',')]; ROWS.forEach(r=>L.push([r.name,r.email,roleName[r.role]||r.role,r.made?new Date(r.made).toISOString().slice(0,10):'',r.teachers,r.students,r.code].map(q).join(','))); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([L.join('\n')],{type:'text/csv'})); a.download='accounts.csv'; a.click(); };
+document.getElementById('go').onclick=async()=>{
+  const m=document.getElementById('m'); m.textContent='Working…';
+  try{
+    const r=await fetch('/api/acct',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'adminreset',adminToken:document.getElementById('t').value,email:document.getElementById('e').value.trim().toLowerCase(),password:document.getElementById('p').value})});
+    const j=await r.json().catch(()=>({}));
+    m.textContent=r.ok?'Done. Tell them their new password and ask them to sign in.':({auth:'The admin token is not right.',no_account:'No account with that email.',weak_password:'Use at least 6 characters.'}[j.error]||'Something went wrong.');
+    if(r.ok) document.getElementById('p').value='';
+  }catch(_){ m.textContent='Could not reach the server.'; }
+};
+</script></main></body></html>
