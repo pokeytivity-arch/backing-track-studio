@@ -1440,10 +1440,12 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
     let X=SQ[v.x[1]].map(i=>r+i), Y=SQ[v.y[1]].map(i=>y+i); const top=Math.max(...sInv(X,3))+tr, sh=top>79?-12:0, add=a=>a.map(m=>m+tr+sh); X=add(X); Y=add(Y); r+=tr+sh;
     const lhC=v.over?(st.sover==='cm6'?[48,51,55,57]:[41,51,57]).map(m=>m+tr+(tr>5?-12:0)):SQ[v.x[1]].map(i=>r-12+i);
     const dirs=st.sdir==='up'?['up','up','up','up']:st.sdir==='down'?['down','down','down','down']:['up','down','up','down'];
-    dirs.forEach((d,b)=>{ const b0=b*4; const lh=st.slh!==false?lhC:[]; if(lh.length) ev.push({t:b0,d:3.9,n:lh,v:.5,h:'l'});
-      for(let k=0;k<3;k++){ const A=d==='up'?sInv(X,k):sInv(X,3-k), B=d==='up'?sInv(Y,k):sInv(Y,2-k); for(let j=0;j<2;j++){ const c=j?B:A; ev.push({t:b0+k+j/2,d:.48,n:c,v:j?.6:.66}); fr.push({t:b0+k+j/2,rh:c,lh,beat:b0+k}); }   /* two eighth notes: the chord, then its neighbour */
+    dirs.forEach((d,b)=>{ const b0=b*4; const d2=st.slh==='drop2', lh=st.slh!==false&&!d2?lhC:[]; if(lh.length) ev.push({t:b0,d:3.9,n:lh,v:.5,h:'l'});
+      /* Drop-2: the middle tone of each chord drops an octave into the left hand; the right hand keeps the outer two */
+      const put=(t,dur,c,v,beat)=>{ if(d2){ const s3=c.slice().sort((x,y)=>x-y), r2=[s3[0],s3[2]], l2=[s3[1]-12]; ev.push({t,d:dur,n:r2,v},{t,d:dur,n:l2,v:v*.9,h:'l'}); fr.push({t,rh:r2,lh:l2,beat}); } else { ev.push({t,d:dur,n:c,v}); fr.push({t,rh:c,lh,beat}); } };
+      for(let k=0;k<3;k++){ const A=d==='up'?sInv(X,k):sInv(X,3-k), B=d==='up'?sInv(Y,k):sInv(Y,2-k); for(let j=0;j<2;j++){ const c=j?B:A; put(b0+k+j/2,.48,c,j?.6:.66,b0+k); }   /* two eighth notes: the chord, then its neighbour */
         words[b0+k]=(d==='up'?'Ascending':'Descending')+' · '+sChord(A)+', then '+sChord(B)+' (eighth notes)'; }
-      const L=d==='up'?sInv(X,3):X; ev.push({t:b0+3,d:.95,n:L,v:.7}); fr.push({t:b0+3,rh:L,lh,beat:b0+3}); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
+      const L=d==='up'?sInv(X,3):X; put(b0+3,.95,L,.7,b0+3); words[b0+3]=(d==='up'?'Ascending':'Descending')+' · '+sChord(L)+' (quarter note)'; });
     total=16; }
   else if(T.id==='back'){ let r=60+tr; const I=[r,r+4,r+7], A=sInv(I,v.rh), B=v.b3.map(i=>r+i); const sh=Math.max(...A,...B)>79?-12:0; const a=A.map(m=>m+sh), b=B.map(m=>m+sh), bass=[r-12+sh];
     for(let k=0;k<4;k++){ const b0=k*3; ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});   /* the left hand holds the whole bar */
@@ -1483,7 +1485,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
     cStrip('Variety',(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[]),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:ncc,off:()=>!T.vars,offWhy:'Coming soon'}),
     cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>[st.sover||'f7'],k=>{ st.sover=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'For the varieties played over F dominant 7 (no 5) or C minor sixth'}),
     cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!ncc,offWhy:'For Neighboring Chord Couples'}),
-    cStrip('Left hand',[['on','Chord of the bar','One chord per bar in the left hand']],()=>st.slh!==false?['on']:[],()=>{ st.slh=st.slh===false; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!ncc,offWhy:'For Neighboring Chord Couples'}),
+    cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The middle tone of each chord drops an octave into the left hand; the right hand plays the other two']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!ncc,offWhy:'For Neighboring Chord Couples'}),
     syTrStrip());
   { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
   const r2=el('div','e-ctl p-ctr'); transport(r2); { const dt=$('#prDisp .pd-top'); if(dt){ r2.classList.add('p-ctop'); dt.appendChild(r2); } else box.appendChild(r2); }
