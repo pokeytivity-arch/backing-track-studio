@@ -16,11 +16,11 @@ const el=(t,c,h)=>{ const e=document.createElement(t); if(c) e.className=c; if(h
 
 /* ---------- the teacher's studio (on this device) ---------- */
 const DEF_SPACES=[
-  {id:'class',k:'class',name:'Class',blurb:'Consultation with HearandPlay beside you, and meet your students. Send them practice tracks.',go:'class'},
+  {id:'class',k:'class',name:'Dashboard',blurb:'Your teacher dashboard, consultation with HearandPlay, and meet a student.',go:'class'},
   {id:'hall',k:'hall',name:'Practice Arena',blurb:'Ear training, scales and chords for your students, with the fingering and the hands.',go:'hall'},
   {id:'studio',k:'studio',name:'Studio',blurb:'The Backing Track Studio and the Transcription Studio: tracks to play along with, and recordings turned into notes.',go:'studios'},
   {id:'arena',k:'challenge',name:'Practice Plan Builder',blurb:'Practice plans for your students, including the 90 Day Challenge. Daily check-ins and certificates.',go:'challenge'}];
-const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
+const spaces=()=>{ const s=jget(K.sp,null); if(Array.isArray(s)&&s.length){ s.forEach(x=>{ if(x.id==='arena'&&x.name==='Practice Arena') x.name='Practice Plan Builder'; if(x.id==='hall'&&x.name==='Practice '+'Hall') x.name='Practice Arena'; if(x.id==='class'&&x.name==='Class'){ x.name='Dashboard'; x.blurb='Your teacher dashboard, consultation with HearandPlay, and meet a student.'; } }); return s; } return DEF_SPACES.map(x=>Object.assign({},x)); };
 const studioName=()=>{ try{ return localStorage.getItem(K.name)||'My HearandPlay Studio'; }catch(_){ return 'My HearandPlay Studio'; } };
 const code=()=>{ let c=null; try{ c=localStorage.getItem(K.code); }catch(_){} if(!c){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; c='HP-T-'; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; try{ localStorage.setItem(K.code,c); }catch(_){} } return c; };
 const ME='me';   /* the studio made on this device, as a teacher students can join */
@@ -372,10 +372,10 @@ function area(k){ const r=document.getElementById('clRoot'); if(!r) return; cons
       m.querySelector('.tx span').textContent=T?'Students looking for a teacher. Invite them to your studio.':'Find a teacher, subscribe, and learn with them in the suite.';
       if(!m.querySelector('.tx .go')) m.querySelector('.tx').appendChild(el('em','go','Open →'));
       m.setAttribute('aria-label',T?'Meet a student':'Meet a teacher'); m.onclick=T?meetStudents:meetPanel; } }
-  const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':'Class Area';
+  const br=r.querySelector('.cl-bar .cl-brand'); if(br) br.textContent=k==='hall'?'Practice Arena':(role()==='teacher'?'Dashboard':'Class Area');
   const w=r.querySelector('.cl-welcome'); if(w){ if(!w.dataset.orig) w.dataset.orig=w.innerHTML;
     w.innerHTML=k==='hall'?'Welcome to the Practice Arena. From scale and chord practice sessions to ear-training sessions, this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'
-      :'Welcome to class today. From consultation sessions to meeting a '+(role()==='teacher'?'student':'teacher')+', this is a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
+      :(role()==='teacher'?'Welcome to your dashboard today. From consultation sessions to meeting a student, this is':'Welcome to class today. From consultation sessions to meeting a teacher, this is')+' a very important part of the piano suite that you must <b>NOT</b> go for a day without.'; } }
 const css2=el('style'); css2.textContent=`
 body[data-area=class] .cl-four.rl-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-width:1280px}
 @media(max-width:900px){ body[data-area=class] .cl-four.rl-3{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
@@ -407,6 +407,7 @@ function myProgressions(){ let st={}, banks=[]; try{ st=JSON.parse(localStorage.
   const b=panel('Your chord progressions','Everything saved in this browser. Press Copy, then paste it into your chat with Claude.'); const t=el('textarea'); t.value=L.join('\n'); t.readOnly=true; t.style.cssText='width:100%;min-height:340px;font:600 13px/1.5 ui-monospace,Menlo,monospace'; b.appendChild(t);
   const c=el('button','rl-btn pri','Copy'); c.type='button'; c.style.marginTop='12px'; c.onclick=()=>{ t.select(); let ok=false; try{ navigator.clipboard.writeText(t.value); ok=true; }catch(_){} try{ ok=document.execCommand('copy')||ok; }catch(_){} toast(ok?'Copied. Paste it into your chat with Claude.':'Select all the text and copy it.'); }; b.appendChild(c); }
 try{ if(/[?&#]myprogressions\b/.test(location.search+location.hash)) setTimeout(myProgressions,1500); }catch(_){}
+try{ if(role()==='teacher'&&window.SUITE&&SUITE.DEST&&SUITE.DEST.class){ SUITE.DEST.class.name='Dashboard'; SUITE.DEST.class.blurb='Your teacher dashboard, consultation with HearandPlay, and meet a student.'; } }catch(_){}
 window.PSROLE={hub:render,role,area,myProgressions,closeDash};
 { const h=document.getElementById('suiteHub'); if(h&&h.classList.contains('on')) render(); }
 })();

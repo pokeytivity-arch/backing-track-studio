@@ -2728,20 +2728,20 @@ const MENUS=[
     {label:'Mixer…',run:()=>openPanel('mixer')},
     {label:'Hum a bass line…',key:'H',run:()=>openPanel('hum')},
     {label:'Transcribe a recording…',key:'R',run:()=>SUITE.go('plus')},
-    {label:'Class…',key:'A',run:()=>SUITE.go('class')},
+    {label:()=>(window.PSROLE&&PSROLE.role()==='teacher'?'Dashboard':'Class')+'…',key:'A',run:()=>SUITE.go('class')},
     {label:'Ask HearandPlay about this chord…',run:()=>askClassFromStudio()},
     ]},
   {label:'Window',items:[
     {label:'Piano Suite home…',run:()=>SUITE.home()},
     {sep:true},
-    {label:'Class',check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
+    {label:()=>(window.PSROLE&&PSROLE.role()==='teacher'?'Dashboard':'Class'),check:()=>SUITE.current()==='class',run:()=>SUITE.go('class')},
     {label:'Practice Arena',check:()=>SUITE.current()==='hall',run:()=>SUITE.go('hall')},
     {label:'Backing Track Studio',check:()=>SUITE.current()==='studio',run:()=>SUITE.go('studio')},
     {label:'Transcription Studio',check:()=>SUITE.current()==='plus',run:()=>SUITE.go('plus')},
     {label:'Practice Plan Builder',check:()=>SUITE.current()==='challenge',run:()=>SUITE.go('challenge')}]},
   {label:'Help',items:[
     {label:'Keyboard shortcuts',key:'?',run:()=>MENUS_HELP_SHORTCUTS()},
-    {label:'Class…',run:()=>SUITE.go('class')},
+    {label:()=>(window.PSROLE&&PSROLE.role()==='teacher'?'Dashboard':'Class')+'…',run:()=>SUITE.go('class')},
     {label:'Install the app…',run:()=>window.PSINSTALL&&PSINSTALL.open()},
     {label:'How to write a chord chart',run:()=>{ setMode('easy'); openPanel('chart'); }},
     {label:'Sound credits',run:()=>infoDialog('Sound credits',`<p>${document.querySelector('.credits')?.innerHTML||''}</p>`)}]},
@@ -3084,7 +3084,7 @@ init();
 <script src="voicings.js?v=h1" defer></script>
 <script src="transcribe.js?v=5" defer></script>
 <script src="suite.js?v=15" defer></script>
-<script src="roles.js?v=14" defer></script>
+<script src="roles.js?v=15" defer></script>
 <script src="layout3.js?v=6" defer></script>
 <script src="class.js?v=z16" defer></script>
 <script src="progress.js?v=h1" defer></script>
