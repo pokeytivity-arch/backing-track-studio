@@ -1408,7 +1408,9 @@ function chordsToStudio(){ if(st.cmode==='arp'||!window.STUDIO_CHORDS) return; c
 function cStrip(title,opts,isOn,press,o){ o=o||{}; if(kind==='styl') opts=styBtnSort(title,opts); const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col); if(o.rows) col.style.gridTemplateRows='repeat('+o.rows+',auto)';
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; } if(o.cls&&o.cls()) strip.classList.add(o.cls());
   opts.forEach(([v,l,tip])=>{ const k=el('button','p-key'); k.type='button'; k.__v=v; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; if(tip) k.title=tip; const on=isOn().includes(v); k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on)); k.disabled=!!(o.off&&o.off())||!!(o.dis&&o.dis(v)); if(o.dis&&o.dis(v)&&o.disWhy) k.title=o.disWhy;
-    k.onclick=()=>{ press(v); }; col.appendChild(k); });
+    k.onclick=()=>{ press(v); }; col.appendChild(k);
+    /* while the layout can be arranged, an unavailable button still looks unavailable but can be dragged */
+    if(kind==='styl'&&!STY_LOCK&&k.disabled){ k.disabled=false; k.classList.add('p-dis'); k.setAttribute('aria-disabled','true'); k.addEventListener('click',e=>{ e.preventDefault(); e.stopImmediatePropagation(); },true); } });
   if(kind==='styl'&&!STY_LOCK) styBtnDrag(strip,col,title);
   return strip; }
 /* ---------- Stylization Practice: stylization techniques, from his lessons. Built on the Chord Practice console.
@@ -1686,7 +1688,7 @@ function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Ar
 function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.p-key')];
   keys().forEach((k,idx)=>{ k.dataset.v=String(k.__v!=null?k.__v:idx);
     k.addEventListener('click',e=>{ if(k.__dragged){ k.__dragged=false; e.preventDefault(); e.stopImmediatePropagation(); } },true);
-    k.addEventListener('pointerdown',e=>{ if(e.button||k.disabled) return; const x0=e.clientX, y0=e.clientY; let moved=false;
+    k.addEventListener('pointerdown',e=>{ if(e.button) return; const x0=e.clientX, y0=e.clientY; let moved=false;
       const mv=ev=>{ if(!moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<7) return; if(!moved){ moved=true; k.classList.add('p-dragging'); } ev.preventDefault();
         const sib=keys().filter(x=>x!==k); let before=null; for(const x of sib){ const r=x.getBoundingClientRect(); if(ev.clientX<r.left-4) continue; if(ev.clientY<r.top+r.height/2&&ev.clientX<=r.right+4){ before=x; break; } }
         if(k.nextSibling!==before) col.insertBefore(k,before); };
@@ -1717,7 +1719,7 @@ function styMix(panel){ const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||
     ed.addEventListener('dblclick',()=>{ const o=Object.assign({},st.swid||{}); delete o[nm]; st.swid=o; save(); render(); }); }); }
 { const cs=document.createElement('style'); cs.textContent=`#prRoom .p-cmix>.p-ch{position:relative} #prRoom .p-edge{position:absolute;top:0;bottom:0;right:-5px;width:10px;cursor:ew-resize;z-index:3;touch-action:none}
 #prRoom .p-edge:hover,#prRoom .p-edge.on{background:linear-gradient(90deg,transparent 4px,#ffd43b 4px,#ffd43b 6px,transparent 6px)} #prRoom .p-ch.p-drag{opacity:.6;outline:1px dashed rgba(255,212,59,.6);border-radius:8px}
-#prRoom .p-cmix .p-ch.p-sized .p-key{overflow:hidden;text-overflow:ellipsis;max-width:100%} #prRoom .p-cmix .p-ch.p-sized .p-bcol{overflow:hidden} #prRoom .p-cmix .p-key.p-dragging{opacity:.55;cursor:grabbing}`; document.head.appendChild(cs); }
+#prRoom .p-cmix .p-ch.p-sized .p-key{overflow:hidden;text-overflow:ellipsis;max-width:100%} #prRoom .p-cmix .p-ch.p-sized .p-bcol{overflow:hidden} #prRoom .p-cmix .p-key.p-dragging{opacity:.55;cursor:grabbing} #prRoom .p-key.p-dis{opacity:.35;cursor:grab}`; document.head.appendChild(cs); }
 function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&&st.svar!=='all'&&+st.svar>=T.vars.length) st.svar=0;
   const box=el('div','p-ccon'); ctl.appendChild(box);
   /* browser-style tabs: Technique and Movements, each a page of techniques */
