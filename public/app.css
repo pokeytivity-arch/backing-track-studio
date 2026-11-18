@@ -270,3 +270,39 @@ html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-row .e-lbl{font-siz
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .e-seg button,html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-chk{min-height:26px!important;padding:2px 10px!important;font-size:12px!important}
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .e-big{font-size:18px!important}
 html.m-ph #earRoom #earDisp #earOpts select{background:#141925!important;color:#e6e9f2!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:8px;min-height:26px!important;height:26px;font-size:12.5px!important;padding:0 24px 0 8px!important}
+/* Relative pitch set-up on a phone: one wrapped line of choices, the Display scrolls if it must, the 'notes to be tested' readout stays in view */
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp>.ep-body{overflow-y:auto!important;overscroll-behavior:contain}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earSub{font-size:11.5px!important;line-height:1.3!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:4px 14px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-row{display:flex!important;align-items:center!important;flex:0 0 auto}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-slide{display:flex!important;align-items:center;gap:6px}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-slide small{font-size:10px;opacity:.75;white-space:nowrap}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-rng{width:150px!important;height:22px}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts>.rp>.e-big{font-size:14px!important;line-height:1.2!important;color:#ffd43b;flex:0 0 auto;white-space:nowrap}
+/* Ear training on a phone: every section (Display, Console, Keyboard) has the same slim bar: minimise, detach, expand; each scrolls inside; sizes stay fixed */
+html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top{height:26px;overflow:hidden;flex-wrap:nowrap!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top h1{font-size:13px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top button{min-height:24px!important;height:24px;padding:0 12px!important;font-size:12px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp>.ep-h,html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP>.ep-h,html.m-ph:is(.ps-rot,.m-land) #earRoom #earConP>.ep-h{display:flex!important;align-items:center;height:20px;min-height:20px;padding:0 6px 0 10px!important;gap:6px;flex:0 0 auto}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep>.ep-h b{font-size:9.5px!important;letter-spacing:.16em}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep>.ep-h .ep-b{min-height:18px!important;height:18px;min-width:26px;padding:0 6px!important;font-size:11px!important;line-height:1;border-radius:6px}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep>.ep-h .ep-x{flex:1 1 auto;display:flex;justify-content:flex-end;min-width:0;overflow:hidden}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP>.ep-h .ep-voices{display:flex;gap:4px;flex-wrap:nowrap}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP>.ep-h .ep-v{min-height:16px!important;height:16px;padding:0 6px 0 4px!important;font-size:9.5px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP>.ep-h .ep-v .ec-led{width:6px;height:6px}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp{height:120px!important;display:flex!important;flex-direction:column;overflow:hidden}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp>.ep-body{flex:1 1 auto;min-height:0;max-height:none!important;height:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP{height:104px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earConP>.ep-body{overflow:auto!important;overscroll-behavior:contain}
+/* minimised, detached or expanded: the fixed sizes give way */
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp.ep-min,html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP.ep-min,html.m-ph:is(.ps-rot,.m-land) #earRoom #earConP.ep-min{height:auto!important;flex:0 0 auto!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp.float,html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP.float,html.m-ph:is(.ps-rot,.m-land) #earRoom #earConP.float{position:absolute!important;z-index:70;height:200px;max-height:calc(var(--appH,390px) - 60px);flex:none!important;display:flex!important;flex-direction:column;overflow:hidden!important;box-shadow:0 14px 40px rgba(0,0,0,.75),0 0 0 1px #ffd43b55}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep.float>.ep-body{flex:1 1 auto;min-height:0;overflow:auto!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep.float>.ep-h{cursor:move;touch-action:none}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp.max,html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP.max,html.m-ph:is(.ps-rot,.m-land) #earRoom #earConP.max{position:fixed!important;inset:46px 8px 8px!important;height:auto!important;z-index:80;display:flex!important;flex-direction:column}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep.max>.ep-body{flex:1 1 auto;min-height:0;overflow:auto!important}
+#earRoom .ep-rz{display:none}
+#earRoom .ep.float>.ep-rz{display:block;position:absolute;right:2px;bottom:2px;width:22px;height:22px;z-index:3;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,#ffd43b99 50%,#ffd43b99 58%,transparent 58%,transparent 70%,#ffd43b99 70%,#ffd43b99 78%,transparent 78%);border-radius:0 0 12px 0}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep>.ep-h [data-a=det]{display:inline-flex!important;align-items:center;justify-content:center}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep.ep-min>.ep-body,html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp.ep-min>.ep-body{display:none!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom .ep.float>.ep-h .ep-grip{display:inline!important}

@@ -196,6 +196,11 @@ function panels(){
   dp.querySelector('.ep-body').append(ov.querySelector('.e-now'),$('#earMsg'),$('#earOpts')); cp.querySelector('.ep-body').append($('#earCats')); kp.querySelector('.ep-body').append($('#earKb'));
   { const vs=el('div','ep-voices'); VOICES.forEach(([k,l])=>{ const b=el('button','ec-key ep-v'+(k===VOICE?' on':'')); b.type='button'; b.innerHTML='<i class="ec-led"></i><span></span>'; b.lastChild.textContent=l; b.onclick=()=>{ VOICE=k; try{ localStorage.setItem('ps-ear-voice',k); }catch(_){} vs.querySelectorAll('.ep-v').forEach(x=>x.classList.toggle('on',x===b)); S(60,1.2,.8,0); }; vs.appendChild(b); }); kp.querySelector('.ep-x').appendChild(vs); }
   top.after(dp,cp,kp);
+  /* a detached panel resizes from its corner, by touch too (CSS resize is mouse-only on a phone) */
+  [dp,cp,kp].forEach(p=>{ const z=el('span','ep-rz'); z.title='Drag to resize'; p.appendChild(z);
+    z.addEventListener('pointerdown',e=>{ if(!p.classList.contains('float')) return; e.preventDefault(); e.stopPropagation(); const q0=lptE(document.body,e), w0=p.offsetWidth, h0=p.offsetHeight;
+      const mv=ev=>{ const q=lptE(document.body,ev); p.style.setProperty('width',Math.max(220,w0+q.x-q0.x)+'px','important'); p.style.setProperty('height',Math.max(90,h0+q.y-q0.y)+'px','important'); if(p===kp){ clearTimeout(drawKb.t); drawKb.t=setTimeout(()=>drawKb(...kbLast),60); } };
+      const up=()=>{ document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up); window.dispatchEvent(new Event('resize')); }; document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); }); });
   [dp,cp,kp].forEach(p=>{ p.querySelectorAll('.ep-b').forEach(b=>b.onclick=()=>panelMode(p,b.dataset.a)); const h=p.querySelector('.ep-h');
     h.addEventListener('pointerdown',e=>{ if(!p.classList.contains('float')||e.target.closest('button')) return; e.preventDefault(); const s0={x:e.clientX,y:e.clientY,l:p.offsetLeft,t:p.offsetTop};
       const mv=ev=>{ const q=lptE(document.body,{clientX:ev.clientX,clientY:ev.clientY}), q0=lptE(document.body,{clientX:s0.x,clientY:s0.y}); p.style.left=(s0.l+q.x-q0.x)+'px'; p.style.top=Math.max(0,s0.t+q.y-q0.y)+'px'; };
@@ -204,7 +209,7 @@ function panels(){
 window.addEventListener('resize',()=>{ const kp=document.getElementById('earKbP'); if(kp&&kp.classList.contains('max')){ clearTimeout(drawKb.t); drawKb.t=setTimeout(()=>drawKb(...kbLast),120); } });
 function panelMode(p,a){ const was=p.classList.contains(a==='det'?'float':'max');
   p.classList.remove('float','max'); p.style.left=p.style.top=p.style.width=p.style.height='';
-  if(!was){ if(a==='det'){ p.classList.add('float'); const W=Math.min(ov.clientWidth-40,a==='det'?Math.max(360,p.offsetWidth*.7):0); p.style.width=W+'px'; p.style.left=Math.round((ov.clientWidth-W)/2+ov.scrollLeft)+'px'; p.style.top=Math.round(ov.scrollTop+70)+'px'; } else p.classList.add('max'); }
+  if(!was){ if(a==='det'){ p.classList.add('float'); const W=Math.min(ov.clientWidth-40,Math.max(ov.clientWidth<900?ov.clientWidth*.8:360,p.offsetWidth*.7)); p.style.width=W+'px'; p.style.left=Math.round((ov.clientWidth-W)/2+ov.scrollLeft)+'px'; p.style.top=Math.round(ov.scrollTop+70)+'px'; } else p.classList.add('max'); }
   p.querySelector('[data-a=det]').classList.toggle('on',p.classList.contains('float')); p.querySelector('[data-a=max]').classList.toggle('on',p.classList.contains('max')); p.querySelector('[data-a=max]').textContent=p.classList.contains('max')?'⤡':'⤢';
   if(p.id==='earKbP') setTimeout(()=>drawKb(...kbLast),30);
   window.dispatchEvent(new Event('resize')); }
@@ -235,8 +240,12 @@ function drawKb(lh,rh,spell){
 function sel(id,opts,val){ const s=el('select'); s.id=id; opts.forEach((o,i)=>{ const x=el('option',null,o); x.value=i; s.appendChild(x); }); s.value=val||0; return s; }
 function awareness(){
   const ctl=$('#earCtl'), big=$('#earBig'), sub=$('#earSub');
-  const root=()=>60+(+(ctl.querySelector('#aRoot')||{value:0}).value);
-  const rootSel=()=>sel('aRoot',NAMES,0);
+  /* the starting note is chosen by its spelling (C♯ and D♭ are separate), so an interval is spelled from it: C♯ up a major 3rd is E♯, D♭ is F */
+  const AR=[['C',0,0],['C♯',0,1],['D♭',1,1],['D',1,2],['D♯',1,3],['E♭',2,3],['E',2,4],['F',3,5],['F♯',3,6],['G♭',4,6],['G',4,7],['G♯',4,8],['A♭',5,8],['A',5,9],['A♯',5,10],['B♭',6,10],['B',6,11]];
+  const rootR=()=>{ const s=ctl.querySelector('#aRoot'); return AR[s?+s.value:0]||AR[0]; };
+  const root=()=>60+rootR()[2];
+  const rootSel=()=>sel('aRoot',AR.map(x=>x[0]),0);
+  const IVG=[2,2,3,3,4,4,5,6,6,7,7,8];   /* the letter each interval lands on: 2nds, 3rds, the tritone as an augmented 4th, … the octave */
   const btn=(t,fn,pri)=>{ const b=el('button','e-btn'+(pri?' pri':''),t); b.type='button'; b.onclick=()=>{ clr(); fn(); }; ctl.appendChild(b); return b; };
   if(cat==='note'){ big.textContent='Tap a key'; sub.textContent='Tap any key to hear it and see its name.'; drawKb([],[]);
     const lab=el('span','e-lbl','Or hear a note:'); ctl.appendChild(lab); const s=rootSel(); ctl.appendChild(s); btn('Play',()=>{ const m=root(); S(m,1.8,.85,0); lit=[m]; big.textContent=midiName(m); sub.textContent='Played '+midiName(m); drawKb([],lit); },true); }
@@ -244,7 +253,7 @@ function awareness(){
       const r=root(), t=SCALES[+ctl.querySelector('#aType').value], notes=t[1].map(x=>r+x); big.textContent=midiName(r)+' '+t[0].toLowerCase(); sub.textContent=notes.map(midiName).join('  '); lit=[]; drawKb([],[]);
       notes.forEach((m,i)=>{ timers.push(setTimeout(()=>{ S(m,.9,.8,0); lit=notes.slice(0,i+1); drawKb([],lit); },i*520)); }); },true);
     big.textContent='Choose a scale'; sub.textContent='Pick the starting note and the kind of scale, then play it.'; drawKb([],[]); }
-  else if(cat==='interval'){ ctl.appendChild(rootSel()); ctl.appendChild(sel('aIv',IV.map(x=>x[1]),3)); const go=(together)=>{ const r=root(), a=IV[+ctl.querySelector('#aIv').value]; big.textContent=a[1]; sub.textContent=midiName(r)+' up to '+midiName(r+a[0])+' · '+a[0]+' half step'+(a[0]===1?'':'s'); lit=[r,r+a[0]]; drawKb([],lit); S(r,1.6,.85,0); S(r+a[0],1.8,.85,together?0:.9); };
+  else if(cat==='interval'){ ctl.appendChild(rootSel()); ctl.appendChild(sel('aIv',IV.map(x=>x[1]),3)); const go=(together)=>{ const r=root(), ix=+ctl.querySelector('#aIv').value, a=IV[ix], R0=rootR(), n1=R0[0], n2=(()=>{ const c=a[0]===6?[spellAt(R0,4,6),spellAt(R0,5,6)].filter(Boolean).sort((x,y)=>x.length-y.length)[0]:spellAt(R0,IVG[ix],a[0]); return c||midiName(r+a[0]); })(); big.textContent=a[1]; sub.textContent=n1+' up to '+n2+' · '+a[0]+' half step'+(a[0]===1?'':'s'); lit=[r,r+a[0]]; drawKb([],lit,labelMap([[r,n1],[r+a[0],n2]])); S(r,1.6,.85,0); S(r+a[0],1.8,.85,together?0:.9); };
     btn('Play one after the other',()=>go(false),true); btn('Play together',()=>go(true));
     big.textContent='Choose an interval'; sub.textContent='Pick the starting note and the interval, then play it.'; drawKb([],[]); }
   else if(cat==='chord'){ const sets=[...TRIADS,...SEVENTHS]; ctl.appendChild(rootSel()); ctl.appendChild(sel('aCh',sets.map(x=>x[0]),0)); const go=(broken)=>{ const r=root(), a=sets[+ctl.querySelector('#aCh').value], notes=a[1].map(x=>r+x); big.textContent=midiName(r)+' '+a[0].toLowerCase(); sub.textContent=notes.map(midiName).join('  '); lit=notes; drawKb([],lit); notes.forEach((m,i)=>S(m,2.4,.8,broken?i*.42:i*.012)); S(r-12,2.4,.7,0); };
