@@ -652,6 +652,22 @@ async function progCode(request, env, url) {
   return json({ error: 'busy' }, 503);
 }
 
+function pkPage(res) {
+  const O = 'https://app.pokeytivity.com/';
+  const attr = (n, v) => ({ element(e) { e.setAttribute(n, v); } });
+  return new HTMLRewriter()
+    .on('title', { element(e) { e.setInnerContent('Pokeytivity Piano Suite'); } })
+    .on('meta[property="og:site_name"]', attr('content', 'Pokeytivity'))
+    .on('meta[property="og:title"],meta[name="twitter:title"]', attr('content', 'Pokeytivity Piano Suite'))
+    .on('meta[property="og:url"]', attr('content', O))
+    .on('meta[property="og:image"],meta[name="twitter:image"]', attr('content', O + 'icon-512.png'))
+    .on('link[rel="manifest"]', attr('href', 'manifest-pk.webmanifest'))
+    .on('link[rel="apple-touch-icon"]', attr('href', 'pk-apple-180.png'))
+    .on('link[rel="icon"]', { element(e) { const h = e.getAttribute('href') || ''; e.setAttribute('href', h.replace('hp-fav-', 'pk-fav-')); } })
+    .on('link[rel="preload"][href="hp-logo.png"]', { element(e) { e.remove(); } })
+    .transform(res);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -690,7 +706,9 @@ export default {
       try { if (request.method !== 'GET') { const g = await gate(request, env, 'transcribe'); if (g) return g; } else if (env.ACCESS_CODE && !same(request.headers.get('x-access'), env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(request.headers.get('x-access'), env.ADMIN_TOKEN))) return json({ error: 'access' }, 401); return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     /* a teacher's suite: hearandplay.app/<handle> (and /@handle) opens the suite page (not on app.pokeytivity.com, which has no teacher wing) */
-    const res = await env.ASSETS.fetch(request);
+    const res0 = await env.ASSETS.fetch(request);
+    /* app.pokeytivity.com: link previews (WhatsApp, iMessage, Facebook…) read the page without running it, so the name, icons and preview card are swapped here */
+    const res = (/(^|\.)pokeytivity\.com$/i.test(url.hostname) && (res0.headers.get('content-type') || '').includes('text/html')) ? pkPage(res0) : res0;
     if (res.status !== 404 || url.hostname === 'app.pokeytivity.com') return res;
     { const m = /^\/(@?)([A-Za-z0-9]{3,30})\/?$/.exec(url.pathname);
       if (m && (request.method === 'GET' || request.method === 'HEAD') && !RESERVED.has(m[2].toLowerCase())) {
