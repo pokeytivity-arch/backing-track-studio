@@ -1660,7 +1660,7 @@ function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=
 /* it pops out over the Display's description lines; it closes with its × or when anything else is clicked, and the Chord of the bar button
    (or choosing a chord) brings it back. The chord keeps playing while it's closed. */
 let bandOpen=true;
-function bandPlace(){ const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
+function bandPlace(){ if(document.querySelector('#prBandP.pb-dock')) return; const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
   const U=st.bPos; if(U&&U.w) p.style.width=U.w+'px'; else p.style.width='';
   if(U&&U.l!=null){ const mxL=Math.max(0,scr.clientWidth-120); p.style.left=Math.max(-20,Math.min(mxL,U.l))+'px'; p.style.top=Math.max(-60,Math.min(400,U.t))+'px'; return; }   /* never off where it can't be found */
   /* his default: the top left corner of the Display, about 43% of its width */
@@ -1691,7 +1691,9 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
       if(!t.closest||!t.closest('#prRoom')||t.closest('#prDisp')||t.closest('#prBandO')||t.closest('.p-ctr')||t.closest('.p-bch[data-ch="Left hand"],.p-bch[data-ch=Chord],.p-ccs,.p-tabs,.p-bch[data-ch=Movements],.p-bch[data-ch=Technique]')) return;
       if(!t.closest('#prKbP')&&!t.closest('#prConP')) return; bandOpen=false; bandSync(); },true);
     window.addEventListener('resize',()=>bandPlace()); }
-  if(scr&&p.parentNode!==scr) scr.appendChild(p);
+  /* on a phone it sits in the page under the main keyboard (where the Console was), so it never covers the keys */
+  const PH=window.APPSHELL&&APPSHELL.isPhone(), kp=document.getElementById('prKbP');
+  if(PH&&kp){ if(p.previousElementSibling!==kp) kp.after(p); p.classList.add('pb-dock'); } else { p.classList.remove('pb-dock'); if(scr&&p.parentNode!==scr) scr.appendChild(p); }
   p.hidden=false; requestAnimationFrame(bandPlace); const on=st.bOn!==false, c=bandCur(), N=sdCNotes(c);
   p.classList.toggle('pb-off',!on); const pw=p.querySelector('.pb-pow'); pw.classList.toggle('on',on); pw.setAttribute('aria-pressed',String(on)); pw.onclick=()=>{ st.bOn=!on; save(); bandSync(); };
   p.querySelector('.pb-nm').innerHTML='<span class="pb-t">Chord of the bar</span><b></b>'; p.querySelector('.pb-nm b').textContent=c.nm||sdCName(c);
@@ -1699,7 +1701,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
     k.onclick=()=>{ const cur=bVoices().slice(), i=cur.indexOf(v); if(i>=0) cur.splice(i,1); else cur.push(v); st.bV=cur; save(); bandSync(); };
-    col.append(k,bandFader(v,MQM.matches||(window.APPSHELL&&APPSHELL.isPhone())?30:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
+    col.append(k,bandFader(v,window.APPSHELL&&APPSHELL.isPhone()?26:MQM.matches?30:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
   bandApply(); }
 { const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{visibility:hidden} #prDisp.has-band .ep-body,#prDisp.has-band .pd-main,#prDisp.has-band .pd-screen{overflow:visible!important}
 #prBandP .pb-top{cursor:grab;user-select:none;touch-action:none} #prBandP.pb-mv .pb-top{cursor:grabbing} #prBandP.pb-mv{opacity:.96}

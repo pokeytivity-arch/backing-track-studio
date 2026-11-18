@@ -69,7 +69,6 @@ html.m-ph #prRoom #prConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-web
 html.m-ph #prRoom #prConP.ep-min{flex:0 0 auto!important}
 html.m-ph #prRoom #prConP>.ep-h{padding:4px 8px} html.m-ph #prRoom #prConP>.ep-h .ep-b{min-width:34px;min-height:30px}
 html.m-ph #prRoom .p-tabs{margin:0 0 6px} html.m-ph #prRoom .p-tab{padding:7px 14px 6px;font-size:11px}
-html.m-ph #prBandP.pb-pop{min-width:260px}
 
 /* the hands stay on the keys: on a phone they are cut off at the bottom of the keyboard, and the Hands switch is on the tool bar */
 html.m-ph #prRoom #prKbP{overflow:hidden}
@@ -166,16 +165,20 @@ html.m-ph .ep.ep-sheet>.ep-body{flex:1 1 auto!important;min-height:0!important;o
 html.m-ph .ep.ep-sheet>.ep-h{display:flex!important} html.m-ph .ep.ep-sheet>.ep-h .ep-mn{font-size:0} html.m-ph .ep.ep-sheet>.ep-h .ep-mn::before{content:"✕";font-size:15px}
 html.m-ph .ep.ep-sheet>.ep-h::before{content:"";position:absolute;left:50%;top:5px;width:44px;height:4px;margin-left:-22px;border-radius:3px;background:rgba(255,255,255,.25)}
 html.m-ph .ep.ep-sheet>.ep-h{position:relative;padding-top:12px!important}
-/* the Chord of the bar keyboard on a phone: a sheet along the bottom, its keyboard full width and the five voices in one row */
-html.m-ph #prBandP.pb-pop{position:fixed!important;left:6px!important;right:6px!important;top:auto!important;bottom:calc(4px + env(safe-area-inset-bottom))!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:calc(var(--appH,390px)*.62);overflow:auto;z-index:2147483100!important;padding:6px 10px 8px!important}
-html.m-ph #prBandP .pb-grip{display:none}
-html.m-ph #prBandP .pb-top{cursor:default}
-html.m-ph #prBandP .ep-body{gap:4px!important}
-html.m-ph #prBandP .pb-rack{flex-wrap:nowrap!important;gap:6px!important;overflow-x:auto;justify-content:space-between}
-html.m-ph #prBandP .pb-v{min-width:58px!important;flex:1 1 0}
-html.m-ph #prBandP .has-kbbar{margin-top:20px!important} html.m-ph #prBandP .kb-bar{top:-19px;height:18px} html.m-ph #prBandP .kb-n{font-size:9.5px;padding:1px 4px}
+/* the Chord of the bar keyboard on a phone: docked under the main keyboard, its own keys on the left and the five voices on the right */
+html.m-ph #prBandP.pb-pop.pb-dock{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:auto!important;min-width:0!important;max-width:none!important;flex:0 0 auto;margin:0!important;padding:4px 8px 6px!important;z-index:1!important;box-shadow:none!important;border-radius:12px!important}
+html.m-ph #prBandP.pb-dock .ep-body{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:10px;row-gap:2px!important;align-items:end}
+html.m-ph #prBandP.pb-dock .pb-top{grid-column:1/-1;gap:8px} html.m-ph #prBandP.pb-dock .pb-pow{width:24px;height:24px;font-size:12px} html.m-ph #prBandP.pb-dock .pb-nm{font-size:12px} html.m-ph #prBandP.pb-dock .pb-x{width:24px;height:24px;font-size:14px}
+html.m-ph #prBandP.pb-dock .pb-kb{grid-column:1;min-width:0}
+html.m-ph #prBandP.pb-dock .pb-kb svg{height:44px!important;width:100%!important}
+html.m-ph #prBandP.pb-dock .pb-rack{grid-column:2;flex-wrap:nowrap!important;gap:4px!important;align-items:flex-end}
+html.m-ph #prBandP.pb-dock .pb-v{min-width:50px!important;gap:2px!important}
+html.m-ph #prBandP.pb-dock .pb-v .p-key{min-height:20px!important;font-size:10px!important;padding:0 5px 0 4px!important}
+html.m-ph #prBandP.pb-dock .p-lvn{display:none}
+html.m-ph #prBandP.pb-dock .pb-grip{display:none}
+html.m-ph #prBandP.pb-dock .pb-top{cursor:default}
+html.m-ph #prBandP.pb-dock .has-kbbar{margin-top:16px!important} html.m-ph #prBandP.pb-dock .kb-bar{top:-15px;height:14px} html.m-ph #prBandP.pb-dock .kb-n{font-size:9px;padding:0 3px}
 html.app-has-tabs .menu-pop{max-height:calc(100dvh - 130px - env(safe-area-inset-bottom))!important}
-html.m-ph #prBandP .pb-kb svg{height:64px!important;width:100%!important}
 html.m-ph #prDisp.has-band #prMsg{visibility:visible!important}
 /* tablets held sideways: the keyboard rooms fit the screen, with the Console scrolling inside */
 @media (orientation:landscape){
