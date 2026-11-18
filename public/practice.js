@@ -1611,8 +1611,8 @@ function bandBar(t,d,BB,bi,bpb,spb){ const C=CLASS.clock; if(st.bOn===false) ret
     timers.push(setTimeout(()=>{ if(!playing) return; bandKb(vi,true); },Math.max(0,(t+o-C.now())*1000))); }); }
 function bandKb(vi,hit){ const kb=document.querySelector('#prBandP .pb-kb'); if(!kb||typeof keyboardSVG!=='function') return; const N=sdCNotes(sdCur(),vi||0), sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); });
   kb.textContent=''; kb.appendChild(keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:true,spell:sp})); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
-function sdChordStrips(){ const L=sdCList();
-  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{two:L.length>4,off:()=>!chordBar(),offWhy:'Opens with Chord of the bar (Left hand)'})]; }
+function sdChordStrips(sd){ const L=sdCList();
+  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>sd&&chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>!sd||!chordBar(),offWhy:sd?'Opens with Chord of the bar (Left hand)':'For Sixth Diminished Movements'})]; }
 /* the second keyboard (61 keys) plays the chord of the bar in the background: layered voices, each with a fader and a meter, and a power button */
 function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=v; strip.dataset.ch=v; strip.tabIndex=0; strip.setAttribute('role','slider'); strip.setAttribute('aria-label',BVOX.find(x=>x[0]===v)[1]+' volume');
   const fz=el('div','p-fz'); fz.style.height=(H+18)+'px'; fz.appendChild(el('div','p-tr')); [0,.25,.5,.75,1].forEach(f=>fz.appendChild(Object.assign(el('i','p-tick'),{style:'top:'+(9+(1-f)*H)+'px'})));
@@ -1684,6 +1684,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
 /* ---------- Stylization console layout: drag a section by its title to move it, drag a button to move it within its section,
    drag the line on a section's right edge to make it narrower or wider. Kept on this device until he locks a layout in (STY_LOCK). ---------- */
 const STY_LOCK=false;
+const STY_W={Technique:292,Over:184,'Left hand':158,Chord:548,Variety:490,'Skill level':137,Hands:128,Direction:139,'Seventh chord':165,'Sixth chord':146,Octaves:118,Transpose:362,Levels:158};
 const STY_TECH_KEYS=['Variety','Chord','Skill level','Hands'];
 function styBKey(title){ return title==='Chord'?'Chord|'+(sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
 function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Array.isArray(ord)) return opts; const pos=v=>{ const i=ord.indexOf(String(v)); return i<0?999:i; };
@@ -1702,7 +1703,8 @@ function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.
 const sNmK=x=>{ const c=x.dataset.ch; return !c?'Levels':c==='Movements'?'Technique':c; };   /* the Technique and Movements pages share one place */
 function styMix(panel){ const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||{}, kids=[...panel.children], pos=c=>{ const i=ord.indexOf(c); return i<0?999:i; };
   kids.map((x,i)=>[x,i]).sort((a,b)=>(pos(sNmK(a[0]))-pos(sNmK(b[0])))||(a[1]-b[1])).forEach(([x])=>panel.appendChild(x));
-  [...panel.children].forEach(sx=>{ const nm=sNmK(sx); if(W[nm]){ sx.style.flex='0 0 '+W[nm]+'px'; sx.style.width=W[nm]+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); } });
+  /* each section keeps one width whatever the technique, key or tab (the widest it ever needs), so nothing on the console moves */
+  [...panel.children].forEach(sx=>{ const nm=sNmK(sx); if(W[nm]){ sx.style.flex='0 0 '+W[nm]+'px'; sx.style.width=W[nm]+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); } else if(STY_W[nm]){ sx.style.flex=(nm==='Levels'?'0':'1')+' 0 '+STY_W[nm]+'px'; sx.style.minWidth=STY_W[nm]+'px'; } });
   if(STY_LOCK) return;
   const saveOrd=()=>{ st.sord=[...panel.children].map(x=>sNmK(x)); save(); };
   [...panel.children].forEach(sx=>{ const nm=sNmK(sx), h=sx.querySelector(':scope>.p-cht');
@@ -1733,10 +1735,11 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   const ncc=T.id==='ncc', sd=T.id==='sixdim', d2=T.id==='drop2', qh=T.id==='quartal', lhOn=ncc||sd, mv=ncc||sd||d2||qh, v=T.vars&&st.svar!=='all'?T.vars[+st.svar]:null, overOn=ncc&&(st.svar==='all'||(v&&v.over));
   /* Drop-2 Movements: Skill level is Intermediate or Advanced; Advanced opens the Hands buttons */
   const d2adv=d2&&st.svar!=='all'&&+st.svar>0, rr=()=>{ save(); const was=playing; render(); if(was) playAll(); };
-  const varStrips=d2?[
-    cStrip('Skill level',[['int','Intermediate'],['adv','Advanced']],()=>st.svar==='all'?[]:[d2adv?'adv':'int'],k=>{ st.svar=k==='int'?0:(+st.d2h||1); rr(); }),
-    cStrip('Hands',[[1,'Left hand'],[2,'Right hand'],[3,'Both hands']],()=>d2adv?[+st.svar]:[],k=>{ st.svar=k; st.d2h=k; rr(); },{off:()=>!d2adv,offWhy:'Choose Advanced to pick the hands'})]
-   :[cStrip('Variety',(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[]),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:ncc,off:()=>!T.vars,offWhy:'Coming soon'})];
+  /* every section is always on the console, in the same place; the ones a technique doesn't use are dimmed */
+  const varStrips=[
+    cStrip('Variety',(d2?[]:(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[])),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>d2||!T.vars,offWhy:d2?'Drop-2 Movements: see Skill level and Hands':'Coming soon'}),
+    cStrip('Skill level',[['int','Intermediate'],['adv','Advanced']],()=>!d2||st.svar==='all'?[]:[d2adv?'adv':'int'],k=>{ st.svar=k==='int'?0:(+st.d2h||1); rr(); },{off:()=>!d2,offWhy:'For Drop-2 Movements'}),
+    cStrip('Hands',[[1,'Left hand'],[2,'Right hand'],[3,'Both hands']],()=>d2adv?[+st.svar]:[],k=>{ st.svar=k; st.d2h=k; rr(); },{off:()=>!d2adv,offWhy:'For Drop-2 Movements on Advanced'})];
   const overStrip=cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>overOn?[st.sover||'f7']:[],k=>{ st.sover=k;
       /* the Over chord is a left-hand chord under the Over varieties: picking one turns the left hand chord on */
       if(st.slh===false||st.slh==='drop2') st.slh='chord';
@@ -1744,7 +1747,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; if(st.slh==='chord') bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
   strips.append(
     cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true,rows:3}),
-    overStrip, lhStrip, ...(sd?sdChordStrips():[]),
+    overStrip, lhStrip, ...sdChordStrips(sd),
     ...varStrips,
     cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Chord Couples, Sixth Diminished, Drop-2 Movements and Quartal Harmony'}),
     cStrip('Seventh chord',[['maj',sNm(st.str||0)+' major seventh'],['min',sNm(st.str||0)+' minor seventh']],()=>[st.s7==='min'?'min':'maj'],k=>{ st.s7=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!d2,offWhy:'For Drop-2 Movements'}),
