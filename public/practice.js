@@ -1455,7 +1455,7 @@ const sFlat=()=>[1,3,5,8,10].includes(((st.str||0)%12+12)%12);
 const sNm=pc=>(sFlat()?FLAT_N:SHARP_N)[((pc%12)+12)%12];
 const sChord=a=>a.map(m=>sNm(m)).join(' ');
 const sInv=(c,k)=>{ const a=c.slice(); for(let i=0;i<k;i++) a.push(a.shift()+12); return a; };
-function syName(T,v){ const tr=st.str||0; if(T.id==='domm'){ const R=sNm(dmRoot()); return R+'dom13sus4 to '+R+'7b9'; } if(T.id==='quartal') return sNm(tr)+' pentatonic · quartal harmony · '+v.n; if(T.id==='drop2') return sNm(tr)+(st.s7==='min'?' minor seventh':' major seventh')+' · '+v.n; if(T.id==='sixdim') return sNm(tr)+(sdMin()?' minor sixth':' major sixth')+' + '+sNm(2+tr)+' diminished seventh · '+v.n; if(T.id==='ncc'){ const n=sNm(v.x[0]+tr)+SQN[v.x[1]]+' + '+sNm(v.y[0]+tr)+SQN[v.y[1]]; return v.cc?n+' (over '+ccName()+')':v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
+function syName(T,v){ const tr=st.str||0; if(T.id==='domm'){ const R=sNm(dmRoot()); return R+'dom13sus4 to '+R+'7b9'; } if(T.id==='quartal') return sNm(tr)+' pentatonic · quartal harmony · '+v.n; if(T.id==='drop2') return sNm(tr)+(st.s7==='min'?' minor seventh':' major seventh')+' · '+v.n; if(T.id==='sixdim') return sNm(tr)+(sdMin()?' minor sixth':' major sixth')+' + '+sNm(2+tr)+' diminished seventh · '+v.n; if(T.id==='ncc'){ const n=(v.nx||sNm(v.x[0]+tr))+SQN[v.x[1]]+' + '+(v.ny||sNm(v.y[0]+tr))+SQN[v.y[1]]; return v.cc?n+' (over '+ccName()+')':v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
 function syOver(short){ const tr=st.str||0; return st.sover==='cm6'?(sNm(tr)+(short?'m6':' minor sixth')):(sNm(5+tr)+(short?'7 (no 5)':' dominant 7 (no 5)')); }
 function syChip(T,v){ const tr=st.str||0; if(T.id==='quartal') return v.n; if(T.id==='drop2') return v.n; if(T.id==='sixdim') return v.n; if(T.id==='ncc'){ const ab=q=>({maj:'',min:'m',dim:'°',six:'6',dim7:'°7'})[q]; return sNm(v.x[0]+tr)+ab(v.x[1])+' + '+sNm(v.y[0]+tr)+ab(v.y[1])+(v.over?' / Over':''); } return v.n; }
 /* one phrase of a variety: the notes (beats from the start), what to show on the keys, and the bar-by-bar words */
@@ -1572,8 +1572,8 @@ function qVoicings(){ const tr=st.str||0, iv={1:0,2:2,3:4,5:7,6:9}, D=[[2,5,1],[
   D.forEach(dg=>{ let m; if(first==null) m=62; else { m=first+1; while(((m%12)+12)%12!==iv[dg[0]]) m++; } first=m; const ns=[m]; for(let k=1;k<3;k++){ let x=ns[k-1]+1; while(((x%12)+12)%12!==iv[dg[k]]) x++; ns.push(x); } out.push({n:ns,deg:dg.join(' ')}); });
   const sh=Math.max(...out.flatMap(x=>x.n))+tr>79?-12:0; return out.map(x=>{ const n=x.n.map(m=>m+tr+sh); return {n,deg:x.deg,fm:{[n[0]]:1,[n[1]]:3,[n[2]]:5}}; }); }
 /* the Technique buttons in the order he locked in (they fill the strip a column at a time) */
-const STY_MOV=['contra','drop2','sixdim','domm'];   /* the Movements tab; everything else is on the Technique tab */
-const STY_ORDER=['ncc','back','contra','drop2','sixdim','domm','quartal','licks','riffs','triad'];
+const STY_MOV=['ncc','drop2','sixdim','domm'];   /* the Movements tab; everything else is on the Technique tab */
+const STY_ORDER=['ncc','drop2','sixdim','domm','back','quartal','licks','riffs','triad','contra'];
 function styOrdered(){ const ord=STY_ORDER; if(st.styOrder){ delete st.styOrder; save(); } const out=[]; ord.forEach(id=>{ const t=STY.find(x=>x.id===id); if(t&&!out.includes(t)) out.push(t); }); STY.forEach(t=>{ if(!out.includes(t)) out.push(t); }); return out; }
 function styDrag(strip){ const ids=styOrdered().map(t=>t.id); strip.title='Drag the buttons to put them in any order';
   [...strip.querySelectorAll('.p-key')].forEach((k,i)=>{ k.draggable=true; k.classList.add('p-dragk');
@@ -1668,7 +1668,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
   if(scr&&p.parentNode!==scr) scr.appendChild(p);
   p.hidden=false; requestAnimationFrame(bandPlace); const on=st.bOn!==false, c=bandCur(), N=sdCNotes(c);
   p.classList.toggle('pb-off',!on); const pw=p.querySelector('.pb-pow'); pw.classList.toggle('on',on); pw.setAttribute('aria-pressed',String(on)); pw.onclick=()=>{ st.bOn=!on; save(); bandSync(); };
-  p.querySelector('.pb-nm').innerHTML='<span class="pb-t">Chord of the bar</span><b></b>'; p.querySelector('.pb-nm b').textContent=sdCName(c);
+  p.querySelector('.pb-nm').innerHTML='<span class="pb-t">Chord of the bar</span><b></b>'; p.querySelector('.pb-nm b').textContent=c.nm||sdCName(c);
   bandKb(0);
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
@@ -1701,7 +1701,7 @@ function favSync(){ const on=kind==='styl'&&styFavIdx()>=0; document.querySelect
 { const cs=document.createElement('style'); cs.textContent=`#prRoom .p-fav{min-width:44px;height:40px;border-radius:999px;border:1.5px solid #3a4a74;background:transparent;font-size:19px;cursor:pointer;filter:grayscale(1) brightness(1.2);opacity:.75}
 #prRoom .p-fav:hover{opacity:1} #prRoom .p-fav.on{filter:none;opacity:1;border-color:#ffd43b;box-shadow:0 0 10px rgba(255,212,59,.45)}`; document.head.appendChild(cs); }
 /* Welcome back: continue the exercise from last time, or reset Stylization Practice to its defaults */
-const STYDEF={sty:'ncc',stab:'tech',svar:0,cc:null,sdir:'updown',slh:'chord',str:0,s7:'maj',ssix:'maj',soct:1};
+const STYDEF={sty:'ncc',stab:'mov',svar:0,cc:null,sdir:'updown',slh:'chord',str:0,s7:'maj',ssix:'maj',soct:1};
 const styIsDef=()=>(st.sty||'ncc')==='ncc'&&(+st.svar||0)===0&&!st.cc&&!st.str&&(st.sdir||'updown')==='updown';
 /* ---------- Chord compatibility (Chord Couples): pick a note and a chord type; the chord goes on the Chord of the bar keyboard and the
    main keyboard plays the couple that goes with it (his list). Degrees are counted from the chord's root (1). Couples: [first chord, its neighbour].
@@ -1719,12 +1719,19 @@ const CCT=[
   {id:'d7b9s5',n:'7[b9,#5]',ab:'7[b9,#5]',v:[[4,8,10,1],[10,1,4,8]],cp:[[[6,'maj'],[8,'maj']],[[10,'dim'],[0,'dim']],[[1,'min'],[3,'min']]]},
   {id:'m6',n:' minor sixth',ab:'m6',v:[[3,7,9,0],[9,0,3,7]],cp:[[[5,'maj'],[7,'maj']],[[9,'dim'],[11,'dim']],[[0,'min'],[2,'min']]]}];
 const NCC_INT=[0,1,2], nccLev=()=>st.nlev==='adv'||st.nlev==='int'?st.nlev:(st.svar!=='all'&&+st.svar>=3?'adv':'int'), nccIdx=()=>{ const T=STY.find(t=>t.id==='ncc'); return T.vars.map((_,i)=>i).filter(i=>(nccLev()==='int')===NCC_INT.includes(i)); };
+/* each couple's home key, counted from the chord's root, and whether it is a major or a melodic minor scale */
+const CC_KEY={maj:[0,'M'],min:[-2,'M'],dim:[-2,'M'],d7:[5,'M'],d9:[5,'M'],d13:[5,'M'],d13s11:[7,'m'],d7s9s5:[1,'m'],d7b9s5:[1,'m'],m6:[0,'m']};
+const KEYN_M=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'], KEYN_m=['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'];
+function ccSpell(pc){ const c=ccT(); if(!c) return sNm(pc); const [o,ty]=CC_KEY[c.id], t=((((st.str||0)+o)%12)+12)%12, tn=(ty==='M'?KEYN_M:KEYN_m)[t];
+  const L='CDEFGAB', LP=[0,2,4,5,7,9,11], SC=ty==='M'?[0,2,4,5,7,9,11]:[0,2,3,5,7,9,11], li=L.indexOf(tn[0]), p=((pc%12)+12)%12;
+  for(let d=0;d<7;d++){ const q=(t+SC[d])%12; if(q!==p) continue; const ln=L[(li+d)%7], nat=LP[(li+d)%7]; let a=((q-nat)%12+12)%12; if(a>6) a-=12; return ln+(a===1?'♯':a===2?'𝄪':a===-1?'♭':a===-2?'𝄫':''); }
+  return sNm(pc); }
 const ccT=()=>st.cc&&CCT.find(x=>x.id===st.cc.t), ccOn=()=>syT().id==='ncc'&&!!ccT();
-const ccName=()=>{ const c=ccT(); return c?sNm(st.str||0)+c.ab:''; };
-function ccVar(){ const c=ccT(); if(!c) return null; const o=Math.min(+st.cc.o||0,c.cp.length-1), [X,Y]=c.cp[o]; return {x:[((X[0]%12)+12)%12,X[1]],y:[((Y[0]%12)+12)%12,Y[1]],s:'Over '+ccName(),cc:true}; }
+const ccName=()=>{ const c=ccT(); return c?ccSpell(st.str||0)+c.ab:''; };
+function ccVar(){ const c=ccT(); if(!c) return null; const o=Math.min(+st.cc.o||0,c.cp.length-1), [X,Y]=c.cp[o]; const tr=st.str||0; return {x:[((X[0]%12)+12)%12,X[1]],y:[((Y[0]%12)+12)%12,Y[1]],nx:ccSpell(X[0]+tr),ny:ccSpell(Y[0]+tr),s:'Over '+ccName(),cc:true}; }
 const syV=(T,i)=>i==='cc'?ccVar():T.vars[i];
 /* the chord the Chord of the bar keyboard plays: the compatible chord on Chord Couples, the chosen chord on Sixth Diminished */
-const bandCur=()=>{ if(syT().id==='domm') return {r:7,n:' bass',v:[[]]}; const c=ccOn()?ccT():null; return c?{r:0,n:c.ab,v:c.v}:sdCur(); };
+const bandCur=()=>{ if(syT().id==='domm') return {r:7,n:' bass',v:[[]]}; const c=ccOn()?ccT():null; return c?{r:0,n:c.ab,v:c.v,nm:ccName()}:sdCur(); };
 function ccStrip(ncc){ const strip=el('div','p-ch p-bch p-ccs'); strip.dataset.ch='Compatible chord'; strip.appendChild(el('div','p-cht','Compatible chord')); const col=el('div','p-bcol'); strip.appendChild(col);
   if(!ncc){ strip.classList.add('off'); strip.title='For Chord Couples'; }
   const row=el('div','p-ccrow'), sn=el('select','p-sel'), sc=el('select','p-sel'); sn.setAttribute('aria-label','Note'); sc.setAttribute('aria-label','Chord type');
@@ -1734,7 +1741,7 @@ function ccStrip(ncc){ const strip=el('div','p-ch p-bch p-ccs'); strip.dataset.c
   const go=()=>{ clr(); st.str=+sn.value; st.cc=sc.value?{t:sc.value,o:0}:null; if(st.cc){ if(st.slh===false||st.slh==='locked') st.slh='chord'; bandOpen=true; } save(); render(); };
   sn.onchange=go; sc.onchange=go; row.append(sn,sc); col.appendChild(row);
   const c=ncc&&ccT(); if(c){ const tr=st.str||0, ab=q=>({maj:'',min:'m',dim:'°'})[q];
-    c.cp.forEach(([X,Y],i)=>{ const k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=sNm(X[0]+tr)+ab(X[1])+' + '+sNm(Y[0]+tr)+ab(Y[1]); const on=(+st.cc.o||0)===i; k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on));
+    c.cp.forEach(([X,Y],i)=>{ const k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=ccSpell(X[0]+tr)+ab(X[1])+' + '+ccSpell(Y[0]+tr)+ab(Y[1]); const on=(+st.cc.o||0)===i; k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on));
       k.onclick=()=>{ st.cc=Object.assign({},st.cc,{o:i}); save(); const was=playing; render(); if(was) playAll(); }; col.appendChild(k); });
     const x=el('button','p-key p-ccx','Clear'); x.type='button'; x.onclick=()=>{ clr(); st.cc=null; save(); render(); }; col.appendChild(x); }
   return strip; }
