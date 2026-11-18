@@ -8,6 +8,7 @@ const root=document.documentElement;
 function vis(el){ if(!el) return false; if(el.closest('[hidden]')) return false; return el.offsetWidth>40&&getComputedStyle(el).visibility!=='hidden'; }   /* width only: a keyboard squeezed short on an upright screen still counts */
 function which(){
   const d=document.body.dataset.dest; if(d==='challenge'||d==='account') return null;
+  { const er=document.getElementById('earRoom'); if(er&&!er.hidden&&er.offsetWidth>40) return 'earRoom'; }   /* Ear training is always laid out sideways, keyboard or not */
   for(const id of IDS){ if(id==='stageKbd'&&d!=='studio') continue; const el=document.getElementById(id); if(vis(el)) return id; }
   if(document.body.dataset.dest==='plus'&&vis(document.getElementById('txCard'))) return 'plus';
   return null;
