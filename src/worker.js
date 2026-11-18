@@ -706,14 +706,19 @@ export default {
       try { if (request.method !== 'GET') { const g = await gate(request, env, 'transcribe'); if (g) return g; } else if (env.ACCESS_CODE && !same(request.headers.get('x-access'), env.ACCESS_CODE) && !(env.ADMIN_TOKEN && same(request.headers.get('x-access'), env.ADMIN_TOKEN))) return json({ error: 'access' }, 401); return request.method === 'GET' ? await pianoStatus(request, env) : await transcribePiano(request, env); } catch (e) { console.log(e); return json({ error: 'server' }, 500); }
     }
     /* a teacher's suite: hearandplay.app/<handle> (and /@handle) opens the suite page (not on app.pokeytivity.com, which has no teacher wing) */
-    const res0 = await env.ASSETS.fetch(request);
+    /* the suite page is public/shell.html, so "/" always reaches this worker (no index.html for the assets to serve first) */
+    let res0 = await env.ASSETS.fetch(request);
+    if (res0.status === 404 && (url.pathname === '/' || url.pathname === '/index.html') && (request.method === 'GET' || request.method === 'HEAD')) {
+      const r = await env.ASSETS.fetch(new Request(url.origin + '/shell', { headers: request.headers }));
+      res0 = new Response(r.body, { status: r.status, headers: r.headers });
+    }
     /* app.pokeytivity.com: link previews (WhatsApp, iMessage, Facebook…) read the page without running it, so the name, icons and preview card are swapped here */
     const res = (/(^|\.)pokeytivity\.com$/i.test(url.hostname) && (res0.headers.get('content-type') || '').includes('text/html')) ? pkPage(res0) : res0;
     if (res.status !== 404 || url.hostname === 'app.pokeytivity.com') return res;
     { const m = /^\/(@?)([A-Za-z0-9]{3,30})\/?$/.exec(url.pathname);
       if (m && (request.method === 'GET' || request.method === 'HEAD') && !RESERVED.has(m[2].toLowerCase())) {
         const h = m[2].toLowerCase(); if (m[1] || h !== m[2] || url.pathname.endsWith('/')) return Response.redirect(url.origin + '/' + h + url.search, 301);
-        const r = await env.ASSETS.fetch(new Request(url.origin + '/', { headers: request.headers }));
+        const r = await env.ASSETS.fetch(new Request(url.origin + '/shell', { headers: request.headers }));
         return new Response(r.body, { status: 200, headers: r.headers });
       } }
     return res;
