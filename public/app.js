@@ -10,7 +10,7 @@ const el=(t,c,x)=>{ const e=document.createElement(t); if(c) e.className=c; if(x
 const coarse=matchMedia('(pointer:coarse)');
 /* device class: a phone is a touch screen whose short side is at most 500 px; a tablet is a larger touch screen */
 function devClass(){ const s=Math.min(screen.width||innerWidth,screen.height||innerHeight), touch=coarse.matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
-  root.classList.toggle('m-ph',touch&&s<=500); root.classList.toggle('m-tb',touch&&s>500); root.classList.toggle('m-app',touch); }
+  root.classList.toggle('m-ph',touch&&s<=500); root.classList.toggle('m-tb',touch&&s>500); root.classList.toggle('m-app',touch); root.classList.toggle('m-land',touch&&innerWidth>innerHeight); }
 /* the page's own height: on a phone turned sideways by rotate.js the page is turned, so its height is the window's width */
 function appH(){ const rot=root.classList.contains('ps-rot'); root.style.setProperty('--appH',(rot?innerWidth:innerHeight)+'px'); root.style.setProperty('--appW',(rot?innerHeight:innerWidth)+'px'); }
 setInterval(appH,600); addEventListener('resize',appH); appH();

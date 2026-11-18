@@ -5,7 +5,7 @@
 const mq=matchMedia('(max-width:700px) and (orientation:portrait) and (pointer:coarse)');
 const IDS=['earKb','prKb','stageKbd','clKbdWrap','gkb','scKeys'];
 const root=document.documentElement;
-function vis(el){ if(!el) return false; if(el.closest('[hidden]')) return false; return el.offsetWidth>40&&el.offsetHeight>10&&getComputedStyle(el).visibility!=='hidden'; }
+function vis(el){ if(!el) return false; if(el.closest('[hidden]')) return false; return el.offsetWidth>40&&getComputedStyle(el).visibility!=='hidden'; }   /* width only: a keyboard squeezed short on an upright screen still counts */
 function which(){
   const d=document.body.dataset.dest; if(d==='challenge'||d==='account') return null;
   for(const id of IDS){ if(id==='stageKbd'&&d!=='studio') continue; const el=document.getElementById(id); if(vis(el)) return id; }
