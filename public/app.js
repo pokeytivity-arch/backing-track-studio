@@ -51,8 +51,11 @@ let pop=null;
 function closePop(){ if(pop){ pop.remove(); pop=null; document.removeEventListener('pointerdown',popOut,true); } }
 function popOut(e){ if(pop&&!pop.contains(e.target)&&!e.target.closest('.dbar-pop-btn')) closePop(); }
 function openPop(btn,build){ if(pop){ const same=pop.__b===btn; closePop(); if(same) return; } pop=el('div','dbar-pop'); pop.__b=btn; build(pop);
-  (btn.closest('#prRoom,#earRoom')||document.body).appendChild(pop); const r=btn.getBoundingClientRect(), host=pop.offsetParent||document.body, hr=host.getBoundingClientRect(), z=hr.width/(host.offsetWidth||hr.width)||1;
-  let x=(r.left-hr.left)/z+(host.scrollLeft||0), y=(r.bottom-hr.top)/z+(host.scrollTop||0)+6; const W=host.clientWidth||innerWidth; if(x+pop.offsetWidth>W-8) x=Math.max(8,W-8-pop.offsetWidth);
+  const host=btn.closest('#prRoom,#earRoom')||document.body; host.appendChild(pop);
+  /* placed from the layout's own offsets, so it lands under its button even while rotate.js has the page turned sideways */
+  let x=0,y=0,e=btn; while(e&&e!==host&&e!==document.body){ x+=e.offsetLeft; y+=e.offsetTop; e=e.offsetParent; }
+  if(host===document.body&&e!==document.body){ x=btn.getBoundingClientRect().left; y=btn.getBoundingClientRect().top; }
+  y+=btn.offsetHeight+6; const W=host.clientWidth||innerWidth; if(x+pop.offsetWidth>W-8) x=Math.max(8,W-8-pop.offsetWidth);
   pop.style.left=x+'px'; pop.style.top=y+'px'; setTimeout(()=>document.addEventListener('pointerdown',popOut,true),0); }
 const pr=()=>$('prRoom');
 function prQ(s){ const r=pr(); return r&&r.querySelector(s); }

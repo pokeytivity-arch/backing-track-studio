@@ -14,8 +14,11 @@ function open(btn){ if(menu){ const was=menu.__btn===btn; closeMenu(); if(was) r
   const h=document.createElement('div'); h.className='trs-h'; h.textContent='Transpose by'; menu.appendChild(h);
   OPTS.forEach(([n,l,s])=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','menuitemradio'); b.setAttribute('aria-checked',String(get()===n)); b.className='trs-o'+(get()===n?' on':'');
     b.innerHTML='<i></i><span></span><em></em>'; b.children[1].textContent=l; b.children[2].textContent=s; b.onclick=()=>{ set(n); closeMenu(); }; menu.appendChild(b); });
-  document.body.appendChild(menu); const r=btn.getBoundingClientRect(), mw=menu.offsetWidth, mh=menu.offsetHeight;
-  let x=r.left, y=r.bottom+6; if(x+mw>innerWidth-8) x=innerWidth-8-mw; if(y+mh>innerHeight-8) y=r.top-6-mh; menu.style.left=Math.max(8,x)+'px'; menu.style.top=Math.max(8,y)+'px';
+  document.body.appendChild(menu); const mw=menu.offsetWidth, mh=menu.offsetHeight, rot=document.documentElement.classList.contains('ps-rot');
+  /* when the page is turned sideways (rotate.js) the body is turned too: place the menu in the body's own coordinates */
+  let r=btn.getBoundingClientRect(), W=innerWidth, H=innerHeight;
+  if(rot){ let x=0,y=0,e=btn; const sc=[]; while(e&&e!==document.body){ x+=e.offsetLeft; y+=e.offsetTop; e=e.offsetParent; } let p=btn.parentElement; while(p&&p!==document.body){ x-=p.scrollLeft||0; y-=p.scrollTop||0; p=p.parentElement; } r={left:x,top:y,bottom:y+btn.offsetHeight}; W=document.body.clientWidth; H=document.body.clientHeight; }
+  let x=r.left, y=r.bottom+6; if(x+mw>W-8) x=W-8-mw; if(y+mh>H-8) y=r.top-6-mh; menu.style.left=Math.max(8,x)+'px'; menu.style.top=Math.max(8,y)+'px';
   setTimeout(()=>document.addEventListener('pointerdown',outside,true),0); }
 function gear(onChange){ const b=document.createElement('button'); b.type='button'; b.className='trs-gear'; b.innerHTML='⚙';
   const sync=()=>{ b.title='Transpose by: '+name()+' (click to change)'; b.setAttribute('aria-label',b.title); }; sync();
