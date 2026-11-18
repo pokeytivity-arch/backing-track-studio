@@ -991,8 +991,9 @@ function handFit(s){ if(!s) return s; const fit=(a,up)=>{ if(!a||a.length<2) ret
   const wr=/^\[/.test(s.src||''), rh=wr?s.rh:fit(s.rh,true), lh=wr?s.lh:fit(s.lh,false), o=Object.assign({},s,{rh,lh});   /* written voicings stay exactly as written */
   /* four notes: whichever of 1 2 3 5 / 1 2 4 5 / 1 3 4 5 fits the gaps (G B D E -> 1 2 4 5, C E G B -> 1 2 3 5); five notes: 1 2 3 4 5 */
   if(!o.rfm&&rh&&(rh.length===4||rh.length===5)){ let F=[1,2,3,4,5];
-    /* each pair of fingers has a comfortable span (thumb to 2 reaches a fourth); the fingering that keeps every gap inside its span wins, 1 2 3 5 first (F# B C E -> 1 2 3 5) */
-    if(rh.length===4){ const rg={'1,2':[1,5],'1,3':[3,7],'2,3':[1,3],'2,4':[3,5],'3,4':[1,2],'3,5':[3,5],'4,5':[1,3]}, g=[rh[1]-rh[0],rh[2]-rh[1],rh[3]-rh[2]]; let bc=1e9;
+    /* each pair of fingers has a comfortable span: the thumb to 2 stretches up to an augmented fourth (C-F#), 2-3, 3-4 and 4-5 up to a major third;
+       the fingering that keeps every gap inside its span wins, 1 2 3 5 first (F# B C E -> 1 2 3 5) */
+    if(rh.length===4){ const rg={'1,2':[1,6],'1,3':[3,7],'2,3':[1,4],'2,4':[3,5],'3,4':[1,4],'3,5':[3,5],'4,5':[1,4]}, g=[rh[1]-rh[0],rh[2]-rh[1],rh[3]-rh[2]]; let bc=1e9;
       [[1,2,3,5],[1,2,4,5],[1,3,4,5]].forEach(f=>{ let c=0; for(let k=0;k<3;k++){ const r=rg[f[k]+','+f[k+1]]; c+=g[k]<r[0]?r[0]-g[k]:g[k]>r[1]?g[k]-r[1]:0; } if(c<bc){ bc=c; F=f; } }); }
     o.rfm={}; rh.forEach((m,i)=>o.rfm[m]=F[i]); o.nofing=false; }
   /* left hand: two notes 5 1, three notes 5 3 1 (or 5 2 1 when the top two are close) */

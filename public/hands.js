@@ -43,10 +43,10 @@ function pose3c(h){
   const cf=[1,2,3,4].filter(i=>own.includes(i+1)&&pos[i+1]!=null), cd=cf.map(i=>dep(i+1,pos[i+1])), avg=cd.length?cd.reduce((a,b)=>a+b,0)/cd.length:kbH*.8;
   /* across the keys: from the chord fingers' keys (the thumb, if it is in the chord, pulls the hand towards it) */
   let ax; if(cf.length){ ax=0; cf.forEach(i=>{ ax+=h.fx[i]-KN[i]*dir*kw; }); ax/=cf.length; } else { ax=0; for(let i=1;i<5;i++) ax+=h.fx[i]-KN[i]*dir*kw; ax/=4; }
-  /* the thumb spreads away from the fingers by up to a fourth (C to F) from the next chord finger: within that the hand stays over the fingers
+  /* the thumb spreads away from the fingers by up to an augmented fourth (C to F#, F# to C) from the next chord finger: within that the hand stays over the fingers
      and the thumb reaches; past it the hand is drawn towards the thumb */
   if(own.includes(1)&&pos[1]!=null){ const tx=h.fx[0]+2.2*dir*kw; const nf=[2,3,4,5].find(f=>own.includes(f)&&pos[f]!=null), gap=nf?Math.abs(pos[nf]-pos[1]):99;
-    if(!cf.length) ax=tx; else if(gap>5&&(ax-tx)*dir>0) ax=tb?ax*.3+tx*.7:ax*.55+tx*.45; }
+    if(!cf.length) ax=tx; else if(gap>6&&(ax-tx)*dir>0) ax=tb?ax*.3+tx*.7:ax*.55+tx*.45; }
   /* how far back the knuckles sit: every chord finger keeps room to curve down onto its key; the thumb draws the hand in only as far as that allows */
   const mx=cd.length?Math.max(...cd):avg, mn=cd.length?Math.min(...cd):avg, lo=mx+(tb?.026:.032)*s;
   let az=Math.max(lo,Math.min(mx+.046*s,mn+.066*s)); if(own.includes(1)&&pos[1]!=null) az=Math.max(lo,Math.min(az,dep(1,pos[1])+.036*s));
