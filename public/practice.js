@@ -1605,7 +1605,7 @@ function bandBar(t,d,BB,bi,bpb,spb){ const C=CLASS.clock; if(st.bOn===false) ret
 function bandKb(vi,hit){ const kb=document.querySelector('#prBandP .pb-kb'); if(!kb||typeof keyboardSVG!=='function') return; const N=sdCNotes(sdCur(),vi||0), sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); });
   kb.textContent=''; kb.appendChild(keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:true,spell:sp})); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
 function sdChordStrips(){ const L=sdCList();
-  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); save(); const was=playing; render(); if(was) playAll(); },{two:L.length>4,off:()=>!chordBar(),offWhy:'Opens with Chord of the bar (Left hand)'})]; }
+  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{two:L.length>4,off:()=>!chordBar(),offWhy:'Opens with Chord of the bar (Left hand)'})]; }
 /* the second keyboard (61 keys) plays the chord of the bar in the background: layered voices, each with a fader and a meter, and a power button */
 function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=v; strip.dataset.ch=v; strip.tabIndex=0; strip.setAttribute('role','slider'); strip.setAttribute('aria-label',BVOX.find(x=>x[0]===v)[1]+' volume');
   const fz=el('div','p-fz'); fz.style.height=(H+18)+'px'; fz.appendChild(el('div','p-tr')); [0,.25,.5,.75,1].forEach(f=>fz.appendChild(Object.assign(el('i','p-tick'),{style:'top:'+(9+(1-f)*H)+'px'})));
@@ -1619,22 +1619,36 @@ function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=
   fz.addEventListener('dblclick',()=>set(.7)); strip.addEventListener('keydown',e=>{ const d={ArrowUp:.05,ArrowRight:.05,ArrowDown:-.05,ArrowLeft:-.05}[e.key]; if(d){ e.preventDefault(); e.stopPropagation(); set(bVol(v)+d); } });
   return strip; }
 /* it sits in the Display, in place of the description lines */
-function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAct(), dp=document.getElementById('prDisp');
-  if(dp) dp.classList.toggle('has-band',show);
-  if(!show){ if(p) p.hidden=true; bandApply(); return; }
-  if(!p){ p=el('div','pb-wrap'); p.id='prBandP'; p.innerHTML='<div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div></div><div class="pb-kb"></div><div class="pb-rack"></div></div>'; }
-  { const scr=dp&&dp.querySelector('.pd-screen'), msg=document.getElementById('prMsg'); if(msg&&msg.parentNode&&p.previousSibling!==msg) msg.after(p); else if(!p.parentNode) (scr||ov).appendChild(p); }
-  p.hidden=false; const on=st.bOn!==false, c=sdCur(), N=sdCNotes(c);
+/* it pops out over the Display's description lines; it closes with its × or when anything else is clicked, and the Chord of the bar button
+   (or choosing a chord) brings it back. The chord keeps playing while it's closed. */
+let bandOpen=true;
+function bandPlace(){ const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
+  const a=scr.getBoundingClientRect(), b=sub.getBoundingClientRect(), z=a.width/(scr.offsetWidth||a.width)||1; p.style.left=Math.max(0,(b.left-a.left)/z)+'px'; p.style.top=((b.top-a.top)/z+scr.scrollTop)+'px'; }
+function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAct(), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen');
+  let ob=document.getElementById('prBandO'); if(!ob&&scr){ ob=el('button','pb-open'); ob.id='prBandO'; ob.type='button'; ob.innerHTML='<span>🎹</span> Chord of the bar'; ob.onclick=()=>{ bandOpen=true; bandSync(); }; const msg=document.getElementById('prMsg'); if(msg) msg.after(ob); else scr.appendChild(ob); }
+  if(ob) ob.hidden=!(show&&!bandOpen);
+  if(dp) dp.classList.toggle('has-band',show&&bandOpen);
+  if(!show||!bandOpen){ if(p) p.hidden=true; bandApply(); return; }
+  if(!p){ p=el('div','pb-wrap pb-pop'); p.id='prBandP'; p.innerHTML='<div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div><button type="button" class="pb-x" title="Close" aria-label="Close">×</button></div><div class="pb-kb"></div><div class="pb-rack"></div></div>';
+    p.querySelector('.pb-x').onclick=()=>{ bandOpen=false; bandSync(); };
+    document.addEventListener('pointerdown',e=>{ const q=document.getElementById('prBandP'); if(!bandOpen||!q||q.hidden||q.contains(e.target)||e.target.closest('#prBandO')) return; bandOpen=false; bandSync(); },true);
+    window.addEventListener('resize',()=>bandPlace()); }
+  if(scr&&p.parentNode!==scr) scr.appendChild(p);
+  p.hidden=false; requestAnimationFrame(bandPlace); const on=st.bOn!==false, c=sdCur(), N=sdCNotes(c);
   p.classList.toggle('pb-off',!on); const pw=p.querySelector('.pb-pow'); pw.classList.toggle('on',on); pw.setAttribute('aria-pressed',String(on)); pw.onclick=()=>{ st.bOn=!on; save(); bandSync(); };
   p.querySelector('.pb-nm').innerHTML='<span class="pb-t">Chord of the bar</span><b></b>'; p.querySelector('.pb-nm b').textContent=sdCName(c);
   bandKb(0);
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
     k.onclick=()=>{ const cur=bVoices().slice(), i=cur.indexOf(v); if(i>=0) cur.splice(i,1); else cur.push(v); st.bV=cur; save(); bandSync(); };
-    col.append(k,bandFader(v,MQM.matches?50:64)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
+    col.append(k,bandFader(v,MQM.matches?34:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
   bandApply(); }
-{ const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{display:none!important} #prDisp.has-band .ep-body,#prDisp.has-band .pd-screen{height:auto!important;overflow:visible}
-#prBandP{margin-top:8px} #prBandP .ep-body{display:flex;flex-direction:column;gap:10px;padding:0}
+{ const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{visibility:hidden} #prDisp.has-band .ep-body,#prDisp.has-band .pd-main,#prDisp.has-band .pd-screen{overflow:visible!important}
+#prBandP.pb-pop{position:absolute;z-index:60;width:57%;min-width:330px;max-width:calc(100% - 8px);box-sizing:border-box;background:#06080d;border:1px solid #2b3347;border-radius:12px;padding:8px 10px 10px;box-shadow:0 18px 44px rgba(0,0,0,.65)}
+#prBandP .ep-body{display:flex;flex-direction:column;gap:7px;padding:0} #prBandP .pb-top{gap:9px} #prBandP .pb-pow{width:28px;height:28px;font-size:14px} #prBandP .pb-nm{font-size:13px;flex:1}
+#prBandP .pb-x{width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:#141925;color:#c9cfdc;font:700 16px/1 var(--body);cursor:pointer} #prBandP .pb-x:hover{background:#222a3a;color:#fff}
+#prBandP .pb-rack{gap:8px} #prBandP .pb-v{min-width:64px;gap:4px} #prBandP .pb-v .p-key{min-height:22px!important;padding:1px 8px 1px 6px!important;font-size:11px!important} #prBandP .p-lvn{font-size:10px}
+#prDisp .pb-open{margin-top:8px;display:inline-flex;align-items:center;gap:7px;font:800 12px var(--body);letter-spacing:.06em;color:#e6e9f2;background:#161c29;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 14px;cursor:pointer} #prDisp .pb-open:hover{background:#1f2738} #prDisp .pb-open[hidden]{display:none}
 #prBandP .pb-t{font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8b93a7;margin-right:12px}
 #prBandP .pb-top{display:flex;align-items:center;gap:12px} #prBandP .pb-nm{font:800 15px var(--body);color:#e6e9f2;letter-spacing:.02em}
 #prBandP .pb-pow{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:#1a1f2b;color:#6b7280;font-size:18px;cursor:pointer;display:grid;place-items:center}
@@ -1660,7 +1674,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
       /* the Over chord is a left-hand chord under the Over varieties: picking one turns the left hand chord on */
       if(st.slh===false||st.slh==='drop2') st.slh='chord';
       save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'Opens with the Chord Couples varieties marked Over'});
-  const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
+  const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; if(st.slh==='chord') bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
   strips.append(
     cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true,rows:3}),
     overStrip, lhStrip, ...(sd?sdChordStrips():[]),

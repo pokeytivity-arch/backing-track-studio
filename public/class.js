@@ -677,13 +677,13 @@ window.CLASS={
     bus(){ if(!E||!E.ch||!E.ch.keys) return null; const id='pr'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(E.ch.keys.g); c.connect(E.ch.click.g); E.ch[id]={g:k}; E.ch[id+'c']={g:c}; return {id,k,c}; },
     /* the Chord of the bar keyboard: a channel per voice (piano, e-piano, organ, pad, strings), each with its own volume and meter, played under the exercise */
     band(v){ if(!E||!ctx) return null; const id='band_'+v; if(!E.ch[id]){ const g=ctx.createGain(); g.gain.value=0; g.connect(E.master); if(E.rev&&(v==='pad'||v==='strings'||v==='organ')){ const s=ctx.createGain(); s.gain.value=.18; g.connect(s); s.connect(E.rev); } E.ch[id]={g}; } return E.ch[id].g; },
-    bandVol(v,x){ const g=this.band(v); if(g) g.gain.setTargetAtTime(Math.max(0,x),ctx.currentTime,.03); },
+    bandVol(v,x){ const g=this.band(v); if(g) g.gain.setTargetAtTime(Math.max(0,x)*2.6,ctx.currentTime,.03); },
     bandBus(v){ const g=this.band(v); if(!g) return null; const id='pb'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(g); E.ch[id]={g:k}; return {id,k,c}; },
     bandNote(v,m,t,d,vel,b){ const ch=b?b.id:'band_'+v; if(!b) this.band(v);
       if(v==='strings'){ const f=440*Math.pow(2,(m-69)/12), out=E.out(ch), end=t+Math.max(d,.1), g=E.gain(0.0001), lp=E.filt('lowpass',Math.min(6000,f*7),0.6), lfo=E.osc('sine',5.3), lg=E.gain(7);
         lfo.connect(lg); [-8,0,8].forEach((dt,i)=>{ const o=E.osc('sawtooth',f*(i===1?1:1)); o.detune.value=dt; lg.connect(o.detune); o.connect(lp); o.start(t); o.stop(end+1); }); lfo.start(t); lfo.stop(end+1);
         const pk=vel*.32; g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(pk,t+.32); g.gain.setValueAtTime(pk,end); g.gain.setTargetAtTime(0.0001,end,.2); lp.connect(g).connect(out); return; }
-      E.note(t,m,d,v==='pad'?vel*.55:v==='organ'?vel*.5:vel,{piano:'piano',ep:'ep',organ:'organ',pad:'pad'}[v]||'piano',ch); },
+      E.note(t,m,d,v==='pad'?vel*.8:v==='organ'?vel*.7:vel,{piano:'piano',ep:'ep',organ:'organ',pad:'pad'}[v]||'piano',ch); },
     kill(b){ if(!b) return; try{ b.k.disconnect(); b.c.disconnect(); }catch(_){} delete E.ch[b.id]; delete E.ch[b.id+'c']; },
     note(m,t,d,v,b){ E.note(t,m,d,v||0.72,'piano',b?b.id:'keys'); },
     step(s,t,d,b){ const ch=b?b.id:'keys'; s.lh.forEach(m=>E.note(t,m,d,0.75,'piano',ch)); s.rh.forEach(m=>E.note(t,m,d,0.72,'piano',ch)); },
