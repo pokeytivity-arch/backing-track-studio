@@ -142,7 +142,7 @@ function drawKeys(){
   let fm=null; if(K.mode==='melodic'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
   const svg=keyboardSVG(s?s.lh:[],s?s.rh:[],{lo,hi,height:K.size===88?58:64,fingers:K.mode!=='melodic',fmap:fm});
   svg.querySelectorAll('rect').forEach((r,idx)=>{ r.style.cursor='pointer'; });
-  svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','var(--ke8c25a,#ffd43b)'); sound(m,1.4,0.85); setTimeout(()=>r.setAttribute('fill',old),260); });
+  svg.addEventListener('pointerdown',e=>{ if(e.pointerType==='touch'||e.pointerType==='pen') return; const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m; if(r.dataset.f0==null) r.dataset.f0=r.getAttribute('fill')||''; r.setAttribute('fill','var(--ke8c25a,#ffd43b)'); sound(m,1.4,0.85); clearTimeout(r.__t); r.__t=setTimeout(()=>{ r.setAttribute('fill',r.dataset.f0); delete r.dataset.f0; },260); });
   wrap.replaceChildren(svg);
   document.querySelectorAll('#clKbdSize button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.k===K.size)));
   const nm=$('clStepName'); if(nm) nm.textContent=s?s.name:'';
