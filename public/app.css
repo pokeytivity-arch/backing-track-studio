@@ -246,3 +246,19 @@ html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP #earOpts .e-opt{min-height:28px!i
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP:has(#earKb[hidden]) #earOpts{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP:has(#earKb[hidden]) #earOpts .e-opt{min-height:36px!important;height:36px;font-size:13px!important}
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP:has(#earKb:not([hidden])) #earOpts{grid-template-columns:repeat(12,minmax(0,1fr))}
+/* Ear training Display on a phone: everything it shows fits its band: a smaller title, a one-line result, small buttons beside it */
+html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top{height:28px;min-height:0!important;margin:0!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top h1{font-size:14px!important} html.m-ph:is(.ps-rot,.m-land) #earRoom>.e-top button{min-height:24px!important;height:24px;padding:0 12px!important;font-size:12px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp{height:122px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp>.ep-body{padding:5px 10px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-auto-rows:min-content;column-gap:10px;row-gap:2px;align-content:start}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-now{display:contents!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-now>div:first-child{grid-column:1;min-width:0}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-now>div:last-child{grid-column:2;grid-row:1/span 2;align-self:start}
+html.m-ph:is(.ps-rot,.m-land) body:not(.x) #earRoom #earDisp .e-big{font-size:22px!important;line-height:1.1!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-lbl{font-size:9.5px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-sub{font-size:12px!important;line-height:1.3}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earMsg{grid-column:1/-1;margin:2px 0 0!important;font-size:12.5px!important;line-height:1.3;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-btn,html.m-ph:is(.ps-rot,.m-land) #earRoom #earMsg button{min-height:28px!important;height:28px;padding:0 12px!important;font-size:12.5px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earCtl{justify-content:flex-end;max-width:52vh}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp select{min-height:28px!important;height:28px;font-size:13px!important;padding:0 26px 0 8px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP{height:96px!important}
