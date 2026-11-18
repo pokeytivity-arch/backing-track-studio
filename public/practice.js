@@ -148,7 +148,9 @@ function watchSync(){ if(!ov) return; const sc=kind==='scales';
   const run=!paused, was=!!SES.t0; if(run&&!SES.t0) SES.t0=Date.now(); if(!run&&SES.t0){ SES.ms+=Date.now()-SES.t0; SES.t0=0; } if(run!==was){ if(run){ feedRun(true); pmClear(); } else { feedRun(false); if(FD.on) feedBeat(true); pmIdle(); } }
   if(SWITCHING) return; const show=run||['prompt','count','break','recover'].includes(PM.mode); const w=watchEl(); if(w){ w.hidden=!show; watchPlace(w); } ov.classList.toggle('p-locked',show); { const bk=$('#prBreak'); if(bk) bk.hidden=run||PM.mode==='break'||PM.mode==='count'||PM.mode==='recover'; } watchDraw(); if(run) meterGo(); }
 /* a thumbs up from the hands when a practice is finished (it played to the end, or was stopped after at least one full time through) */
-let doneOnce=false; const cheer=()=>{ doneOnce=false; try{ if(window.PSHANDS&&PSHANDS.thumbsUp) setTimeout(()=>PSHANDS.thumbsUp(2600),250); }catch(_){} };
+/* Play cuts short a thumbs up or a knuckle crack (and one about to start): the hands go straight back to work */
+let hCelebT=0; const hAbort=()=>{ clearTimeout(hCelebT); try{ if(window.PSHANDS&&PSHANDS.abort) PSHANDS.abort(); }catch(_){} };
+let doneOnce=false; const cheer=()=>{ doneOnce=false; try{ if(window.PSHANDS&&PSHANDS.thumbsUp) hCelebT=setTimeout(()=>PSHANDS.thumbsUp(2600),250); }catch(_){} };
 const playPause=()=>{ if(!playing){ playAll(); updPause(); return; } if(waitL) return; if(pauseFn) pauseFn(); };
 const killCh=()=>{ try{ chBus.forEach(b=>CLASS.clock.kill(b)); }catch(_){} chBus=[]; bassFO=null; chBeat=0; planNext=null; BPEND={}; lastEv=null; };
 const clr=()=>{ curDesc=false; killCh(); timers.forEach(x=>{ if(x&&x.clear) x.clear(); else clearTimeout(x); }); timers=[]; playing=false; paused=false; waitL=false; pauseFn=null; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} updPause(); const lp=document.getElementById('prLearn'); if(lp) lp.hidden=true; const b=$('#prPlay'); if(b) b.textContent='▶ Play'; };
@@ -558,7 +560,7 @@ function rhyPlan(){ const n=rhyN(), L=steps.length, top=L-1, ev=[]; let b=0;
   ev.forEach(e=>{ e.b=Math.round(e.b*1000)/1000; }); return {ev,beats:Math.round(b)}; }
 let rbus=null; const rkill=()=>{ try{ if(rbus&&window.CLASS&&CLASS.clock.kill) CLASS.clock.kill(rbus); }catch(_){} rbus=null; };
 function playRhythm(){
-  const C=window.CLASS&&CLASS.clock; if(!C){ return; } const {ev,beats}=rhyPlan(); playing=true; paused=false; waitL=false; updPause();
+  const C=window.CLASS&&CLASS.clock; if(!C){ return; } const {ev,beats}=rhyPlan(); hAbort(); playing=true; paused=false; waitL=false; updPause();
   C.ready().then(()=>{ if(!playing) return;
     const spb=60/st.bpm, AHEAD=0.6; rkill(); rbus=C.bus&&C.bus(); const myBus=()=>rbus;
     let base=C.now()+0.15+4*spb, k=0, cyc=0, beatK=-4, pausedAt=0, loop=null;   /* one bar of count-in */
@@ -572,12 +574,12 @@ function playRhythm(){
       if(k>=ev.length&&beatK>=beats){ const due=st.kc&&KC.rep+1>=(st.reps||1)&&kcNextKey(true); if(due){ if(C.now()>at(beats,cyc)-0.02){ rkill(); repDone(); } return; } if(st.loop||st.kc){ doneOnce=true; KC.rep++; cyc++; k=0; beatK=0; } else if(C.now()>at(beats,cyc)-0.02){ rkill(); clr(); show(); cheer(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} return; } } };
     loop=setInterval(pump,40); timers.push(loop); timers.push({clear:()=>{ live.forEach(clearTimeout); live.clear(); rkill(); }}); pump();
     pauseFn=()=>{ if(!playing) return;
-      if(!paused){ paused=true; pausedAt=C.now(); live.forEach(clearTimeout); live.clear(); rkill(); try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){}   /* silence what was already scheduled; the hands crack their knuckles */
+      if(!paused){ paused=true; pausedAt=C.now(); live.forEach(clearTimeout); live.clear(); rkill(); try{ if(window.PSHANDS&&PSHANDS.crack) hCelebT=setTimeout(()=>PSHANDS.crack(),120); }catch(_){}   /* silence what was already scheduled; the hands crack their knuckles */
         /* rewind to the first note and click that had not sounded yet */
         if(k===0&&beatK===0&&cyc>0&&at(beats-1,cyc-1)+spb>pausedAt){ cyc--; k=ev.length; beatK=beats; }
         while(k>0&&at(ev[k-1].b,cyc)>=pausedAt) k--; while(beatK>-4&&at(beatK-1,cyc)>=pausedAt) beatK--;
         try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); }catch(_){} }
-      else { paused=false; C.ready().then(()=>{ if(!playing||paused) return; base+=C.now()-pausedAt+0.05; rbus=C.bus&&C.bus(); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} pump(); }); }
+      else { paused=false; hAbort(); C.ready().then(()=>{ if(!playing||paused) return; base+=C.now()-pausedAt+0.05; rbus=C.bus&&C.bus(); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} pump(); }); }
       updPause(); }; });
   pauseFn=()=>{};
 }
@@ -602,7 +604,7 @@ function playAll(){
   if(rhyN()){ playRhythm(); return; }
   const order=kind==='scales'?seq():(kind==='chords'&&st.cmode==='voice'&&!st.loop)?[cur>=0?cur:0]:[...Array(steps.length).keys()], gap0=(60/st.bpm)*(kind==='scales'?1:(steps.length>1?2:4))*1000;
   /* chords: each one lasts as many beats as the chord canvas gives it */ const gapOf=i=>kind==='chords'&&steps[i]&&steps[i].beats?steps[i].beats*60000/st.bpm:gap0;
-  playing=true; doneOnce=false; let p=0, t0=0, rem=0; paused=false; waitL=false;
+  hAbort(); playing=true; doneOnce=false; let p=0, t0=0, rem=0; paused=false; waitL=false;
   const adv=()=>{ if(!playing||paused) return; p++; if(p>=order.length){ doneOnce=true; if(kind==='scales'&&repDone()) return; if(st.loop||(kind==='scales'&&st.kc)){ p=0; if(kind==='chords'&&steps.arp&&order.length>1){ const a=steps[order[0]], z=steps[order[order.length-1]]; if(a&&z&&String(a.rh)===String(z.rh)) p=1; } } else { clr(); try{ if(window.PSPROG) PSPROG.mark(); }catch(_){} cheer(); return; } } tick(); };
   const sched=ms=>{ rem=ms; t0=Date.now(); timers.push(setTimeout(adv,ms)); };
   const go=()=>{ if(!playing) return; cur=order[p]; curDesc=kind==='scales'&&p>0&&order[p]<order[p-1]; show(); tally(curS()); const gap=gapOf(order[p]); const nxi=order[p+1]!=null?order[p+1]:(st.loop?order[0]:null);
@@ -615,8 +617,8 @@ function playAll(){
     go(); };
   /* Pause keeps the place in the scale and freezes the hands; Resume carries on with the time that was left on the current note */
   pauseFn=()=>{ if(!playing||waitL) return;
-    if(!paused){ paused=true; if(kind==='chords') killCh(); timers.forEach(clearTimeout); timers=[]; rem=Math.max(0,rem-(Date.now()-t0)); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} }
-    else { paused=false; try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} sched(rem); }
+    if(!paused){ paused=true; if(kind==='chords') killCh(); timers.forEach(clearTimeout); timers=[]; rem=Math.max(0,rem-(Date.now()-t0)); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(true); if(window.PSHANDS&&PSHANDS.crack) hCelebT=setTimeout(()=>PSHANDS.crack(),120); }catch(_){} }
+    else { paused=false; hAbort(); try{ if(window.PSHANDS&&PSHANDS.pause) PSHANDS.pause(false); }catch(_){} sched(rem); }
     updPause(); };
   updPause();
   tick();
@@ -1524,7 +1526,7 @@ function syChips(){ const box=$('#prChips'); box.textContent=''; const T=syT(); 
   T.vars.forEach((v,i)=>mk(syChip(T,v),st.svar!=='all'&&+st.svar===i,()=>{ st.svar=i; save(); const was=playing; render(); if(was) playAll(); }));
   mk('All variations',st.svar==='all',()=>{ st.svar='all'; save(); const was=playing; render(); if(was) playAll(); }); }
 function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; return; }
-  const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,syV(T,list[0])); drawKb(); if(c) cheer(); else { try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} } }; updPause();
+  const C=window.CLASS&&CLASS.clock; if(!C) return; hAbort(); playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,syV(T,list[0])); drawKb(); if(c) cheer(); else { try{ if(window.PSHANDS&&PSHANDS.crack) hCelebT=setTimeout(()=>PSHANDS.crack(),120); }catch(_){} } }; updPause();
   let qi=0; const run=t0=>{ if(!playing) return; const v=syV(T,list[qi]), P=syPhrase(T,v), spb=60/st.bpm, bus=C.bus(); if(bus) chBus.push(bus); meterGo();
     P.ev.forEach(e=>e.n.forEach(m=>C.note(m,t0+e.t*spb,Math.max(.08,e.d*spb*(e.d<.2?1.15:1)),e.v,bus)));
     if(bandAct()){ bandApply(); const BB={}; for(let b=0;b<P.total;b+=P.bpb){ const tt=t0+b*spb, dd=Math.min(P.bpb,P.total-b)*spb-.04; timers.push(setTimeout(()=>{ if(!playing||!bandAct()) return; bandBar(tt,dd,BB,b/P.bpb,P.bpb,spb); },Math.max(0,(tt-C.now()-.4)*1000))); } }

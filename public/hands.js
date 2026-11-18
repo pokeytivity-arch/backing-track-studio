@@ -339,5 +339,7 @@ function nail(n,tx,ty,kw,num,act,T,ux,uy,wt){
 function thumbsUp(ms){ if(mode!=='3d'||!P3) return; const end=performance.now()+(ms||2400); window.__thumbsUp=end; const loop=()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); if(performance.now()<end+150) setTimeout(loop,90); }; loop(); }
 /* on Pause: both hands lace their fingers and crack their knuckles */
 function crack(){ if(mode!=='3d'||!P3) return; const t0=performance.now(); window.__crack=t0; const loop=()=>{ last=0; if(!raf) raf=requestAnimationFrame(tick); if(performance.now()<t0+2550) setTimeout(loop,30); }; loop(); }
-window.PSHANDS={lead,pause,sync,thumbsUp,crack,tones:TONES,isOn:()=>on,dbg:()=>P3&&P3.dbg&&P3.dbg()};
+/* Play: stop any thumbs up or knuckle crack at once and go back to the keys */
+function abort(){ window.__thumbsUp=0; window.__crack=0; last=0; if(mode==='3d'&&P3&&!raf) raf=requestAnimationFrame(tick); }
+window.PSHANDS={lead,pause,sync,thumbsUp,crack,abort,tones:TONES,isOn:()=>on,dbg:()=>P3&&P3.dbg&&P3.dbg()};
 })();
