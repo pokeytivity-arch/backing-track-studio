@@ -491,7 +491,7 @@ function tbInit(){ const st=document.querySelector('#txCard .txstage'); if(!st||
     +'<div class="tbr"><span class="tbpill tbch" id="tbChord" title="Chord now">–</span><span class="tbpill" id="tbKey">Key: –</span><button type="button" id="tbPlay" aria-label="Play" disabled>'+ICON.play+'</button><span class="tbtime" id="tbTime">0:00 / 0:00</span><button type="button" id="tbFull" aria-label="Full screen" title="Full screen">'+ICON.full+'</button></div>'
     +'<div class="tbprog" id="tbSeek" role="slider" aria-label="Position" tabindex="0"><b id="tbProg"></b></div>';
   st.insertBefore(bar,st.firstChild);
-  $('tbMenu').onclick=()=>{ const con=$('txConP'); if(con){ if(st.classList.contains('fs')) fullView(false); setTimeout(()=>con.scrollIntoView({behavior:'smooth',block:'start'}),st.classList.contains('fs')?120:0); } else $('txMenuBtn').click(); };
+  $('tbMenu').onclick=()=>{ if(window.APPSHELL&&APPSHELL.isPhone()&&!st.classList.contains('fs')){ APPSHELL.toggleCon('txConP'); return; } const con=$('txConP'); if(con){ if(st.classList.contains('fs')) fullView(false); setTimeout(()=>con.scrollIntoView({behavior:'smooth',block:'start'}),st.classList.contains('fs')?120:0); } else $('txMenuBtn').click(); };
   $('tbPlay').onclick=()=>{ if(S.audio) S.playing?pausePlay():startPlay(); };
   $('tbSpeed').onclick=()=>{ const sp=Math.round(S.rate*100), nx=sp>75?75:sp>50?50:100; if(S.setRate) S.setRate(nx); tbUpd(cur()); };
   $('tbMix').onclick=()=>{ const m=$('txMix'); const v=+m.value, nx=v>=99?50:v>1?0:100; m.value=String(nx); m.dispatchEvent(new Event('input')); tbUpd(cur()); };

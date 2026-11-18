@@ -11,6 +11,9 @@ const coarse=matchMedia('(pointer:coarse)');
 /* device class: a phone is a touch screen whose short side is at most 500 px; a tablet is a larger touch screen */
 function devClass(){ const s=Math.min(screen.width||innerWidth,screen.height||innerHeight), touch=coarse.matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
   root.classList.toggle('m-ph',touch&&s<=500); root.classList.toggle('m-tb',touch&&s>500); root.classList.toggle('m-app',touch); }
+/* the page's own height: on a phone turned sideways by rotate.js the page is turned, so its height is the window's width */
+function appH(){ const rot=root.classList.contains('ps-rot'); root.style.setProperty('--appH',(rot?innerWidth:innerHeight)+'px'); root.style.setProperty('--appW',(rot?innerHeight:innerWidth)+'px'); }
+setInterval(appH,600); addEventListener('resize',appH); appH();
 devClass(); addEventListener('resize',devClass); addEventListener('orientationchange',()=>setTimeout(devClass,200));
 const phone=()=>root.classList.contains('m-ph'), app=()=>root.classList.contains('m-app');
 
@@ -21,7 +24,7 @@ function setMin(p,on){ p.classList.toggle('ep-min',on); const b=p.querySelector(
   const m=mins(); if(p.id){ m[p.id]=on; try{ localStorage.setItem(MK,JSON.stringify(m)); }catch(_){} } setTimeout(()=>dispatchEvent(new Event('resize')),30); }
 function addMin(p){ if(p.__mn) return; const h=p.querySelector(':scope>.ep-h'); if(!h) return; p.__mn=true;
   const b=el('button','ep-b ep-mn','–'); b.type='button'; b.title='Minimise'; b.setAttribute('aria-label','Minimise or open this panel');
-  b.onclick=e=>{ e.stopPropagation(); if(p.classList.contains('max')||p.classList.contains('float')){ const x=p.querySelector(':scope>.ep-h [data-a='+(p.classList.contains('max')?'max':'det')+']'); if(x) x.click(); } setMin(p,!p.classList.contains('ep-min')); };
+  b.onclick=e=>{ e.stopPropagation(); if(p.classList.contains('ep-sheet')){ p.classList.remove('ep-sheet'); setTimeout(syncAll,30); return; } if(p.classList.contains('max')||p.classList.contains('float')){ const x=p.querySelector(':scope>.ep-h [data-a='+(p.classList.contains('max')?'max':'det')+']'); if(x) x.click(); } setMin(p,!p.classList.contains('ep-min')); };
   h.insertBefore(b,h.querySelector('.ep-b')||null);
   /* on a touch screen the whole title bar opens a minimised panel */
   h.addEventListener('click',e=>{ if(e.target.closest('button,select,input,a,.tx3-view')) return; if(p.classList.contains('ep-min')) setMin(p,false); });
@@ -42,7 +45,7 @@ const IC={
   close:'<svg viewBox="0 0 24 24"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg>',
   fav:'<svg viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.6 10H18a2 2 0 012 2.3l-1.1 6A2 2 0 0117 20H7"/></svg>',
   metro:'<svg viewBox="0 0 24 24"><path d="M9 3h6l3.5 17h-13z"/><path d="M12 15l5-8"/></svg>',
-  count:'<svg viewBox="0 0 24 24"><text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="800" class="t">1234</text></svg>'
+  count:'<span class="dbcnt">1 2<br>3 4</span>'
 };
 let pop=null;
 function closePop(){ if(pop){ pop.remove(); pop=null; document.removeEventListener('pointerdown',popOut,true); } }
@@ -57,47 +60,73 @@ function tempoIn(){ return prQ('.p-tempo input[type=range]'); }
 function loopIn(){ const ls=[...(pr()?pr().querySelectorAll('label.p-rng'):[])].find(l=>/loop/i.test(l.textContent)&&l.querySelector('input[type=checkbox]')); return ls&&ls.querySelector('input'); }
 function handsBtn(){ const k=$('prKbP'); return k&&[...k.querySelectorAll('button')].find(b=>b.textContent.trim()==='Hands'); }
 function noteSel(){ const r=pr(); if(!r) return null; const L=[...r.querySelectorAll('#prDisp .p-sel')].find(x=>/^\s*note/i.test(x.textContent)); return L?L.querySelector('select'):null; }
-function keyText(){ const v=prQ('.p-trs .p-trv'); if(v) return v.textContent.trim(); const s=noteSel(); if(s&&s.options[s.selectedIndex]) return s.options[s.selectedIndex].textContent.trim(); return ''; }
-function setTempo(b){ const r=tempoIn(); if(!r) return; r.value=String(Math.max(+r.min||40,Math.min(+r.max||200,b))); r.dispatchEvent(new Event('input',{bubbles:true})); }
-function prBar(){ const d=$('prDisp'); if(!d) return; const body=d.querySelector(':scope>.ep-body'); if(!body) return; let bar=$('prDbar');
-  if(!bar){ bar=el('div','dbar'); bar.id='prDbar';
-    bar.innerHTML='<div class="dbl"><button type="button" data-k="con" class="dbar-pop-btn" title="Console">'+IC.con+'</button><button type="button" data-k="tempo" class="dbar-pop-btn" title="Tempo">'+IC.tempo+'<small data-v="bpm"></small></button><button type="button" data-k="loop" title="Loop">'+IC.loop+'</button><button type="button" data-k="hands" title="Hands">'+IC.hands+'</button><button type="button" data-k="fav" title="Favourite: save this exercise to a memory bank">'+IC.fav+'</button></div>'
-      +'<div class="dbm"><span class="dbt" data-v="title"></span></div>'
-      +'<div class="dbr"><button type="button" data-k="key" class="dbpill dbar-pop-btn" title="Key and transpose"><span data-v="key">Key</span></button><button type="button" data-k="play" class="dbplay" title="Play">'+IC.play+'</button><button type="button" data-k="stop" title="Stop">'+IC.stop+'</button><button type="button" data-k="full" title="Full screen">'+IC.full+'</button></div>';
-    body.insertBefore(bar,body.firstChild); pr().classList.add('app-dbar');
-    bar.addEventListener('click',e=>{ const b=e.target.closest('button[data-k]'); if(!b) return; const k=b.dataset.k;
-      if(k==='play'){ const p=$('prPlay'); if(p) p.click(); }
-      else if(k==='stop'){ const p=$('prPause'); if(p&&!p.disabled) p.click(); }
-      else if(k==='loop'){ const c=loopIn(); if(c){ c.checked=!c.checked; c.dispatchEvent(new Event('change',{bubbles:true})); } }
-      else if(k==='hands'){ const h=handsBtn(); if(h) h.click(); }
-      else if(k==='fav'){ const f=prQ('.p-fav'); if(f) f.click(); }
-      else if(k==='con'){ const c=$('prConP'); if(c){ const on=c.classList.contains('ep-min'); setMin(c,!on); if(on) setTimeout(()=>{ try{ c.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(_){} },60); } }
-      else if(k==='full') fullRoom(!document.fullscreenElement&&!root.classList.contains('app-fs'));
-      else if(k==='tempo') openPop(b,p=>{ const r=tempoIn(); const cur=()=>+(r&&r.value||80);
-        p.innerHTML='<div class="dp-h">Tempo</div><div class="dp-row"><button type="button" data-d="-10">−10</button><button type="button" data-d="-2">−</button><b class="dp-v"></b><button type="button" data-d="2">+</button><button type="button" data-d="10">+10</button></div><input type="range" class="dp-r" min="40" max="200" step="2"><div class="dp-row"><button type="button" class="dp-tap">Tap</button><span class="dp-n">BPM</span></div>';
-        const v=p.querySelector('.dp-v'), rr=p.querySelector('.dp-r'), up=()=>{ v.textContent=cur(); rr.value=cur(); sync(); }; up();
-        p.querySelectorAll('[data-d]').forEach(x=>x.onclick=()=>{ setTempo(cur()+(+x.dataset.d)); up(); }); rr.oninput=()=>{ setTempo(+rr.value); up(); };
-        p.querySelector('.dp-tap').onclick=()=>{ const t=$('prTap'); if(t) t.click(); setTimeout(up,30); }; });
-      else if(k==='key') openPop(b,p=>{ const trs=prQ('.p-trs');
-        if(trs){ p.innerHTML='<div class="dp-h">Key</div><div class="dp-row"><button type="button" data-t="-">−</button><b class="dp-v"></b><button type="button" data-t="+">+</button><span class="dp-g"></span></div><div class="dp-n dp-s"></div>';
-          const v=p.querySelector('.dp-v'), up=()=>{ v.textContent=keyText(); sync(); const g=p.querySelector('.dp-g'); if(g&&window.TRSTEP&&!g.firstChild) g.appendChild(TRSTEP.gear(()=>{ p.querySelector('.dp-s').textContent='Each press: '+TRSTEP.name().toLowerCase(); })); p.querySelector('.dp-s').textContent=window.TRSTEP?'Each press: '+TRSTEP.name().toLowerCase():''; }; up();
-          p.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>{ const bs=[...(prQ('.p-trs')||document).querySelectorAll('.p-trb')]; const t=x.dataset.t==='-'?bs[0]:bs[bs.length-1]; if(t) t.click(); setTimeout(up,40); }); }
-        else { const s=noteSel(); p.innerHTML='<div class="dp-h">Key</div><div class="dp-n">Choose the note in the Display.</div>'; if(s) setTimeout(()=>{ closePop(); s.focus(); s.click(); },10); } });
-      setTimeout(sync,60); setTimeout(sync,400); });
-  }
-  sync(); }
-function sync(){ const bar=$('prDbar'); if(!bar) return; const r=pr(); const kind=r&&r.dataset.kind, styl=r&&r.dataset.styl==='1';
-  const p=$('prPlay'), playing=p&&/Pause/.test(p.textContent), st=$('prPause');
-  const pb=bar.querySelector('[data-k=play]'); pb.innerHTML=playing?IC.pause:IC.play; pb.title=playing?'Pause':p&&/Resume/.test(p.textContent)?'Resume':'Play'; pb.classList.toggle('on',playing);
-  bar.querySelector('[data-k=stop]').disabled=!st||st.disabled;
-  const t=tempoIn(); bar.querySelector('[data-v=bpm]').textContent=t?t.value:''; bar.querySelector('[data-k=tempo]').hidden=!t;
-  const c=loopIn(); const lb=bar.querySelector('[data-k=loop]'); lb.hidden=!c; lb.setAttribute('aria-pressed',String(!!(c&&c.checked))); lb.title=c&&c.checked?'Loop is on':'Loop is off';
-  const h=handsBtn(); const hb=bar.querySelector('[data-k=hands]'); hb.hidden=!h; hb.setAttribute('aria-pressed',String(!!(h&&h.getAttribute('aria-pressed')==='true')));
-  const f=prQ('.p-fav'); const fb=bar.querySelector('[data-k=fav]'); fb.hidden=!f; fb.setAttribute('aria-pressed',String(!!(f&&f.classList.contains('on'))));
-  const kt=keyText(); bar.querySelector('[data-v=key]').textContent=kt?'Key: '+kt:'Key'; bar.querySelector('[data-k=key]').hidden=!kt;
-  const big=$('prBig'); bar.querySelector('[data-v=title]').textContent=big?big.textContent:'';
-  const cp=$('prConP'); bar.querySelector('[data-k=con]').setAttribute('aria-pressed',String(!!(cp&&!cp.classList.contains('ep-min'))));
-  const fs=!!document.fullscreenElement||root.classList.contains('app-fs'); const fu=bar.querySelector('[data-k=full]'); fu.innerHTML=fs?IC.close:IC.full; fu.title=fs?'Close full screen':'Full screen'; }
+function keyText(){ const v=prQ('.p-trs .p-trr .p-trv'); if(v) return v.textContent.trim(); const s=noteSel(); if(s&&s.options[s.selectedIndex]) return s.options[s.selectedIndex].textContent.trim(); return ''; }
+const fire=(x,ev)=>x&&x.dispatchEvent(new Event(ev,{bubbles:true}));
+/* a tempo pop-up for any range input */
+function tempoPop(p,inp,tap){ const cur=()=>+(inp&&inp.value||80), set=b=>{ if(!inp) return; inp.value=String(Math.max(+inp.min||30,Math.min(+inp.max||300,b))); fire(inp,'input'); fire(inp,'change'); };
+  p.innerHTML='<div class="dp-h">Tempo</div><div class="dp-row"><button type="button" data-d="-10">−10</button><button type="button" data-d="-1">−</button><b class="dp-v"></b><button type="button" data-d="1">+</button><button type="button" data-d="10">+10</button></div><input type="range" class="dp-r"><div class="dp-row">'+(tap?'<button type="button" class="dp-tap">Tap</button>':'')+'<span class="dp-n">BPM</span></div>';
+  const v=p.querySelector('.dp-v'), rr=p.querySelector('.dp-r'); rr.min=inp.min||30; rr.max=inp.max||300; rr.step=inp.step||1; const up=()=>{ v.textContent=cur(); rr.value=cur(); syncAll(); }; up();
+  p.querySelectorAll('[data-d]').forEach(x=>x.onclick=()=>{ set(cur()+(+x.dataset.d)*(+(inp.step)||1)); up(); }); rr.oninput=()=>{ set(+rr.value); up(); };
+  const tb=p.querySelector('.dp-tap'); if(tb) tb.onclick=()=>{ if(tap) tap(); setTimeout(up,30); }; }
+/* a key pop-up: − and + (with the settings wheel for the step) */
+function keyPop(p,minus,plus,txt){ p.innerHTML='<div class="dp-h">Key</div><div class="dp-row"><button type="button" data-t="-">−</button><b class="dp-v"></b><button type="button" data-t="+">+</button><span class="dp-g"></span></div><div class="dp-n dp-s"></div>';
+  const v=p.querySelector('.dp-v'), sN=()=>{ p.querySelector('.dp-s').textContent=window.TRSTEP?'Each press: '+TRSTEP.name().toLowerCase():''; }, up=()=>{ v.textContent=txt(); sN(); syncAll(); };
+  { const g=p.querySelector('.dp-g'); if(window.TRSTEP) g.appendChild(TRSTEP.gear(sN)); } up();
+  p.querySelectorAll('[data-t]').forEach(x=>x.onclick=()=>{ const b=x.dataset.t==='-'?minus():plus(); if(b) b.click(); setTimeout(up,60); }); }
+/* the bars: each space says what its buttons do; the bar itself is the same everywhere */
+const BARS={
+  pr:{host:()=>{ const d=$('prDisp'); return d&&d.querySelector(':scope>.ep-body'); }, room:()=>pr(), cls:'app-dbar',
+    title:()=>($('prBig')||{}).textContent||'',
+    items:[
+      {k:'con',ic:'con',t:'Console',pressed:()=>conOn('prConP'),go:()=>toggleCon('prConP')},
+      {k:'tempo',ic:'tempo',t:'Tempo',hide:()=>!tempoIn(),val:()=>(tempoIn()||{}).value,pop:p=>tempoPop(p,tempoIn(),()=>{ const t=$('prTap'); if(t) t.click(); })},
+      {k:'loop',ic:'loop',t:'Loop',hide:()=>!loopIn(),pressed:()=>!!(loopIn()&&loopIn().checked),go:()=>{ const c=loopIn(); c.checked=!c.checked; fire(c,'change'); }},
+      {k:'hands',ic:'hands',t:'Hands',hide:()=>!handsBtn(),pressed:()=>{ const h=handsBtn(); return !!(h&&h.getAttribute('aria-pressed')==='true'); },go:()=>handsBtn().click()},
+      {k:'fav',ic:'fav',t:'Favourite: save this exercise to a memory bank',hide:()=>!prQ('.p-fav'),pressed:()=>{ const f=prQ('.p-fav'); return !!(f&&f.classList.contains('on')); },go:()=>prQ('.p-fav').click()}],
+    right:[
+      {k:'key',pill:1,t:'Key and transpose',hide:()=>!keyText(),label:()=>(/^[+-]?\d/.test(keyText())?'Transpose: ':'Key: ')+keyText(),pop:p=>{ const row=prQ('.p-trs .p-trr'); if(row) keyPop(p,()=>row.querySelectorAll('.p-trb')[0],()=>row.querySelectorAll('.p-trb')[1],keyText); else { closePop(); const s=noteSel(); if(s){ s.focus(); s.click(); } } }},
+      {k:'play',play:1,t:'Play',playing:()=>/Pause/.test(($('prPlay')||{}).textContent||''),go:()=>$('prPlay')&&$('prPlay').click()},
+      {k:'stop',ic:'stop',t:'Stop',dis:()=>{ const b=$('prPause'); return !b||b.disabled; },go:()=>{ const b=$('prPause'); if(b&&!b.disabled) b.click(); }},
+      {k:'full',full:1,t:'Full screen'}]},
+  st:{host:()=>{ const d=$('stDisp'); return d&&d.querySelector(':scope>.ep-body'); }, room:()=>document.body.dataset.dest==='studio'?document.body:null, cls:'app-stbar',
+    title:()=>{ const n=document.querySelector('#stage .stage-top .now'); return n?n.textContent.replace(/\s+/g,' ').trim():''; },
+    items:[
+      {k:'con',ic:'con',t:'Console',pressed:()=>conOn('stConP'),go:()=>toggleCon('stConP')},
+      {k:'tempo',ic:'tempo',t:'Tempo',hide:()=>!$('bpmRange'),val:()=>($('bpmRange')||{}).value,pop:p=>tempoPop(p,$('bpmRange'),()=>{ const t=document.querySelector('.stage-tempo .tapbig,#tapBtn'); if(t) t.click(); })},
+      {k:'count',ic:'count',t:'Count-in',hide:()=>!$('countBtn'),pressed:()=>($('countBtn')||{}).getAttribute&&$('countBtn').getAttribute('aria-pressed')==='true',go:()=>$('countBtn').click()},
+      {k:'metro',ic:'metro',t:'Metronome',hide:()=>!$('clickBtn'),pressed:()=>($('clickBtn')||{}).getAttribute&&$('clickBtn').getAttribute('aria-pressed')==='true',go:()=>$('clickBtn').click()},
+      {k:'fing',ic:'hands',t:'Fingering',hide:()=>!$('fingChk'),pressed:()=>!!($('fingChk')||{}).checked,go:()=>{ const c=$('fingChk'); c.checked=!c.checked; fire(c,'change'); }},
+      {k:'size',ic:'kbd',t:'Keyboard size: 88, 76 or 61 keys',hide:()=>!document.querySelector('.kbd-bar .seg [data-k]'),val:()=>{ const b=document.querySelector('.kbd-bar .seg [aria-pressed=true],.kbd-bar .seg .on'); return b?b.dataset.k:''; },go:()=>{ const bs=[...document.querySelectorAll('.kbd-bar .seg [data-k]')]; const i=bs.findIndex(b=>b.getAttribute('aria-pressed')==='true'||b.classList.contains('on')); (bs[(i+1)%bs.length]||bs[0]).click(); }}],
+    right:[
+      {k:'key',pill:1,t:'Key and transpose',hide:()=>!$('keyLbl'),label:()=>{ const t=(($('keyLbl')||{}).textContent||'').replace(/original key|[+-]?\d+ semitones?/g,'').replace(/^Starts on\s*/,'').trim(); return 'Key: '+(t||'–'); },pop:p=>keyPop(p,()=>$('trDown'),()=>$('trUp'),()=>{ const t=(($('keyLbl')||{}).textContent||'').replace(/original key|[+-]?\d+ semitones?/g,'').replace(/^Starts on\s*/,'').trim(); return t||'–'; })},
+      {k:'play',play:1,t:'Play',playing:()=>/pause/i.test(($('playTxt')||{}).textContent||''),go:()=>$('playBtn')&&$('playBtn').click()},
+      {k:'stop',ic:'stop',t:'Stop',dis:()=>{ const b=$('stopBtn'); return !b||b.disabled; },go:()=>{ const b=$('stopBtn'); if(b&&!b.disabled) b.click(); }},
+      {k:'full',full:1,t:'Full screen'}]}
+};
+function conOn(id){ const c=$(id); if(!c) return false; return phone()?c.classList.contains('ep-sheet'):!c.classList.contains('ep-min'); }
+function toggleCon(id){ const c=$(id); if(!c) return;
+  /* on a phone the Console comes up as a sheet over the lower part of the screen, with room to work; – or the button again puts it back */
+  if(phone()){ const on=!c.classList.contains('ep-sheet'); c.classList.toggle('ep-sheet',on); if(on&&c.classList.contains('ep-min')) setMin(c,false); setTimeout(()=>dispatchEvent(new Event('resize')),30); return; } const on=c.classList.contains('ep-min'); setMin(c,!on); if(on) setTimeout(()=>{ try{ c.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(_){} },60); }
+function btnFor(it){ const b=el('button',it.pill?'dbpill':it.play?'dbplay':''); b.type='button'; b.dataset.k=it.k; b.title=it.t; b.setAttribute('aria-label',it.t); if(it.pop) b.classList.add('dbar-pop-btn');
+  b.innerHTML=it.pill?'<span></span>':it.play?IC.play:it.full?IC.full:(IC[it.ic]||'')+(it.val?'<small></small>':''); b.__it=it; return b; }
+function makeBar(name){ const C=BARS[name], host=C.host(); if(!host||!C.room()) return; let bar=host.querySelector(':scope>.dbar'); if(bar) return bar;
+  bar=el('div','dbar'); bar.dataset.bar=name; const L=el('div','dbl'), M=el('div','dbm'), R=el('div','dbr'); M.appendChild(el('span','dbt'));
+  C.items.forEach(it=>L.appendChild(btnFor(it))); C.right.forEach(it=>R.appendChild(btnFor(it))); bar.append(L,M,R); host.insertBefore(bar,host.firstChild);
+  const rm=C.room(); if(rm&&rm!==document.body) rm.classList.add(C.cls); else root.classList.add(C.cls);
+  bar.addEventListener('click',e=>{ const b=e.target.closest('button[data-k]'); if(!b||!b.__it) return; const it=b.__it;
+    if(it.full) fullRoom(!document.fullscreenElement&&!root.classList.contains('app-fs'));
+    else if(it.pop) openPop(b,it.pop); else if(it.go) try{ it.go(); }catch(_){}
+    setTimeout(syncAll,60); setTimeout(syncAll,400); });
+  syncBar(bar); return bar; }
+function syncBar(bar){ const C=BARS[bar.dataset.bar]; bar.querySelectorAll('button[data-k]').forEach(b=>{ const it=b.__it; let h=false; try{ h=!!(it.hide&&it.hide()); }catch(_){ h=true; } b.hidden=h; if(h) return;
+    if(it.pressed) b.setAttribute('aria-pressed',String(!!it.pressed())); if(it.dis) b.disabled=!!it.dis();
+    if(it.val){ const sm=b.querySelector('small'); if(sm) sm.textContent=it.val()||''; } if(it.pill) b.firstChild.textContent=it.label();
+    if(it.play){ const on=!!it.playing(); b.innerHTML=on?IC.pause:IC.play; b.classList.toggle('on',on); b.title=on?'Pause':'Play'; }
+    if(it.full){ const fs=!!document.fullscreenElement||root.classList.contains('app-fs'); b.innerHTML=fs?IC.close:IC.full; b.title=fs?'Close full screen':'Full screen'; } });
+  const t=bar.querySelector('.dbt'); if(t) t.textContent=C.title(); }
+function syncAll(){ document.querySelectorAll('.dbar[data-bar]').forEach(syncBar); }
+function prBar(){ makeBar('pr'); if(document.body.dataset.dest==='studio') makeBar('st'); }
+const sync=syncAll;
 /* full screen: the browser's own where it can (and the phone turns to landscape); otherwise the room fills the window */
 function fullRoom(on){ root.classList.toggle('app-fs',on);
   try{ if(on){ const t=document.documentElement; if(t.requestFullscreen&&!document.fullscreenElement) t.requestFullscreen({navigationUI:'hide'}).then(()=>{ try{ screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{}); }catch(_){} }).catch(()=>{}); }
@@ -117,10 +146,10 @@ function tabBar(){ if(tabs) return tabs; tabs=el('nav','app-tabs'); tabs.setAttr
     b.onclick=()=>{ closePop(); try{ if(window.PRACTICE&&PRACTICE.close) PRACTICE.close(); }catch(_){} try{ if(window.EAR&&EAR.close) EAR.close(); }catch(_){}
       if(!window.SUITE) return; if(k==='home') SUITE.home(); else if(k==='studio') SUITE.studios(); else SUITE.go(k); setTimeout(tabSync,80); };
     tabs.appendChild(b); }); document.body.appendChild(tabs); return tabs; }
-function roomOpen(){ const a=$('prRoom'), b=$('earRoom'); return !!((a&&!a.hidden&&a.offsetParent!==null)||(b&&!b.hidden&&b.offsetParent!==null)); }
+function roomOpen(){ const v=x=>!!(x&&!x.hidden&&getComputedStyle(x).display!=='none'); return v($('prRoom'))||v($('earRoom')); }
 function tabSync(){ if(!app()){ if(tabs) tabs.hidden=true; root.classList.remove('app-has-tabs'); return; } tabBar();
   const hub=$('suiteHub'), onHub=!!(hub&&hub.classList.contains('on')), d=document.body.dataset.dest, rot=root.classList.contains('ps-rot');
-  const kbdPage=roomOpen()||d==='studio'||d==='plus'; const land=innerWidth>innerHeight&&phone();
+  const kbdPage=roomOpen()||d==='studio'||d==='plus'; const land=innerWidth>innerHeight;
   const show=!rot&&!(kbdPage&&(phone()||land))&&!root.classList.contains('app-fs');
   tabs.hidden=!show; root.classList.toggle('app-has-tabs',show);
   const curK=onHub?'home':d==='hall'||(d==='class'&&window.SUITE&&SUITE.current&&SUITE.current()==='hall')?'hall':d==='plus'?'studio':d;
@@ -131,5 +160,5 @@ let t0=0; function tick(){ clearTimeout(t0); t0=setTimeout(()=>{ scanPanels(); p
 new MutationObserver(tick).observe(document.body,{childList:true,subtree:true}); new MutationObserver(tick).observe(document.body,{attributes:true,attributeFilter:['data-dest']});
 setInterval(()=>{ if(!document.hidden){ sync(); tabSync(); } },700);
 addEventListener('resize',tick); document.addEventListener('DOMContentLoaded',tick); tick();
-window.APPSHELL={setMin,sync,fullRoom};
+window.APPSHELL={setMin,sync,fullRoom,toggleCon,isPhone:phone};
 })();

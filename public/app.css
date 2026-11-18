@@ -52,7 +52,7 @@ html.m-ph body .menubar .menu-btn.mmore{display:block;margin-left:auto;min-heigh
 html.m-ph body .menubar .menu-status{display:none}
 html.m-ph .ep-h [data-a=det]{display:none}
 /* keyboard rooms on a phone (turned sideways or held sideways): tool bar, Display, the 88 keys and the Console share the screen; the Console scrolls inside */
-html.m-ph #prRoom{display:flex!important;flex-direction:column;overflow:hidden!important;gap:4px!important;padding:4px 8px calc(4px + env(safe-area-inset-bottom))!important}
+html.m-ph #prRoom:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;gap:4px!important;padding:4px 8px calc(4px + env(safe-area-inset-bottom))!important}
 html.m-ph #prRoom>.e-top{display:none!important}
 html.m-ph #prRoom>.ep{flex:0 0 auto;margin:0!important}
 html.m-ph #prRoom #prDisp>.ep-h,html.m-ph #prRoom #prKbP>.ep-h{display:none}
@@ -87,8 +87,8 @@ html.m-ph #suiteHub .dcard>*:not(.ic):not(.nm):not(.bl):not(.badge){display:none
 html.m-ph #suiteHub .dcard .nm{font-size:19px}
 html.m-ph #suiteHub .dcard .bl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px}
 
-/* Class Area and Practice Arena on an upright phone: one card a row, picture on the left, name and line beside it */
-@media (orientation:portrait){
+/* Class Area and Practice Arena on a phone: one card a row (two side by side when held sideways), picture on the left, name and line beside it */
+@media all{
 html.m-ph body .cl-four,html.m-ph body[data-area] #clHome .cl-four,html.m-ph body[data-area] #clHome .cl-four.has-plan{grid-template-columns:1fr!important;gap:10px!important}
 html.m-ph body .cl-four .cl-box{min-height:0!important;height:96px;flex-direction:row!important;border-radius:18px!important}
 html.m-ph body .cl-four .cl-box .ph,html.m-ph body .cl-four .cl-box .sty-ph{flex:0 0 30%!important;width:30%!important;height:100%!important;min-height:0!important;-webkit-mask-image:none!important;mask-image:none!important}
@@ -104,3 +104,65 @@ html.m-ph #psInstBar{left:8px!important;right:8px!important;padding:6px 10px!imp
 html.m-ph #psInstBar img{width:28px!important;height:28px!important}
 html.m-ph #psInstBar span{font-size:12px!important;line-height:1.25!important}
 html.m-ph #psInstBar .go{padding:7px 10px!important;font-size:12px!important;white-space:nowrap}
+/* Ear training on a phone: the Display on top, the Console in the middle (it scrolls inside), the 88 keys at the bottom */
+html.m-ph #earRoom:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;gap:4px!important;padding:4px 8px calc(4px + env(safe-area-inset-bottom))!important}
+html.m-ph #earRoom>.e-top{flex:0 0 auto;min-height:0;margin:0!important;gap:8px}
+html.m-ph #earRoom>.e-top h1{font-size:15px!important;margin:0} html.m-ph #earRoom>.e-top button{min-height:30px!important;padding:2px 14px!important;font-size:13px!important}
+html.m-ph #earRoom>.ep{flex:0 0 auto;margin:0!important}
+html.m-ph #earRoom #earDisp>.ep-h,html.m-ph #earRoom #earKbP>.ep-h{display:none}
+html.m-ph #earRoom #earDisp:not(.max)>.ep-body{height:auto!important;max-height:118px;overflow:auto;padding:6px 10px!important}
+html.m-ph #earRoom #earDisp .e-lbl{font-size:10px!important;margin:0!important} html.m-ph #earRoom #earDisp .e-sub{font-size:13px!important;margin:2px 0!important}
+html.m-ph body:not(.x) #earRoom #earDisp .e-big{font-size:24px!important}
+html.m-ph #earRoom #earConP{flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column}
+html.m-ph #earRoom #earConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 8px!important}
+html.m-ph #earRoom #earConP.ep-min{flex:0 0 auto!important}
+html.m-ph #earRoom #earConP>.ep-h{padding:4px 8px}
+html.m-ph #earRoom #earKbP>.ep-body{padding:2px 4px!important}
+/* Backing Track Studio: the tool bar does Play, Stop, Count-in and Metronome, so the old row and corner buttons are not shown twice */
+html.app-stbar body[data-dest=studio] #stage .transport,html.app-stbar body[data-dest=studio] #stage .corner-tools{display:none!important}
+html.app-stbar body[data-dest=studio] #stDisp>.ep-body>.dbar{margin:6px 8px 0}
+/* on a phone: tool bar, chord, chart, the keys, and the Console (it scrolls inside) on one screen */
+html.m-ph body[data-dest=studio] .wrap:not([hidden]){position:fixed!important;top:42px;left:0;right:0;bottom:0;display:flex!important;flex-direction:column;gap:4px;padding:4px 8px calc(4px + env(safe-area-inset-bottom))!important;margin:0!important;max-width:none!important;overflow:hidden}
+html.m-ph body[data-dest=studio] .wrap>*:not(#stDisp):not(#stKbP):not(#stConP){display:none!important}
+html.m-ph body[data-dest=studio] .wrap>.ep{flex:0 0 auto;margin:0!important}
+html.m-ph body[data-dest=studio] #stDisp>.ep-h,html.m-ph body[data-dest=studio] #stKbP>.ep-h{display:none}
+html.m-ph body[data-dest=studio] #stage{padding:4px 10px 6px!important;gap:4px!important}
+html.m-ph body[data-dest=studio] #stage .stage-top{display:flex!important;align-items:center;gap:12px;min-height:0}
+html.m-ph body[data-dest=studio] #stage .stage-top .now{font-size:30px!important;line-height:1!important;margin:0}
+html.m-ph body[data-dest=studio] #stage .stage-top .next{font-size:16px!important;margin:0!important}
+html.m-ph body[data-dest=studio] #stage .meter{display:none!important}
+html.m-ph body[data-dest=studio] #stage .chart{margin:0!important}
+html.m-ph body[data-dest=studio] #stConP{flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column}
+html.m-ph body[data-dest=studio] #stConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+html.m-ph body[data-dest=studio] #stConP.ep-min{flex:0 0 auto!important}
+html.m-ph body[data-dest=studio] #stKbP>.ep-body{padding:2px 4px!important}
+
+.dbar .dbcnt{display:inline-block;font:900 9px/1.05 var(--mono,ui-monospace,monospace);letter-spacing:.06em;text-align:center}
+/* phone Studio: the keyboard options are on the tool bar */
+html.m-ph body[data-dest=studio] .stage-kbd .kbd-bar,html.m-ph body[data-dest=studio] .stage-kbd .fing-line{display:none!important}
+
+/* Transcription Studio on a phone: the display with its own tool bar on top, the Console below it scrolls inside */
+html.m-ph body[data-dest=plus] #txCard:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;padding:4px 8px!important;gap:4px}
+html.m-ph body[data-dest=plus] #txCard>*:not(#txDispP):not(#txConP){flex:0 0 auto}
+html.m-ph body[data-dest=plus] #txDispP{flex:0 0 auto;margin:0!important}
+html.m-ph body[data-dest=plus] #txConP{flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column;margin:0!important}
+html.m-ph body[data-dest=plus] #txConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+html.m-ph body[data-dest=plus] #txConP.ep-min{flex:0 0 auto!important}
+html.m-ph body[data-dest=plus] #txCard .ps-head{display:none!important}
+html.m-ph body[data-dest=plus] .tx .txstage:not(.fs) canvas{height:max(140px,calc(var(--appH,390px) - 205px))!important;min-height:0!important}
+html.m-ph body[data-dest=plus] .tx .txempty{top:52px!important;bottom:auto!important;gap:6px!important}
+html.m-ph body[data-dest=plus] .tx .txempty b{font-size:20px!important} html.m-ph body[data-dest=plus] .tx .txempty span{font-size:12.5px!important}
+html.m-ph body[data-dest=plus] .tx .txempty small{display:none!important}
+html.m-ph body[data-dest=plus] .tx .txempty .btn{min-height:36px!important;padding:6px 16px!important;font-size:14px!important}
+html.m-ph #prRoom #prKbP .e-kb>.e-lbl,html.m-ph #earRoom #earKbP .e-kb>.e-lbl{display:none!important}
+@media (orientation:landscape){ html.m-ph:not(.ps-rot) body .cl-four,html.m-ph:not(.ps-rot) body[data-area] #clHome .cl-four,html.m-ph:not(.ps-rot) body[data-area] #clHome .cl-four.has-plan{grid-template-columns:1fr 1fr!important} }
+html.m-ph body[data-dest=studio] #stage .beats,html.m-ph body[data-dest=studio] #stage .stage-top .lbl,html.m-ph body[data-dest=studio] #stage .room-back,html.m-ph body[data-dest=studio] #stage .stage-sync{display:none!important}
+/* the rooms stop above the tab bar when it is shown (an upright tablet) */
+html.app-has-tabs #prRoom,html.app-has-tabs #earRoom{bottom:calc(64px + env(safe-area-inset-bottom))!important}
+html.m-ph #prRoom,html.m-ph #earRoom{top:42px!important}
+/* the Console as a sheet on a phone */
+html.m-ph .ep.ep-sheet{position:fixed!important;left:6px!important;right:6px!important;bottom:calc(4px + env(safe-area-inset-bottom))!important;top:calc(var(--appH,390px)*.26)!important;z-index:2147483000!important;display:flex!important;flex-direction:column!important;margin:0!important;border-radius:16px!important;box-shadow:0 -10px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12)!important;background:#0f1420!important}
+html.m-ph .ep.ep-sheet>.ep-body{flex:1 1 auto!important;min-height:0!important;overflow:auto!important;display:block!important}
+html.m-ph .ep.ep-sheet>.ep-h{display:flex!important} html.m-ph .ep.ep-sheet>.ep-h .ep-mn{font-size:0} html.m-ph .ep.ep-sheet>.ep-h .ep-mn::before{content:"✕";font-size:15px}
+html.m-ph .ep.ep-sheet>.ep-h::before{content:"";position:absolute;left:50%;top:5px;width:44px;height:4px;margin-left:-22px;border-radius:3px;background:rgba(255,255,255,.25)}
+html.m-ph .ep.ep-sheet>.ep-h{position:relative;padding-top:12px!important}

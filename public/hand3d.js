@@ -17,7 +17,9 @@ function mkRenderer() {
   canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;display:block';
   renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  /* phones: a lighter drawing (1.5x is still sharp at that size and saves the battery) */
+  const PH = Math.min(screen.width || 9999, screen.height || 9999) <= 500 && matchMedia('(pointer:coarse)').matches;
+  renderer.setPixelRatio(Math.min(PH ? 1.5 : 2, window.devicePixelRatio || 1));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   scene = new THREE.Scene();
