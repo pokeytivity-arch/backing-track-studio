@@ -1663,7 +1663,11 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
   if(!show||!bandOpen){ if(p) p.hidden=true; bandApply(); return; }
   if(!p){ p=el('div','pb-wrap pb-pop'); p.id='prBandP'; p.innerHTML='<div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div><button type="button" class="pb-x" title="Close" aria-label="Close">×</button></div><div class="pb-kb"></div><div class="pb-rack"></div></div>';
     p.querySelector('.pb-x').onclick=()=>{ bandOpen=false; bandSync(); }; bandDragSize(p);
-    document.addEventListener('pointerdown',e=>{ const q=document.getElementById('prBandP'); if(!bandOpen||!q||q.hidden||q.contains(e.target)||e.target.closest('#prBandO')) return; bandOpen=false; bandSync(); },true);
+    /* it closes when you click in another section (the Keyboard, or the console away from the parts that drive it); the Display, Play and Stop,
+       and the Left hand, Chord and Compatible chord sections leave it open */
+    document.addEventListener('pointerdown',e=>{ const q=document.getElementById('prBandP'); if(!bandOpen||!q||q.hidden||q.contains(e.target)) return; const t=e.target;
+      if(!t.closest||!t.closest('#prRoom')||t.closest('#prDisp')||t.closest('#prBandO')||t.closest('.p-ctr')||t.closest('.p-bch[data-ch="Left hand"],.p-bch[data-ch=Chord],.p-ccs,.p-tabs,.p-bch[data-ch=Movements],.p-bch[data-ch=Technique]')) return;
+      if(!t.closest('#prKbP')&&!t.closest('#prConP')) return; bandOpen=false; bandSync(); },true);
     window.addEventListener('resize',()=>bandPlace()); }
   if(scr&&p.parentNode!==scr) scr.appendChild(p);
   p.hidden=false; requestAnimationFrame(bandPlace); const on=st.bOn!==false, c=bandCur(), N=sdCNotes(c);

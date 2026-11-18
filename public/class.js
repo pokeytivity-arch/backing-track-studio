@@ -677,7 +677,7 @@ window.CLASS={
     bus(){ if(!E||!E.ch||!E.ch.keys) return null; const id='pr'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(E.ch.keys.g); c.connect(E.ch.click.g); E.ch[id]={g:k}; E.ch[id+'c']={g:c}; return {id,k,c}; },
     /* the Chord of the bar keyboard: a channel per voice (piano, e-piano, organ, pad, strings), each with its own volume and meter, played under the exercise */
     band(v){ if(!E||!ctx) return null; const id='band_'+v; if(!E.ch[id]){ const g=ctx.createGain(); g.gain.value=0; g.connect(E.master); if(E.rev&&(v==='pad'||v==='strings'||v==='organ')){ const s=ctx.createGain(); s.gain.value=.18; g.connect(s); s.connect(E.rev); } E.ch[id]={g}; } return E.ch[id].g; },
-    bandVol(v,x){ const g=this.band(v); if(g) g.gain.setTargetAtTime(Math.max(0,x)*2.6,ctx.currentTime,.03); },
+    bandVol(v,x){ const g=this.band(v); if(g) g.gain.setTargetAtTime(Math.sqrt(Math.max(0,x))*2.6,ctx.currentTime,.03); },   /* a gentler curve: low settings stay audible */
     bandBus(v){ const g=this.band(v); if(!g) return null; const id='pb'+(++BUSN); const k=ctx.createGain(), c=ctx.createGain(); k.connect(g); E.ch[id]={g:k}; return {id,k,c}; },
     bandNote(v,m,t,d,vel,b){ const ch=b?b.id:'band_'+v; if(!b) this.band(v);
       if(v==='strings'){ const f=440*Math.pow(2,(m-69)/12), out=E.out(ch), end=t+Math.max(d,.1), g=E.gain(0.0001), lp=E.filt('lowpass',Math.min(6000,f*7),0.6), lfo=E.osc('sine',5.3), lg=E.gain(7);
