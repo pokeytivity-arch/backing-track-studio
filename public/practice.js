@@ -1748,7 +1748,7 @@ const NCC_INT=[0,1,2], nccLev=()=>st.nlev==='adv'||st.nlev==='int'?st.nlev:(st.s
 /* each couple's home key, counted from the chord's root, and whether it is a major or a melodic minor scale */
 const CC_KEY={maj:[0,'M'],min:[-2,'M'],dim:[-2,'M'],d7:[5,'M'],d9:[5,'M'],d13:[5,'M'],d13s11:[7,'m'],d7s9s5:[1,'m'],d7b9s5:[1,'m'],m6:[0,'m']};
 const KEYN_M=['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B'], KEYN_m=['C','C#','D','Eb','E','F','F#','G','G#','A','Bb','B'];
-function ccSpell(pc){ const c=ccT(); if(!c) return sNm(pc); const [o,ty]=CC_KEY[c.id], t=((((st.str||0)+o)%12)+12)%12, tn=(ty==='M'?KEYN_M:KEYN_m)[t];
+function ccSpell(pc,tid,root){ const c=tid?CCT.find(x=>x.id===tid):ccT(); if(!c) return sNm(pc); const [o,ty]=CC_KEY[c.id], t=((((root==null?(st.str||0):root)+o)%12)+12)%12, tn=(ty==='M'?KEYN_M:KEYN_m)[t];
   const L='CDEFGAB', LP=[0,2,4,5,7,9,11], SC=ty==='M'?[0,2,4,5,7,9,11]:[0,2,3,5,7,9,11], li=L.indexOf(tn[0]), p=((pc%12)+12)%12;
   for(let d=0;d<7;d++){ const q=(t+SC[d])%12; if(q!==p) continue; const ln=L[(li+d)%7], nat=LP[(li+d)%7]; let a=((q-nat)%12+12)%12; if(a>6) a-=12; return ln+(a===1?'♯':a===2?'𝄪':a===-1?'♭':a===-2?'𝄫':''); }
   return sNm(pc); }
@@ -1761,7 +1761,7 @@ const bandCur=()=>{ if(syT().id==='domm') return {r:7,n:' bass',v:[[]],nm:sdNm(d
 function ccStrip(ncc){ const strip=el('div','p-ch p-bch p-ccs'); strip.dataset.ch='Compatible chord'; strip.appendChild(el('div','p-cht','Compatible chord')); const col=el('div','p-bcol'); strip.appendChild(col);
   if(!ncc){ strip.classList.add('off'); strip.title='For Chord Couples'; }
   const row=el('div','p-ccrow'), sn=el('select','p-sel'), sc=el('select','p-sel'); sn.setAttribute('aria-label','Note'); sc.setAttribute('aria-label','Chord type');
-  for(let i=0;i<12;i++){ const o=document.createElement('option'); o.value=i; o.textContent=DOMKEY[i].replace('G♭','F♯'); sn.appendChild(o); } sn.value=String(((st.str||0)%12+12)%12);
+  for(let i=0;i<12;i++){ const o=document.createElement('option'); o.value=i; o.textContent=ccT()?ccSpell(i,st.cc.t,i):DOMKEY[i].replace('G♭','F♯'); sn.appendChild(o); }   /* the notes are named the way this chord type spells them (C♯ minor, not D♭ minor) */ sn.value=String(((st.str||0)%12+12)%12);
   { const o=document.createElement('option'); o.value=''; o.textContent='Choose a chord…'; sc.appendChild(o); } CCT.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.n.trim().replace(/^7/,'dominant seventh '); sc.appendChild(o); }); sc.value=ccT()?st.cc.t:'';
   [sn,sc].forEach(x=>{ x.disabled=!ncc; x.addEventListener('keydown',e=>e.stopPropagation()); });
   const go=()=>{ clr(); st.str=((+sn.value+6)%12)-6; st.cc=sc.value?{t:sc.value,o:0}:null; if(st.cc){ if(st.slh===false||st.slh==='locked') st.slh='chord'; bandOpen=true; } save(); render(); };
