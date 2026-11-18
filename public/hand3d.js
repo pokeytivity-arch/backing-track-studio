@@ -8,7 +8,7 @@ import { GLTFLoader } from './vendor/three/GLTFLoader.js';
 
 const FINGERS = ['thumb', 'index-finger', 'middle-finger', 'ring-finger', 'pinky-finger'];
 const KEY_MM = 23.5;                     /* a white key is 23.5 mm wide */
-const HAND_SIZE = 1.61;                  /* the hands are drawn bigger than life against the keys (15% bigger, then 40% more), so they read well on screen */
+const HAND_SIZE = 1.38;                  /* the hands are drawn bigger than life against the keys (15% bigger, then 20% more), so they read well on screen */
 let renderer, scene, cam, canvas, wrap, plane, key, ready = false, failed = false, G = { W: 600, H: 200, kw: 20, KH: 120, HP: 36 };
 const hands = {};                        /* rh / lh: { root, arm, bones, rest, chains, anchor, mat } */
 let skinCol = '#c8916f';
