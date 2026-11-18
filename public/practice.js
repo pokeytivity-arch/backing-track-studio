@@ -1413,7 +1413,7 @@ function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-
    Backtracking (3/4, major chords): beats 1 and 2 the chord over its root, beat 3 the backtrack chord. ---------- */
 const SQ={maj:[0,4,7],min:[0,3,7],dim:[0,3,6],six:[0,4,7,9],dim7:[0,3,6,9]}, SQN={maj:' major',min:' minor',dim:' diminished',six:' major sixth',dim7:' diminished seventh'};
 const STY=[
-  {id:'ncc',name:'Neighboring Chord Couples',bpb:4,vars:[
+  {id:'ncc',name:'Chord Couples',bpb:4,vars:[
     {x:[0,'maj'],y:[2,'min'],s:'Hexatonic (no 7) scale'},
     {x:[7,'maj'],y:[9,'min'],s:'Hexatonic (no 4) scale'},
     {x:[0,'maj'],y:[2,'dim'],s:'Mixolydian ♭6 scale'},
@@ -1427,7 +1427,7 @@ const STY=[
     {n:'Root position',rh:0,b3:[0,5,9],d:'Beats 1 and 2: 1 / 1 3 5 · Beat 3: C F A'},
     {n:'First inversion',rh:1,b3:[5,9,12],d:'Beats 1 and 2: 1 / 3 5 1 · Beat 3: F A C'},
     {n:'Second inversion',rh:2,b3:[9,12,17],d:'Beats 1 and 2: 1 / 5 1 3 · Beat 3: A C F'}]},
-  {id:'licks',name:'Licks'},{id:'riffs',name:'Riffs'},{id:'contra',name:'Contrapuntal (two-handed) movements'},{id:'drop2',name:'Drop-2 Movements',bpb:4,vars:[
+  {id:'licks',name:'Licks'},{id:'riffs',name:'Riffs'},{id:'contra',name:'Counterpoint'},{id:'drop2',name:'Drop-2 Movements',bpb:4,vars:[
     {n:'Intermediate',f0:55,seq:[[[5],[1,3,7]],[[7],[3,5,1]],[[1],[5,7,3]],[[3],[7,1,5]]]},
     {n:'Advanced · Left hand',f0:48,seq:[[[1,5],[]],[[3,7],[]],[[5,1],[]],[[7,3],[]]]},
     {n:'Advanced · Right hand',f0:60,seq:[[[],[1,5]],[[],[3,7]],[[],[5,1]],[[],[7,3]]]},
@@ -1438,7 +1438,7 @@ const STY=[
     {x:[0,'six'],y:[2,'dim7'],ord:'dim',n:'Variation #3',s:'Inverts only diminished chord tones'},
     {x:[0,'six'],y:[2,'dim7'],ord:'step',n:'Variation #4',s:'Up, each note then a step down; down, each note then a step up'},
     {x:[0,'six'],y:[2,'dim7'],ord:'g3up',q:1,bpb:3,n:'Variation #5',s:'Groups of three, ascending (3/4, a chord a beat)'},
-    {x:[0,'six'],y:[2,'dim7'],ord:'g3dn',q:1,bpb:3,n:'Variation #6',s:'Groups of three, descending (3/4, a chord a beat)'}]},{id:'quartal',name:'Quartal Harmony (Pentatonic Scale)',bpb:3,vars:[
+    {x:[0,'six'],y:[2,'dim7'],ord:'g3dn',q:1,bpb:3,n:'Variation #6',s:'Groups of three, descending (3/4, a chord a beat)'}]},{id:'quartal',name:'Quartal Harmony',bpb:3,vars:[
     {n:'Variety 1',qv:1,s:'2 5 1 · 3 6 2 · 5 1 3 · 6 2 5 · 1 3 6 · 2 5 1'},
     {n:'Variety 2',qv:2,s:'Each beat: the lower two notes, then the top note (eighth notes)'}]},{id:'triad',name:'Triad Patterns'}];
 const syT=()=>STY.find(t=>t.id===st.sty)||STY[0];
