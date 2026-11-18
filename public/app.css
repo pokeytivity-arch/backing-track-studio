@@ -262,3 +262,11 @@ html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp .e-btn,html.m-ph:is(.ps-rot,.m-l
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earCtl{justify-content:flex-end;max-width:52vh}
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp select{min-height:28px!important;height:28px;font-size:13px!important;padding:0 26px 0 8px!important}
 html.m-ph:is(.ps-rot,.m-land) #earRoom #earKbP{height:96px!important}
+/* Relative pitch's set-up in the Display on a phone: compact rows that scroll inside the Display */
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts{grid-column:1/-1;display:block!important;margin:2px 0 0!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp{gap:4px!important;padding:0!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-row{gap:6px!important;margin:0!important;flex-wrap:wrap}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-row .e-lbl{font-size:10px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .e-seg button,html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .rp-chk{min-height:26px!important;padding:2px 10px!important;font-size:12px!important}
+html.m-ph:is(.ps-rot,.m-land) #earRoom #earDisp #earOpts .e-big{font-size:18px!important}
+html.m-ph #earRoom #earDisp #earOpts select{background:#141925!important;color:#e6e9f2!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:8px;min-height:26px!important;height:26px;font-size:12.5px!important;padding:0 24px 0 8px!important}
