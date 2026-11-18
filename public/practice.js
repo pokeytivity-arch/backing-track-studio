@@ -827,7 +827,7 @@ function levelsSmall(){
 function seg(parent,list,val,fn,small){ parent.textContent=''; if(small) parent.classList.add('sm'); list.forEach(([k,t])=>{ const b=el('button',null,t); b.type='button'; b.dataset.k=k; b.setAttribute('aria-pressed',String(k===val)); b.onclick=()=>fn(k); parent.appendChild(b); }); }
 
 function render(){
-  { const bp=document.getElementById('prBandP'); if(bp&&kind!=='styl') bp.hidden=true; }
+  { const bp=document.getElementById('prBandP'); if(bp&&kind!=='styl'){ bp.hidden=true; const dp=document.getElementById('prDisp'); if(dp) dp.classList.remove('has-band'); } }
   { const dt=ov&&ov.querySelector('#prDisp .pd-top'), dtp=ov&&ov.querySelector('#prDisp .pd-tp'); if(dt) dt.textContent=''; if(dtp) dtp.textContent=''; }
   { const pk=$('#prPick'); if(pk) pk.hidden=false; }
   ov.querySelectorAll('.e-top .p-motop').forEach(x=>x.remove());
@@ -1616,20 +1616,24 @@ function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=
   fz.addEventListener('pointermove',e=>{ if(drag) set(at(e)); }); const end=()=>{ if(!drag) return; drag=false; cap.classList.remove('drag'); cap.style.transition=''; }; fz.addEventListener('pointerup',end); fz.addEventListener('pointercancel',end);
   fz.addEventListener('dblclick',()=>set(.7)); strip.addEventListener('keydown',e=>{ const d={ArrowUp:.05,ArrowRight:.05,ArrowDown:-.05,ArrowLeft:-.05}[e.key]; if(d){ e.preventDefault(); e.stopPropagation(); set(bVol(v)+d); } });
   return strip; }
-function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAct();
+/* it sits in the Display, in place of the description lines */
+function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAct(), dp=document.getElementById('prDisp');
+  if(dp) dp.classList.toggle('has-band',show);
   if(!show){ if(p) p.hidden=true; bandApply(); return; }
-  if(!p){ p=el('section','ep'); p.id='prBandP'; p.innerHTML='<div class="ep-h"><span class="ep-grip">⠿</span><b>Chord of the bar</b><span class="ep-x"></span></div><div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div></div><div class="pb-kb"></div><div class="pb-rack"></div></div>';
-    const kp=document.getElementById('prKbP'); if(kp) kp.after(p); else ov.appendChild(p); }
+  if(!p){ p=el('div','pb-wrap'); p.id='prBandP'; p.innerHTML='<div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div></div><div class="pb-kb"></div><div class="pb-rack"></div></div>'; }
+  { const scr=dp&&dp.querySelector('.pd-screen'), msg=document.getElementById('prMsg'); if(msg&&msg.parentNode&&p.previousSibling!==msg) msg.after(p); else if(!p.parentNode) (scr||ov).appendChild(p); }
   p.hidden=false; const on=st.bOn!==false, c=sdCur(), N=sdCNotes(c);
   p.classList.toggle('pb-off',!on); const pw=p.querySelector('.pb-pow'); pw.classList.toggle('on',on); pw.setAttribute('aria-pressed',String(on)); pw.onclick=()=>{ st.bOn=!on; save(); bandSync(); };
-  p.querySelector('.pb-nm').textContent=sdCName(c);
+  p.querySelector('.pb-nm').innerHTML='<span class="pb-t">Chord of the bar</span><b></b>'; p.querySelector('.pb-nm b').textContent=sdCName(c);
   bandKb(0);
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
     k.onclick=()=>{ const cur=bVoices().slice(), i=cur.indexOf(v); if(i>=0) cur.splice(i,1); else cur.push(v); st.bV=cur; save(); bandSync(); };
-    col.append(k,bandFader(v,MQM.matches?60:84)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
+    col.append(k,bandFader(v,MQM.matches?50:64)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
   bandApply(); }
-{ const cs=document.createElement('style'); cs.textContent=`#prBandP .ep-body{display:flex;flex-direction:column;gap:10px;padding:10px 12px}
+{ const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{display:none!important} #prDisp.has-band .ep-body,#prDisp.has-band .pd-screen{height:auto!important;overflow:visible}
+#prBandP{margin-top:8px} #prBandP .ep-body{display:flex;flex-direction:column;gap:10px;padding:0}
+#prBandP .pb-t{font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8b93a7;margin-right:12px}
 #prBandP .pb-top{display:flex;align-items:center;gap:12px} #prBandP .pb-nm{font:800 15px var(--body);color:#e6e9f2;letter-spacing:.02em}
 #prBandP .pb-pow{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:#1a1f2b;color:#6b7280;font-size:18px;cursor:pointer;display:grid;place-items:center}
 #prBandP .pb-pow.on{color:#69db7c;box-shadow:0 0 12px rgba(105,219,124,.45),inset 0 0 0 1px rgba(105,219,124,.5)}
