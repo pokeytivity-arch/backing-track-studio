@@ -1549,9 +1549,9 @@ function d2Voicings(v){ const tr=st.str||0, mj=st.s7!=='min', iv={1:0,3:mj?4:3,5
 function qVoicings(){ const tr=st.str||0, iv={1:0,2:2,3:4,5:7,6:9}, D=[[2,5,1],[3,6,2],[5,1,3],[6,2,5],[1,3,6],[2,5,1]]; let first=null; const out=[];
   D.forEach(dg=>{ let m; if(first==null) m=62; else { m=first+1; while(((m%12)+12)%12!==iv[dg[0]]) m++; } first=m; const ns=[m]; for(let k=1;k<3;k++){ let x=ns[k-1]+1; while(((x%12)+12)%12!==iv[dg[k]]) x++; ns.push(x); } out.push({n:ns,deg:dg.join(' ')}); });
   const sh=Math.max(...out.flatMap(x=>x.n))+tr>79?-12:0; return out.map(x=>{ const n=x.n.map(m=>m+tr+sh); return {n,deg:x.deg,fm:{[n[0]]:1,[n[1]]:3,[n[2]]:5}}; }); }
-/* the Technique buttons can be dragged into any order (kept on this device); STY_ORDER is the order he locks in */
-const STY_ORDER=null;
-function styOrdered(){ const ord=(Array.isArray(st.styOrder)&&st.styOrder.length?st.styOrder:STY_ORDER)||[]; const out=[]; ord.forEach(id=>{ const t=STY.find(x=>x.id===id); if(t&&!out.includes(t)) out.push(t); }); STY.forEach(t=>{ if(!out.includes(t)) out.push(t); }); return out; }
+/* the Technique buttons in the order he locked in (they fill the strip a column at a time) */
+const STY_ORDER=['ncc','back','contra','drop2','sixdim','quartal','licks','riffs','triad'];
+function styOrdered(){ const ord=STY_ORDER; if(st.styOrder){ delete st.styOrder; save(); } const out=[]; ord.forEach(id=>{ const t=STY.find(x=>x.id===id); if(t&&!out.includes(t)) out.push(t); }); STY.forEach(t=>{ if(!out.includes(t)) out.push(t); }); return out; }
 function styDrag(strip){ const ids=styOrdered().map(t=>t.id); strip.title='Drag the buttons to put them in any order';
   [...strip.querySelectorAll('.p-key')].forEach((k,i)=>{ k.draggable=true; k.classList.add('p-dragk');
     k.addEventListener('dragstart',e=>{ e.stopPropagation(); try{ e.dataTransfer.setData('text/plain',ids[i]); e.dataTransfer.effectAllowed='move'; }catch(_){} k.classList.add('p-dragging'); });
@@ -1571,7 +1571,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   const box=el('div','p-ccon'); ctl.appendChild(box); const strips=el('div','p-mix p-cmix'); box.appendChild(strips);
   const ncc=T.id==='ncc', sd=T.id==='sixdim', d2=T.id==='drop2', qh=T.id==='quartal', lhOn=ncc||sd, mv=ncc||sd||d2||qh, v=T.vars&&st.svar!=='all'?T.vars[+st.svar]:null, overOn=ncc&&(st.svar==='all'||(v&&v.over));
   strips.append(
-    styDrag(cStrip('Technique',styOrdered().map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true})),
+    cStrip('Technique',styOrdered().map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true}),
     cStrip('Variety',(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[]),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:ncc,off:()=>!T.vars,offWhy:'Coming soon'}),
     cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>[st.sover||'f7'],k=>{ st.sover=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'For the varieties played over F dominant 7 (no 5) or C minor sixth'}),
     cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Neighboring Chord Couples, Sixth Diminished, Drop-2 Movements and Quartal Harmony'}),
