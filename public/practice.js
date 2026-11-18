@@ -1772,11 +1772,11 @@ function ccStrip(ncc){ const strip=el('div','p-ch p-bch p-ccs'); strip.dataset.c
     const x=el('button','p-key p-ccx','Clear'); x.type='button'; x.onclick=()=>{ clr(); st.cc=null; save(); render(); }; col.appendChild(x); }
   return strip; }
 { const cs=document.createElement('style'); cs.textContent=`#prRoom .p-ccrow{display:flex;gap:6px} #prRoom .p-ccrow .p-sel:first-child{flex:0 0 74px} #prRoom .p-sel{flex:1;min-width:0;background:#141925;color:#e6e9f2;border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:5px 6px;font:700 12.5px var(--body)}
-#prRoom .p-sel:disabled{opacity:.5} #prRoom .p-ccx{justify-content:center;color:#c9cfdc} #prRoom[data-styl="1"] .p-cmix>.p-bch{min-height:126px;box-sizing:border-box} #prRoom .p-ccs .p-bcol{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;align-content:start} #prRoom .p-ccs .p-ccrow{grid-column:1/-1}`; document.head.appendChild(cs); }
+#prRoom .p-sel:disabled{opacity:.5} #prRoom .p-ccx{justify-content:center;color:#c9cfdc} #prRoom[data-styl="1"] .p-cmix>.p-bch{min-height:126px;box-sizing:border-box} #prRoom[data-styl="1"] .p-cmix{justify-content:flex-start!important} #prRoom .p-ccs .p-bcol{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px;align-content:start} #prRoom .p-ccs .p-ccrow{grid-column:1/-1}`; document.head.appendChild(cs); }
 /* ---------- Stylization console layout: drag a section by its title to move it, drag a button to move it within its section,
    drag the line on a section's right edge to make it narrower or wider. Kept on this device until he locks a layout in (STY_LOCK). ---------- */
 const STY_LOCK=false;
-const STY_W={Technique:292,Over:184,'Left hand':158,Chord:548,Variety:490,'Skill level':137,Hands:128,Direction:139,'Seventh chord':165,'Sixth chord':146,Octaves:118,Transpose:362,Levels:158,'Compatible chord':400};
+const STY_W={Technique:414,'Left hand':158,Chord:548,'Compatible chord':360,Variety:398,'Skill level':137,Hands:128,Direction:139,'Seventh chord':165,'Sixth chord':146,Octaves:118,Transpose:362,Levels:158};
 const STY_TECH_KEYS=['Variety','Chord','Skill level','Hands'];
 function styBKey(title){ if(title==='Variations') title='Variety'; return title==='Chord'?'Chord|'+(st.sty==='ncc'?'over':sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
 function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Array.isArray(ord)) return opts; const pos=v=>{ const i=ord.indexOf(String(v)); return i<0?999:i; };
@@ -1793,10 +1793,10 @@ function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up); }); }); }
 /* sections: order and widths */
 const sNmK=x=>{ const c=x.dataset.ch; return !c?'Levels':c==='Movements'?'Technique':c==='Variations'?'Variety':c; };   /* the Technique and Movements pages share one place */
-function styMix(panel){ const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||{}, kids=[...panel.children], pos=c=>{ const i=ord.indexOf(c); return i<0?999:i; };
+function styMix(panel){ if(st.swv!==2){ if(st.swid){ const o=Object.assign({},st.swid); delete o.Technique; st.swid=o; } st.swv=2; save(); } const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||{}, kids=[...panel.children], pos=c=>{ const i=ord.indexOf(c); return i<0?999:i; };
   kids.map((x,i)=>[x,i]).sort((a,b)=>(pos(sNmK(a[0]))-pos(sNmK(b[0])))||(a[1]-b[1])).forEach(([x])=>panel.appendChild(x));
   /* each section keeps one width whatever the technique, key or tab (the widest it ever needs), so nothing on the console moves */
-  [...panel.children].forEach(sx=>{ const nm=sNmK(sx); if(W[nm]){ sx.style.flex='0 0 '+W[nm]+'px'; sx.style.width=W[nm]+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); } else if(STY_W[nm]){ sx.style.flex=(nm==='Levels'?'0':'1')+' 0 '+STY_W[nm]+'px'; sx.style.minWidth=STY_W[nm]+'px'; } });
+  [...panel.children].forEach(sx=>{ const nm=sNmK(sx); if(W[nm]){ sx.style.flex='0 0 '+W[nm]+'px'; sx.style.width=W[nm]+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); } else if(STY_W[nm]){ sx.style.flex='0 0 '+STY_W[nm]+'px'; sx.style.width=STY_W[nm]+'px'; sx.style.minWidth=STY_W[nm]+'px'; } });
   if(STY_LOCK) return;
   const saveOrd=()=>{ st.sord=[...panel.children].map(x=>sNmK(x)); save(); };
   [...panel.children].forEach(sx=>{ const nm=sNmK(sx), h=sx.querySelector(':scope>.p-cht');
