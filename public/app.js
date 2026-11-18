@@ -50,7 +50,7 @@ const IC={
 let pop=null;
 function closePop(){ if(pop){ pop.remove(); pop=null; document.removeEventListener('pointerdown',popOut,true); } }
 function popOut(e){ if(pop&&!pop.contains(e.target)&&!e.target.closest('.dbar-pop-btn')) closePop(); }
-function openPop(btn,build){ if(pop){ const same=pop.__b===btn; closePop(); if(same) return; } pop=el('div','dbar-pop'); pop.__b=btn; build(pop);
+function openPop(btn,build){ if(pop){ const same=pop.__b===btn; closePop(); if(same) return; } pop=el('div','dbar-pop'); pop.__b=btn; build(pop); if(!pop) return;
   const host=btn.closest('#prRoom,#earRoom')||document.body; host.appendChild(pop);
   /* placed from the layout's own offsets, so it lands under its button even while rotate.js has the page turned sideways */
   let x=0,y=0,e=btn; while(e&&e!==host&&e!==document.body){ x+=e.offsetLeft; y+=e.offsetTop; e=e.offsetParent; }
@@ -62,6 +62,10 @@ function prQ(s){ const r=pr(); return r&&r.querySelector(s); }
 function tempoIn(){ return prQ('.p-tempo input[type=range]'); }
 function loopIn(){ const ls=[...(pr()?pr().querySelectorAll('label.p-rng'):[])].find(l=>/loop/i.test(l.textContent)&&l.querySelector('input[type=checkbox]')); return ls&&ls.querySelector('input'); }
 function handsBtn(){ const k=$('prKbP'); return k&&[...k.querySelectorAll('button')].find(b=>b.textContent.trim()==='Hands'); }
+function dSel(re){ const r=pr(); if(!r) return null; const L=[...r.querySelectorAll('#prDisp .p-sel')].find(x=>re.test((x.querySelector('span')||x).textContent.trim())); return L?L.querySelector('select'):null; }
+const selTxt=s=>s&&s.options[s.selectedIndex]?s.options[s.selectedIndex].textContent.trim():'';
+/* a drop-down opened from the tool bar: the turned page's own list (rotate.js) or the phone's picker */
+function openSel(s){ closePop(); if(!s) return; if(root.classList.contains('ps-rot')){ s.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})); return; } try{ if(s.showPicker){ s.showPicker(); return; } }catch(_){} s.focus(); }
 function noteSel(){ const r=pr(); if(!r) return null; const L=[...r.querySelectorAll('#prDisp .p-sel')].find(x=>/^\s*note/i.test(x.textContent)); return L?L.querySelector('select'):null; }
 function keyText(){ const v=prQ('.p-trs .p-trr .p-trv'); if(v) return v.textContent.trim(); const s=noteSel(); if(s&&s.options[s.selectedIndex]) return s.options[s.selectedIndex].textContent.trim(); return ''; }
 const fire=(x,ev)=>x&&x.dispatchEvent(new Event(ev,{bubbles:true}));
@@ -87,7 +91,9 @@ const BARS={
       {k:'hands',ic:'hands',t:'Hands',hide:()=>!handsBtn(),pressed:()=>{ const h=handsBtn(); return !!(h&&h.getAttribute('aria-pressed')==='true'); },go:()=>handsBtn().click()},
       {k:'fav',ic:'fav',t:'Favourite: save this exercise to a memory bank',hide:()=>!prQ('.p-fav'),pressed:()=>{ const f=prQ('.p-fav'); return !!(f&&f.classList.contains('on')); },go:()=>prQ('.p-fav').click()}],
     right:[
-      {k:'key',pill:1,t:'Key and transpose',hide:()=>!keyText(),label:()=>(/^[+-]?\d/.test(keyText())?'Transpose: ':'Key: ')+keyText(),pop:p=>{ const row=prQ('.p-trs .p-trr'); if(row) keyPop(p,()=>row.querySelectorAll('.p-trb')[0],()=>row.querySelectorAll('.p-trb')[1],keyText); else { closePop(); const s=noteSel(); if(s){ s.focus(); s.click(); } } }},
+      {k:'key',pill:1,t:'Key and transpose',hide:()=>!keyText(),label:()=>(/^[+-]?\d/.test(keyText())?'Transpose: ':'Key: ')+keyText(),pop:p=>{ const row=prQ('.p-trs .p-trr'); if(row) keyPop(p,()=>row.querySelectorAll('.p-trb')[0],()=>row.querySelectorAll('.p-trb')[1],keyText); else openSel(noteSel()); }},
+      {k:'scale',pill:1,t:'Scale',hide:()=>!dSel(/^scale$/i),label:()=>selTxt(dSel(/^scale$/i)),go:()=>openSel(dSel(/^scale$/i))},
+      {k:'oct',pill:1,t:'Octaves',hide:()=>!dSel(/^octaves?$/i),label:()=>selTxt(dSel(/^octaves?$/i)).replace(/^One octave$/i,'1 oct').replace(/^(\w+) octaves$/i,(m,n)=>({two:'2',three:'3',four:'4'}[n.toLowerCase()]||n)+' oct'),go:()=>openSel(dSel(/^octaves?$/i))},
       {k:'play',play:1,t:'Play',playing:()=>/Pause/.test(($('prPlay')||{}).textContent||''),go:()=>$('prPlay')&&$('prPlay').click()},
       {k:'stop',ic:'stop',t:'Stop',dis:()=>{ const b=$('prPause'); return !b||b.disabled; },go:()=>{ const b=$('prPause'); if(b&&!b.disabled) b.click(); }},
       {k:'full',full:1,t:'Full screen'}]},

@@ -201,3 +201,14 @@ html.m-ph:not(.ps-rot):not(.m-land) #earRoom #earOpts{display:grid!important;gri
 html.m-ph:not(.ps-rot):not(.m-land) #earRoom #earOpts .e-opt{min-height:52px;font-size:17px}
 html.m-ph:not(.ps-rot):not(.m-land) #earRoom #earDisp>.ep-body{height:auto!important;min-height:0!important}
 html.m-ph:not(.ps-rot):not(.m-land) #earRoom #earCtl{flex-wrap:wrap;gap:8px}
+/* phone: Note, Scale and Octaves live on the tool bar, so their row leaves the Display to the practice feed */
+html.m-ph #prRoom.app-dbar #prDisp .pd-top .p-r1:has(select[aria-label=Scale]){display:none!important}
+html.m-ph #prRoom.app-dbar #prDisp .pd-top:not(:has(>:not(.p-r1):not(.p-ctr))):has(select[aria-label=Scale]){display:none!important}
+html.m-ph #prRoom #prDisp .pd-screen{max-height:96px}
+html.m-ph #prRoom .dbar .dbpill{padding:0 9px;font-size:12px;height:32px;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+html.m-ph #prRoom .dbar .dbr{gap:3px}
+/* phone: the practice feed (stopwatch, goal, time, notes) sits in the Display as a strip, not over the text */
+html.m-ph #prRoom #prDisp .p-watch.indisp{position:static!important;inset:auto!important;width:auto!important;height:auto!important;margin:2px 0 0;flex-direction:row;align-items:center;flex-wrap:wrap}
+html.m-ph #prRoom #prDisp .p-watch.indisp .p-wps{flex:1 1 auto}
+html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp){max-height:none}
+html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp) #prMsg{display:none}
