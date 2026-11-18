@@ -180,7 +180,7 @@ function target(h,m,f,pos){
 /* avail: this scale has a fingering to show. s: the step being shown (or none). Hands are only ever drawn in the Scale room. */
 function sync(kb,avail,s,cb){
   if(cb) onChange=cb; lastA=[kb,avail,s,cb];
-  if(!avail||!kb){ if(svg){ ['rh','lh'].forEach(k=>{ H[k].on=false; H[k].init=false; set(H[k].g,{display:'none'}); }); host.style.paddingTop=''; host.style.paddingBottom='0px'; ctrl.hidden=true; } return; }
+  if(!avail||!kb){ if(svg){ ['rh','lh'].forEach(k=>{ H[k].on=false; H[k].init=false; set(H[k].g,{display:'none'}); }); host.style.paddingTop=''; host.style.paddingBottom='24px'; ctrl.hidden=true;   /* the keyboard keeps its size with or without hands, so nothing below it moves */ } return; }
   if(!host){ const w=kb.parentNode; if(!w) return; mount(w); }
   if(!layout(kb)) return;
   if(!ro&&window.ResizeObserver){ ro=new ResizeObserver(()=>{ if(lastA&&lastA[0]&&lastA[0].isConnected&&host) sync(...lastA); }); }
