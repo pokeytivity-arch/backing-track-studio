@@ -170,7 +170,10 @@ function tabSync(){ if(!app()){ if(tabs) tabs.hidden=true; root.classList.remove
   tabs.querySelectorAll('.app-tab').forEach(b=>{ const on=b.dataset.k===curK; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); }); }
 
 /* ---------------- keep everything in step ---------------- */
-let t0=0; function tick(){ clearTimeout(t0); t0=setTimeout(()=>{ scanPanels(); prBar(); tabSync(); },40); }
+/* Ear training on a phone: the answer buttons live in the keyboard area (an exercise uses one or the other), so nothing above them moves */
+function earOpts(){ const o=$('earOpts'), kp=$('earKbP'), dp=$('earDisp'); if(!o||!kp||!dp) return; const kb=kp.querySelector(':scope>.ep-body'), db=dp.querySelector(':scope>.ep-body'); if(!kb||!db) return;
+  if(phone()){ if(o.parentNode!==kb) kb.insertBefore(o,kb.firstChild); } else if(o.parentNode!==db){ const m=$('earMsg'); if(m&&m.parentNode===db) m.after(o); else db.appendChild(o); } }
+let t0=0; function tick(){ clearTimeout(t0); t0=setTimeout(()=>{ scanPanels(); prBar(); earOpts(); tabSync(); },40); }
 new MutationObserver(tick).observe(document.body,{childList:true,subtree:true}); new MutationObserver(tick).observe(document.body,{attributes:true,attributeFilter:['data-dest']});
 setInterval(()=>{ if(!document.hidden){ sync(); tabSync(); } },700);
 addEventListener('resize',tick); document.addEventListener('DOMContentLoaded',tick); tick();
