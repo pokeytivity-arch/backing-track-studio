@@ -1,0 +1,106 @@
+/* app.css: panels that minimise, the Display tool bar, the tab bar, and the phone/tablet layouts (see app.js). Loaded last. */
+
+/* ---------- every panel can be minimised to its title bar ---------- */
+.ep .ep-mn{font-weight:900}
+.ep.ep-min>.ep-body{display:none!important}
+.ep.ep-min{flex:0 0 auto!important;min-height:0!important;height:auto!important}
+.ep.ep-min>.ep-h{cursor:pointer;border-bottom:0}
+.ep.ep-min>.ep-h b::after{content:"  ·  tap to open";font-weight:600;letter-spacing:.06em;text-transform:none;opacity:.6}
+
+/* ---------- the Display tool bar (practice rooms), like the Transcription Studio's ---------- */
+.dbar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;padding:0 8px;margin:-2px -2px 6px;background:#1d1d1f;color:#f2f2f4;border-radius:12px;user-select:none;-webkit-user-select:none}
+.dbar .dbl,.dbar .dbr{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.dbar .dbm{flex:1 1 auto;min-width:0;text-align:center;overflow:hidden}
+.dbar .dbt{display:block;font:800 13px var(--body);letter-spacing:.02em;color:#c9cfdc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbar button{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:3px;min-width:38px;height:38px;padding:0 7px;border:0;border-radius:10px;background:transparent;color:#f2f2f4;cursor:pointer;font:700 12px var(--body)}
+.dbar button:hover:not(:disabled){background:rgba(255,255,255,.08)} .dbar button:disabled{opacity:.3;cursor:default} .dbar button[hidden]{display:none}
+.dbar button[aria-pressed=true]{color:#ffd43b;background:rgba(255,212,59,.12)}
+.dbar svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round} .dbar svg .f{fill:currentColor;stroke:none}
+.dbar small{font:800 11px var(--mono,ui-monospace,monospace);color:#ffd43b}
+.dbar .dbpill{background:#2c2c30;border-radius:999px;padding:0 12px;font:700 13px var(--body);color:#e6e9f2;white-space:nowrap}
+.dbar .dbplay{background:#ffd43b;color:#151b28;border-radius:999px;min-width:46px} .dbar .dbplay:hover:not(:disabled){background:#ffe066}
+.dbar .dbplay.on{background:#3dff6e;color:#0b1a10}
+.dbar-pop{position:absolute;z-index:2147483500;min-width:220px;background:#16181d;border:1px solid #333845;border-radius:14px;padding:10px 12px;box-shadow:0 16px 40px rgba(0,0,0,.6);color:#eef1f7;font:600 13px var(--body)}
+.dbar-pop .dp-h{font:800 10.5px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8b93a7;margin-bottom:8px}
+.dbar-pop .dp-row{display:flex;align-items:center;gap:6px;margin:6px 0}
+.dbar-pop .dp-row button{min-width:40px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#22262f;color:#fff;font:800 14px var(--body);cursor:pointer}
+.dbar-pop .dp-v{flex:1;text-align:center;font:800 22px var(--mono,ui-monospace,monospace);color:#ffd43b}
+.dbar-pop .dp-r{width:100%;accent-color:#ffd43b}
+.dbar-pop .dp-tap{flex:1} .dbar-pop .dp-n{color:#8b93a7;font-size:12px} .dbar-pop .dp-g{display:inline-flex}
+/* the tool bar does what the old row of Play, Stop, Tempo, Tap, Loop and the thumbs up did, so those are not shown twice */
+#prRoom.app-dbar #prDisp #prPlay,#prRoom.app-dbar #prDisp #prPause,#prRoom.app-dbar #prDisp .p-tempo,#prRoom.app-dbar #prDisp .p-fav,#prRoom.app-dbar #prDisp label.p-rng:has(>input[type=checkbox]){display:none!important}
+#prRoom.app-dbar #prDisp .p-ctr:not(:has(>:not(#prPlay):not(#prPause):not(.p-tempo):not(.p-fav):not(label.p-rng))){display:none!important}
+#prRoom.app-dbar #prDisp .pd-top:not(:has(>:not(.p-ctr))):has(>.p-ctr){display:none!important}
+#prRoom.app-dbar #prDisp .pd-tp:not(:has(>:not(#prPlay):not(#prPause))){display:none!important}
+
+/* ---------- tab bar ---------- */
+.app-tabs{position:fixed;left:0;right:0;bottom:0;z-index:200500;display:flex;justify-content:space-around;align-items:stretch;padding:4px 6px calc(4px + env(safe-area-inset-bottom));background:rgba(12,15,24,.92);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.1)}
+.app-tabs[hidden]{display:none}
+.app-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:0;background:transparent;color:#9aa3b8;font:700 11px var(--body,system-ui);letter-spacing:.02em;cursor:pointer;border-radius:12px;-webkit-tap-highlight-color:transparent}
+.app-tab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.app-tab.on{color:#ffd43b} .app-tab.on svg{stroke-width:2.2} .app-tab:active{background:rgba(255,255,255,.06)}
+html.app-has-tabs body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+html.app-has-tabs #suiteHub .in{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+html.app-has-tabs #psInstBar{bottom:calc(70px + env(safe-area-inset-bottom))!important}
+
+/* ---------- phones ---------- */
+/* the menu bar: back, the space's name and one Menu button, held either way */
+html.m-ph body .menubar{overflow:visible;gap:6px;height:42px;padding:0 8px}
+html.m-ph body .menubar .menu-btn:not(.mmore):not(#psChip):not(#psBackBtn){display:none}
+html.m-ph body .menubar #psChip{min-width:0;max-width:56vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.m-ph body .menubar .menu-btn.mmore{display:block;margin-left:auto;min-height:0;height:34px;line-height:1;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:700}
+html.m-ph body .menubar .menu-status{display:none}
+html.m-ph .ep-h [data-a=det]{display:none}
+/* keyboard rooms on a phone (turned sideways or held sideways): tool bar, Display, the 88 keys and the Console share the screen; the Console scrolls inside */
+html.m-ph #prRoom{display:flex!important;flex-direction:column;overflow:hidden!important;gap:4px!important;padding:4px 8px calc(4px + env(safe-area-inset-bottom))!important}
+html.m-ph #prRoom>.e-top{display:none!important}
+html.m-ph #prRoom>.ep{flex:0 0 auto;margin:0!important}
+html.m-ph #prRoom #prDisp>.ep-h,html.m-ph #prRoom #prKbP>.ep-h{display:none}
+html.m-ph #prRoom #prDisp>.ep-body{padding:4px 6px!important;gap:2px!important}
+html.m-ph #prRoom .dbar{min-height:40px;margin:0 0 2px} html.m-ph #prRoom .dbar button{height:34px;min-width:34px} html.m-ph #prRoom .dbar svg{width:21px;height:21px}
+html.m-ph #prRoom #prLbl,html.m-ph #prRoom #prBig,html.m-ph #prRoom #prSub{display:none!important}
+html.m-ph #prRoom #prDisp .pd-screen{height:auto!important;max-height:58px;min-height:0!important;padding:4px 8px!important;overflow:auto}
+html.m-ph #prRoom #prDisp .pd-main{gap:6px}
+html.m-ph #prRoom #prMsg{font-size:13px!important;line-height:1.3;margin:0}
+html.m-ph #prRoom #prKbP>.ep-body{padding:2px 4px!important}
+html.m-ph #prRoom .has-kbbar{margin-top:22px!important} html.m-ph #prRoom .kb-bar{top:-21px;height:20px} html.m-ph #prRoom .kb-n{font-size:10px;padding:1px 4px} html.m-ph #prRoom .kb-n.kb-2{top:10px}
+html.m-ph #prRoom #prConP{flex:1 1 auto!important;min-height:0;display:flex;flex-direction:column}
+html.m-ph #prRoom #prConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 8px!important}
+html.m-ph #prRoom #prConP.ep-min{flex:0 0 auto!important}
+html.m-ph #prRoom #prConP>.ep-h{padding:4px 8px} html.m-ph #prRoom #prConP>.ep-h .ep-b{min-width:34px;min-height:30px}
+html.m-ph #prRoom .p-tabs{margin:0 0 6px} html.m-ph #prRoom .p-tab{padding:7px 14px 6px;font-size:11px}
+html.m-ph #prBandP.pb-pop{min-width:260px}
+
+/* the hands stay on the keys: on a phone they are cut off at the bottom of the keyboard, and the Hands switch is on the tool bar */
+html.m-ph #prRoom #prKbP{overflow:hidden}
+html.m-ph #prRoom #prKbP .p-hctl{display:none!important}
+html.m-ph #prRoom #prKbP .e-kb>div{padding-bottom:4px!important}
+/* the home page on a phone: a short list of spaces, like a chat list */
+html.m-ph #suiteHub .in{padding:64px 14px 40px}
+html.m-ph #suiteHub h1{font-size:30px;margin:6px 0 6px}
+html.m-ph #suiteHub .sub{font-size:13.5px;margin:0 auto 16px}
+html.m-ph #suiteHub .cards{grid-template-columns:1fr;gap:10px}
+html.m-ph #suiteHub .dcard{display:grid!important;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;row-gap:2px;align-items:center;padding:12px 14px;border-radius:18px;min-height:0}
+html.m-ph #suiteHub .dcard .ic{grid-row:1/3;width:52px;height:52px;font-size:30px} html.m-ph #suiteHub .dcard .ic svg{width:30px;height:30px}
+html.m-ph #suiteHub .dcard .badge{position:static;grid-column:2;justify-self:start;order:-1;font-size:9.5px;padding:3px 7px;margin-bottom:2px}
+html.m-ph #suiteHub .dcard>*:not(.ic):not(.nm):not(.bl):not(.badge){display:none!important}
+html.m-ph #suiteHub .dcard .nm{font-size:19px}
+html.m-ph #suiteHub .dcard .bl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px}
+
+/* Class Area and Practice Arena on an upright phone: one card a row, picture on the left, name and line beside it */
+@media (orientation:portrait){
+html.m-ph body .cl-four,html.m-ph body[data-area] #clHome .cl-four,html.m-ph body[data-area] #clHome .cl-four.has-plan{grid-template-columns:1fr!important;gap:10px!important}
+html.m-ph body .cl-four .cl-box{min-height:0!important;height:96px;flex-direction:row!important;border-radius:18px!important}
+html.m-ph body .cl-four .cl-box .ph,html.m-ph body .cl-four .cl-box .sty-ph{flex:0 0 30%!important;width:30%!important;height:100%!important;min-height:0!important;-webkit-mask-image:none!important;mask-image:none!important}
+html.m-ph body .cl-four .cl-box .tx{flex:1;min-width:0;margin:0!important;padding:8px 30px 8px 12px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr);column-gap:12px;row-gap:1px;align-content:center;align-items:center}
+html.m-ph body .cl-four .cl-box .ic{grid-row:1/3;width:42px!important;height:42px!important}
+html.m-ph body .cl-four .cl-box b{font-size:17px!important;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.m-ph body .cl-four .cl-box span{font-size:12.5px!important;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html.m-ph body .cl-four .cl-box .go{display:none!important}
+html.m-ph body .cl-four .cl-box:after{content:"›";position:absolute;right:12px;top:50%;transform:translateY(-52%);font:700 24px var(--body);color:rgba(255,255,255,.7);z-index:3}
+}
+/* the install banner: one slim line above the tab bar */
+html.m-ph #psInstBar{left:8px!important;right:8px!important;padding:6px 10px!important;gap:8px!important;border-radius:14px!important}
+html.m-ph #psInstBar img{width:28px!important;height:28px!important}
+html.m-ph #psInstBar span{font-size:12px!important;line-height:1.25!important}
+html.m-ph #psInstBar .go{padding:7px 10px!important;font-size:12px!important;white-space:nowrap}
