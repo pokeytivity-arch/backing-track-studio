@@ -166,3 +166,14 @@ html.m-ph .ep.ep-sheet>.ep-body{flex:1 1 auto!important;min-height:0!important;o
 html.m-ph .ep.ep-sheet>.ep-h{display:flex!important} html.m-ph .ep.ep-sheet>.ep-h .ep-mn{font-size:0} html.m-ph .ep.ep-sheet>.ep-h .ep-mn::before{content:"✕";font-size:15px}
 html.m-ph .ep.ep-sheet>.ep-h::before{content:"";position:absolute;left:50%;top:5px;width:44px;height:4px;margin-left:-22px;border-radius:3px;background:rgba(255,255,255,.25)}
 html.m-ph .ep.ep-sheet>.ep-h{position:relative;padding-top:12px!important}
+/* the Chord of the bar keyboard on a phone: a sheet along the bottom, its keyboard full width and the five voices in one row */
+html.m-ph #prBandP.pb-pop{position:fixed!important;left:6px!important;right:6px!important;top:auto!important;bottom:calc(4px + env(safe-area-inset-bottom))!important;width:auto!important;min-width:0!important;max-width:none!important;max-height:calc(var(--appH,390px)*.62);overflow:auto;z-index:2147483100!important;padding:6px 10px 8px!important}
+html.m-ph #prBandP .pb-grip{display:none}
+html.m-ph #prBandP .pb-top{cursor:default}
+html.m-ph #prBandP .ep-body{gap:4px!important}
+html.m-ph #prBandP .pb-rack{flex-wrap:nowrap!important;gap:6px!important;overflow-x:auto;justify-content:space-between}
+html.m-ph #prBandP .pb-v{min-width:58px!important;flex:1 1 0}
+html.m-ph #prBandP .has-kbbar{margin-top:20px!important} html.m-ph #prBandP .kb-bar{top:-19px;height:18px} html.m-ph #prBandP .kb-n{font-size:9.5px;padding:1px 4px}
+html.app-has-tabs .menu-pop{max-height:calc(100dvh - 130px - env(safe-area-inset-bottom))!important}
+html.m-ph #prBandP .pb-kb svg{height:64px!important;width:100%!important}
+html.m-ph #prDisp.has-band #prMsg{visibility:visible!important}

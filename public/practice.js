@@ -1641,7 +1641,7 @@ function bandBar(t,d,BB,bi,bpb,spb){ const C=CLASS.clock; if(st.bOn===false) ret
   segs.forEach(([o,dd],k)=>{ if(nv>1&&(bi>0||k>0)) BB.vi=(BB.vi+1)%nv; const vi=BB.vi; sdCNotes(c,vi).rh.forEach(m=>play(m,t+o,dd-.02,.42));
     timers.push(setTimeout(()=>{ if(!playing) return; bandKb(vi,true); },Math.max(0,(t+o-C.now())*1000))); }); }
 function bandKb(vi,hit){ const kb=document.querySelector('#prBandP .pb-kb'); if(!kb||typeof keyboardSVG!=='function') return; const N=sdCNotes(bandCur(),vi||0), sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); });
-  kb.textContent=''; const sv=keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:false}); kb.appendChild(sv); kbBar(kb,sv,N.lh,N.rh,sp); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
+  kb.textContent=''; const sv=keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:false}); if(window.APPSHELL&&APPSHELL.isPhone()) sv.setAttribute('preserveAspectRatio','none'); kb.appendChild(sv); kbBar(kb,sv,N.lh,N.rh,sp); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
 function sdChordStrips(sd){ const L=sdCList();
   return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>sd&&chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>!sd||!chordBar(),offWhy:sd?'Opens with Chord of the bar (Left hand)':'For Sixth Diminished Movements'})]; }
 /* the second keyboard (61 keys) plays the chord of the bar in the background: layered voices, each with a fader and a meter, and a power button */
@@ -1699,7 +1699,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
     k.onclick=()=>{ const cur=bVoices().slice(), i=cur.indexOf(v); if(i>=0) cur.splice(i,1); else cur.push(v); st.bV=cur; save(); bandSync(); };
-    col.append(k,bandFader(v,MQM.matches?34:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
+    col.append(k,bandFader(v,MQM.matches||(window.APPSHELL&&APPSHELL.isPhone())?30:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
   bandApply(); }
 { const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{visibility:hidden} #prDisp.has-band .ep-body,#prDisp.has-band .pd-main,#prDisp.has-band .pd-screen{overflow:visible!important}
 #prBandP .pb-top{cursor:grab;user-select:none;touch-action:none} #prBandP.pb-mv .pb-top{cursor:grabbing} #prBandP.pb-mv{opacity:.96}
