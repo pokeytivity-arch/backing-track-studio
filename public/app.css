@@ -212,3 +212,4 @@ html.m-ph #prRoom #prDisp .p-watch.indisp{position:static!important;inset:auto!i
 html.m-ph #prRoom #prDisp .p-watch.indisp .p-wps{flex:1 1 auto}
 html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp){max-height:none}
 html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp) #prMsg{display:none}
+html.m-ph #prRoom #prTip{display:none!important}

@@ -954,15 +954,26 @@ const MCH={ // the minor chord: where it lives
 MCH.Eb=MCH['D#'];
 const OPP={'C#':'Db','D#':'Eb','G#':'Ab','A#':'Bb','F#':'Gb','Gb':'F#'};
 const SYMK=k=>k.replace('#','♯').replace(/b$/,'♭');
+/* a key with an easier spelling: a dialog asks once each time you choose it: switch, or carry on with this one */
+let tipSeen='';
+function keyAsk(title,lines,sw,swLabel){ const tag=kind+'|'+st.type+'|'+st.key; if(tipSeen===tag) return; tipSeen=tag; document.querySelectorAll('.ps-menu.p-keyask').forEach(x=>x.remove());
+  const m=el('div','ps-menu p-keyask'), sh=el('div','ps-sheet'), t=el('div','ps-t',title), body=el('div','ps-l'); body.style.padding='14px 16px';
+  lines.forEach(x=>{ const q=el('p',null,x); q.style.margin='0 0 10px'; body.appendChild(q); });
+  const row=el('div'); row.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-top:4px'; const go=el('button','e-btn pri',swLabel), st2=el('button','e-btn','Continue with '+SYMK(st.key));
+  [go,st2].forEach(b=>{ b.type='button'; b.style.cssText='flex:1 1 150px;justify-content:center;text-align:center;border:1.5px solid #3a4a74;border-radius:999px'; row.appendChild(b); });
+  go.style.background='#ffd24d'; go.style.color='#151b28'; go.style.fontWeight='800';
+  go.onclick=()=>{ m.remove(); sw(); }; st2.onclick=()=>m.remove(); m.onclick=e=>{ if(e.target===m) m.remove(); };
+  body.appendChild(row); sh.append(t,body); m.appendChild(sh); document.body.appendChild(m); go.focus(); }
 function keyTip(){
-  let t=document.getElementById('prTip'); if(!t){ t=el('div','p-tip'); t.id='prTip'; const m=$('#prMsg'); m.parentNode.insertBefore(t,m.nextSibling); }
-  t.textContent=''; t.hidden=true; const SC=window.SCALES;
-  if(kind==='scales'&&['nat','harm','mel'].includes(st.type)&&MINS[st.key]){ const m=MINS[st.key]; const p1=el('p',null,m[0]); t.appendChild(p1); if(MCH[st.key]) t.appendChild(el('p',null,MCH[st.key])); if(m[1]){ const bb=el('button','e-btn','Switch to '+SYMK(m[1])+' minor'); bb.type='button'; bb.onclick=()=>{ st.key=m[1]; save(); loadScale(); render(); }; t.appendChild(bb); } t.hidden=false; return; }
-  if(kind!=='scales'||st.type!=='major'||!OPP[st.key]||!SC||!SC.acc) return;
-  const k=st.key, o=OPP[k], a=SC.acc(k), b=SC.acc(o), p=el('p',null,''); let msg;
+  let t=document.getElementById('prTip'); if(!t){ t=el('div','p-tip'); t.id='prTip'; const mm=$('#prMsg'); mm.parentNode.insertBefore(t,mm.nextSibling); } t.textContent=''; t.hidden=true; const SC=window.SCALES;
+  if(kind==='scales'&&['nat','harm','mel'].includes(st.type)&&MINS[st.key]){ const m=MINS[st.key]; if(m[1]){ const L=[m[0]]; if(MCH[st.key]) L.push(MCH[st.key]); keyAsk(SYMK(st.key)+' minor',L,()=>{ st.key=m[1]; save(); loadScale(); render(); },'Switch to '+SYMK(m[1])+' minor'); }
+    else { t.appendChild(el('p',null,m[0])); if(MCH[st.key]) t.appendChild(el('p',null,MCH[st.key])); t.hidden=false; }   /* a key that is already the right one: a short note in the Display */
+    return; }
+  if(kind!=='scales'||st.type!=='major'||!OPP[st.key]||!SC||!SC.acc){ tipSeen=''; return; }
+  const k=st.key, o=OPP[k], a=SC.acc(k), b=SC.acc(o); let msg;
   if(k==='F#'||k==='Gb') msg='F♯ and G♭ major are both allowed in music: either way it is 6 (6 sharps or 6 flats). Use F♯ when G♭ is inconvenient: the 4th tone of G♭ is C♭, so switch to F♯ if you want a B. Use G♭ when the 7th tone of F♯, E♯, is inconvenient: G♭ has F as its 7th tone.';
   else msg=SYMK(k)+' major has '+a.sharps+' sharps. '+SYMK(o)+' major has '+b.flats+' flats. The number of sharps in a key and the number of flats in the opposing key always add up to 12 ('+a.sharps+' + '+b.flats+' = 12). Switching to '+SYMK(o)+' takes you from '+a.sharps+' sharps to '+b.flats+' flats.';
-  p.textContent=msg; t.appendChild(p); const b2=el('button','e-btn','Switch to '+SYMK(o)+' major'); b2.type='button'; b2.onclick=()=>{ st.key=o; save(); loadScale(); render(); }; t.appendChild(b2); t.hidden=false;
+  keyAsk(SYMK(k)+' major',[msg],()=>{ st.key=o; save(); loadScale(); render(); },'Switch to '+SYMK(o)+' major');
 }
 function loadScale(){
   syncStudioBtn(); clr(); const SC=window.SCALES; if(!SC||!SC.build) return; if(st.rhy&&st.rhy!=='free'&&rhyOK(st.rhy)) st.rhy='free'; steps=SC.build(st.key,st.hand,st.type,rhyN()||st.oct,st.motion,st.fa==='alt'); kcRegister(); cur=-1; chips();
