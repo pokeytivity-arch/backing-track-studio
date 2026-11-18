@@ -1505,7 +1505,7 @@ function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').t
   const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,T.vars[list[0]]); drawKb(); if(c) cheer(); else { try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} } }; updPause();
   let qi=0; const run=t0=>{ if(!playing) return; const v=T.vars[list[qi]], P=syPhrase(T,v), spb=60/st.bpm, bus=C.bus(); if(bus) chBus.push(bus); meterGo();
     P.ev.forEach(e=>e.n.forEach(m=>C.note(m,t0+e.t*spb,Math.max(.08,e.d*spb*(e.d<.2?1.15:1)),e.v,bus)));
-    if(bandAct()){ bandApply(); const BB={}; for(let b=0;b<P.total;b+=P.bpb){ const tt=t0+b*spb, dd=Math.min(P.bpb,P.total-b)*spb-.04; timers.push(setTimeout(()=>{ if(!playing||!bandAct()) return; bandBar(tt,dd,BB); },Math.max(0,(tt-C.now()-.4)*1000))); } }
+    if(bandAct()){ bandApply(); const BB={}; for(let b=0;b<P.total;b+=P.bpb){ const tt=t0+b*spb, dd=Math.min(P.bpb,P.total-b)*spb-.04; timers.push(setTimeout(()=>{ if(!playing||!bandAct()) return; bandBar(tt,dd,BB,b/P.bpb,P.bpb,spb); },Math.max(0,(tt-C.now()-.4)*1000))); } }
     for(let b=0;b<P.total;b++) C.click(t0+b*spb,b%P.bpb===0,bus);
     const at=t=>Math.max(0,(t0+t*spb-C.now())*1000);
     steps=P.fr.map(f=>syStep(T,v,f));
@@ -1583,7 +1583,7 @@ const SDCH={maj:[
 const BVOX=[['piano','Piano'],['ep','E-Piano'],['organ','Organ'],['pad','Pad'],['strings','Strings']];
 const sdCList=()=>SDCH[sdMin()?'min':'maj'];
 function sdCI(){ const L=sdCList(), o=st.sdc||{}, i=+o[sdMin()?'min':'maj']||0; return Math.min(i,L.length-1); }
-const sdCur=()=>sdCList()[sdCI()], sdVI=()=>Math.min(+st.sdv||0,sdCur().v.length-1);
+const sdCur=()=>sdCList()[sdCI()], sdVI=()=>0;
 const sdCName=c=>sNm(c.r+(st.str||0))+c.n;
 /* the bass in the octave below middle C's octave (C2 up to B2), the right hand from around middle C, each note above the last */
 function sdCNotes(c,vi){ const tr=st.str||0, pcs=c.v[vi==null?sdVI():vi], bass=36+(((c.r+tr)%12)+12)%12; let prev=null; const rh=pcs.map(p=>{ const pc=(((p+tr)%12)+12)%12; let m=prev==null?53+(((pc-53)%12)+12)%12:prev+1+(((pc-prev-1)%12)+12)%12; prev=m; return m; }); return {lh:[bass],rh}; }
@@ -1592,12 +1592,17 @@ const chordBar=()=>st.slh!==false&&st.slh!=='drop2';
 const bandAct=()=>kind==='styl'&&syT().id==='sixdim'&&chordBar();
 const bVoices=()=>Array.isArray(st.bV)?st.bV:['piano'], bVol=v=>{ const o=st.bVol||{}; return o[v]==null?.7:+o[v]; };
 function bandApply(){ const C=window.CLASS&&CLASS.clock; if(!C||!C.bandVol) return; const on=st.bOn!==false&&bandAct(); BVOX.forEach(([v])=>{ try{ C.bandVol(v,on&&bVoices().includes(v)?bVol(v):0); }catch(_){} }); }
-function bandBar(t,d,BB){ const C=CLASS.clock; if(st.bOn===false) return; const N=sdCNotes(sdCur()), all=[...N.lh,...N.rh];
-  bVoices().forEach(v=>{ if(!BB[v]){ BB[v]=C.bandBus(v); if(BB[v]) chBus.push(BB[v]); } all.forEach((m,i)=>C.bandNote(v,m,t,d,i===0?.55:.42,BB[v])); });
-  const kb=document.querySelector('#prBandP .pb-kb'); if(kb){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
-function sdChordStrips(){ const L=sdCList(), c=sdCur(), off=()=>!chordBar(), why='Opens with Chord of the bar (Left hand)';
-  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x),sdCDesc(x,0)]),()=>chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); st.sdv=0; save(); render(); },{two:L.length>4,off,offWhy:why}),
-    cStrip('Voicing',c.v.map((_,i)=>[i,sdCNotes(c,i).rh.map(sdNm).join(' ')]),()=>chordBar()?[sdVI()]:[],k=>{ st.sdv=k; save(); render(); },{off:()=>off()||c.v.length<2,offWhy:c.v.length<2?'This chord has one voicing':why})]; }
+/* a chord with two right-hand voicings changes voicing every bar, and now and then every two beats */
+function bandBar(t,d,BB,bi,bpb,spb){ const C=CLASS.clock; if(st.bOn===false) return; const c=sdCur(), nv=c.v.length; if(BB.vi==null) BB.vi=0;
+  const split=nv>1&&bi>0&&Math.random()<.35, h=Math.min(2,bpb-1)*spb, segs=split?[[0,h],[h,d-h]]:[[0,d]];
+  const bass=sdCNotes(c,0).lh, play=(m,tt,dd,vel)=>bVoices().forEach(v=>{ if(!BB[v]){ BB[v]=C.bandBus(v); if(BB[v]) chBus.push(BB[v]); } C.bandNote(v,m,tt,dd,vel,BB[v]); });
+  bass.forEach(m=>play(m,t,d,.55));
+  segs.forEach(([o,dd],k)=>{ if(nv>1&&(bi>0||k>0)) BB.vi=(BB.vi+1)%nv; const vi=BB.vi; sdCNotes(c,vi).rh.forEach(m=>play(m,t+o,dd-.02,.42));
+    timers.push(setTimeout(()=>{ if(!playing) return; bandKb(vi,true); },Math.max(0,(t+o-C.now())*1000))); }); }
+function bandKb(vi,hit){ const kb=document.querySelector('#prBandP .pb-kb'); if(!kb||typeof keyboardSVG!=='function') return; const N=sdCNotes(sdCur(),vi||0), sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); });
+  kb.textContent=''; kb.appendChild(keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:true,spell:sp})); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
+function sdChordStrips(){ const L=sdCList();
+  return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); save(); const was=playing; render(); if(was) playAll(); },{two:L.length>4,off:()=>!chordBar(),offWhy:'Opens with Chord of the bar (Left hand)'})]; }
 /* the second keyboard (61 keys) plays the chord of the bar in the background: layered voices, each with a fader and a meter, and a power button */
 function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=v; strip.dataset.ch=v; strip.tabIndex=0; strip.setAttribute('role','slider'); strip.setAttribute('aria-label',BVOX.find(x=>x[0]===v)[1]+' volume');
   const fz=el('div','p-fz'); fz.style.height=(H+18)+'px'; fz.appendChild(el('div','p-tr')); [0,.25,.5,.75,1].forEach(f=>fz.appendChild(Object.assign(el('i','p-tick'),{style:'top:'+(9+(1-f)*H)+'px'})));
@@ -1616,8 +1621,8 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
     const kp=document.getElementById('prKbP'); if(kp) kp.after(p); else ov.appendChild(p); }
   p.hidden=false; const on=st.bOn!==false, c=sdCur(), N=sdCNotes(c);
   p.classList.toggle('pb-off',!on); const pw=p.querySelector('.pb-pow'); pw.classList.toggle('on',on); pw.setAttribute('aria-pressed',String(on)); pw.onclick=()=>{ st.bOn=!on; save(); bandSync(); };
-  p.querySelector('.pb-nm').textContent=sdCName(c)+'  ·  '+sdCDesc(c);
-  const kb=p.querySelector('.pb-kb'); kb.textContent=''; if(typeof keyboardSVG==='function'){ const sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); }); kb.appendChild(keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:true,spell:sp})); }
+  p.querySelector('.pb-nm').textContent=sdCName(c);
+  bandKb(0);
   const rk=p.querySelector('.pb-rack'); rk.textContent=''; const VS=bVoices();
   BVOX.forEach(([v,l])=>{ const col=el('div','pb-v'), k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; const vo=VS.includes(v); k.classList.toggle('on',vo); k.setAttribute('aria-pressed',String(vo)); k.title='Layer '+l+' on or off';
     k.onclick=()=>{ const cur=bVoices().slice(), i=cur.indexOf(v); if(i>=0) cur.splice(i,1); else cur.push(v); st.bV=cur; save(); bandSync(); };
