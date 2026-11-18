@@ -1507,7 +1507,7 @@ function syBackD(v){ const r=60+(st.str||0), I=[r,r+4,r+7]; return 'Beats 1 and 
 function syChips(){ const box=$('#prChips'); box.textContent=''; const T=syT(); if(!T.vars) return;
   const mk=(lab,on,fn)=>{ const b=el('button','p-chip'); b.type='button'; b.appendChild(el('span',null,lab)); b.setAttribute('aria-pressed',String(on)); b.onclick=fn; box.appendChild(b); };
   T.vars.forEach((v,i)=>mk(syChip(T,v),st.svar!=='all'&&+st.svar===i,()=>{ st.svar=i; save(); const was=playing; render(); if(was) playAll(); }));
-  mk('All varieties',st.svar==='all',()=>{ st.svar='all'; save(); const was=playing; render(); if(was) playAll(); }); }
+  mk('All variants',st.svar==='all',()=>{ st.svar='all'; save(); const was=playing; render(); if(was) playAll(); }); }
 function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').textContent=T.name+': HearandPlay will add these exercises soon.'; return; }
   const C=window.CLASS&&CLASS.clock; if(!C) return; playing=true; paused=false; pauseFn=()=>{ const c=doneOnce; clr(); syShow(T,T.vars[list[0]]); drawKb(); if(c) cheer(); else { try{ if(window.PSHANDS&&PSHANDS.crack) setTimeout(()=>PSHANDS.crack(),120); }catch(_){} } }; updPause();
   let qi=0; const run=t0=>{ if(!playing) return; const v=T.vars[list[qi]], P=syPhrase(T,v), spb=60/st.bpm, bus=C.bus(); if(bus) chBus.push(bus); meterGo();
@@ -1517,11 +1517,11 @@ function syPlay(){ const T=syT(), list=syList(); if(!list.length){ $('#prMsg').t
     const at=t=>Math.max(0,(t0+t*spb-C.now())*1000);
     steps=P.fr.map(f=>syStep(T,v,f));
     P.fr.forEach((f,i)=>timers.push(setTimeout(()=>{ if(!playing) return; cur=i; drawKb(); },at(f.t))));
-    for(let b=0;b<P.total;b++) timers.push(setTimeout(()=>{ if(!playing) return; syShow(T,v,'Bar '+(Math.floor(b/P.bpb)+1)+' of '+(P.total/P.bpb)+' · beat '+(b%P.bpb+1)+' · '+(P.words[b]||'')); ov.querySelectorAll('.p-bch[data-ch=Variety] .p-key').forEach((c,ci)=>c.classList.toggle('p-now',st.svar==='all'&&ci===list[qi])); },at(b)));
+    for(let b=0;b<P.total;b++) timers.push(setTimeout(()=>{ if(!playing) return; syShow(T,v,'Bar '+(Math.floor(b/P.bpb)+1)+' of '+(P.total/P.bpb)+' · beat '+(b%P.bpb+1)+' · '+(P.words[b]||'')); ov.querySelectorAll('.p-bch[data-ch=Variants] .p-key').forEach((c,ci)=>c.classList.toggle('p-now',st.svar==='all'&&ci===list[qi])); },at(b)));
     const end=t0+P.total*spb;
     timers.push(setTimeout(()=>{ if(!playing) return; qi++; if(qi>=list.length){ if(!st.loop){ timers.push(setTimeout(()=>{ clr(); syShow(T,v); cheer(); },Math.max(0,(end-C.now())*1000))); return; } qi=0; } timers.push(setTimeout(()=>{ doneOnce=true; },Math.max(0,(end-C.now())*1000))); run(end); },Math.max(0,(end-C.now()-0.6)*1000))); };
   doneOnce=false; C.ready().then(()=>run(C.now()+0.15)); }
-{ const cs=document.createElement('style'); cs.textContent='#prRoom .p-bch[data-ch=Variety] .p-key.p-now{box-shadow:0 0 0 2px #ffd43b inset}#prRoom[data-styl="1"] .p-trs{max-width:340px}'; document.head.appendChild(cs); }
+{ const cs=document.createElement('style'); cs.textContent='#prRoom .p-bch[data-ch=Variants] .p-key.p-now{box-shadow:0 0 0 2px #ffd43b inset}#prRoom[data-styl="1"] .p-trs{max-width:340px}'; document.head.appendChild(cs); }
 /* four-note right-hand chords are fingered 1 2 3 5 (his fingering) */
 function syStep(T,v,f){ const o={name:syName(T,v),lh:f.lh,rh:f.rh,src:''}; if(f.rfm) o.rfm=f.rfm; if((T.id==='sixdim'||T.id==='drop2')&&f.lh&&f.lh.length===1) o.lfm={[f.lh[0]]:1};   /* one note in the left hand: the thumb */ if(f.rh.length===4){ const a=f.rh.slice().sort((x,y)=>x-y); o.rfm={[a[0]]:1,[a[1]]:2,[a[2]]:3,[a[3]]:5}; } else if(T.id==='drop2'&&f.rh.length===3){ const a=f.rh.slice().sort((x,y)=>x-y); o.rfm={[a[0]]:1,[a[1]]:2,[a[2]]:5}; }   /* drop-2: the right hand's three notes are 1 2 5 (his fingering) */ return o; }
 /* Sixth Diminished Movements: the major bebop scale as two chords, the major sixth and the diminished seventh a step above. Every melody note is on top of
@@ -1686,7 +1686,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
 const STY_LOCK=false;
 const STY_W={Technique:292,Over:184,'Left hand':158,Chord:548,Variety:490,'Skill level':137,Hands:128,Direction:139,'Seventh chord':165,'Sixth chord':146,Octaves:118,Transpose:362,Levels:158};
 const STY_TECH_KEYS=['Variety','Chord','Skill level','Hands'];
-function styBKey(title){ return title==='Chord'?'Chord|'+(sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
+function styBKey(title){ if(title==='Variants') title='Variety'; return title==='Chord'?'Chord|'+(sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
 function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Array.isArray(ord)) return opts; const pos=v=>{ const i=ord.indexOf(String(v)); return i<0?999:i; };
   return opts.map((x,i)=>[x,i]).sort((a,b)=>(pos(a[0][0])-pos(b[0][0]))||(a[1]-b[1])).map(x=>x[0]); }
 function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.p-key')];
@@ -1700,7 +1700,7 @@ function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.
         st.bord=Object.assign({},st.bord||{},{[styBKey(title)]:keys().map(x=>x.dataset.v)}); save(); };
       document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up); }); }); }
 /* sections: order and widths */
-const sNmK=x=>{ const c=x.dataset.ch; return !c?'Levels':c==='Movements'?'Technique':c; };   /* the Technique and Movements pages share one place */
+const sNmK=x=>{ const c=x.dataset.ch; return !c?'Levels':c==='Movements'?'Technique':c==='Variants'?'Variety':c; };   /* the Technique and Movements pages share one place */
 function styMix(panel){ const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||{}, kids=[...panel.children], pos=c=>{ const i=ord.indexOf(c); return i<0?999:i; };
   kids.map((x,i)=>[x,i]).sort((a,b)=>(pos(sNmK(a[0]))-pos(sNmK(b[0])))||(a[1]-b[1])).forEach(([x])=>panel.appendChild(x));
   /* each section keeps one width whatever the technique, key or tab (the widest it ever needs), so nothing on the console moves */
@@ -1737,13 +1737,13 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
   const d2adv=d2&&st.svar!=='all'&&+st.svar>0, rr=()=>{ save(); const was=playing; render(); if(was) playAll(); };
   /* every section is always on the console, in the same place; the ones a technique doesn't use are dimmed */
   const varStrips=[
-    cStrip('Variety',(d2?[]:(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All varieties','Play every variety, one after the other']]:[])),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>d2||!T.vars,offWhy:d2?'Drop-2 Movements: see Skill level and Hands':'Coming soon'}),
+    cStrip('Variants',(d2?[]:(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All variants','Play every variant, one after the other']]:[])),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>d2||!T.vars,offWhy:d2?'Drop-2 Movements: see Skill level and Hands':'Coming soon'}),
     cStrip('Skill level',[['int','Intermediate'],['adv','Advanced']],()=>!d2||st.svar==='all'?[]:[d2adv?'adv':'int'],k=>{ st.svar=k==='int'?0:(+st.d2h||1); rr(); },{off:()=>!d2,offWhy:'For Drop-2 Movements'}),
     cStrip('Hands',[[1,'Left hand'],[2,'Right hand'],[3,'Both hands']],()=>d2adv?[+st.svar]:[],k=>{ st.svar=k; st.d2h=k; rr(); },{off:()=>!d2adv,offWhy:'For Drop-2 Movements on Advanced'})];
   const overStrip=cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>overOn?[st.sover||'f7']:[],k=>{ st.sover=k;
       /* the Over chord is a left-hand chord under the Over varieties: picking one turns the left hand chord on */
       if(st.slh===false||st.slh==='drop2') st.slh='chord';
-      save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'Opens with the Chord Couples varieties marked Over'});
+      save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'Opens with the Chord Couples variants marked Over'});
   const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; if(st.slh==='chord') bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
   strips.append(
     cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true,rows:3}),
