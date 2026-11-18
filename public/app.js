@@ -159,9 +159,14 @@ function roomOpen(){ const v=x=>!!(x&&!x.hidden&&getComputedStyle(x).display!=='
 function tabSync(){ if(!app()){ if(tabs) tabs.hidden=true; root.classList.remove('app-has-tabs'); return; } tabBar();
   const hub=$('suiteHub'), onHub=!!(hub&&hub.classList.contains('on')), d=document.body.dataset.dest, rot=root.classList.contains('ps-rot');
   const kbdPage=roomOpen()||d==='studio'||d==='plus'; const land=innerWidth>innerHeight;
-  const show=!rot&&!(kbdPage&&(phone()||land))&&!root.classList.contains('app-fs');
+  const show=!rot&&(onHub||!(kbdPage&&(phone()||land)))&&!root.classList.contains('app-fs');
   tabs.hidden=!show; root.classList.toggle('app-has-tabs',show);
-  const curK=onHub?'home':d==='hall'||(d==='class'&&window.SUITE&&SUITE.current&&SUITE.current()==='hall')?'hall':d==='plus'?'studio':d;
+  /* a page inside the home screen (the Studio chooser) gets a back arrow where the menu bar's would be */
+  { let bk=$('appBack'); const sub=onHub&&[...hub.querySelectorAll('button')].find(b=>/Back to the whole suite/i.test(b.textContent)&&b.offsetParent);
+    if(sub&&!bk){ bk=el('button','app-back'); bk.id='appBack'; bk.type='button'; bk.setAttribute('aria-label','Back'); bk.innerHTML='<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>'; document.body.appendChild(bk); }
+    if(bk){ bk.hidden=!sub; bk.onclick=()=>{ const b=[...hub.querySelectorAll('button')].find(b=>/Back to the whole suite/i.test(b.textContent)); if(b) b.click(); setTimeout(tabSync,60); }; } }
+  const isStudios=onHub&&!!$('appBack')&&!$('appBack').hidden;
+  const curK=isStudios?'studio':onHub?'home':d==='hall'||(d==='class'&&window.SUITE&&SUITE.current&&SUITE.current()==='hall')?'hall':d==='plus'?'studio':d;
   tabs.querySelectorAll('.app-tab').forEach(b=>{ const on=b.dataset.k===curK; b.classList.toggle('on',on); b.setAttribute('aria-current',on?'page':'false'); }); }
 
 /* ---------------- keep everything in step ---------------- */

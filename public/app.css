@@ -213,3 +213,17 @@ html.m-ph #prRoom #prDisp .p-watch.indisp .p-wps{flex:1 1 auto}
 html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp){max-height:none}
 html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp) #prMsg{display:none}
 html.m-ph #prRoom #prTip{display:none!important}
+/* phone: the Display keeps one height whatever it shows (before Play, during, the break, the feed), so the keyboard and Console never move */
+html.m-ph #prRoom #prDisp{flex:0 0 auto!important;height:clamp(150px,calc(var(--appH,390px)*.44),190px)!important;overflow:hidden}
+html.m-ph #prRoom #prDisp>.ep-body{height:100%!important;display:flex!important;flex-direction:column!important;box-sizing:border-box;overflow:hidden}
+html.m-ph #prRoom #prDisp>.ep-body>.dbar{flex:0 0 auto}
+html.m-ph #prRoom #prDisp>.ep-body>.pd-main{flex:1 1 auto!important;min-height:0!important;overflow:hidden}
+html.m-ph #prRoom #prDisp .pd-screen,html.m-ph #prRoom #prDisp .pd-screen:has(.p-watch.indisp){height:100%!important;max-height:none!important;overflow:auto!important;box-sizing:border-box}
+html.m-ph #prRoom #prKbP{flex:0 0 auto!important}
+.app-back{position:fixed;z-index:200400;top:calc(10px + env(safe-area-inset-top));left:10px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(12,15,24,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;display:grid;place-items:center;cursor:pointer}
+.app-back[hidden]{display:none} .app-back svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+html:not(.m-app) .app-back{display:none}
+/* home-screen cards: the picture on the left, then the badge, the name and the line stacked beside it */
+html.m-ph #suiteHub .dcard{grid-template-rows:auto auto auto!important}
+html.m-ph #suiteHub .dcard .ic{grid-row:1/4!important;grid-column:1}
+html.m-ph #suiteHub .dcard .badge,html.m-ph #suiteHub .dcard .nm,html.m-ph #suiteHub .dcard .bl{grid-column:2!important}
