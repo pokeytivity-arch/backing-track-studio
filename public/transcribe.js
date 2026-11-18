@@ -690,7 +690,8 @@ function init(){
   updLegend();
   $('txLook').onchange=e=>{ S.look=+e.target.value; draw(cur()); };
   const setTr=n=>{ n=Math.max(-12,Math.min(12,n)); S.tr=n; $('txTr').textContent=(n>0?'+':'')+n; resetSched(); draw(cur()); };
-  $('txTrDn').onclick=()=>setTr((S.tr||0)-1); $('txTrUp').onclick=()=>setTr((S.tr||0)+1); setTr(0);
+  $('txTrDn').onclick=()=>setTr((S.tr||0)-(window.TRSTEP?TRSTEP.get():1)); $('txTrUp').onclick=()=>setTr((S.tr||0)+(window.TRSTEP?TRSTEP.get():1)); setTr(0);
+  if(window.TRSTEP){ const lab=()=>{ const n=TRSTEP.name().toLowerCase(); $('txTrDn').setAttribute('aria-label','Down a '+n); $('txTrUp').setAttribute('aria-label','Up a '+n); $('txTrDn').title='Down a '+n; $('txTrUp').title='Up a '+n; }; $('txTrUp').after(TRSTEP.gear(lab)); lab(); }
   $('txMix').oninput=e=>{ S.mixNote=+e.target.value/100; applyMix(); };
   $('txNames').onchange=e=>{ S.names=e.target.checked; draw(cur()); };
   try{ S.nudge=+localStorage.getItem('tx-nudge')||0; $('txNudge').value=S.nudge; }catch(_){}

@@ -77,6 +77,7 @@ html.ps-intro #suiteHub,html.ps-intro #suiteHub.on{visibility:hidden!important}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>HearandPlay Piano Suite</title>
 <script src="brand.js?v=1"></script>
+<script src="trstep.js?v=1"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2726,8 +2727,8 @@ const MENUS=[
   {label:'Edit',items:[
     {label:'Chord chart…',key:'E',run:()=>openPanel('chart')},
     {sep:true},
-    {label:'Transpose up ½ step',key:']',run:()=>press('trUp')},
-    {label:'Transpose down ½ step',key:'[',run:()=>press('trDown')},
+    {label:'Transpose up',key:']',run:()=>press('trUp')},
+    {label:'Transpose down',key:'[',run:()=>press('trDown')},
     {label:'Back to the original key',run:()=>press('trReset')},
     {label:'Key and transpose…',run:()=>goTo('trUp')},
     {sep:true},
@@ -3090,7 +3091,9 @@ function init(){
   let taps=[]; $('tapBtn').onclick=()=>{ const n=performance.now(); taps=taps.filter(x=>n-x<2500); taps.push(n);
     if(taps.length>=3){ const iv=(taps[taps.length-1]-taps[0])/(taps.length-1); setBpm(60000/iv); } else toast('Keep tapping'); };
   const tr=d=>{ S.transpose=d===0?0:Math.max(-11,Math.min(11,S.transpose+d)); E&&(E.vo=null); rebuild(); };
-  $('trUp').onclick=()=>tr(1); $('trDown').onclick=()=>tr(-1); $('trReset').onclick=()=>tr(0);
+  $('trUp').onclick=()=>tr(TRSTEP.get()); $('trDown').onclick=()=>tr(-TRSTEP.get()); $('trReset').onclick=()=>tr(0);
+  /* the settings wheel: how far each press moves (a minor second unless he chooses otherwise) */
+  { const lab=()=>{ const s=TRSTEP.short(); $('trUp').textContent='+ '+s; $('trDown').textContent='− '+s; $('trUp').setAttribute('aria-label','Transpose up a '+TRSTEP.name().toLowerCase()); $('trDown').setAttribute('aria-label','Transpose down a '+TRSTEP.name().toLowerCase()); }; $('trUp').after(TRSTEP.gear(lab)); lab(); }
   $('trOn').onchange=e=>{ S.trainer.on=e.target.checked; saveDraft(); };
   ['trInc','trEvery','trMax'].forEach(id=>$(id).onchange=e=>{ const k={trInc:'inc',trEvery:'every',trMax:'max'}[id]; S.trainer[k]=Math.max(1,+e.target.value||1); saveDraft(); });
   ['ex','class','mine'].forEach(k=>$('tab-'+k).onclick=()=>{ tab=k; renderList(); });
@@ -3118,7 +3121,7 @@ init();
 <script src="auth.js?v=h2" defer></script>
 <script src="assign.js" defer></script>
 <script src="voicings.js?v=h1" defer></script>
-<script src="transcribe.js?v=8" defer></script>
+<script src="transcribe.js?v=9" defer></script>
 <script src="suite.js?v=17" defer></script>
 <script src="roles.js?v=29" defer></script>
 <script src="layout3.js?v=7" defer></script>
@@ -3126,7 +3129,7 @@ init();
 <script src="progress.js?v=h1" defer></script>
 <script src="ear.js?v=zz16" defer></script>
 <script src="hands.js?v=80" defer></script>
-<script src="practice.js?v=j69" defer></script>
+<script src="practice.js?v=j70" defer></script>
 <script src="scale-library.js?v=5" defer></script>
 <script src="scales.js?v=12" defer></script>
 <script src="check.js?v=h1" defer></script>
