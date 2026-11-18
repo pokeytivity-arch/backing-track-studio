@@ -65,7 +65,7 @@ function handsBtn(){ const k=$('prKbP'); return k&&[...k.querySelectorAll('butto
 function dSel(re){ const r=pr(); if(!r) return null; const L=[...r.querySelectorAll('#prDisp .p-sel')].find(x=>re.test((x.querySelector('span')||x).textContent.trim())); return L?L.querySelector('select'):null; }
 const selTxt=s=>s&&s.options[s.selectedIndex]?s.options[s.selectedIndex].textContent.trim():'';
 /* a drop-down opened from the tool bar: the turned page's own list (rotate.js) or the phone's picker */
-function openSel(s){ closePop(); if(!s) return; if(root.classList.contains('ps-rot')){ s.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true})); return; } try{ if(s.showPicker){ s.showPicker(); return; } }catch(_){} s.focus(); }
+function openSel(s){ closePop(); if(!s) return; if(root.classList.contains('ps-rot')){ if(window.PSROT) PSROT.open(s); return; } try{ if(s.showPicker){ s.showPicker(); return; } }catch(_){} s.focus(); }
 function noteSel(){ const r=pr(); if(!r) return null; const L=[...r.querySelectorAll('#prDisp .p-sel')].find(x=>/^\s*note/i.test(x.textContent)); return L?L.querySelector('select'):null; }
 function keyText(){ const v=prQ('.p-trs .p-trr .p-trv'); if(v) return v.textContent.trim(); const s=noteSel(); if(s&&s.options[s.selectedIndex]) return s.options[s.selectedIndex].textContent.trim(); return ''; }
 const fire=(x,ev)=>x&&x.dispatchEvent(new Event(ev,{bubbles:true}));

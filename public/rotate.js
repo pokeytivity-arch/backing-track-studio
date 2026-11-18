@@ -36,5 +36,7 @@ const onSel=e=>{ const s=e.target&&e.target.closest&&e.target.closest('select');
 document.addEventListener('touchend',e=>{ const s=onSel(e); if(s){ if(e.cancelable) e.preventDefault(); openMenu(s); } },{capture:true,passive:false});
 document.addEventListener('click',e=>{ const s=onSel(e); if(s){ e.preventDefault(); e.stopPropagation(); openMenu(s); } },true);
 document.addEventListener('keydown',e=>{ if(menu&&e.key==='Escape'){ closeMenu(); return; } const s=e.target&&e.target.tagName==='SELECT'&&turned()?e.target:null; if(s&&(e.key==='Enter'||e.key===' '||e.key==='ArrowDown')){ e.preventDefault(); openMenu(s); } },true);
+/* the tool bar opens a drop-down through here, so only the turned list shows (never the phone's own upright picker as well) */
+window.PSROT={open:s=>{ lastOpen=0; openMenu(s); },turned};
 try{ new MutationObserver(()=>{ if(menu&&!turned()) closeMenu(); }).observe(root,{attributes:true,attributeFilter:['class']}); }catch(_){}
 })();
