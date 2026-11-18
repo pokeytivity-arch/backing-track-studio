@@ -1405,10 +1405,11 @@ function chordsToStudio(){ if(st.cmode==='arp'||!window.STUDIO_CHORDS) return; c
   if(window.SUITE&&SUITE.returnTo) window.__psRet=()=>{ SUITE.returnTo('studio',()=>{ SUITE.go(back); setTimeout(()=>{ if((back==='class'||back==='hall')&&window.CLASS&&CLASS.reopenPractice) CLASS.reopenPractice('chords'); else open('chords',{resume:true}); },260); }); };
   window.STUDIO_CHORDS({title,chords:'| '+bars.join(' | ')+' |',bpm:st.bpm,transpose:tr}); }
 /* a console strip of lit buttons, like the Scale room's */
-function cStrip(title,opts,isOn,press,o){ o=o||{}; const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col); if(o.rows) col.style.gridTemplateRows='repeat('+o.rows+',auto)';
+function cStrip(title,opts,isOn,press,o){ o=o||{}; if(kind==='styl') opts=styBtnSort(title,opts); const strip=el('div','p-ch p-bch'); strip.dataset.ch=title; strip.appendChild(el('div','p-cht',title)); const col=el('div','p-bcol'+(o.two?' p-c2':'')); strip.appendChild(col); if(o.rows) col.style.gridTemplateRows='repeat('+o.rows+',auto)';
   if(o.off&&o.off()){ strip.classList.add('off'); strip.title=o.offWhy||''; } if(o.cls&&o.cls()) strip.classList.add(o.cls());
-  opts.forEach(([v,l,tip])=>{ const k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; if(tip) k.title=tip; const on=isOn().includes(v); k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on)); k.disabled=!!(o.off&&o.off())||!!(o.dis&&o.dis(v)); if(o.dis&&o.dis(v)&&o.disWhy) k.title=o.disWhy;
+  opts.forEach(([v,l,tip])=>{ const k=el('button','p-key'); k.type='button'; k.__v=v; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=l; if(tip) k.title=tip; const on=isOn().includes(v); k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on)); k.disabled=!!(o.off&&o.off())||!!(o.dis&&o.dis(v)); if(o.dis&&o.dis(v)&&o.disWhy) k.title=o.disWhy;
     k.onclick=()=>{ press(v); }; col.appendChild(k); });
+  if(kind==='styl'&&!STY_LOCK) styBtnDrag(strip,col,title);
   return strip; }
 /* ---------- Stylization Practice: stylization techniques, from his lessons. Built on the Chord Practice console.
    Neighboring Chord Couples (4/4): a 4-bar phrase, one chord per bar; beats 1 to 3 are two eighth notes, the chord then its neighbour,
@@ -1493,6 +1494,9 @@ function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
       ev.push({t:b0,d:2.95,n:bass,v:.6,h:'l'},{t:b0,d:1.9,n:a,v:.68},{t:b0+2,d:.95,n:b,v:.66});   /* the left hand holds the whole bar */
       fr.push({t:b0,rh:a,lh:bass,beat:b0},{t:b0+2,rh:b,lh:bass,beat:b0+2}); words[b0]=words[b0+1]='Beats 1 and 2 · '+sNm(r)+' / '+sChord(a); words[b0+2]='Beat 3 · '+sNm(r)+' / '+sChord(b); }
     total=12; }
+  /* nothing starts below G2: a phrase that would is moved up an octave (or two) */
+  { const lo=()=>Math.min(...ev.flatMap(e=>e.n),999), hi=()=>Math.max(...ev.flatMap(e=>e.n),0); let sh=0; while(lo()+sh<43&&hi()+sh+12<=103) sh+=12;
+    if(sh){ ev.forEach(e=>{ e.n=e.n.map(m=>m+sh); }); fr.forEach(f=>{ f.rh=(f.rh||[]).map(m=>m+sh); f.lh=(f.lh||[]).map(m=>m+sh); if(f.rfm){ const o={}; Object.keys(f.rfm).forEach(k=>o[+k+sh]=f.rfm[k]); f.rfm=o; } if(f.lfm){ const o={}; Object.keys(f.lfm).forEach(k=>o[+k+sh]=f.lfm[k]); f.lfm=o; } }); } }
   return {ev,fr,words,total,bpb:(v&&v.bpb)||T.bpb}; }
 function syList(){ const T=syT(); if(!T.vars) return []; return st.svar==='all'?T.vars.map((v,i)=>i):[Math.min(+st.svar||0,T.vars.length-1)]; }
 function syShow(T,v,line){ $('#prLbl').textContent='Stylization practice · '+T.name; $('#prBig').textContent=v?syName(T,v):T.name; $('#prSub').textContent=line||(v?(T.id==='quartal'?v.s+' · 3/4':T.id==='drop2'?d2Voicings(v).slice(0,4).map(x=>x.deg).join(' · ')+(d2Oct(v)>1?' · '+d2Oct(v)+' octaves':'')+' · one a beat, 4/4':T.id==='sixdim'?sdDesc(v):T.id==='ncc'?v.s+' · 4 bars, one chord a bar'+(v.over?' · over '+syOver(false):''):syBackD(v)+' · 3/4'):''); }
@@ -1672,6 +1676,48 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
 #prBandP .pb-kb svg{width:100%;height:auto;display:block;border-radius:6px} #prBandP .pb-kb.pb-hit svg{animation:pbHit .5s ease-out} @keyframes pbHit{0%{filter:brightness(1.35)}100%{filter:none}}
 #prBandP .pb-rack{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start} #prBandP .pb-v{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:96px}
 #prBandP .pb-v .p-lvl{border-right:0} #prBandP .pb-vo .p-lvl{opacity:.45} #prBandP.pb-off .pb-kb,#prBandP.pb-off .pb-rack{opacity:.4}`; document.head.appendChild(cs); }
+/* ---------- Stylization console layout: drag a section by its title to move it, drag a button to move it within its section,
+   drag the line on a section's right edge to make it narrower or wider. Kept on this device until he locks a layout in (STY_LOCK). ---------- */
+const STY_LOCK=false;
+const STY_TECH_KEYS=['Variety','Chord','Skill level','Hands'];
+function styBKey(title){ return title==='Chord'?'Chord|'+(sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
+function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Array.isArray(ord)) return opts; const pos=v=>{ const i=ord.indexOf(String(v)); return i<0?999:i; };
+  return opts.map((x,i)=>[x,i]).sort((a,b)=>(pos(a[0][0])-pos(b[0][0]))||(a[1]-b[1])).map(x=>x[0]); }
+function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.p-key')];
+  keys().forEach((k,idx)=>{ k.dataset.v=String(k.__v!=null?k.__v:idx);
+    k.addEventListener('click',e=>{ if(k.__dragged){ k.__dragged=false; e.preventDefault(); e.stopImmediatePropagation(); } },true);
+    k.addEventListener('pointerdown',e=>{ if(e.button||k.disabled) return; const x0=e.clientX, y0=e.clientY; let moved=false;
+      const mv=ev=>{ if(!moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<7) return; if(!moved){ moved=true; k.classList.add('p-dragging'); } ev.preventDefault();
+        const sib=keys().filter(x=>x!==k); let before=null; for(const x of sib){ const r=x.getBoundingClientRect(); if(ev.clientX<r.left-4) continue; if(ev.clientY<r.top+r.height/2&&ev.clientX<=r.right+4){ before=x; break; } }
+        if(k.nextSibling!==before) col.insertBefore(k,before); };
+      const up=()=>{ document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up); document.removeEventListener('pointercancel',up); if(!moved) return; k.classList.remove('p-dragging'); k.__dragged=true; setTimeout(()=>{ k.__dragged=false; },400);
+        st.bord=Object.assign({},st.bord||{},{[styBKey(title)]:keys().map(x=>x.dataset.v)}); save(); };
+      document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up); }); }); }
+/* sections: order and widths */
+const sNmK=x=>{ const c=x.dataset.ch; return !c?'Levels':c==='Movements'?'Technique':c; };   /* the Technique and Movements pages share one place */
+function styMix(panel){ const ord=Array.isArray(st.sord)?st.sord:[], W=st.swid||{}, kids=[...panel.children], pos=c=>{ const i=ord.indexOf(c); return i<0?999:i; };
+  kids.map((x,i)=>[x,i]).sort((a,b)=>(pos(sNmK(a[0]))-pos(sNmK(b[0])))||(a[1]-b[1])).forEach(([x])=>panel.appendChild(x));
+  [...panel.children].forEach(sx=>{ const nm=sNmK(sx); if(W[nm]){ sx.style.flex='0 0 '+W[nm]+'px'; sx.style.width=W[nm]+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); } });
+  if(STY_LOCK) return;
+  const saveOrd=()=>{ st.sord=[...panel.children].map(x=>sNmK(x)); save(); };
+  [...panel.children].forEach(sx=>{ const nm=sNmK(sx), h=sx.querySelector(':scope>.p-cht');
+    if(h){ h.title='Drag to move this section'; h.style.cursor='grab';
+      h.addEventListener('pointerdown',e=>{ if(e.button) return; e.preventDefault(); const x0=e.clientX, y0=e.clientY; let moved=false;
+        const mv=ev=>{ if(!moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<5) return; moved=true; sx.classList.add('p-drag');
+          const sib=[...panel.children].filter(x=>x!==sx); let before=null; for(const x of sib){ const r=x.getBoundingClientRect(); if(ev.clientY<r.top||(ev.clientY<=r.bottom&&ev.clientX<r.left+r.width/2)){ before=x; break; } }
+          if(sx.nextSibling!==before) panel.insertBefore(sx,before); };
+        const up=()=>{ document.removeEventListener('pointermove',mv); document.removeEventListener('pointerup',up); document.removeEventListener('pointercancel',up); if(moved){ sx.classList.remove('p-drag'); saveOrd(); } };
+        document.addEventListener('pointermove',mv); document.addEventListener('pointerup',up); document.addEventListener('pointercancel',up); }); }
+    /* the line on the right edge: drag it to resize the section; double-click it to go back to the natural width */
+    const ed=el('div','p-edge'); ed.title='Drag to make this section narrower or wider (double-click: natural width)'; sx.appendChild(ed);
+    ed.addEventListener('pointerdown',e=>{ if(e.button) return; e.preventDefault(); e.stopPropagation(); const x0=e.clientX, r0=sx.getBoundingClientRect(), z=r0.width/(sx.offsetWidth||r0.width)||1, w0=sx.offsetWidth; ed.setPointerCapture(e.pointerId); ed.classList.add('on');
+      const mv=ev=>{ const w=Math.max(56,Math.min(1400,w0+(ev.clientX-x0)/z)); sx.style.flex='0 0 '+w+'px'; sx.style.width=w+'px'; sx.style.minWidth='0'; sx.classList.add('p-sized'); };
+      const up=()=>{ ed.removeEventListener('pointermove',mv); ed.removeEventListener('pointerup',up); ed.removeEventListener('pointercancel',up); ed.classList.remove('on'); st.swid=Object.assign({},st.swid||{},{[nm]:Math.round(sx.offsetWidth)}); save(); };
+      ed.addEventListener('pointermove',mv); ed.addEventListener('pointerup',up); ed.addEventListener('pointercancel',up); });
+    ed.addEventListener('dblclick',()=>{ const o=Object.assign({},st.swid||{}); delete o[nm]; st.swid=o; save(); render(); }); }); }
+{ const cs=document.createElement('style'); cs.textContent=`#prRoom .p-cmix>.p-ch{position:relative} #prRoom .p-edge{position:absolute;top:0;bottom:0;right:-5px;width:10px;cursor:ew-resize;z-index:3;touch-action:none}
+#prRoom .p-edge:hover,#prRoom .p-edge.on{background:linear-gradient(90deg,transparent 4px,#ffd43b 4px,#ffd43b 6px,transparent 6px)} #prRoom .p-ch.p-drag{opacity:.6;outline:1px dashed rgba(255,212,59,.6);border-radius:8px}
+#prRoom .p-cmix .p-ch.p-sized .p-key{overflow:hidden;text-overflow:ellipsis;max-width:100%} #prRoom .p-cmix .p-ch.p-sized .p-bcol{overflow:hidden} #prRoom .p-cmix .p-key.p-dragging{opacity:.55;cursor:grabbing}`; document.head.appendChild(cs); }
 function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&&st.svar!=='all'&&+st.svar>=T.vars.length) st.svar=0;
   const box=el('div','p-ccon'); ctl.appendChild(box);
   /* browser-style tabs: Technique and Movements, each a page of techniques */
@@ -1701,6 +1747,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
     cStrip('Octaves',[[1,'1 octave'],[2,'2 octaves'],[3,'3 octaves']],()=>[+st.soct||1],k=>{ st.soct=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!(sd||d2adv),offWhy:'For Sixth Diminished Movements, and Drop-2 Movements on Advanced'}),
     syTrStrip());
   { const lv=el('div','p-lvls'); lv.append(...levels(MQM.matches?70:(ov.querySelector('#prConP.max')?200:118))); strips.append(lv); }
+  styMix(strips);
   const r2=el('div','e-ctl p-ctr'); transport(r2); { const dt=$('#prDisp .pd-top'); if(dt){ r2.classList.add('p-ctop'); dt.appendChild(r2); } else box.appendChild(r2); }
   const bar=el('div','p-cbar p-ccbar'); box.appendChild(bar); bar.appendChild(el('span','p-sp'));
   const ask=el('button','p-ubtn','Ask HearandPlay about this technique'); ask.type='button'; ask.onclick=()=>{ close(); if(window.CLASS) CLASS.askAbout('Teach me the '+T.name+' stylization technique'+(v?': '+syName(T,v):'')+'. How do I practice it?',{fresh:true}); }; bar.appendChild(ask);
