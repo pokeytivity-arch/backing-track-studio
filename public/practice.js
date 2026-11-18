@@ -1454,7 +1454,7 @@ function syOver(short){ const tr=st.str||0; return st.sover==='cm6'?(sNm(tr)+(sh
 function syChip(T,v){ const tr=st.str||0; if(T.id==='quartal') return v.n; if(T.id==='drop2') return v.n; if(T.id==='sixdim') return v.n; if(T.id==='ncc'){ const ab=q=>({maj:'',min:'m',dim:'°',six:'6',dim7:'°7'})[q]; return sNm(v.x[0]+tr)+ab(v.x[1])+' + '+sNm(v.y[0]+tr)+ab(v.y[1])+(v.over?' / Over':''); } return v.n; }
 /* one phrase of a variety: the notes (beats from the start), what to show on the keys, and the bar-by-bar words */
 function syPhrase(T,v){ const tr=st.str||0, ev=[], fr=[], words=[]; let total=0;
-  if(T.id==='sixdim'){ const C=sdPhrase(v), d2=st.slh==='drop2', lo=Math.min(...C[0]), rt=lo-1-(((lo-1-(st.str||0))%12)+12)%12, lhc=st.slh!==false&&!d2?[rt]:[];   /* Chord of the bar: the root, below the first chord */
+  if(T.id==='sixdim'){ const C=sdPhrase(v), d2=st.slh==='drop2', lo=Math.min(...C[0]), rt=lo-1-(((lo-1-(st.str||0))%12)+12)%12, lhc=[];   /* Chord of the bar: the left hand rests; the right hand practises against the chord on the Chord of the bar keyboard */
     const put=(t,dur,c,vv,beat)=>{ if(d2){ const s3=c.slice().sort((x,y)=>x-y), k2=s3.length-2, l2=[s3[k2]-12], r2=s3.filter((_,i)=>i!==k2); ev.push({t,d:dur,n:r2,v:vv},{t,d:dur,n:l2,v:vv*.9,h:'l'}); fr.push({t,rh:r2,lh:l2,beat}); } else { ev.push({t,d:dur,n:c,v:vv}); fr.push({t,rh:c,lh:lhc,beat}); } };
     const q=v.q?1:.5, bb=v.bpb||4, n=C.length-1, tl=n*q; total=Math.ceil((tl+.01)/bb)*bb; if(total-tl<2) total+=bb; const bars=total/bb;   /* eighth notes in 4/4, or (groups of three) a chord a beat in 3/4 */
     if(lhc.length) for(let b=0;b<bars;b++) ev.push({t:b*bb,d:bb-.1,n:lhc,v:.5,h:'l'});
