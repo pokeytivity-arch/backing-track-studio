@@ -1623,14 +1623,28 @@ function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=
    (or choosing a chord) brings it back. The chord keeps playing while it's closed. */
 let bandOpen=true;
 function bandPlace(){ const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
+  const U=st.bPos; if(U&&U.w) p.style.width=U.w+'px'; else p.style.width='';
+  if(U&&U.l!=null){ p.style.left=U.l+'px'; p.style.top=U.t+'px'; return; }
   const a=scr.getBoundingClientRect(), b=sub.getBoundingClientRect(), z=a.width/(scr.offsetWidth||a.width)||1; p.style.left=Math.max(0,(b.left-a.left)/z)+'px'; p.style.top=((b.top-a.top)/z+scr.scrollTop)+'px'; }
+/* drag it by its top bar, resize it from the corner; double-click the top bar to put it back in its place and size */
+function bandDragSize(p){ const top=p.querySelector('.pb-top'), gr=el('div','pb-grip'); gr.title='Drag to resize'; p.appendChild(gr);
+  const zoom=()=>{ const r=p.getBoundingClientRect(); return r.width/(p.offsetWidth||r.width)||1; };
+  top.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; e.preventDefault(); const z=zoom(), x0=e.clientX, y0=e.clientY, l0=p.offsetLeft, t0=p.offsetTop; top.setPointerCapture(e.pointerId); p.classList.add('pb-mv');
+    const mv=ev=>{ p.style.left=(l0+(ev.clientX-x0)/z)+'px'; p.style.top=(t0+(ev.clientY-y0)/z)+'px'; };
+    const up=()=>{ top.removeEventListener('pointermove',mv); top.removeEventListener('pointerup',up); top.removeEventListener('pointercancel',up); p.classList.remove('pb-mv'); st.bPos=Object.assign({},st.bPos||{},{l:p.offsetLeft,t:p.offsetTop}); save(); };
+    top.addEventListener('pointermove',mv); top.addEventListener('pointerup',up); top.addEventListener('pointercancel',up); });
+  top.addEventListener('dblclick',e=>{ if(e.target.closest('button')) return; st.bPos=null; save(); bandPlace(); });
+  gr.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); const z=zoom(), x0=e.clientX, w0=p.offsetWidth; gr.setPointerCapture(e.pointerId); p.classList.add('pb-mv');
+    const mv=ev=>{ p.style.width=Math.max(300,Math.min(1600,w0+(ev.clientX-x0)/z))+'px'; };
+    const up=()=>{ gr.removeEventListener('pointermove',mv); gr.removeEventListener('pointerup',up); gr.removeEventListener('pointercancel',up); p.classList.remove('pb-mv'); st.bPos=Object.assign({},st.bPos||{},{w:p.offsetWidth,l:p.offsetLeft,t:p.offsetTop}); save(); };
+    gr.addEventListener('pointermove',mv); gr.addEventListener('pointerup',up); gr.addEventListener('pointercancel',up); }); }
 function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAct(), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen');
   let ob=document.getElementById('prBandO'); if(!ob&&scr){ ob=el('button','pb-open'); ob.id='prBandO'; ob.type='button'; ob.innerHTML='<span>🎹</span> Chord of the bar'; ob.onclick=()=>{ bandOpen=true; bandSync(); }; const msg=document.getElementById('prMsg'); if(msg) msg.after(ob); else scr.appendChild(ob); }
   if(ob) ob.hidden=!(show&&!bandOpen);
   if(dp) dp.classList.toggle('has-band',show&&bandOpen);
   if(!show||!bandOpen){ if(p) p.hidden=true; bandApply(); return; }
   if(!p){ p=el('div','pb-wrap pb-pop'); p.id='prBandP'; p.innerHTML='<div class="ep-body"><div class="pb-top"><button type="button" class="pb-pow" title="Power"><span>⏻</span></button><div class="pb-nm"></div><button type="button" class="pb-x" title="Close" aria-label="Close">×</button></div><div class="pb-kb"></div><div class="pb-rack"></div></div>';
-    p.querySelector('.pb-x').onclick=()=>{ bandOpen=false; bandSync(); };
+    p.querySelector('.pb-x').onclick=()=>{ bandOpen=false; bandSync(); }; bandDragSize(p);
     document.addEventListener('pointerdown',e=>{ const q=document.getElementById('prBandP'); if(!bandOpen||!q||q.hidden||q.contains(e.target)||e.target.closest('#prBandO')) return; bandOpen=false; bandSync(); },true);
     window.addEventListener('resize',()=>bandPlace()); }
   if(scr&&p.parentNode!==scr) scr.appendChild(p);
@@ -1644,7 +1658,9 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
     col.append(k,bandFader(v,MQM.matches?34:40)); if(!vo) col.classList.add('pb-vo'); rk.appendChild(col); });
   bandApply(); }
 { const cs=document.createElement('style'); cs.textContent=`#prDisp.has-band #prSub,#prDisp.has-band #prMsg,#prDisp.has-band #prChips{visibility:hidden} #prDisp.has-band .ep-body,#prDisp.has-band .pd-main,#prDisp.has-band .pd-screen{overflow:visible!important}
-#prBandP.pb-pop{position:absolute;z-index:60;width:57%;min-width:330px;max-width:calc(100% - 8px);box-sizing:border-box;background:#06080d;border:1px solid #2b3347;border-radius:12px;padding:8px 10px 10px;box-shadow:0 18px 44px rgba(0,0,0,.65)}
+#prBandP .pb-top{cursor:grab;user-select:none;touch-action:none} #prBandP.pb-mv .pb-top{cursor:grabbing} #prBandP.pb-mv{opacity:.96}
+#prBandP .pb-grip{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,rgba(255,255,255,.35) 50%,rgba(255,255,255,.35) 58%,transparent 58%,transparent 70%,rgba(255,255,255,.35) 70%,rgba(255,255,255,.35) 78%,transparent 78%);border-radius:0 0 10px 0}
+#prBandP.pb-pop{position:absolute;z-index:60;width:57%;min-width:300px;box-sizing:border-box;background:#06080d;border:1px solid #2b3347;border-radius:12px;padding:8px 10px 10px;box-shadow:0 18px 44px rgba(0,0,0,.65)}
 #prBandP .ep-body{display:flex;flex-direction:column;gap:7px;padding:0} #prBandP .pb-top{gap:9px} #prBandP .pb-pow{width:28px;height:28px;font-size:14px} #prBandP .pb-nm{font-size:13px;flex:1}
 #prBandP .pb-x{width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:#141925;color:#c9cfdc;font:700 16px/1 var(--body);cursor:pointer} #prBandP .pb-x:hover{background:#222a3a;color:#fff}
 #prBandP .pb-rack{gap:8px} #prBandP .pb-v{min-width:64px;gap:4px} #prBandP .pb-v .p-key{min-height:22px!important;padding:1px 8px 1px 6px!important;font-size:11px!important} #prBandP .p-lvn{font-size:10px}
