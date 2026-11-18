@@ -64,7 +64,7 @@
     try{ if(localStorage.getItem('ps-installed')||+localStorage.getItem('ps-inst-no')>Date.now()) return; }catch(_){}
     if(matchMedia('(min-width:900px)').matches) return;
     const b=document.createElement('div'); b.id='psInstBar';
-    b.innerHTML='<img src="hp-icon-192.png" alt=""><span>Install HearandPlay Piano Suite on your '+(ios?'iPhone':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
+    b.innerHTML='<img src="hp-icon-192.png" alt=""><span>Install HearandPlay Piano Suite on your '+(/iPad/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)?'iPad':ios?'iPhone':/Android/i.test(ua)&&!/Mobile/i.test(ua)?'tablet':'phone')+' for the full-screen app.</span><button class="go" type="button">Show me how</button><button class="no" type="button" aria-label="Not now">✕</button>';
     b.querySelector('.go').onclick=()=>{ open(); };
     b.querySelector('.no').onclick=()=>{ b.remove(); try{ localStorage.setItem('ps-inst-no',String(Date.now()+14*864e5)); }catch(_){} };
     document.body.appendChild(b);

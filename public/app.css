@@ -177,3 +177,16 @@ html.m-ph #prBandP .has-kbbar{margin-top:20px!important} html.m-ph #prBandP .kb-
 html.app-has-tabs .menu-pop{max-height:calc(100dvh - 130px - env(safe-area-inset-bottom))!important}
 html.m-ph #prBandP .pb-kb svg{height:64px!important;width:100%!important}
 html.m-ph #prDisp.has-band #prMsg{visibility:visible!important}
+/* tablets held sideways: the keyboard rooms fit the screen, with the Console scrolling inside */
+@media (orientation:landscape){
+html.m-tb #prRoom:not([hidden]),html.m-tb #earRoom:not([hidden]){display:flex!important;flex-direction:column;overflow:hidden!important;gap:8px!important}
+html.m-tb #prRoom>.ep,html.m-tb #earRoom>.ep{flex:0 0 auto;margin:0!important}
+html.m-tb #prRoom>.e-top{flex:0 0 auto}
+html.m-tb #prRoom #prConP,html.m-tb #earRoom #earConP{flex:1 1 auto!important;min-height:120px;display:flex;flex-direction:column}
+html.m-tb #prRoom #prConP>.ep-body,html.m-tb #earRoom #earConP>.ep-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+html.m-tb #prRoom #prConP.ep-min,html.m-tb #earRoom #earConP.ep-min{flex:0 0 auto!important;min-height:0}
+html.m-tb #prRoom #prDisp .pd-screen{height:auto!important;max-height:150px;min-height:0!important}
+html.m-tb #prRoom>.e-top h1{font-size:22px!important}
+}
+@media (orientation:landscape){ html.m-tb #earRoom #earDisp:not(.max)>.ep-body{height:auto!important;max-height:170px;overflow:auto} html.m-tb #earRoom>.e-top{flex:0 0 auto;margin:0} }
+html.m-tb #earRoom #earDisp:not(.max)>.ep-body{height:clamp(150px,24vh,260px)!important}
