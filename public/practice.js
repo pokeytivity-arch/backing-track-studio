@@ -1631,7 +1631,7 @@ function bandFader(v,H){ const strip=el('div','p-ch p-lvl'); strip.dataset.bvol=
 let bandOpen=true;
 function bandPlace(){ const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
   const U=st.bPos; if(U&&U.w) p.style.width=U.w+'px'; else p.style.width='';
-  if(U&&U.l!=null){ p.style.left=U.l+'px'; p.style.top=U.t+'px'; return; }
+  if(U&&U.l!=null){ const mxL=Math.max(0,scr.clientWidth-120); p.style.left=Math.max(-20,Math.min(mxL,U.l))+'px'; p.style.top=Math.max(-60,Math.min(400,U.t))+'px'; return; }   /* never off where it can't be found */
   /* his default: the top left corner of the Display, about 43% of its width */
   const a=scr.getBoundingClientRect(), D=dp.getBoundingClientRect(), z=a.width/(scr.offsetWidth||a.width)||1; if(!(U&&U.w)) p.style.width=Math.max(300,Math.round(D.width/z*.43))+'px';
   p.style.left=((D.left-a.left)/z+3)+'px'; p.style.top=((D.top-a.top)/z+scr.scrollTop+12)+'px'; }
@@ -1673,7 +1673,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
 #prBandP .ep-body{display:flex;flex-direction:column;gap:7px;padding:0} #prBandP .pb-top{gap:9px} #prBandP .pb-pow{width:28px;height:28px;font-size:14px} #prBandP .pb-nm{font-size:13px;flex:1}
 #prBandP .pb-x{width:26px;height:26px;border-radius:7px;border:1px solid rgba(255,255,255,.14);background:#141925;color:#c9cfdc;font:700 16px/1 var(--body);cursor:pointer} #prBandP .pb-x:hover{background:#222a3a;color:#fff}
 #prBandP .pb-rack{gap:8px} #prBandP .pb-v{min-width:64px;gap:4px} #prBandP .pb-v .p-key{min-height:22px!important;padding:1px 8px 1px 6px!important;font-size:11px!important} #prBandP .p-lvn{font-size:10px}
-#prDisp .pb-open{margin-top:8px;display:inline-flex;align-items:center;gap:7px;font:800 12px var(--body);letter-spacing:.06em;color:#e6e9f2;background:#161c29;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 14px;cursor:pointer} #prDisp .pb-open:hover{background:#1f2738} #prDisp .pb-open[hidden]{display:none}
+#prDisp .pb-open{position:absolute;top:8px;right:10px;z-index:5;display:inline-flex;align-items:center;gap:7px;font:800 12px var(--body);letter-spacing:.06em;color:#e6e9f2;background:#161c29;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:6px 14px;cursor:pointer} #prDisp .pb-open:hover{background:#1f2738} #prDisp .pb-open[hidden]{display:none}
 #prBandP .pb-t{font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;color:#8b93a7;margin-right:12px}
 #prBandP .pb-top{display:flex;align-items:center;gap:12px} #prBandP .pb-nm{font:800 15px var(--body);color:#e6e9f2;letter-spacing:.02em}
 #prBandP .pb-pow{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:#1a1f2b;color:#6b7280;font-size:18px;cursor:pointer;display:grid;place-items:center}
@@ -1746,7 +1746,7 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
       save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'Opens with the Chord Couples variations marked Over'});
   const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; if(st.slh==='chord') bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
   strips.append(
-    cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true,rows:3}),
+    cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; if(k==='sixdim') bandOpen=true; save(); render(); },{two:true,rows:3}),
     lhStrip, (ncc?overStrip:sdChordStrips(sd)[0]),   /* Chord: the Over chords on Chord Couples, the chords of the bar on Sixth Diminished */
     ...varStrips,
     cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Chord Couples, Sixth Diminished, Drop-2 Movements and Quartal Harmony'}),
