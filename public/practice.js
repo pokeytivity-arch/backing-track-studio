@@ -436,15 +436,25 @@ const hasSol=()=>!!(window.SCALELIB&&SCALELIB.solfa[st.type]);
 const sysNow=()=>(kind==='scales'&&st.sys!=='letter'&&hasSol())?st.sys:'letter';
 const curS=()=>{ const s=steps[cur]; return curDesc&&s&&s.alt?s.alt:s; };
 function lab(s,desc){ if(!s) return ''; const y=sysNow(); if(y==='letter') return DSP(s.name); const sy=(desc&&s.solD)||s.sol; if(!sy) return DSP(s.name); return y==='solfa'?sy:(SCALELIB.solnum[sy]||sy); }
+/* the note names sit on a bar above the keys, over their own keys */
+const KBN=['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+function kbBar(host,svg,lh,rh,spell){ host.querySelectorAll(':scope>.kb-bar').forEach(x=>x.remove()); const vb=(svg.getAttribute('viewBox')||'').split(/\s+/).map(Number), W=vb[2]||1; if(getComputedStyle(host).position==='static') host.style.position='relative';
+  const bar=document.createElement('div'); bar.className='kb-bar'; host.appendChild(bar); host.classList.add('has-kbbar');
+  const items=[...new Set([...lh,...rh])].map(m=>{ const r=svg.querySelector('rect[data-m="'+m+'"]'); if(!r) return null; const x=+r.getAttribute('x')+(+r.getAttribute('width'))/2; const nm=spell&&spell[m]!=null?[].concat(spell[m]).join(' '):KBN[((m%12)+12)%12]; return {m,x,nm,l:lh.includes(m)}; }).filter(Boolean).sort((a,b)=>a.x-b.x);
+  let last=-1e9, row=0; items.forEach(it=>{ row=it.x-last<20?1-row:0; last=it.x; const t=document.createElement('span'); t.className='kb-n '+(it.l?'kb-l':'kb-r')+(row?' kb-2':''); t.textContent=it.nm; t.style.left=(it.x/W*100)+'%'; bar.appendChild(t); }); }
+{ const cs=document.createElement('style'); cs.textContent=`.has-kbbar{margin-top:30px!important} .kb-bar{position:absolute;left:0;right:0;top:-29px;height:28px;pointer-events:none}
+.kb-n{position:absolute;top:1px;transform:translateX(-50%);font:800 12px/1 var(--body,Arial);padding:2px 5px;border-radius:5px;white-space:nowrap;color:#fff} .kb-n.kb-2{top:14px}
+.kb-n.kb-l{background:#1c7ed6} .kb-n.kb-r{background:#f76707}`; document.head.appendChild(cs); }
 function drawKb(){
   const wrap=$('#prKb'); if(!wrap||typeof keyboardSVG!=='function') return; const s=curS(); if(kind==='scales'||steps.arp) handPos();
   let fm=null; if(kind==='scales'&&s){ fm={}; (s.lh||[]).forEach(m=>{ if(s.lfing) fm[m]=s.lfing; }); (s.rh||[]).forEach(m=>{ if(s.fing) fm[m]=s.fing; }); }
   const V=kind==='chords'&&vis&&vis.s===s?vis:null, XL=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='l'):[], XR=V?Object.keys(V.extra).map(Number).filter(m=>V.extra[m].h==='r'):[];
-  if((kind==='chords'||kind==='styl')&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:kind!=='scales',fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
+  if((kind==='chords'||kind==='styl')&&s&&(s.rfm||s.lfm||V)&&typeof fingering==='function'){ fm=Object.assign(fingering(s.lh||[],s.rh||[]),s.lfm||{},s.rfm||{}); if(V){ Object.assign(fm,V.fo||{}); Object.keys(V.extra).forEach(m=>{ fm[m]=V.extra[m].f; }); } } const rng=kbRange(), kbx=ov.querySelector('#prKbP.max'), kH=kbx?120:(MQM.matches?64:96); const VO=kind==='chords'&&st.cmode==='voice'&&s&&s.vroot!=null, VSP=VO&&st.nkb?vLabels(s):null; const SPL=(VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null))||(kind==='styl'&&s?styKbSpell([...XL,...s.lh,...XR,...s.rh]):null);
+  const svg=keyboardSVG(s?[...XL,...s.lh]:[],s?[...XR,...s.rh]:[],{lo:rng[0],hi:rng[1],height:kH,labels:false,fingers:kind==='chords'&&!(s&&s.nofing),fmap:fm,spell:VSP?VSP:(s&&sysNow()!=='letter'&&s.sol)?(()=>{ const o={}; [...(s.lh||[]),...(s.rh||[])].forEach(m=>{ o[m]=lab(s,curDesc); }); return o; })():(s&&s.spell||null)});
   svg.addEventListener('pointerdown',e=>{ const r=e.target.closest('rect[data-m]'); if(!r) return; const m=+r.dataset.m, old=r.getAttribute('fill'); r.setAttribute('fill','#ffd43b'); if(window.CLASS) CLASS.sound(m,1.4,.85); setTimeout(()=>r.setAttribute('fill',old),260); });
   /* while a chord plays, each note lights up as it sounds and dims when it stops */
   if(V) [...(s.lh||[]),...(s.rh||[]),...XL,...XR].forEach(m=>{ const r=svg.querySelector('rect[data-m="'+m+'"]'); if(!r) return; if(V.on.has(m)){ r.setAttribute('stroke','#fff'); r.setAttribute('stroke-width','2'); } else { const w=+r.getAttribute('width')>10, f=r.getAttribute('fill'); r.setAttribute('fill',f==='#f76707'?(w?'#ffd8bd':'#7a3a12'):f==='#1c7ed6'?(w?'#c4ddf6':'#163d63'):f); r.setAttribute('data-dim','1'); } });
-  wrap.replaceChildren(svg); tab(svg,s);
+  wrap.replaceChildren(svg); if(kind!=='scales') kbBar(wrap,svg,s?[...XL,...(s.lh||[])]:[],s?[...XR,...(s.rh||[])]:[],SPL); else wrap.classList.remove('has-kbbar'); tab(svg,s);
   if(window.PSHANDS){ if(kind==="scales"||steps.arp) PSHANDS.sync(wrap,steps.some(x=>x.fing||x.lfing),s,drawKb); else if((kind==="chords"||kind==="styl")&&s&&typeof fingering==="function") PSHANDS.sync(wrap,true,chordHands(s),drawKb); else PSHANDS.sync(null,false); }
   ov.querySelectorAll('.p-chip').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===cur)));
 }
@@ -1455,7 +1465,7 @@ const sFlat=()=>[1,3,5,8,10].includes(((st.str||0)%12+12)%12);
 const sNm=pc=>(sFlat()?FLAT_N:SHARP_N)[((pc%12)+12)%12];
 const sChord=a=>a.map(m=>sNm(m)).join(' ');
 const sInv=(c,k)=>{ const a=c.slice(); for(let i=0;i<k;i++) a.push(a.shift()+12); return a; };
-function syName(T,v){ const tr=st.str||0; if(T.id==='domm'){ const R=sNm(dmRoot()); return R+'dom13sus4 to '+R+'7b9'; } if(T.id==='quartal') return sNm(tr)+' pentatonic · quartal harmony · '+v.n; if(T.id==='drop2') return sNm(tr)+(st.s7==='min'?' minor seventh':' major seventh')+' · '+v.n; if(T.id==='sixdim') return sNm(tr)+(sdMin()?' minor sixth':' major sixth')+' + '+sNm(2+tr)+' diminished seventh · '+v.n; if(T.id==='ncc'){ const n=(v.nx||sNm(v.x[0]+tr))+SQN[v.x[1]]+' + '+(v.ny||sNm(v.y[0]+tr))+SQN[v.y[1]]; return v.cc?n+' (over '+ccName()+')':v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
+function syName(T,v){ const tr=st.str||0; if(T.id==='domm'){ const R=sdNm(dmRoot()); return R+'dom13sus4 to '+R+'7b9'; } if(T.id==='quartal') return sNm(tr)+' pentatonic · quartal harmony · '+v.n; if(T.id==='drop2') return sNm(tr)+(st.s7==='min'?' minor seventh':' major seventh')+' · '+v.n; if(T.id==='sixdim') return sNm(tr)+(sdMin()?' minor sixth':' major sixth')+' + '+sNm(2+tr)+' diminished seventh · '+v.n; if(T.id==='ncc'){ const n=(v.nx||sNm(v.x[0]+tr))+SQN[v.x[1]]+' + '+(v.ny||sNm(v.y[0]+tr))+SQN[v.y[1]]; return v.cc?n+' (over '+ccName()+')':v.over?n+' (over '+syOver(true)+')':n; } if(T.id==='back') return sNm(tr)+' major · '+v.n; return T.name; }
 function syOver(short){ const tr=st.str||0; return st.sover==='cm6'?(sNm(tr)+(short?'m6':' minor sixth')):(sNm(5+tr)+(short?'7 (no 5)':' dominant 7 (no 5)')); }
 function syChip(T,v){ const tr=st.str||0; if(T.id==='quartal') return v.n; if(T.id==='drop2') return v.n; if(T.id==='sixdim') return v.n; if(T.id==='ncc'){ const ab=q=>({maj:'',min:'m',dim:'°',six:'6',dim7:'°7'})[q]; return sNm(v.x[0]+tr)+ab(v.x[1])+' + '+sNm(v.y[0]+tr)+ab(v.y[1])+(v.over?' / Over':''); } return v.n; }
 /* one phrase of a variety: the notes (beats from the start), what to show on the keys, and the bar-by-bar words */
@@ -1533,7 +1543,18 @@ function syStep(T,v,f){ const o={name:syName(T,v),lh:f.lh,rh:f.rh,src:''}; if(f.
    diminished ones. Variation #2: the sixth chord's notes only. Variation #3: the diminished chord's notes only. Down is the way up played backwards. */
 /* major sixth (C E G A + D F G# B: the major bebop scale) or minor sixth (C Eb G A + D F G# B: C D Eb F G G# A B) */
 const sdMin=()=>st.ssix==='min', sdS6=()=>sdMin()?[0,3,7,9]:[0,4,7,9];
-const sdNm=m=>{ if(syT().id==='domm'){ const q=((m-dmRoot())%12+12)%12; return q===1||q===8?FLAT_N[((m%12)+12)%12]:sNm(m); } const r=((m-(st.str||0))%12+12)%12; return r===3?FLAT_N[((m%12)+12)%12]:r===8?SHARP_N[((m%12)+12)%12]:sNm(m); }, sdChord=a=>a.map(sdNm).join(' ');
+/* spelling by the key: each scale degree keeps its own letter (F♯ major sixth: F♯ G♯ A♯ B C♯ C𝄪 D♯ E♯) */
+const LETS='CDEFGAB', LTPC=[0,2,4,5,7,9,11];
+const nmLet=(li,pc)=>{ let a=((pc-LTPC[li])%12+12)%12; if(a>6) a-=12; return LETS[li]+({0:'','1':'♯','2':'𝄪','-1':'♭','-2':'𝄫'})[a]; };
+function keyMap(tn,ints,extra){ const li=LETS.indexOf(tn[0]), tpc=((LTPC[li]+(/[♯#]/.test(tn)?1:/[♭b]/.test(tn.slice(1))?-1:0))%12+12)%12, map={};
+  ints.forEach((iv,d)=>{ const pc=(tpc+iv)%12; map[pc]=nmLet((li+d)%7,pc); }); (extra||[]).forEach(([d,iv])=>{ const pc=(tpc+iv)%12; if(map[pc]==null) map[pc]=nmLet((li+d)%7,pc); }); return map; }
+const SC_MAJ=[0,2,4,5,7,9,11], DOMKEY=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+/* Sixth Diminished: the key's major (or, for the minor sixth, minor-third) scale plus the raised fifth. Dominant Movements: the key the dominant
+   belongs to (G7: C), with the lowered sixth (A♭, the ♭9). */
+function sdMap(){ if(syT().id==='domm') return keyMap(DOMKEY[(dmRoot()+5)%12],SC_MAJ,[[5,8]]); return keyMap(sNm(st.str||0),sdMin()?[0,2,3,5,7,9,11]:SC_MAJ,[[4,8]]); }
+const sdNm=m=>{ const n=sdMap()[((m%12)+12)%12]; return n||sNm(m); }, sdChord=a=>a.map(sdNm).join(' ');
+const styNm=m=>{ const id=syT().id; return id==='sixdim'||id==='domm'?sdNm(m):ccOn()?ccSpell(m):sNm(m); };
+function styKbSpell(ms){ const o={}; ms.forEach(m=>{ o[m]=styNm(m); }); return o; }
 function sdTops(v){ const tr=st.str||0, oc=Math.max(1,Math.min(3,+st.soct||1)), SC=sdMin()?[0,2,3,5,7,8,9,11]:[0,2,4,5,7,8,9,11], base=(oc===3?48:60)+tr;
   const S=k=>base+12*Math.floor(k/8)+SC[((k%8)+8)%8];
   let U=[]; if(v.ord==='main'){ for(let k=0;k<=8*oc;k++) U.push(S(k)); }
@@ -1587,8 +1608,8 @@ function styDrag(strip){ const ids=styOrdered().map(t=>t.id); strip.title='Drag 
 { const cs=document.createElement('style'); cs.textContent='#prRoom .p-tabs{display:flex;gap:2px;align-items:flex-end;padding:0 8px;border-bottom:1px solid rgba(255,255,255,.12);margin:-2px 0 10px}#prRoom .p-tab{position:relative;font:800 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#8b93a7;background:#141925;border:1px solid rgba(255,255,255,.08);border-bottom:0;border-radius:10px 10px 0 0;padding:9px 22px 8px;cursor:pointer;margin-bottom:-1px}#prRoom .p-tab:hover{color:#d0d6e4;background:#1a2030}#prRoom .p-tab.on{color:#f1f3f9;background:#1f2533;border-color:rgba(255,255,255,.16);box-shadow:0 -2px 0 #ffd43b inset,0 -6px 14px rgba(0,0,0,.25)}#prRoom .p-tab.on{box-shadow:inset 0 2px 0 #ffd43b}#prRoom .p-tabdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#69db7c;margin-left:8px;vertical-align:middle;box-shadow:0 0 6px #69db7c}#prRoom .p-ch.p-soft{opacity:.6}#prRoom .p-key.p-dragk{cursor:grab}#prRoom .p-key.p-dragging{opacity:.4}#prRoom .p-key.p-dover{box-shadow:0 0 0 2px #ffd43b inset}'; document.head.appendChild(cs); }
 function syTrStrip(){ const strip=el('div','p-ch p-bch p-trs'); strip.dataset.ch='Transpose'; strip.appendChild(el('div','p-cht','Transpose')); const col=el('div','p-bcol'); strip.appendChild(col);
   const r=el('div','p-trr'); r.appendChild(el('span','p-trl','Key')); const mk=(t,fn,cls,ti)=>{ const k=el('button','p-key '+cls); k.type='button'; k.innerHTML='<span></span>'; k.firstChild.textContent=t; k.title=ti; k.onclick=fn; r.appendChild(k); return k; };
-  const go=d=>{ const n=Math.max(-6,Math.min(5,(st.str||0)+d)); if(n===(st.str||0)) return; st.str=n; save(); const was=playing; render(); if(was) playAll(); };
-  mk('−',()=>go(-1),'p-trb','Key down'); const val=mk(sNm((st.str||0)+(syT().id==='domm'?7:0)),()=>{ if(st.str){ st.str=0; save(); const was=playing; render(); if(was) playAll(); } },'p-trv'+(st.str?' on':''),'Back to C'); void val; mk('+',()=>go(1),'p-trb','Key up'); col.appendChild(r);
+  const go=d=>{ const n=((((st.str||0)+d+6)%12)+12)%12-6; if(n===(st.str||0)) return; st.str=n; save(); const was=playing; render(); if(was) playAll(); };
+  mk('−',()=>go(-1),'p-trb','Key down'); const val=mk(syT().id==='domm'?sdNm(dmRoot()):sNm(st.str||0),()=>{ if(st.str){ st.str=0; save(); const was=playing; render(); if(was) playAll(); } },'p-trv'+(st.str?' on':''),'Back to C'); void val; mk('+',()=>go(1),'p-trb','Key up'); col.appendChild(r);
   col.appendChild(el('p','p-cvhelp','Transposing the chord moves its neighbouring chord too.')); return strip; }
 /* ---------- Sixth Diminished: Chord of the bar. His chord lists (the minor sixth ones he gave a minor third low, moved up to C).
    Each chord: its root (= the bass), then the right hand's notes from the bottom up; ">" in his list is a second voicing. ---------- */
@@ -1619,7 +1640,7 @@ function bandBar(t,d,BB,bi,bpb,spb){ const C=CLASS.clock; if(st.bOn===false) ret
   segs.forEach(([o,dd],k)=>{ if(nv>1&&(bi>0||k>0)) BB.vi=(BB.vi+1)%nv; const vi=BB.vi; sdCNotes(c,vi).rh.forEach(m=>play(m,t+o,dd-.02,.42));
     timers.push(setTimeout(()=>{ if(!playing) return; bandKb(vi,true); },Math.max(0,(t+o-C.now())*1000))); }); }
 function bandKb(vi,hit){ const kb=document.querySelector('#prBandP .pb-kb'); if(!kb||typeof keyboardSVG!=='function') return; const N=sdCNotes(bandCur(),vi||0), sp={}; [...N.lh,...N.rh].forEach(m=>{ sp[m]=sdNm(m); });
-  kb.textContent=''; kb.appendChild(keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:true,spell:sp})); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
+  kb.textContent=''; const sv=keyboardSVG(N.lh,N.rh,{lo:36,hi:96,height:78,labels:false}); kb.appendChild(sv); kbBar(kb,sv,N.lh,N.rh,sp); if(hit){ kb.classList.remove('pb-hit'); void kb.offsetWidth; kb.classList.add('pb-hit'); } }
 function sdChordStrips(sd){ const L=sdCList();
   return [cStrip('Chord',L.map((x,i)=>[i,sdCName(x)]),()=>sd&&chordBar()?[sdCI()]:[],k=>{ st.sdc=Object.assign({},st.sdc||{},{[sdMin()?'min':'maj']:k}); bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>!sd||!chordBar(),offWhy:sd?'Opens with Chord of the bar (Left hand)':'For Sixth Diminished Movements'})]; }
 /* the second keyboard (61 keys) plays the chord of the bar in the background: layered voices, each with a fader and a meter, and a power button */
@@ -1735,14 +1756,14 @@ const ccName=()=>{ const c=ccT(); return c?ccSpell(st.str||0)+c.ab:''; };
 function ccVar(){ const c=ccT(); if(!c) return null; const o=Math.min(+st.cc.o||0,c.cp.length-1), [X,Y]=c.cp[o]; const tr=st.str||0; return {x:[((X[0]%12)+12)%12,X[1]],y:[((Y[0]%12)+12)%12,Y[1]],nx:ccSpell(X[0]+tr),ny:ccSpell(Y[0]+tr),s:'Over '+ccName(),cc:true}; }
 const syV=(T,i)=>i==='cc'?ccVar():T.vars[i];
 /* the chord the Chord of the bar keyboard plays: the compatible chord on Chord Couples, the chosen chord on Sixth Diminished */
-const bandCur=()=>{ if(syT().id==='domm') return {r:7,n:' bass',v:[[]]}; const c=ccOn()?ccT():null; return c?{r:0,n:c.ab,v:c.v,nm:ccName()}:sdCur(); };
+const bandCur=()=>{ if(syT().id==='domm') return {r:7,n:' bass',v:[[]],nm:sdNm(dmRoot())+' bass'}; const c=ccOn()?ccT():null; return c?{r:0,n:c.ab,v:c.v,nm:ccName()}:sdCur(); };
 function ccStrip(ncc){ const strip=el('div','p-ch p-bch p-ccs'); strip.dataset.ch='Compatible chord'; strip.appendChild(el('div','p-cht','Compatible chord')); const col=el('div','p-bcol'); strip.appendChild(col);
   if(!ncc){ strip.classList.add('off'); strip.title='For Chord Couples'; }
   const row=el('div','p-ccrow'), sn=el('select','p-sel'), sc=el('select','p-sel'); sn.setAttribute('aria-label','Note'); sc.setAttribute('aria-label','Chord type');
-  for(let i=0;i<12;i++){ const o=document.createElement('option'); o.value=i; o.textContent=sNm(i); sn.appendChild(o); } sn.value=String(((st.str||0)%12+12)%12);
+  for(let i=0;i<12;i++){ const o=document.createElement('option'); o.value=i; o.textContent=DOMKEY[i].replace('G♭','F♯'); sn.appendChild(o); } sn.value=String(((st.str||0)%12+12)%12);
   { const o=document.createElement('option'); o.value=''; o.textContent='Choose a chord…'; sc.appendChild(o); } CCT.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.n.trim().replace(/^7/,'dominant seventh '); sc.appendChild(o); }); sc.value=ccT()?st.cc.t:'';
   [sn,sc].forEach(x=>{ x.disabled=!ncc; x.addEventListener('keydown',e=>e.stopPropagation()); });
-  const go=()=>{ clr(); st.str=+sn.value; st.cc=sc.value?{t:sc.value,o:0}:null; if(st.cc){ if(st.slh===false||st.slh==='locked') st.slh='chord'; bandOpen=true; } save(); render(); };
+  const go=()=>{ clr(); st.str=((+sn.value+6)%12)-6; st.cc=sc.value?{t:sc.value,o:0}:null; if(st.cc){ if(st.slh===false||st.slh==='locked') st.slh='chord'; bandOpen=true; } save(); render(); };
   sn.onchange=go; sc.onchange=go; row.append(sn,sc); col.appendChild(row);
   const c=ncc&&ccT(); if(c){ const tr=st.str||0, ab=q=>({maj:'',min:'m',dim:'°'})[q];
     c.cp.forEach(([X,Y],i)=>{ const k=el('button','p-key'); k.type='button'; k.innerHTML='<i class="p-led"></i><span></span>'; k.lastChild.textContent=ccSpell(X[0]+tr)+ab(X[1])+' + '+ccSpell(Y[0]+tr)+ab(Y[1]); const on=(+st.cc.o||0)===i; k.classList.toggle('on',on); k.setAttribute('aria-pressed',String(on));
