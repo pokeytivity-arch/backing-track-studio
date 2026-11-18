@@ -1686,7 +1686,7 @@ function bandSync(){ let p=document.getElementById('prBandP'); const show=bandAc
 const STY_LOCK=false;
 const STY_W={Technique:292,Over:184,'Left hand':158,Chord:548,Variety:490,'Skill level':137,Hands:128,Direction:139,'Seventh chord':165,'Sixth chord':146,Octaves:118,Transpose:362,Levels:158};
 const STY_TECH_KEYS=['Variety','Chord','Skill level','Hands'];
-function styBKey(title){ if(title==='Variations') title='Variety'; return title==='Chord'?'Chord|'+(sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
+function styBKey(title){ if(title==='Variations') title='Variety'; return title==='Chord'?'Chord|'+(st.sty==='ncc'?'over':sdMin()?'min':'maj'):STY_TECH_KEYS.includes(title)?title+'|'+st.sty:title; }
 function styBtnSort(title,opts){ const ord=(st.bord||{})[styBKey(title)]; if(!Array.isArray(ord)) return opts; const pos=v=>{ const i=ord.indexOf(String(v)); return i<0?999:i; };
   return opts.map((x,i)=>[x,i]).sort((a,b)=>(pos(a[0][0])-pos(b[0][0]))||(a[1]-b[1])).map(x=>x[0]); }
 function styBtnDrag(strip,col,title){ const keys=()=>[...col.querySelectorAll('.p-key')];
@@ -1740,14 +1740,14 @@ function stylRender(ctl){ const T=syT(); if(st.svar==null) st.svar=0; if(T.vars&
     cStrip('Variations',(d2?[]:(T.vars||[]).map((x,i)=>[i,syChip(T,x)]).concat(T.vars?[['all','All variations','Play every variation, one after the other']]:[])),()=>[st.svar==='all'?'all':+st.svar],k=>{ st.svar=k; save(); const was=playing; render(); if(was) playAll(); },{two:true,rows:3,off:()=>d2||!T.vars,offWhy:d2?'Drop-2 Movements: see Skill level and Hands':'Coming soon'}),
     cStrip('Skill level',[['int','Intermediate'],['adv','Advanced']],()=>!d2||st.svar==='all'?[]:[d2adv?'adv':'int'],k=>{ st.svar=k==='int'?0:(+st.d2h||1); rr(); },{off:()=>!d2,offWhy:'For Drop-2 Movements'}),
     cStrip('Hands',[[1,'Left hand'],[2,'Right hand'],[3,'Both hands']],()=>d2adv?[+st.svar]:[],k=>{ st.svar=k; st.d2h=k; rr(); },{off:()=>!d2adv,offWhy:'For Drop-2 Movements on Advanced'})];
-  const overStrip=cStrip('Over',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>overOn?[st.sover||'f7']:[],k=>{ st.sover=k;
+  const overStrip=cStrip('Chord',[['f7',sNm(5+(st.str||0))+' dominant 7 (no 5)'],['cm6',sNm(st.str||0)+' minor sixth']],()=>overOn?[st.sover||'f7']:[],k=>{ st.sover=k;
       /* the Over chord is a left-hand chord under the Over varieties: picking one turns the left hand chord on */
       if(st.slh===false||st.slh==='drop2') st.slh='chord';
       save(); const was=playing; render(); if(was) playAll(); },{off:()=>!overOn,offWhy:'Opens with the Chord Couples variations marked Over'});
   const lhStrip=cStrip('Left hand',[['chord','Chord of the bar','One chord per bar in the left hand'],['drop2','Drop-2','The second note from the top of each chord drops an octave into the left hand; the right hand plays the rest']],()=>st.slh===false?[]:[st.slh==='drop2'?'drop2':'chord'],k=>{ const now=st.slh===false?'':st.slh==='drop2'?'drop2':'chord'; st.slh=now===k?false:k; if(st.slh==='chord') bandOpen=true; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!lhOn,offWhy:'For Chord Couples and Sixth Diminished Movements'});
   strips.append(
     cStrip(st.stab==='mov'?'Movements':'Technique',styOrdered().filter(t=>STY_MOV.includes(t.id)===(st.stab==='mov')).map(t=>[t.id,t.name,t.vars?'':'HearandPlay will add these exercises soon']),()=>[st.sty],k=>{ if(st.sty===k) return; clr(); st.sty=k; st.svar=0; save(); render(); },{two:true,rows:3}),
-    overStrip, lhStrip, ...sdChordStrips(sd),
+    lhStrip, (ncc?overStrip:sdChordStrips(sd)[0]),   /* Chord: the Over chords on Chord Couples, the chords of the bar on Sixth Diminished */
     ...varStrips,
     cStrip('Direction',[['updown','Up and down'],['up','Ascending'],['down','Descending']],()=>[st.sdir||'updown'],k=>{ st.sdir=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!mv,offWhy:'For Chord Couples, Sixth Diminished, Drop-2 Movements and Quartal Harmony'}),
     cStrip('Seventh chord',[['maj',sNm(st.str||0)+' major seventh'],['min',sNm(st.str||0)+' minor seventh']],()=>[st.s7==='min'?'min':'maj'],k=>{ st.s7=k; save(); const was=playing; render(); if(was) playAll(); },{off:()=>!d2,offWhy:'For Drop-2 Movements'}),
