@@ -1632,7 +1632,9 @@ let bandOpen=true;
 function bandPlace(){ const p=document.getElementById('prBandP'), dp=document.getElementById('prDisp'), scr=dp&&dp.querySelector('.pd-screen'), sub=document.getElementById('prSub'); if(!p||p.hidden||!scr||!sub) return;
   const U=st.bPos; if(U&&U.w) p.style.width=U.w+'px'; else p.style.width='';
   if(U&&U.l!=null){ p.style.left=U.l+'px'; p.style.top=U.t+'px'; return; }
-  const a=scr.getBoundingClientRect(), b=sub.getBoundingClientRect(), z=a.width/(scr.offsetWidth||a.width)||1; p.style.left=Math.max(0,(b.left-a.left)/z)+'px'; p.style.top=((b.top-a.top)/z+scr.scrollTop)+'px'; }
+  /* his default: the top left corner of the Display, about 43% of its width */
+  const a=scr.getBoundingClientRect(), D=dp.getBoundingClientRect(), z=a.width/(scr.offsetWidth||a.width)||1; if(!(U&&U.w)) p.style.width=Math.max(300,Math.round(D.width/z*.43))+'px';
+  p.style.left=((D.left-a.left)/z+3)+'px'; p.style.top=((D.top-a.top)/z+scr.scrollTop+12)+'px'; }
 /* drag it by its top bar, resize it from the corner; double-click the top bar to put it back in its place and size */
 function bandDragSize(p){ const top=p.querySelector('.pb-top'), gr=el('div','pb-grip'); gr.title='Drag to resize'; p.appendChild(gr);
   const zoom=()=>{ const r=p.getBoundingClientRect(); return r.width/(p.offsetWidth||r.width)||1; };
